@@ -19,6 +19,87 @@ Please comment your code ! :-) Imagine an engineer is trying to fix a production
 
 When naming variables use strict camel case e.g. use myUrl not myURL. This is so we can automatically convert from camelCase to snake_case for JSON output.
 
+## Writing an API endpoint
+
+```scala
+    resourceDocs += ResourceDoc(
+      getCustomersForUser,
+      implementedInApiVersion,
+      nameOf(getCustomersForUser),
+      "GET",
+      "/users/current/customers",
+      "Get Customers for Current User",
+      s"""Gets all Customers that are linked to a User.
+        |
+        |
+        |${authenticationRequiredMessage(true)}
+        |
+        |""",
+      emptyObjectJson,
+      customerJsonV300,
+      List(
+        UserNotLoggedIn,
+        UserCustomerLinksNotFoundForUser,
+        UnknownError
+      ),
+      Catalogs(notCore, notPSD2, notOBWG),
+      List(apiTagCustomer, apiTagUser, apiTagNewStyle))
+
+
+
+    // This can be considered a reference new style endpoint.
+    // This is a partial function. The lazy value should have a meaningful name.
+    lazy val getCustomersForUser : OBPEndpoint = {
+      // This defines the URL path and method (GET) for which this partial function will accept the call.
+      case "users" :: "current" :: "customers" :: Nil JsonGet _ => {
+        // We have the Call Context (cc) object (provided through the OBPEndpoint type)
+        // The Call Context contains the authorisation headers etc.
+        cc => {
+          for {
+            // Extract the user from the headers and get an updated callContext
+            (Full(u), callContext) <- authorizedAccess(cc)
+            // Now here is the business logic.
+            // Get The customers related to a user. Process the resonse which might be an Exception
+            (customers,callContext) <- Connector.connector.vend.getCustomersByUserIdFuture(u.userId, callContext) map {
+              connectorEmptyResponse(_, callContext)
+            }
+          } yield {
+            // Create the JSON to return. We also return the callContext
+            (JSONFactory300.createCustomersJson(customers), HttpCode.`200`(callContext))
+          }
+        }
+      }
+    }
+```
+### Recommended order of checks at an endpoint
+
+```scala
+    lazy val createProduct: OBPEndpoint = {
+      case "banks" :: BankId(bankId) :: "products" :: ProductCode(productCode) :: Nil JsonPut json -> _ => {
+        cc =>
+          for {
+            // 1. makes sure the user which attempts to use the endpoint is authorized
+            (Full(u), callContext) <- authorizedAccess(cc)
+            // 2. makes sure the user which attempts to use the endpoint is allowed to consume it 
+            _ <- NewStyle.function.hasAtLeastOneEntitlement(failMsg = createProductEntitlementsRequiredText)(bankId.value, u.userId, createProductEntitlements)
+            // 3. checks the endpoint constraints
+            (_, callContext) <- NewStyle.function.getBank(bankId, callContext)
+            failMsg = s"$InvalidJsonFormat The Json body should be the $PostPutProductJsonV310 "
+            ...
+```
+Please note that that checks at an endpoint should be applied only in case an user is authorized and has privilege to consume the endpoint. Otherwise we can reveal sensitive data to the user. For instace if we reorder the checks in next way:
+```scala
+            // 1. makes sure the user which attempts to use the endpoint is authorized
+            (Full(u), callContext) <- authorizedAccess(cc)
+            // 3. checks the endpoint constraints
+            (_, callContext) <- NewStyle.function.getBank(bankId, callContext)
+            failMsg = s"$InvalidJsonFormat The Json body should be the $PostPutProductJsonV310 "      
+            (Full(u), callContext) <- authorizedAccess(cc)
+            // 2. makes sure the user which attempts to use the endpoint is allowed to consume it 
+            _ <- NewStyle.function.hasAtLeastOneEntitlement(failMsg = createProductEntitlementsRequiredText)(bankId.value, u.userId, createProductEntitlements)   
+```
+the user which cannot consume the endpoint still can check does some bank exist or not at that instance. It's not the issue if banks are public data at the instance but it wouldn't be the only business case all the time.
+
 ## Writing tests
 
 When you write a test for an endpoint please tag it with a version and the endpoint.
@@ -54,6 +135,33 @@ class FundsAvailableTest extends V310ServerSetup {
 
 }
 ``` 
+
+## Code Generation
+We support to generate the OBP-API code from the following three types of json. You can choose one of them as your own requirements. 
+
+    1 Choose one of the following types: type1 or type2 or type3
+    2 Modify the json file your selected,
+    3 Run the Main method according to your json file
+    4 Run/Restart OBP-API project.
+    5 Run API_Exploer project to test your new APIs. (click the Tag `APIBuilder B1)
+
+Here are the three types: 
+
+Type1: If you use `modelSource.json`, please run `APIBuilderModel.scala` main method
+```
+OBP-API/src/main/scala/code/api/APIBuilder/APIModelSource.json
+OBP-API/src/main/scala/code/api/APIBuilder/APIBuilderModel.scala
+```
+Type2: If you use `apisResource.json`, please run `APIBuilder.scala` main method
+```
+OBP-API/src/main/scala/code/api/APIBuilder/apiResourceDoc/apisResource.json
+OBP-API/src/main/scala/code/api/APIBuilder/apiResourceDoc/APIBuilder.scala
+```
+Type3: If you use `swaggerResource.json`, please run `APIBuilderSwagger.scala` main method
+```
+OBP-API/src/main/scala/code/api/APIBuilder/swagger/swaggerResource.json
+OBP-API/src/main/scala/code/api/APIBuilder/swagger/APIBuilderSwagger.scala
+```
 
 ## Issues
 

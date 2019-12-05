@@ -3,7 +3,36 @@
 ### Most recent changes at top of file
 ```
 Date          Commit        Action 
-
+21/11/2019    51f97330      Added props: portal_hostname. default use the same value as hostname. This props is only useful when we split obp to
+                            two instances: apis and portal. So portal one need its own hostname, portal_hostname can be used for it.  
+18/11/2019    de4aec71      Added props: grpc.server.enabled. default is false. 
+18/11/2019    4bd31563      Added props: grpc.server.port. if do not set this props, the grpc port will be set randomly when OBP starts. 
+                            And you can call `Get API Configuration` endpoint to see the `grpc_port` there. When you set this props, need to
+                            make sure this port is available.  
+08/11/2019    13d2e88a      Added props: rest2019_connector_timeout. This set the timeout for all rest-connector methods. If connector do not get 
+                            response by the specified seconds, then obp will throw the adapter timeout error.
+07/11/2019    015d8420      Added props: webui_agree_privacy_policy_html_text makes this text on the sign up page /user_mgt/sign_up configurable.
+                            It has the default html format value. 
+04/10/2019    aa9659c7      Added props: es.warehouse.allowed.maximum.pagesize. This is the maximum size in the query for warehouse apis.
+                            It has the default value 10000.
+03/09/2019    f953386c      Added props: implicitly_convert_ids . it will convert Bank_Plan_Text_Reference to OBP-UUID implicitly.  
+21/08/2019    4ac93f1c      Added props: webui_register_consumer_success_message_webpage and webui_register_consumer_success_message_email.
+                            These  messages will be shown to developers on the webpage or email, when they register the consumer successfully. 
+05/07/2019    7032ce3       Added props: webui_sandbox_introduction, To display the introduction page for sandbox.
+                            It supports the markdown format.It will show the introduction OBP-API home page `INTRODUCTION` 
+                            page and also for Glossary `Sandbox Introduction`. 
+14/06/2019    7a1c453       Added props: sca_phone_api_key and sca_phone_api_secret. We For now, OBP-API use `nexmo` server 
+                            as the SMS provider. Please check `nexmo` website, and get the api key and value there.
+03/06/2019    5194b48       The table viewimpl is replaced with a table viewdefinition
+                            The table viewprivileges is replaced with a table accountaccess
+                            Please note that next props must be set up:
+                            migration_scripts.execute=true
+                            list_of_migration_scripts_to_execute=populateTableViewDefinition,populateTableAccountAccess```
+                            In the table migrationscriptlog you can see results of the migration scripts.
+                            Please note that 2 backup tables are created as well, something like these 2 below:
+                            1. accountaccess_backup_2019_05_17_11_16_32_134
+                            2.  viewdefinition_backup_2019_05_17_11_16_31_862
+29/04/2019    a6b58a1       Added Props system_environment_property_name_prefix, default is OBP_. This adds the prefix only for the system environment property name, eg: db.driver --> OBP_db.driver
 07/07/2018    4944572       Added Props api_instance_id, default is 1. This deceides the current api instance number, start from 1.  
 29/06/2018    7422894       Added Props logging.database.queries.enable, default is false. This should enable logging all the database queries in log file.
 01/06/2018    a286684       Added Props write_connector_metrics, default is false. This decides whether the connector level metric save or not
