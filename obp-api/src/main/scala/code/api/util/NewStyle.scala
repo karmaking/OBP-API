@@ -1039,7 +1039,7 @@ object NewStyle extends MdcLoggable{
     
     def handleEntitlementsAndScopes(failMsg: => String)(bankId: String, userId: String, roles: List[ApiRole], callContext: Option[CallContext]): Future[Box[Unit]] =
       Helper.booleanToFuture(failMsg, cc=callContext) {
-        APIUtil.handleEntitlementsAndScopes(bankId, userId, APIUtil.getConsumerPrimaryKey(callContext),roles)
+        APIUtil.handleAccessControlRegardingEntitlementsAndScopes(bankId, userId, APIUtil.getConsumerPrimaryKey(callContext),roles)
       } map validateRequestPayload(callContext)
 
     def hasAtLeastOneEntitlement(bankId: String, userId: String, roles: List[ApiRole], callContext: Option[CallContext]): Future[Box[Unit]] = {

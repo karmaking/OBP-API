@@ -2403,57 +2403,50 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
   // Function checks does a user specified by a parameter userId has at least one role provided by a parameter roles at a bank specified by a parameter bankId
   // i.e. does user has assigned at least one role from the list
   // when roles is empty, that means no access control, treat as pass auth check
-  def handleEntitlementsAndScopes(bankId: String, userId: String, consumerId: String, roles: List[ApiRole]): Boolean = {
-    
-    val requireScopesForListedRoles: List[String] = getPropsValue("require_scopes_for_listed_roles", "").split(",").toList
-    val requireScopesForRoles: immutable.Seq[String] = roles.map(_.toString()) intersect requireScopesForListedRoles
+  def handleAccessControlRegardingEntitlementsAndScopes(bankId: String, userId: String, consumerId: String, roles: List[ApiRole]): Boolean = {
+    if (roles.isEmpty) { // No access control, treat as pass auth check
+      true
+    } else {
+      val requireScopesForListedRoles = getPropsValue("require_scopes_for_listed_roles", "").split(",").toSet
+      val requireScopesForRoles = roles.map(_.toString).toSet.intersect(requireScopesForListedRoles)
 
-    def userHasTheRoles: Boolean = {
-      val userHasTheRole: Boolean = roles.isEmpty || roles.exists(hasEntitlement(bankId, userId, _))
-      userHasTheRole match {
-        case true => userHasTheRole // Just forward
-        case false =>
-          // If a user is trying to use a Role and the user could grant them selves the required Role(s),
-          // then just automatically grant the Role(s)!
-          getPropsAsBoolValue("create_just_in_time_entitlements", false) match {
-            case false => userHasTheRole // Just forward
-            case true => // Try to add missing roles
-              if (hasEntitlement(bankId, userId, ApiRole.canCreateEntitlementAtOneBank) ||
-                hasEntitlement("", userId, ApiRole.canCreateEntitlementAtAnyBank)) {
-                // Add missing roles
-                roles.map {
-                  role => 
-                    val addedEntitlement = Entitlement.entitlement.vend.addEntitlement(
-                      bankId, 
-                      userId, 
-                      role.toString(), 
-                      "create_just_in_time_entitlements"
-                    )
-                    logger.info(s"Just in Time Entitlements: $addedEntitlement")
-                    addedEntitlement
-                }.forall(_.isDefined)
-              } else {
-                userHasTheRole // Just forward
+      def userHasTheRoles: Boolean = {
+        val userHasTheRole: Boolean = roles.exists(hasEntitlement(bankId, userId, _))
+        userHasTheRole || {
+          getPropsAsBoolValue("create_just_in_time_entitlements", false) && {
+            // If a user is trying to use a Role and the user could grant them selves the required Role(s),
+            // then just automatically grant the Role(s)!
+            (hasEntitlement(bankId, userId, ApiRole.canCreateEntitlementAtOneBank) ||
+              hasEntitlement("", userId, ApiRole.canCreateEntitlementAtAnyBank)) &&
+              roles.forall { role =>
+                val addedEntitlement = Entitlement.entitlement.vend.addEntitlement(
+                  bankId,
+                  userId,
+                  role.toString,
+                  "create_just_in_time_entitlements"
+                )
+                logger.info(s"Just in Time Entitlements: $addedEntitlement")
+                addedEntitlement.isDefined
               }
           }
+        }
+      }
+
+      // Consumer AND User has the Role
+      if (ApiPropsWithAlias.requireScopesForAllRoles || requireScopesForRoles.nonEmpty) {
+        userHasTheRoles && roles.exists(hasScope(bankId, consumerId, _))
+      }
+      // Consumer OR User has the Role
+      else if (getPropsAsBoolValue("allow_entitlements_or_scopes", false)) {
+        roles.exists(role => hasScope(if (role.requiresBankId) bankId else "", consumerId, role)) || userHasTheRoles
+      }
+      // User has the Role
+      else {
+        userHasTheRoles
       }
     }
-    // Consumer AND User has the Role
-    if(ApiPropsWithAlias.requireScopesForAllRoles || !requireScopesForRoles.isEmpty) {
-      roles.isEmpty || (userHasTheRoles && roles.exists(hasScope(bankId, consumerId, _)))
-    } 
-    // Consumer OR User has the Role
-    else if(getPropsAsBoolValue("allow_entitlements_or_scopes", false)) {
-      roles.isEmpty ||
-        userHasTheRoles || 
-        roles.exists(role => hasScope(if (role.requiresBankId) bankId else "", consumerId, role))
-    }
-    // User has the Role
-    else {
-      userHasTheRoles
-    }
-    
   }
+
 
 
   // Function checks does a user specified by a parameter userId has all roles provided by a parameter roles at a bank specified by a parameter bankId
@@ -2687,7 +2680,7 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
     def checkVersion: Boolean = {
       val disabledVersions: List[String] = getDisabledVersions()
       val enabledVersions: List[String] = getEnabledVersions()
-      if (//                                     this is the short version: v4.0.0             this is for fullyQualifiedVersion: OBPv4.0.0 
+      if (//                                     this is the short version: v4.0.0             this is for fullyQualifiedVersion: OBPv4.0.0
         (disabledVersions.find(disableVersion => (disableVersion == version.apiShortVersion || disableVersion == version.fullyQualifiedVersion )).isEmpty) &&
           // Enabled versions or all
           (enabledVersions.find(enableVersion => (enableVersion ==version.apiShortVersion || enableVersion == version.fullyQualifiedVersion)).isDefined || enabledVersions.isEmpty)
@@ -2762,7 +2755,7 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
 
     // Endpoint Operation Ids
     val enabledEndpointOperationIds = getEnabledEndpointOperationIds
-    
+
 
     val routes = for (
       item <- resourceDocs
@@ -3011,12 +3004,12 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
           case Some(consent) => // JWT value obtained via "Consent-Id" request header
             Consent.applyRules(
               Some(consent.jsonWebToken),
-              // Note: At this point we are getting the Consumer from the Consumer in the Consent. 
-              // This may later be cross checked via the value in consumer_validation_method_for_consent. 
+              // Note: At this point we are getting the Consumer from the Consumer in the Consent.
+              // This may later be cross checked via the value in consumer_validation_method_for_consent.
               // Get the source of truth for Consumer (e.g. CONSUMER_CERTIFICATE) as early as possible.
               cc.copy(consumer = Consent.getCurrentConsumerViaMtls(callContext = cc))
             )
-          case _ => 
+          case _ =>
             JwtUtil.checkIfStringIsJWTValue(consentValue.getOrElse("")).isDefined match {
               case true => // It's JWT obtained via "Consent-JWT" request header
                 Consent.applyRules(APIUtil.getConsentJWT(reqHeaders), cc)
@@ -3115,7 +3108,7 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
           case _ =>
             Future { (Failure(ErrorMessages.DAuthUnknownError), None) }
         }
-      } 
+      }
       else if(Option(cc).flatMap(_.user).isDefined) {
         Future{(cc.user, Some(cc))}
       }
@@ -3222,7 +3215,7 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
         // val authUser = AuthUser.findUserByUsernameLocally(x._1.head.name).openOrThrowException("")
         // tryo{AuthUser.grantEntitlementsToUseDynamicEndpointsInSpaces(authUser, x._2)}.openOr(logger.error(s"${x._1} authenticatedAccess.grantEntitlementsToUseDynamicEndpointsInSpaces throw exception! "))
 
-        // make sure, if `refreshUserIfRequired` throw exception, do not break the `authenticatedAccess`, 
+        // make sure, if `refreshUserIfRequired` throw exception, do not break the `authenticatedAccess`,
         // TODO better move `refreshUserIfRequired` to other place.
         // 2022-02-18 from now, we will put this method after user create UserAuthContext successfully.
 //        tryo{refreshUserIfRequired(x._1,x._2)}.openOr(logger.error(s"${x._1} authenticatedAccess.refreshUserIfRequired throw exception! "))
@@ -3291,7 +3284,7 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
    * @param cc Call Context of te current call
    * @return Tuple (User, Call Context)
    */
-  def applicationAccess(cc: CallContext): Future[(Box[User], Option[CallContext])] = 
+  def applicationAccess(cc: CallContext): Future[(Box[User], Option[CallContext])] =
     getUserAndSessionContextFuture(cc) map { result =>
       val url = result._2.map(_.url).getOrElse("None")
       val verb = result._2.map(_.verb).getOrElse("None")
@@ -3356,9 +3349,9 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
         throw new Exception("Empty Box not allowed")
       case obj1@ParamFailure(m,e,c,af: APIFailureNewStyle) =>
         val obj = (m,e, c) match {
-          case ("", Empty, Empty) => 
+          case ("", Empty, Empty) =>
             Empty ?~! af.translatedErrorMessage
-          case _ => 
+          case _ =>
             Failure (m, e, c) ?~! af.translatedErrorMessage
         }
         val failuresMsg = filterMessage(obj)
@@ -3378,7 +3371,7 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
         throw new Exception(UnknownError)
     }
   }
-  
+
   def unboxFullAndWrapIntoFuture[T](box: Box[T])(implicit m: Manifest[T]) : Future[T] = {
     Future {
       unboxFull(fullBoxOrException(box))
@@ -3473,7 +3466,7 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
 
     //Note: this property name prefix is only used for system environment, not for Liftweb props.
     val sysEnvironmentPropertyNamePrefix = Props.get("system_environment_property_name_prefix").openOr("OBP_")
-    //All the property will first check from system environment, if not find then from the liftweb props file 
+    //All the property will first check from system environment, if not find then from the liftweb props file
     //Replace "." with "_" (environment vars cannot include ".") and convert to upper case
     // Append "OBP_" because all Open Bank Project environment vars are namespaced with OBP
     val sysEnvironmentPropertyName = sysEnvironmentPropertyNamePrefix.concat(brandSpecificPropertyName.replace('.', '_').toUpperCase())
@@ -3558,7 +3551,7 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
         None
     }
   }
-  
+
   // TODO This function needs testing in a cluster environment
   private def getActiveBrand(): Option[String] = {
     val brandParameter = "brand"
@@ -3646,7 +3639,7 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
    * Note: The public views means you can use anonymous access which implies that the user is an optional value
    */
   final def checkViewAccessAndReturnView(viewId : ViewId, bankIdAccountId: BankIdAccountId, user: Option[User], callContext: Option[CallContext]): Box[View] = {
-    
+
     val customView = MapperViews.customView(viewId, bankIdAccountId)
     customView match { // CHECK CUSTOM VIEWS
       // 1st: View is Pubic and Public views are NOT allowed on this instance.
@@ -3676,7 +3669,7 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
   }
 
   final def checkAuthorisationToCreateTransactionRequest(viewId: ViewId, bankAccountId: BankIdAccountId, user: User, callContext: Option[CallContext]): Box[Boolean] = {
-    lazy val hasCanCreateAnyTransactionRequestRole = APIUtil.handleEntitlementsAndScopes(
+    lazy val hasCanCreateAnyTransactionRequestRole = APIUtil.handleAccessControlRegardingEntitlementsAndScopes(
       bankAccountId.bankId.value,
       user.userId,
       APIUtil.getConsumerPrimaryKey(callContext),
