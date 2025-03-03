@@ -518,7 +518,7 @@ case class MeetingsJsonV310(
   meetings: List[MeetingJsonV310]
 )
 case class PostConsentEntitlementJsonV310(bank_id: String, role_name: String)
-case class PostConsentViewJsonV310(bank_id: String, account_id: String, view_id: String, helper_info: Option[HelperInfoJson])
+case class PostConsentViewJsonV310(bank_id: String, account_id: String, view_id: String)
 trait PostConsentCommonBody{
   val everything: Boolean
   val views: List[PostConsentViewJsonV310]

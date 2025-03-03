@@ -73,7 +73,7 @@ case class Role(role_name: String,
 case class ConsentView(bank_id: String, 
                        account_id: String,
                        view_id : String,
-                       helper_info: Option[HelperInfoJson]
+                       helper_info: Option[HelperInfoJson]//this is only for VRP consent.
                       )
 
 case class Consent(createdByUserId: String,
@@ -596,7 +596,7 @@ object Consent extends MdcLoggable {
                        consumerId: Option[String],
                        validFrom: Option[Date],
                        timeToLive: Long,
-                       helperInfo: Option[HelperInfoJson]
+                       helperInfo: Option[HelperInfoJson] //this is only used for VRP consent, all the others are NONE.
   ): String = {
     
     lazy val currentConsumerId = Consumer.findAll(By(Consumer.createdByUserId, user.userId)).map(_.consumerId.get).headOption.getOrElse("")
@@ -625,7 +625,7 @@ object Consent extends MdcLoggable {
     val viewsToAdd: Seq[ConsentView] = 
       for {
         view <- views
-        if consent.everything || consent.views.exists(_ == PostConsentViewJsonV310(view.bankId.value,view.accountId.value, view.viewId.value, helperInfo))
+        if consent.everything || consent.views.exists(_ == PostConsentViewJsonV310(view.bankId.value,view.accountId.value, view.viewId.value))
       } yield  {
         ConsentView(
           bank_id = view.bankId.value,
