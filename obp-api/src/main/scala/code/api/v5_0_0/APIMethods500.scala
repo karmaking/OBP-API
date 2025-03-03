@@ -1154,25 +1154,23 @@ trait APIMethods500 {
                 )
             }
             postConsentViewJsons <- if(isVrpConsent) {
-            Future.successful(List(PostConsentViewJsonV310(
-                bankId.value,
-                accountId.value,
-                viewId.value,
-                Some(HelperInfoJson(List(counterpartyId.value)))
-              )))
-            }else{
-              Future.sequence(
-                consentRequestJson.account_access.map(
-                  access =>
-                    NewStyle.function.getBankAccountByRouting(consentRequestJson.bank_id.map(BankId(_)),access.account_routing.scheme, access.account_routing.address, cc.callContext)
-                      .map(result =>PostConsentViewJsonV310(
-                        result._1.bankId.value,
-                        result._1.accountId.value,
-                        access.view_id,
-                        None,
-                      ))
+              Future.successful(List(PostConsentViewJsonV310(
+                  bankId.value,
+                  accountId.value,
+                  viewId.value
+                )))
+              }else{
+                Future.sequence(
+                  consentRequestJson.account_access.map(
+                    access =>
+                      NewStyle.function.getBankAccountByRouting(consentRequestJson.bank_id.map(BankId(_)),access.account_routing.scheme, access.account_routing.address, cc.callContext)
+                        .map(result =>PostConsentViewJsonV310(
+                          result._1.bankId.value,
+                          result._1.accountId.value,
+                          access.view_id
+                        ))
+                  )
                 )
-              )
             }
   
             (_, assignedViews) <- Future(Views.views.vend.privateViewsUserCanAccess(user))
