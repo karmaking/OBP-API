@@ -315,8 +315,8 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats {
       x =>
         val (iBan: String, bBan: String) = getIbanAndBban(x)
         val commonPath = s"${OBP_BERLIN_GROUP_1_3.apiVersion.urlPrefix}/${OBP_BERLIN_GROUP_1_3.version}/accounts/${x.accountId.value}"
-        val balanceRef = LinkHrefJson(s"/$commonPath/accounts/${x.accountId.value}/balances")
-        val transactionRef = LinkHrefJson(s"/$commonPath/accounts/${x.accountId.value}/transactions")
+        val balanceRef = LinkHrefJson(s"/$commonPath/balances")
+        val transactionRef = LinkHrefJson(s"/$commonPath/transactions")
         val canReadTransactions = canReadTransactionsAccounts.map(_.accountId.value).contains(x.accountId.value)
 
       
