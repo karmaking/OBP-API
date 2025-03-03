@@ -86,7 +86,7 @@ jobs:
           cp obp-api/target/obp-api-1.*.war ./push/
       - uses: actions/upload-artifact@v4
         with:
-          name: $GITHUB_SHA
+          name: ${{ github.sha }}
           path: push/
 
       - name: Build the Docker image
