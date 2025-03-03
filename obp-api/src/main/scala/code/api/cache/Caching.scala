@@ -57,14 +57,6 @@ object Caching extends MdcLoggable {
     }
   }
 
-  def getLocalisedResourceDocCache(key: String) = {
-    use(JedisMethod.GET, (LOCALISED_RESOURCE_DOC_PREFIX + key).intern(), Some(CREATE_LOCALISED_RESOURCE_DOC_JSON_TTL)) 
-  }
-    
-  def setLocalisedResourceDocCache(key:String, value: String)=  {
-    use(JedisMethod.SET, (LOCALISED_RESOURCE_DOC_PREFIX+key).intern(), Some(CREATE_LOCALISED_RESOURCE_DOC_JSON_TTL), Some(value))
-  }
-
   def getDynamicResourceDocCache(key: String) = {
     use(JedisMethod.GET, (DYNAMIC_RESOURCE_DOC_CACHE_KEY_PREFIX + key).intern(), Some(GET_DYNAMIC_RESOURCE_DOCS_TTL))
   }

@@ -3181,14 +3181,6 @@ trait APIMethods310 {
           implicit val ec = EndpointContext(Some(cc))
           for {
             (_, callContext) <- anonymousAccess(cc)
-            convertedToResourceDocs = RestConnector_vMar2019.messageDocs.map(toResourceDoc).toList
-            resourceDocListFiltered = ResourceDocsAPIMethodsUtil.filterResourceDocs(convertedToResourceDocs, resourceDocTags, partialFunctions)
-            resourceDocJsonList =  JSONFactory1_4_0.createResourceDocsJson(resourceDocListFiltered, true, None).resource_docs
-            swaggerResourceDoc <- Future {SwaggerJSONFactory.createSwaggerResourceDoc(resourceDocJsonList, ApiVersion.v3_1_0)}
-            //For this connector swagger, it shares some basic fields with api swagger, eg: BankId, AccountId. So it need to merge here.
-            allSwaggerDefinitionCaseClasses = MessageDocsSwaggerDefinitions.allFields++SwaggerDefinitionsJSON.allFields
-            
-
             cacheKey = APIUtil.createResourceDocCacheKey(
               None,
               restConnectorVersion,
@@ -3199,11 +3191,19 @@ trait APIMethods310 {
               apiCollectionIdParam,
               None
             )
-            swaggerJValue <- NewStyle.function.tryons(s"$UnknownError Can not convert internal swagger file.", 400, cc.callContext) {
-              val cacheValueFromRedis = Caching.getStaticSwaggerDocCache(cacheKey)
-              if (cacheValueFromRedis.isDefined) {
+            cacheValueFromRedis = Caching.getStaticSwaggerDocCache(cacheKey)
+            swaggerJValue <- if (cacheValueFromRedis.isDefined) {
+              NewStyle.function.tryons(s"$UnknownError Can not convert internal swagger file from cache.", 400, cc.callContext) {
                 json.parse(cacheValueFromRedis.get)
-              } else {
+              }
+            } else {
+              NewStyle.function.tryons(s"$UnknownError Can not convert internal swagger file.", 400, cc.callContext) {
+                val convertedToResourceDocs = RestConnector_vMar2019.messageDocs.map(toResourceDoc).toList
+                val resourceDocListFiltered = ResourceDocsAPIMethodsUtil.filterResourceDocs(convertedToResourceDocs, resourceDocTags, partialFunctions)
+                val resourceDocJsonList = JSONFactory1_4_0.createResourceDocsJson(resourceDocListFiltered, true, None).resource_docs
+                val swaggerResourceDoc = SwaggerJSONFactory.createSwaggerResourceDoc(resourceDocJsonList, ApiVersion.v3_1_0)
+                //For this connector swagger, it shares some basic fields with api swagger, eg: BankId, AccountId. So it need to merge here.
+                val allSwaggerDefinitionCaseClasses = MessageDocsSwaggerDefinitions.allFields ++ SwaggerDefinitionsJSON.allFields
                 val jsonAST = SwaggerJSONFactory.loadDefinitions(resourceDocJsonList, allSwaggerDefinitionCaseClasses)
                 val swaggerDocJsonJValue = Extraction.decompose(swaggerResourceDoc) merge jsonAST
                 val jsonString = json.compactRender(swaggerDocJsonJValue)
@@ -3211,7 +3211,6 @@ trait APIMethods310 {
                 swaggerDocJsonJValue
               }
             }
-             
           } yield {
             // Merge both results and return
             (swaggerJValue, HttpCode.`200`(callContext))
