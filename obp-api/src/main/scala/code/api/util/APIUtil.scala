@@ -930,11 +930,11 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
       case _ => OBPId
     }
 
-  def dateOrNull(date : Date) =
+  def dateOrNone(date : Date): Option[String] =
     if(date == null)
-      null
+      None
     else
-      APIUtil.DateWithMsRollback.format(date)
+      Some(APIUtil.DateWithMsRollback.format(date))
   
   def stringOrNull(text : String) =
     if(text == null || text.isEmpty)
