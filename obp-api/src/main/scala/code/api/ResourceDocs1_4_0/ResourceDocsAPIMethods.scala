@@ -491,7 +491,7 @@ trait ResourceDocsAPIMethods extends MdcLoggable with APIMethods220 with APIMeth
           )
           json <- locale match {
             case _ if (apiCollectionIdParam.isDefined) => 
-              NewStyle.function.tryons(s"$UnknownError Can not prepare OBP resource docs.", 400, callContext) {
+              NewStyle.function.tryons(s"$UnknownError Can not prepare OBP resource docs.", 500, callContext) {
                 val operationIds = MappedApiCollectionEndpointsProvider.getApiCollectionEndpoints(apiCollectionIdParam.getOrElse("")).map(_.operationId).map(getObpFormatOperationId)
                 val resourceDocs = ResourceDoc.getResourceDocs(operationIds)
                 val resourceDocsJson = JSONFactory1_4_0.createResourceDocsJson(resourceDocs, isVersion4OrHigher, locale)
@@ -501,7 +501,7 @@ trait ResourceDocsAPIMethods extends MdcLoggable with APIMethods220 with APIMeth
             case _ =>
               contentParam match {
                 case Some(DYNAMIC) =>{
-                  NewStyle.function.tryons(s"$UnknownError Can not prepare OBP resource docs.", 400, callContext) {
+                  NewStyle.function.tryons(s"$UnknownError Can not prepare OBP resource docs.", 500, callContext) {
                     val cacheValueFromRedis = Caching.getDynamicResourceDocCache(cacheKey)
                     val dynamicDocs: Box[JValue] =
                       if (cacheValueFromRedis.isDefined) {
@@ -517,7 +517,7 @@ trait ResourceDocsAPIMethods extends MdcLoggable with APIMethods220 with APIMeth
                   }
                 }
                 case Some(STATIC) => {
-                  NewStyle.function.tryons(s"$UnknownError Can not prepare OBP resource docs.", 400, callContext) {
+                  NewStyle.function.tryons(s"$UnknownError Can not prepare OBP resource docs.", 500, callContext) {
                     val cacheValueFromRedis = Caching.getStaticResourceDocCache(cacheKey)
                     val staticDocs: Box[JValue] =
                       if (cacheValueFromRedis.isDefined) {
@@ -533,7 +533,7 @@ trait ResourceDocsAPIMethods extends MdcLoggable with APIMethods220 with APIMeth
                   }
                 }
                 case _ => {
-                  NewStyle.function.tryons(s"$UnknownError Can not prepare OBP resource docs.", 400, callContext) {
+                  NewStyle.function.tryons(s"$UnknownError Can not prepare OBP resource docs.", 500, callContext) {
                     val cacheValueFromRedis = Caching.getAllResourceDocCache(cacheKey)
                     val bothStaticAndDyamicDocs: Box[JValue] =
                       if (cacheValueFromRedis.isDefined) {
