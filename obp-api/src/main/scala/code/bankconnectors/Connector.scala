@@ -691,8 +691,6 @@ trait Connector extends MdcLoggable {
     callContext: Option[CallContext]
   ): OBPReturnType[Box[PhysicalCardTrait]] = Future{(Failure{setUnimplementedError(nameOf(updatePhysicalCard _))}, callContext)}
 
-
-  //Note: introduce v210 here, is for kafka connectors, use callContext and return Future.
   def makePaymentv210(fromAccount: BankAccount,
                       toAccount: BankAccount,
                       transactionRequestId: TransactionRequestId,
