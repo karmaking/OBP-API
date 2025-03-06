@@ -32,7 +32,6 @@ import code.consent.{ConsentRequests, ConsentStatus, Consents, MappedConsent}
 import code.consumer.Consumers
 import code.context.UserAuthContextUpdateProvider
 import code.entitlement.Entitlement
-import code.kafka.KafkaHelper
 import code.loginattempts.LoginAttempt
 import code.methodrouting.{MethodRouting, MethodRoutingCommons, MethodRoutingParam, MethodRoutingT}
 import code.metrics.APIMetrics
@@ -1862,14 +1861,7 @@ trait APIMethods310 {
       "GET",
       "/connector/loopback",
       "Get Connector Status (Loopback)",
-      s"""This endpoint makes a call to the Connector to check the backend transport (e.g. Kafka) is reachable.
-         |
-         |Currently this is only implemented for Kafka based connectors.
-         |
-         |For Kafka based connectors, this endpoint writes a message to Kafka and reads it again.
-         |
-         |In the future, this endpoint may also return information about database connections etc.
-         |
+      s"""This endpoint makes a call to the Connector to check the backend transport is reachable. (WIP)
          |
          |${userAuthenticationMessage(true)}
          |
@@ -1888,12 +1880,16 @@ trait APIMethods310 {
             (_, callContext) <- anonymousAccess(cc)
             connectorVersion = APIUtil.getPropsValue("connector").openOrThrowException("connector props field `connector` not set")
             starConnectorProps = APIUtil.getPropsValue("starConnector_supported_types").openOr("notfound")
-            obpApiLoopback <- connectorVersion.contains("kafka") ||  (connectorVersion.contains("star") && starConnectorProps.contains("kafka")) match {
-              case false => throw new IllegalStateException(s"${NotImplemented}for connector ${connectorVersion}")
-              case true => KafkaHelper.echoKafkaServer.recover {
-                case e: Throwable => throw new IllegalStateException(s"${KafkaServerUnavailable} Timeout error, because kafka do not return message to OBP-API. ${e.getMessage}")
-              }
-            }
+//            obpApiLoopback <- connectorVersion.contains(connectorVersion.contains("star")) match {
+//              case false => throw new IllegalStateException(s"${NotImplemented}for connector ${connectorVersion}")
+//              case _ => throw new IllegalStateException(s"${KafkaServerUnavailable} Timeout error, because kafka do not return message to OBP-API. ${e.getMessage}")
+//            }
+            //TODO, before we only support kafka, now we need to decide what kind of connector should we use.
+            obpApiLoopback = ObpApiLoopback(
+              connectorVersion ="Unknown",
+              gitCommit ="Unknown",
+              durationTime ="Unknown"
+              )
           } yield {
             (createObpApiLoopbackJson(obpApiLoopback), HttpCode.`200`(callContext))
           }
