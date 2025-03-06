@@ -12,7 +12,6 @@ import code.bankconnectors.akka.AkkaConnector_vDec2018
 import code.bankconnectors.rabbitmq.RabbitMQConnector_vOct2024
 import code.bankconnectors.rest.RestConnector_vMar2019
 import code.bankconnectors.storedprocedure.StoredProcedureConnector_vDec2019
-import code.bankconnectors.vSept2018.KafkaMappedConnector_vSept2018
 import com.openbankproject.commons.model.CounterpartyLimitTrait
 import com.openbankproject.commons.model.CustomerAccountLinkTrait
 import com.openbankproject.commons.model.EndpointTagT
@@ -63,7 +62,6 @@ object Connector extends SimpleInjector {
   val nameToConnector: Map[String, Connector] = Map(
     "mapped" -> LocalMappedConnector,
     "akka_vDec2018" -> AkkaConnector_vDec2018,
-    "kafka_vSept2018" -> KafkaMappedConnector_vSept2018,
     "rest_vMar2019" -> RestConnector_vMar2019,
     "stored_procedure_vDec2019" -> StoredProcedureConnector_vDec2019,
     "rabbitmq_vOct2024" -> RabbitMQConnector_vOct2024,
