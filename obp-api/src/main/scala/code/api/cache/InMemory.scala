@@ -13,7 +13,7 @@ import com.openbankproject.commons.ExecutionContext.Implicits.global
 
 object InMemory extends MdcLoggable {
 
-  val underlyingGuavaCache = CacheBuilder.newBuilder().maximumSize(10000L).build[String, Object]
+  val underlyingGuavaCache = CacheBuilder.newBuilder().maximumSize(100000L).build[String, Object]
   implicit val scalaCache  = ScalaCache(GuavaCache(underlyingGuavaCache))
 
   def memoizeSyncWithInMemory[A](cacheKey: Option[String])(@cacheKeyExclude ttl: Duration)(@cacheKeyExclude f: => A): A = {
