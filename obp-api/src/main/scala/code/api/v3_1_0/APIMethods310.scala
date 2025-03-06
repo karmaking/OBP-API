@@ -1880,11 +1880,7 @@ trait APIMethods310 {
             (_, callContext) <- anonymousAccess(cc)
             connectorVersion = APIUtil.getPropsValue("connector").openOrThrowException("connector props field `connector` not set")
             starConnectorProps = APIUtil.getPropsValue("starConnector_supported_types").openOr("notfound")
-//            obpApiLoopback <- connectorVersion.contains(connectorVersion.contains("star")) match {
-//              case false => throw new IllegalStateException(s"${NotImplemented}for connector ${connectorVersion}")
-//              case _ => throw new IllegalStateException(s"${KafkaServerUnavailable} Timeout error, because kafka do not return message to OBP-API. ${e.getMessage}")
-//            }
-            //TODO, before we only support kafka, now we need to decide what kind of connector should we use.
+            //TODO we need to decide what kind of connector should we use.
             obpApiLoopback = ObpApiLoopback(
               connectorVersion ="Unknown",
               gitCommit ="Unknown",

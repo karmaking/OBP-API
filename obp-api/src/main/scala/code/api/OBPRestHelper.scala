@@ -246,7 +246,7 @@ trait OBPRestHelper extends RestHelper with MdcLoggable {
   # }
   # When is enabled we show all messages in a chain. For instance:
   # {
-  #   "error": "OBP-30001: Bank not found. Please specify a valid value for BANK_ID. <- Full(Kafka_TimeoutExceptionjava.util.concurrent.TimeoutException: The stream has not been completed in 1550 milliseconds.)"
+  #   "error": "OBP-30001: Bank not found. Please specify a valid value for BANK_ID. <- Full(TimeoutExceptionjava.util.concurrent.TimeoutException: The stream has not been completed in 1550 milliseconds.)"
   # }
   */
   implicit def jsonResponseBoxToJsonResponse(box: Box[JsonResponse]): JsonResponse = {

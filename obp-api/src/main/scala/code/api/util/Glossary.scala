@@ -129,10 +129,10 @@ object Glossary extends MdcLoggable  {
 	// NOTE! Some glossary items are defined in ExampleValue.scala
 
 
-	val latestKafkaConnector : String = "kafka_vSept2018"
+	val latestConnector : String = "rest_vMar2019"
 
 	def messageDocLink(process: String) : String = {
-		s"""<a href="/message-docs?connector=$latestKafkaConnector#$process">$process</a>"""
+		s"""<a href="/message-docs?connector=$latestConnector#$process">$process</a>"""
 	}
 
 	val latestAkkaConnector : String = "akka_vDec2018"
@@ -170,8 +170,6 @@ object Glossary extends MdcLoggable  {
 				 |[Glossary](/glossary)
 				 				 |
 				 |[Access Control](/glossary#API.Access-Control)
-				 				 |
-				 |[OBP Kafka](/glossary#Adapter.Kafka.Intro)
 				 				 |
 				 |[OBP Akka](/glossary#Adapter.Akka.Intro)
 				 				 |
@@ -289,159 +287,6 @@ object Glossary extends MdcLoggable  {
 |
 """)
 
-
-
-	glossaryItems += GlossaryItem(
-		title = "Adapter.Kafka.Intro",
-		description =
-				s"""
-					|## Use Kafka as an interface between OBP and your Core Banking System (CBS).
-|
-|
-|For an introduction to Kafka see [here](https://kafka.apache.org/)
-|
-					|### Installation Prerequisites
-					|
-					|
-					|* You have OBP-API running and it is connected to a Kafka installation.
-					| You can check OBP -> Kafka connectivity using the <a href="/#OBPv3_1_0-getObpConnectorLoopback">"loopback" endpoint</a>.
-					|
-					|* Ideally you have API Explorer running (the application serving this page) but its not necessary - you could use any other REST client.
-					|* You might want to also run API Manager as it makes it easier to grant yourself roles, but its not necessary - you could use the API Explorer / any REST client instead.
-					|
-|### Create a Customer User and an Admin User
-|
-|* Register a User who will use the API as a Customer.
-|* Register another User that will use the API as an Admin. The Admin user will need some Roles. See [here](/index#OBPv2_0_0-addEntitlement). You can bootstrap an Admin user by editing the Props file. See the README for that.
-|
-|### Add some authentication context to the Customer User
-|
-|* As the Admin User, use the [Create Auth Context](/index#OBPv3_1_0-createUserAuthContext) endpoint to add one or more attributes to the Customer User.
-|For instance you could add the name/value pair CUSTOMER_NUMBER/889763 and this will be sent to the Adapter / CBS inside the AuthInfo object.
-|
-|
-|Now you should be able to use the [Get Auth Contexts](/index#OBPv3_1_0-getUserAuthContexts) endpoint to see the data you added.
-|
-|### Write or Build an Adapter to respond to the following messages.
-|
-| When getting started, we suggest that you implement the messages in the following order:
-|
- |1) Core (Prerequisites) - Get Adapter, Get Banks, Get Bank
- |
- |* ${messageDocLink("obp.getAdapterInfo")}
- |
- |Now you should be able to use the [Adapter Info](/index#OBPv3_1_0-getAdapterInfo) endpoint
- |
- |* ${messageDocLink("obp.getBanks")}
- |
- |Now you should be able to use the [Get Banks](/index#OBPv3_0_0-getBanks) endpoint
- |
- |* ${messageDocLink("obp.getBank")}
- |
- |Now you should be able to use the [Get Bank](/index#OBPv3_0_0-bankById) endpoint
- |
- |
- |2) Core (Authentications) -The step1 Apis are all anonymous access. If you need to link bank customer data to the obp user,
- | Then you need link OBP user with Bank user/customer using the [Create User Auth Context]((/index#OBPv3_1_0-createUserAuthContext)). Also 
- | check the description for this endpoint. Once you create the user-auth-context for one user, then these user-auth-context key value pair
- | can be propagated over connector message. Than the Adapter can use it to map OBP user and Bank user/customer. 
- | 
- |* ${messageDocLink("obp.getBankAccountsForUser")}
- |
- |Now you should be able to use the [Refresh User](/index#OBPv3_1_0-refreshUser) endpoint 
- |
- |3) Customers for logged in User
- |
- |* ${messageDocLink("obp.getCustomersByUserIdBox")}
- |
- |Now you should be able to use the [Get Customers](/index#OBPv3_0_0-getCustomersForUser) endpoint.
- |
- |
- |4) Get Accounts
- |
- |Now you should already be able to use the [Get Accounts at Bank (IDs only).](/index#OBPv3_0_0-getPrivateAccountIdsbyBankId) endpoint.
- |
- |* ${messageDocLink("obp.getCoreBankAccounts")}
- |
- | The above messages should enable at least the following endpoints:
- |
- |* [Get Accounts at Bank (Minimal).](/index#OBPv3_0_0-privateAccountsAtOneBank)
- |* [Get Accounts at all Banks (private)](/index#OBPv3_0_0-corePrivateAccountsAllBanks)
- |
- |5) Get Account
- |
- 					|* ${messageDocLink("obp.checkBankAccountExists")}
- 					|* ${messageDocLink("obp.getBankAccount")}
- |
- | The above message should enable at least the following endpoints:
- |
- |* [Get Account by Id - Core](/index#OBPv3_0_0-getCoreAccountById)
- |* [Get Account by Id - Full](/index#OBPv3_0_0-getPrivateAccountById)
- |
- |6) Get Transactions
- |
-					 |* ${messageDocLink("obp.getTransactions")}
-					 |* ${messageDocLink("obp.getTransaction")}
-					 |
- |7) Manage Counterparties
- |
-					 |* ${messageDocLink("obp.getCounterparties")}
-					 |* ${messageDocLink("obp.getCounterpartyByCounterpartyId")}
-					 |* ${messageDocLink("obp.createCounterparty")}
-					 |
- |8) Get Transaction Request Types
- |
-					 |* This is configured using OBP Props - No messages required
-					 |
- |9) Get Challenge Threshold (CBS)
- |
-					 |* ${messageDocLink("obp.getChallengeThreshold")}
-					 |
- |10)  Make Payment (used by Create Transaction Request)
- |
-					 |* ${messageDocLink("obp.makePaymentv210")}
- 						|* This also requires 8,9,10 for high value payments.
-					 |
- |11) Get Transaction Requests.
- |
-					 |* ${messageDocLink("obp.getTransactionRequests210")}
-					 |
- |12) Generate Security Challenges (CBS)
- |
-					 |* ${messageDocLink("obp.createChallenge")}
-					 |
- |13) Answer Security Challenges (Validate)
- |
-					 |* Optional / Internal OBP (No additional messages required)
-					 |
- |14) Manage Counterparty Metadata
- |
-					 |* Internal OBP (No additional messages required)
-					 |
- |15) Get Entitlements
- |
-					 |* Internal OBP (No additional messages required)
-					 |
- |16) Manage Roles
- |
-					 |* Internal OBP (No additional messages required)
-					 |
- |17) Manage Entitlements
- |
-					 |* Internal OBP (No additional messages required)
-					 |
- |18) Manage Views
- |
-					 |* Internal OBP (No additional messages required)
-					 |
- |19) Manage Transaction Metadata
- |
-					 |* Internal OBP (No additional messages required)
-					 |
- |"""
-	)
-
-
 	glossaryItems += GlossaryItem(
 		title = "Adapter.Stored_Procedure.Intro",
 		description =
@@ -488,14 +333,14 @@ object Glossary extends MdcLoggable  {
 				 |
 				 |However, there are multiple available connector implementations - and you can also mix and create your own.|
 				 |
-				 |E.g. Kafka
+				 |E.g. RabbitMq
 				 |
 				 |<pre>
 				 |[=============]                              [============]       [============]     [============]       [============]
 				 |[             ]                              [            ]       [            ]     [            ]       [            ]
-				 |[   OBP API   ] ===> Kafka Connector   ===>  [  Kafka     ] ===>  [  Kafka     ]     [  OBP Kafka ]  ===> [  CBS       ]
+				 |[   OBP API   ] ===> RabbitMq Connector ===> [  RabbitMq  ] ===>  [  RabbitMq  ]     [ OBP RabbitMq] ===> [     CBS    ]
 				 |[             ]      Puts OBP Messages       [  Connector ]       [  Cluster   ]     [  Adapter   ]       [            ]
-				 |[=============]       onto a Kafka           [============]       [============]     [============]       [============]
+				 |[=============]       onto a RabbitMq           [============]       [============]     [============]       [============]
 				 |
 				 |</pre>
 				 |
@@ -691,7 +536,7 @@ object Glossary extends MdcLoggable  {
 		  |It SHOULD be a UUID. It MUST be unique in combination with the BANK_ID. ACCOUNT_ID is used in many URLS so it should be considered public.
 		  |(We do NOT use account number in URLs since URLs are cached and logged all over the internet.)
 		  |In local / sandbox mode, ACCOUNT_ID is generated as a UUID and stored in the database.
-		  |In non sandbox modes (Kafka etc.), ACCOUNT_ID is mapped to core banking account numbers / identifiers at the South Side Adapter level.
+		  |In non sandbox modes (RabbitMq etc.), ACCOUNT_ID is mapped to core banking account numbers / identifiers at the South Side Adapter level.
 		  |ACCOUNT_ID is used to link Metadata and Views so it must be persistant and known to the North Side (OBP-API).
 			|
 			| Example value: ${accountIdExample.value}
@@ -3172,7 +3017,7 @@ object Glossary extends MdcLoggable  {
 |
 |The OBP Connector is a core part of the OBP-API and is written in Scala / Java and potentially other JVM languages.
 |
-|The OBP Connector implements multiple functions / methods in a style that satisfies a particular transport / protocol such as HTTP REST, Akka or Kafka.
+|The OBP Connector implements multiple functions / methods in a style that satisfies a particular transport / protocol such as HTTP REST, Akka or RabbitMq.
 |
 |An OBP Adapter is a separate software component written in any programming language that responds to requests from the OBP Connector.
 |
@@ -3193,7 +3038,7 @@ object Glossary extends MdcLoggable  {
 |  1) The Name of the internal OBP function / method e.g. getAccountsForUser
 |  2) The Outbound Message structure.
 |  3) The Inbound Message structure.
-|  4) The Connector name which denotes the protocol / transport used (e.g. REST, Akka, Kafka etc)
+|  4) The Connector name which denotes the protocol / transport used (e.g. REST, Akka, RabbitMq etc)
 |  5) Outbound / Inbound Topic
 |  6) A list of required Inbound fields
 |  7) A list of dependent endpoints.
@@ -3233,7 +3078,7 @@ object Glossary extends MdcLoggable  {
 |This contains the named fields and their values which are specific to each Function / Message Doc.
 |
 |
-|The Outbound / Inbound Topics are used for routing in multi OBP instance / Kafka installations. (so OBP nodes only listen only to the correct Topics).
+|The Outbound / Inbound Topics are used for routing in multi OBP instance / RabbitMq installations. (so OBP nodes only listen only to the correct Topics).
 |
 |The dependent endpoints are listed to facilitate navigation in the API Explorer so integrators can test endpoints during integration.
 |
@@ -3247,7 +3092,7 @@ object Glossary extends MdcLoggable  {
 			s"""
    |
    | Open Bank Project can have different connectors, to connect difference data sources. 
-   | We support several sources at the moment, eg: databases, rest services, stored procedures and kafka. 
+   | We support several sources at the moment, eg: databases, rest services, stored procedures and RabbitMq. 
    | 
    | If OBP set connector=star, then you can use this method routing to switch the sources.
    | And we also provide the fields mapping in side the endpoints. If the fields in the source are different from connector,

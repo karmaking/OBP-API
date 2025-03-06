@@ -54,12 +54,12 @@ trait RabbitMQConnector_vOct2024 extends Connector with MdcLoggable {
   implicit override val nameOfConnector = RabbitMQConnector_vOct2024.toString
 
   // "Versioning" of the messages sent by this or similar connector works like this:
-  // Use Case Classes (e.g. KafkaInbound... KafkaOutbound... as below to describe the message structures.
+  // Use Case Classes (e.g. Inbound... Outbound... as below to describe the message structures.
   // Each connector has a separate file like this one.
   // Once the message format is STABLE, freeze the key/value pair names there. For now, new keys may be added but none modified.
   // If we want to add a new message format, create a new file e.g. March2017_messages.scala
-  // Then add a suffix to the connector value i.e. instead of kafka we might have kafka_march_2017.
-  // Then in this file, populate the different case classes depending on the connector name and send to Kafka
+  // Then add a suffix to the connector value i.e. instead of RabbitMq we might have rest_vMar2019.
+  // Then in this file, populate the different case classes depending on the connector name and send to CBS
   val messageFormat: String = "Oct2024"
 
   override val messageDocs = ArrayBuffer[MessageDoc]()

@@ -1043,7 +1043,7 @@ trait APIMethods400 extends MdcLoggable {
         |4) `answer` : must be `123` in case that Strong Customer Authentication method for OTP challenge is dummy.
         |    For instance: SANDBOX_TAN_OTP_INSTRUCTION_TRANSPORT=dummy
         |    Possible values are dummy,email and sms
-        |    In kafka mode, the answer can be got by phone message or other SCA methods.
+        |    In CBS mode, the answer can be got by phone message or other SCA methods.
         |
         |Note that each Transaction Request Type can have its own OTP_INSTRUCTION_TRANSPORT method.
         |OTP_INSTRUCTION_TRANSPORT methods are set in Props. See sample.props.template for instructions.

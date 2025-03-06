@@ -1371,7 +1371,7 @@ object NewStyle extends MdcLoggable{
     
     def getTransactionRequestImpl(transactionRequestId: TransactionRequestId, callContext: Option[CallContext]): OBPReturnType[TransactionRequest] = 
     {
-      //Note: this method is not over kafka yet, so use Future here.
+      //Note: this method is not over CBS yet, so use Future here.
       Future{ Connector.connector.vend.getTransactionRequestImpl(transactionRequestId, callContext)} map {
         unboxFullOrFail(_, callContext, s"$InvalidTransactionRequestId Current TransactionRequestId($transactionRequestId) ")
       }

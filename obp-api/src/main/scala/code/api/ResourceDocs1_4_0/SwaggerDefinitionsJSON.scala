@@ -618,7 +618,7 @@ object SwaggerDefinitionsJSON {
 
   val messageDocJson = MessageDocJson(
     process = "getAccounts",
-    message_format = "KafkaV2017",
+    message_format = "rest_vMar2019",
     inbound_topic = Some("from.obp.api.1.to.adapter.mf.caseclass.OutboundGetAccounts"),
     outbound_topic = Some("to.obp.api.1.caseclass.OutboundGetAccounts"),
     description = "get Banks",
@@ -4020,7 +4020,7 @@ object SwaggerDefinitionsJSON {
     user_auth_contexts = List(userAuthContextJson)
   )
   
-  val obpApiLoopbackJson = ObpApiLoopbackJson("kafka_vSept2018","f0acd4be14cdcb94be3433ec95c1ad65228812a0","10 ms")
+  val obpApiLoopbackJson = ObpApiLoopbackJson("rest_vMar2019","f0acd4be14cdcb94be3433ec95c1ad65228812a0","10 ms")
   
   val refresUserJson = RefreshUserJson("10 ms")
   

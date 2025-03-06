@@ -44,7 +44,7 @@ import scala.reflect.runtime.universe.{MethodSymbol, typeOf}
 So we can switch between different sources of resources e.g.
 - Mapper ORM for connecting to RDBMS (via JDBC) https://www.assembla.com/wiki/show/liftweb/Mapper
 - MongoDB
-- KafkaMQ
+- RabbitMq
 etc.
 
 Note: We also have individual providers for resources like Branches and Products.
