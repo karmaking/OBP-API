@@ -18,7 +18,6 @@
 #which data connector to use
 
 #connector=rest
-#connector=kafka
 #connector=obpjvm
 ## proxy connector get data from LocalMappedConnector, and set the follow corresponding fields to be null: @optional, inbound.optional.fields props, outbound.optional.fields props
 #connector=proxy
@@ -28,17 +27,6 @@ starConnector_supported_types = mapped,internal
 # Connector cache time-to-live in seconds, caching disabled if not set
 #connector.cache.ttl.seconds=3
 
-# OBP-JVM transport type. currently supported: kafka, mock
-#obpjvm.transport=kafka
-
-#if using kafka, set zookeeper host and brokers
-#defaults to "localhost:2181" if not set
-#kafka.zookeeper_host=localhost:2181
-#kafka.bootstrap_hosts=localhost:9092
-
-#if using kafka, the following is mandatory
-#kafka.request_topic=Request
-#kafka.response_topic=Response
 
 #this is needed for oauth to work. it's important to access the api over this url, e.g.
 # if this is 127.0.0.1 don't use localhost to access it.
