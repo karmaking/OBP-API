@@ -683,9 +683,6 @@ autocomplete_at_login_form_enabled=false
 # To BYPASS this security features (for local development only), set this property to true to skip the email address validation.
 #authUser.skipEmailValidation=false
 
-# If using Kafka but want to get counterparties from OBP, set this to true
-#get_counterparties_from_OBP_DB=true
-
 # control the create and access to public views.
 # allow_public_views=false
 
@@ -729,7 +726,7 @@ dauth.host=127.0.0.1
 # }
 # When is enabled we show all messages in a chain. For instance:
 # {
-#   "error": "OBP-30001: Bank not found. Please specify a valid value for BANK_ID. <- Full(Kafka_TimeoutExceptionjava.util.concurrent.TimeoutException: The stream has not been completed in 1550 milliseconds.)"
+#   "error": "OBP-30001: Bank not found. Please specify a valid value for BANK_ID. <- Full(TimeoutExceptionjava.util.concurrent.TimeoutException: The stream has not been completed in 1550 milliseconds.)"
 # }
 display_internal_errors=false
 # -------------------------------------- Display internal errors --
