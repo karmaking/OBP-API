@@ -1886,6 +1886,7 @@ trait APIMethods310 {
               gitCommit ="Unknown",
               durationTime ="Unknown"
               )
+            _ = throw new IllegalStateException(s"${NotImplemented}")
           } yield {
             (createObpApiLoopbackJson(obpApiLoopback), HttpCode.`200`(callContext))
           }
