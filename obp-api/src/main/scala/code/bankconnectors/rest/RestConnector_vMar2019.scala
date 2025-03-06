@@ -42,7 +42,6 @@ import code.api.util.{APIUtil, CallContext, OBPQueryParam}
 import code.bankconnectors._
 import code.context.UserAuthContextProvider
 import code.customer.internalMapping.MappedCustomerIdMappingProvider
-import code.kafka.KafkaHelper
 import code.model.dataAccess.internalMapping.MappedAccountIdMappingProvider
 import code.util.AkkaHttpClient._
 import code.util.Helper
