@@ -24,8 +24,6 @@
 
 [Access Control](https://apiexplorersandbox.openbankproject.com/glossary#API.Access-Control)
 
-[OBP Kafka](https://apiexplorersandbox.openbankproject.com/glossary#Adapter.Kafka.Intro)
-
 [OBP Akka](https://apiexplorersandbox.openbankproject.com/glossary#Adapter.Akka.Intro)
 
 [API Explorer](https://github.com/OpenBankProject/API-Explorer/blob/develop/README.md)

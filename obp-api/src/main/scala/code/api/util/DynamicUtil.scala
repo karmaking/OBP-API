@@ -256,7 +256,6 @@ object DynamicUtil extends MdcLoggable{
       |import code.api.dynamic.endpoint.helper.MockResponseHolder
       |import code.bankconnectors._
       |import code.customer.internalMapping.MappedCustomerIdMappingProvider
-      |import code.kafka.KafkaHelper
       |import code.model.dataAccess.internalMapping.MappedAccountIdMappingProvider
       |import code.util.AkkaHttpClient._
       |import code.util.Helper.MdcLoggable

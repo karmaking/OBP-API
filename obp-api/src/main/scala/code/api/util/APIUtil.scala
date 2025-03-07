@@ -2057,7 +2057,6 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
     Glossary.glossaryItems.toList.sortBy(_.title)
   }
 
-  // Used to document the KafkaMessage calls
   case class MessageDoc(
                          process: String,
                          messageFormat: String,
@@ -3396,7 +3395,6 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
 
   /**
    * This method is used for cache in connector level.
-   * eg: KafkaMappedConnector_vJune2017.bankTTL
    * The default cache time unit is second.
    */
   def getSecondsCache(cacheType: String) : Int = {

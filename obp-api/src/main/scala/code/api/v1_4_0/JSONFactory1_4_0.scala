@@ -1,5 +1,6 @@
 package code.api.v1_4_0
 
+import code.api.Constant.{CREATE_LOCALISED_RESOURCE_DOC_JSON_TTL, LOCALISED_RESOURCE_DOC_PREFIX}
 import code.api.berlin.group.v1_3.JvalueCaseClass
 import code.api.cache.Caching
 import java.util.Date
@@ -519,17 +520,17 @@ object JSONFactory1_4_0 extends MdcLoggable{
     jsonFieldsDescription.mkString(jsonTitleType,"","\n")
   }
   
-  //cache key will only contain "operationId + locale"
-  
   def createLocalisedResourceDocJsonCached(
     operationId: String, // this will be in the cacheKey
     locale: Option[String],// this will be in the cacheKey
     resourceDocUpdatedTags: ResourceDoc,
-    isVersion4OrHigher:Boolean,
+    isVersion4OrHigher:Boolean,// this will be in the cacheKey
     urlParametersI18n:String ,
     jsonRequestBodyFieldsI18n:String,
     jsonResponseBodyFieldsI18n:String
   ): ResourceDocJson = {
+    val cacheKey = LOCALISED_RESOURCE_DOC_PREFIX + s"operationId:${operationId}-locale:$locale- isVersion4OrHigher:$isVersion4OrHigher".intern()
+    Caching.memoizeSyncWithImMemory(Some(cacheKey))(CREATE_LOCALISED_RESOURCE_DOC_JSON_TTL seconds) {
       val fieldsDescription =
         if (resourceDocUpdatedTags.tags.toString.contains("Dynamic-Entity")
           || resourceDocUpdatedTags.tags.toString.contains("Dynamic-Endpoint")
@@ -588,7 +589,7 @@ object JSONFactory1_4_0 extends MdcLoggable{
 
         logger.trace(s"createLocalisedResourceDocJsonCached value is $resourceDoc")
         resourceDoc
-    }
+    }}
   
   
   def createLocalisedResourceDocJson(rd: ResourceDoc, isVersion4OrHigher:Boolean, locale: Option[String], urlParametersI18n:String ,jsonRequestBodyFieldsI18n:String, jsonResponseBodyFieldsI18n:String) : ResourceDocJson = {
@@ -596,26 +597,15 @@ object JSONFactory1_4_0 extends MdcLoggable{
     val userDefinedEndpointTags = getAllEndpointTagsBox(rd.operationId).map(endpointTag =>ResourceDocTag(endpointTag.tagName))
     val resourceDocWithUserDefinedEndpointTags: ResourceDoc = rd.copy(tags = userDefinedEndpointTags++ rd.tags)
     
-    val cacheKey = s"operationId:${resourceDocWithUserDefinedEndpointTags.operationId}-locale:$locale- isVersion4OrHigher:$isVersion4OrHigher".intern()
-    val cacheValueFromRedis = Caching.getLocalisedResourceDocCache(cacheKey)
-    
-    if(cacheValueFromRedis.isDefined){
-      json.parse(cacheValueFromRedis.get).extract[ResourceDocJson] 
-    }else{
-      val resourceDocJson = createLocalisedResourceDocJsonCached(
-        resourceDocWithUserDefinedEndpointTags.operationId,
-        locale: Option[String],
-        resourceDocWithUserDefinedEndpointTags,
-        isVersion4OrHigher: Boolean,
-        urlParametersI18n: String,
-        jsonRequestBodyFieldsI18n: String,
-        jsonResponseBodyFieldsI18n: String
-      )
-      val jsonString = json.compactRender(Extraction.decompose(resourceDocJson))
-      Caching.setLocalisedResourceDocCache(cacheKey,jsonString)
-      
-      resourceDocJson
-    }
+    createLocalisedResourceDocJsonCached(
+      resourceDocWithUserDefinedEndpointTags.operationId,
+      locale: Option[String],
+      resourceDocWithUserDefinedEndpointTags,
+      isVersion4OrHigher: Boolean,
+      urlParametersI18n: String,
+      jsonRequestBodyFieldsI18n: String,
+      jsonResponseBodyFieldsI18n: String
+    )
     
   }
 

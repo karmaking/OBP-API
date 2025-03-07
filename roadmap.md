@@ -36,7 +36,6 @@ See [completed_developments.md](completed_developments.md)
 * Clarify Account Customer Owners.
 
 * Auto feed of Firehose Accounts/Transactions/Customers into Elastic Search
-* Kafka Stream API for Accounts/Transactions/Customers
 
 
 ### SDK Documentation Upgrade

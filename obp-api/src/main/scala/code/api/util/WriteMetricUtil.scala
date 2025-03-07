@@ -135,7 +135,7 @@ object WriteMetricUtil extends MdcLoggable {
           Empty
         }
 
-      // TODO This should use Elastic Search or Kafka not an RDBMS
+      // TODO This should use Elastic Search not an RDBMS
       val u: User = user.orNull
       val userId = if (u != null) u.userId else "null"
       val userName = if (u != null) u.name else "null"

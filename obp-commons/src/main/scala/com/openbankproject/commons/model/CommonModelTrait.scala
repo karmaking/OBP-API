@@ -44,7 +44,7 @@ trait JsonFieldReName
 
 /**
 *
-* This is the base class for all kafka outbound case class
+* This is the base class for all CBS outbound case class
 * action and messageFormat are mandatory
 * The optionalFields can be any other new fields .
 */
@@ -251,7 +251,7 @@ trait CustomerAddress {
   def insertDate: Date
 }
 
-// This is the common InboundAccount from all Kafka/remote, not finished yet.
+// This is the common InboundAccount from all CBS/remote, not finished yet.
 trait InboundAccount{
   def bankId: String
   def branchId: String
@@ -392,8 +392,6 @@ trait RoutingT {
   def address: String
 }
 
-// @see 'case request: TopicTrait' in  code/bankconnectors/kafkaStreamsHelper.scala
-// This is for Kafka topics for both North and South sides.
 // In OBP-API, these topics will be created automatically.
 trait TopicTrait {
 

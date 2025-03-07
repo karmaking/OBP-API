@@ -93,12 +93,12 @@ trait Views {
   final def getPrivateBankAccountsFuture(user : User, bankId : BankId) : Future[List[BankIdAccountId]] = Future {getPrivateBankAccounts(user, bankId)}
 
   /**
-   * @param bankIdAccountId the IncomingAccount from Kafka
+   * @param bankIdAccountId the IncomingAccount from CBS
    * @param viewId          This field should be selected one from Owner/Public/Accountant/Auditor, only support
    *                        these four values.
    * @return This will insert a View (e.g. the owner view) for an Account (BankAccount), and return the view
    *         Note:
-   *         updateUserAccountViews would call createAccountView once per View specified in the IncomingAccount from Kafka.
+   *         updateUserAccountViews would call createAccountView once per View specified in the IncomingAccount from CBS.
    *         We should cache this function because the available views on an account will change rarely.
    *
    */

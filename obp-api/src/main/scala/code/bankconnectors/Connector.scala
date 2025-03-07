@@ -12,8 +12,6 @@ import code.bankconnectors.akka.AkkaConnector_vDec2018
 import code.bankconnectors.rabbitmq.RabbitMQConnector_vOct2024
 import code.bankconnectors.rest.RestConnector_vMar2019
 import code.bankconnectors.storedprocedure.StoredProcedureConnector_vDec2019
-import code.bankconnectors.vMay2019.KafkaMappedConnector_vMay2019
-import code.bankconnectors.vSept2018.KafkaMappedConnector_vSept2018
 import com.openbankproject.commons.model.CounterpartyLimitTrait
 import com.openbankproject.commons.model.CustomerAccountLinkTrait
 import com.openbankproject.commons.model.EndpointTagT
@@ -46,7 +44,7 @@ import scala.reflect.runtime.universe.{MethodSymbol, typeOf}
 So we can switch between different sources of resources e.g.
 - Mapper ORM for connecting to RDBMS (via JDBC) https://www.assembla.com/wiki/show/liftweb/Mapper
 - MongoDB
-- KafkaMQ
+- RabbitMq
 etc.
 
 Note: We also have individual providers for resources like Branches and Products.
@@ -64,8 +62,6 @@ object Connector extends SimpleInjector {
   val nameToConnector: Map[String, Connector] = Map(
     "mapped" -> LocalMappedConnector,
     "akka_vDec2018" -> AkkaConnector_vDec2018,
-    "kafka_vSept2018" -> KafkaMappedConnector_vSept2018,
-    "kafka_vMay2019" -> KafkaMappedConnector_vMay2019,
     "rest_vMar2019" -> RestConnector_vMar2019,
     "stored_procedure_vDec2019" -> StoredProcedureConnector_vDec2019,
     "rabbitmq_vOct2024" -> RabbitMQConnector_vOct2024,
@@ -695,8 +691,6 @@ trait Connector extends MdcLoggable {
     callContext: Option[CallContext]
   ): OBPReturnType[Box[PhysicalCardTrait]] = Future{(Failure{setUnimplementedError(nameOf(updatePhysicalCard _))}, callContext)}
 
-
-  //Note: introduce v210 here, is for kafka connectors, use callContext and return Future.
   def makePaymentv210(fromAccount: BankAccount,
                       toAccount: BankAccount,
                       transactionRequestId: TransactionRequestId,

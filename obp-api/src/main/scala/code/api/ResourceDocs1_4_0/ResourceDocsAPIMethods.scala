@@ -421,8 +421,7 @@ trait ResourceDocsAPIMethods extends MdcLoggable with APIMethods220 with APIMeth
         val (tags, partialFunctions, locale, contentParam, apiCollectionIdParam) = ResourceDocsAPIMethodsUtil.getParams()
         cc =>
           implicit val ec = EndpointContext(Some(cc))
-          val resourceDocs = getApiLevelResourceDocs(cc,requestedApiVersionString, tags, partialFunctions, locale, contentParam, apiCollectionIdParam,false)
-          resourceDocs
+          getApiLevelResourceDocs(cc,requestedApiVersionString, tags, partialFunctions, locale, contentParam, apiCollectionIdParam,false)
       }
     }
     
@@ -446,8 +445,7 @@ trait ResourceDocsAPIMethods extends MdcLoggable with APIMethods220 with APIMeth
         val (tags, partialFunctions, locale, contentParam, apiCollectionIdParam) = ResourceDocsAPIMethodsUtil.getParams()
         cc =>
           implicit val ec = EndpointContext(Some(cc))
-          val resourceDocs = getApiLevelResourceDocs(cc,requestedApiVersionString, tags, partialFunctions, locale, contentParam, apiCollectionIdParam,true)
-          resourceDocs
+          getApiLevelResourceDocs(cc,requestedApiVersionString, tags, partialFunctions, locale, contentParam, apiCollectionIdParam,true)
       }
     }
 
@@ -492,61 +490,63 @@ trait ResourceDocsAPIMethods extends MdcLoggable with APIMethods220 with APIMeth
             Some(isVersion4OrHigher)
           )
           json <- locale match {
-            case _ if (apiCollectionIdParam.isDefined) =>
-              val operationIds = MappedApiCollectionEndpointsProvider.getApiCollectionEndpoints(apiCollectionIdParam.getOrElse("")).map(_.operationId).map(getObpFormatOperationId)
-              val resourceDocs = ResourceDoc.getResourceDocs(operationIds)
-              val resourceDocsJson = JSONFactory1_4_0.createResourceDocsJson(resourceDocs, isVersion4OrHigher, locale)
-              val resourceDocsJsonJValue = Full(resourceDocsJsonToJsonResponse(resourceDocsJson))
-              Future(resourceDocsJsonJValue.map(successJsonResponse(_)))
+            case _ if (apiCollectionIdParam.isDefined) => 
+              NewStyle.function.tryons(s"$UnknownError Can not prepare OBP resource docs.", 500, callContext) {
+                val operationIds = MappedApiCollectionEndpointsProvider.getApiCollectionEndpoints(apiCollectionIdParam.getOrElse("")).map(_.operationId).map(getObpFormatOperationId)
+                val resourceDocs = ResourceDoc.getResourceDocs(operationIds)
+                val resourceDocsJson = JSONFactory1_4_0.createResourceDocsJson(resourceDocs, isVersion4OrHigher, locale)
+                val resourceDocsJsonJValue = Full(resourceDocsJsonToJsonResponse(resourceDocsJson))
+                resourceDocsJsonJValue.map(successJsonResponse(_))
+              }
             case _ =>
               contentParam match {
                 case Some(DYNAMIC) =>{
-                  val cacheValueFromRedis = Caching.getDynamicResourceDocCache(cacheKey)
-                  val dynamicDocs: Box[JValue] =
-                    if (cacheValueFromRedis.isDefined) {
-                      Full(json.parse(cacheValueFromRedis.get))
-                    } else {
-                      val resourceDocJson = getResourceDocsObpDynamicCached(tags, partialFunctions, locale, None, false)
-                      val resourceDocJsonJValue = resourceDocJson.map(resourceDocsJsonToJsonResponse).head
-                      val jsonString = json.compactRender(resourceDocJsonJValue)
-                      Caching.setDynamicResourceDocCache(cacheKey, jsonString)
-                      Full(resourceDocJsonJValue)
-                    }
-                  
-                  Future(dynamicDocs.map(successJsonResponse(_)))
+                  NewStyle.function.tryons(s"$UnknownError Can not prepare OBP resource docs.", 500, callContext) {
+                    val cacheValueFromRedis = Caching.getDynamicResourceDocCache(cacheKey)
+                    val dynamicDocs: Box[JValue] =
+                      if (cacheValueFromRedis.isDefined) {
+                        Full(json.parse(cacheValueFromRedis.get))
+                      } else {
+                        val resourceDocJson = getResourceDocsObpDynamicCached(tags, partialFunctions, locale, None, false)
+                        val resourceDocJsonJValue = resourceDocJson.map(resourceDocsJsonToJsonResponse).head
+                        val jsonString = json.compactRender(resourceDocJsonJValue)
+                        Caching.setDynamicResourceDocCache(cacheKey, jsonString)
+                        Full(resourceDocJsonJValue)
+                      }
+                    dynamicDocs.map(successJsonResponse(_))
+                  }
                 }
-                  
                 case Some(STATIC) => {
-                  val cacheValueFromRedis = Caching.getStaticResourceDocCache(cacheKey)
-
-                  val staticDocs: Box[JValue] =
-                    if (cacheValueFromRedis.isDefined) {
-                      Full(json.parse(cacheValueFromRedis.get))
-                    } else {
-                      val resourceDocJson  = getStaticResourceDocsObpCached(requestedApiVersionString, tags, partialFunctions, locale, isVersion4OrHigher)
-                      val resourceDocJsonJValue = resourceDocJson.map(resourceDocsJsonToJsonResponse).head
-                      val jsonString = json.compactRender(resourceDocJsonJValue)
-                      Caching.setStaticResourceDocCache(cacheKey, jsonString)
-                      Full(resourceDocJsonJValue)
-                    }
-
-                  Future(staticDocs.map(successJsonResponse(_)))
+                  NewStyle.function.tryons(s"$UnknownError Can not prepare OBP resource docs.", 500, callContext) {
+                    val cacheValueFromRedis = Caching.getStaticResourceDocCache(cacheKey)
+                    val staticDocs: Box[JValue] =
+                      if (cacheValueFromRedis.isDefined) {
+                        Full(json.parse(cacheValueFromRedis.get))
+                      } else {
+                        val resourceDocJson = getStaticResourceDocsObpCached(requestedApiVersionString, tags, partialFunctions, locale, isVersion4OrHigher)
+                        val resourceDocJsonJValue = resourceDocJson.map(resourceDocsJsonToJsonResponse).head
+                        val jsonString = json.compactRender(resourceDocJsonJValue)
+                        Caching.setStaticResourceDocCache(cacheKey, jsonString)
+                        Full(resourceDocJsonJValue)
+                      }
+                    staticDocs.map(successJsonResponse(_))
+                  }
                 }
                 case _ => {
-                  val cacheValueFromRedis = Caching.getAllResourceDocCache(cacheKey)
-
-                  val bothStaticAndDyamicDocs: Box[JValue] =
-                    if (cacheValueFromRedis.isDefined) {
-                      Full(json.parse(cacheValueFromRedis.get))
-                    } else {
-                      val resourceDocJson = getAllResourceDocsObpCached(requestedApiVersionString, tags, partialFunctions, locale, contentParam, isVersion4OrHigher)
-                      val resourceDocJsonJValue = resourceDocJson.map(resourceDocsJsonToJsonResponse).head
-                      val jsonString = json.compactRender(resourceDocJsonJValue)
-                      Caching.setAllResourceDocCache(cacheKey, jsonString)
-                      Full(resourceDocJsonJValue)
-                    }
-
-                  Future(bothStaticAndDyamicDocs.map(successJsonResponse(_)))
+                  NewStyle.function.tryons(s"$UnknownError Can not prepare OBP resource docs.", 500, callContext) {
+                    val cacheValueFromRedis = Caching.getAllResourceDocCache(cacheKey)
+                    val bothStaticAndDyamicDocs: Box[JValue] =
+                      if (cacheValueFromRedis.isDefined) {
+                        Full(json.parse(cacheValueFromRedis.get))
+                      } else {
+                        val resourceDocJson = getAllResourceDocsObpCached(requestedApiVersionString, tags, partialFunctions, locale, contentParam, isVersion4OrHigher)
+                        val resourceDocJsonJValue = resourceDocJson.map(resourceDocsJsonToJsonResponse).head
+                        val jsonString = json.compactRender(resourceDocJsonJValue)
+                        Caching.setAllResourceDocCache(cacheKey, jsonString)
+                        Full(resourceDocJsonJValue)
+                      }
+                    bothStaticAndDyamicDocs.map(successJsonResponse(_))
+                  }
                 }
               }
           }
@@ -681,27 +681,7 @@ trait ResourceDocsAPIMethods extends MdcLoggable with APIMethods220 with APIMeth
             } else {
               Future.successful(true)
             }
-            
             isVersion4OrHigher = true
-            resourceDocsJsonFiltered <- locale match {
-              case _ if (apiCollectionIdParam.isDefined) =>
-                val operationIds = MappedApiCollectionEndpointsProvider.getApiCollectionEndpoints(apiCollectionIdParam.getOrElse("")).map(_.operationId).map(getObpFormatOperationId)
-                val resourceDocs = ResourceDoc.getResourceDocs(operationIds)
-                val resourceDocsJson = JSONFactory1_4_0.createResourceDocsJson(resourceDocs, isVersion4OrHigher, locale)
-                Future(resourceDocsJson.resource_docs)
-              case _ =>
-                contentParam match {
-                  case Some(DYNAMIC) =>
-                    Future(getResourceDocsObpDynamicCached(resourceDocTags, partialFunctions, locale, None, isVersion4OrHigher).head.resource_docs)
-                  case Some(STATIC) => {
-                    Future(getStaticResourceDocsObpCached(requestedApiVersionString, resourceDocTags, partialFunctions, locale, isVersion4OrHigher).head.resource_docs)
-                  }
-                  case _ => {
-                    Future(getAllResourceDocsObpCached(requestedApiVersionString, resourceDocTags, partialFunctions, locale, contentParam, isVersion4OrHigher).head.resource_docs)
-                  }
-                }
-            }
-
             cacheKey = APIUtil.createResourceDocCacheKey(
               None,
               requestedApiVersionString,
@@ -710,14 +690,32 @@ trait ResourceDocsAPIMethods extends MdcLoggable with APIMethods220 with APIMeth
               locale,
               contentParam,
               apiCollectionIdParam,
-              None
+              Some(isVersion4OrHigher)
             )
-            swaggerJValue <- NewStyle.function.tryons(s"$UnknownError Can not convert internal swagger file.", 400, cc.callContext) {
-              val cacheValueFromRedis = Caching.getStaticSwaggerDocCache(cacheKey)
-
-              if (cacheValueFromRedis.isDefined) {
-                json.parse(cacheValueFromRedis.get)
-              } else {
+            cacheValueFromRedis = Caching.getStaticSwaggerDocCache(cacheKey)
+            
+            swaggerJValue <- if (cacheValueFromRedis.isDefined) {
+              NewStyle.function.tryons(s"$UnknownError Can not convert internal swagger file from cache.", 400, cc.callContext) {json.parse(cacheValueFromRedis.get)}
+            } else {
+              NewStyle.function.tryons(s"$UnknownError Can not convert internal swagger file.", 400, cc.callContext) {
+                val resourceDocsJsonFiltered = locale match {
+                  case _ if (apiCollectionIdParam.isDefined) =>
+                    val operationIds = MappedApiCollectionEndpointsProvider.getApiCollectionEndpoints(apiCollectionIdParam.getOrElse("")).map(_.operationId).map(getObpFormatOperationId)
+                    val resourceDocs = ResourceDoc.getResourceDocs(operationIds)
+                    val resourceDocsJson = JSONFactory1_4_0.createResourceDocsJson(resourceDocs, isVersion4OrHigher, locale)
+                    resourceDocsJson.resource_docs
+                  case _ =>
+                    contentParam match {
+                      case Some(DYNAMIC) =>
+                        getResourceDocsObpDynamicCached(resourceDocTags, partialFunctions, locale, None, isVersion4OrHigher).head.resource_docs
+                      case Some(STATIC) => {
+                        getStaticResourceDocsObpCached(requestedApiVersionString, resourceDocTags, partialFunctions, locale, isVersion4OrHigher).head.resource_docs
+                      }
+                      case _ => {
+                        getAllResourceDocsObpCached(requestedApiVersionString, resourceDocTags, partialFunctions, locale, contentParam, isVersion4OrHigher).head.resource_docs
+                      }
+                    }
+                }
                 convertResourceDocsToSwaggerJvalueAndSetCache(cacheKey, requestedApiVersionString, resourceDocsJsonFiltered)
               }
             }

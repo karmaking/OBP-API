@@ -235,7 +235,6 @@ object Helper extends Loggable {
    /**
     * Used for version extraction from props string
     */
-  val matchAnyKafka = "kafka.*|star".r
   val matchAnyStoredProcedure = "stored_procedure.*|star".r
   
   /**

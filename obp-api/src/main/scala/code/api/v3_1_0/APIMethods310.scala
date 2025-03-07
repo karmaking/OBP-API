@@ -32,7 +32,6 @@ import code.consent.{ConsentRequests, ConsentStatus, Consents, MappedConsent}
 import code.consumer.Consumers
 import code.context.UserAuthContextUpdateProvider
 import code.entitlement.Entitlement
-import code.kafka.KafkaHelper
 import code.loginattempts.LoginAttempt
 import code.methodrouting.{MethodRouting, MethodRoutingCommons, MethodRoutingParam, MethodRoutingT}
 import code.metrics.APIMetrics
@@ -1862,14 +1861,7 @@ trait APIMethods310 {
       "GET",
       "/connector/loopback",
       "Get Connector Status (Loopback)",
-      s"""This endpoint makes a call to the Connector to check the backend transport (e.g. Kafka) is reachable.
-         |
-         |Currently this is only implemented for Kafka based connectors.
-         |
-         |For Kafka based connectors, this endpoint writes a message to Kafka and reads it again.
-         |
-         |In the future, this endpoint may also return information about database connections etc.
-         |
+      s"""This endpoint makes a call to the Connector to check the backend transport is reachable. (WIP)
          |
          |${userAuthenticationMessage(true)}
          |
@@ -1888,12 +1880,13 @@ trait APIMethods310 {
             (_, callContext) <- anonymousAccess(cc)
             connectorVersion = APIUtil.getPropsValue("connector").openOrThrowException("connector props field `connector` not set")
             starConnectorProps = APIUtil.getPropsValue("starConnector_supported_types").openOr("notfound")
-            obpApiLoopback <- connectorVersion.contains("kafka") ||  (connectorVersion.contains("star") && starConnectorProps.contains("kafka")) match {
-              case false => throw new IllegalStateException(s"${NotImplemented}for connector ${connectorVersion}")
-              case true => KafkaHelper.echoKafkaServer.recover {
-                case e: Throwable => throw new IllegalStateException(s"${KafkaServerUnavailable} Timeout error, because kafka do not return message to OBP-API. ${e.getMessage}")
-              }
-            }
+            //TODO we need to decide what kind of connector should we use.
+            obpApiLoopback = ObpApiLoopback(
+              connectorVersion ="Unknown",
+              gitCommit ="Unknown",
+              durationTime ="Unknown"
+              )
+            _ = throw new IllegalStateException(s"${NotImplemented}")
           } yield {
             (createObpApiLoopbackJson(obpApiLoopback), HttpCode.`200`(callContext))
           }
@@ -3181,14 +3174,6 @@ trait APIMethods310 {
           implicit val ec = EndpointContext(Some(cc))
           for {
             (_, callContext) <- anonymousAccess(cc)
-            convertedToResourceDocs = RestConnector_vMar2019.messageDocs.map(toResourceDoc).toList
-            resourceDocListFiltered = ResourceDocsAPIMethodsUtil.filterResourceDocs(convertedToResourceDocs, resourceDocTags, partialFunctions)
-            resourceDocJsonList =  JSONFactory1_4_0.createResourceDocsJson(resourceDocListFiltered, true, None).resource_docs
-            swaggerResourceDoc <- Future {SwaggerJSONFactory.createSwaggerResourceDoc(resourceDocJsonList, ApiVersion.v3_1_0)}
-            //For this connector swagger, it shares some basic fields with api swagger, eg: BankId, AccountId. So it need to merge here.
-            allSwaggerDefinitionCaseClasses = MessageDocsSwaggerDefinitions.allFields++SwaggerDefinitionsJSON.allFields
-            
-
             cacheKey = APIUtil.createResourceDocCacheKey(
               None,
               restConnectorVersion,
@@ -3199,11 +3184,19 @@ trait APIMethods310 {
               apiCollectionIdParam,
               None
             )
-            swaggerJValue <- NewStyle.function.tryons(s"$UnknownError Can not convert internal swagger file.", 400, cc.callContext) {
-              val cacheValueFromRedis = Caching.getStaticSwaggerDocCache(cacheKey)
-              if (cacheValueFromRedis.isDefined) {
+            cacheValueFromRedis = Caching.getStaticSwaggerDocCache(cacheKey)
+            swaggerJValue <- if (cacheValueFromRedis.isDefined) {
+              NewStyle.function.tryons(s"$UnknownError Can not convert internal swagger file from cache.", 400, cc.callContext) {
                 json.parse(cacheValueFromRedis.get)
-              } else {
+              }
+            } else {
+              NewStyle.function.tryons(s"$UnknownError Can not convert internal swagger file.", 400, cc.callContext) {
+                val convertedToResourceDocs = RestConnector_vMar2019.messageDocs.map(toResourceDoc).toList
+                val resourceDocListFiltered = ResourceDocsAPIMethodsUtil.filterResourceDocs(convertedToResourceDocs, resourceDocTags, partialFunctions)
+                val resourceDocJsonList = JSONFactory1_4_0.createResourceDocsJson(resourceDocListFiltered, true, None).resource_docs
+                val swaggerResourceDoc = SwaggerJSONFactory.createSwaggerResourceDoc(resourceDocJsonList, ApiVersion.v3_1_0)
+                //For this connector swagger, it shares some basic fields with api swagger, eg: BankId, AccountId. So it need to merge here.
+                val allSwaggerDefinitionCaseClasses = MessageDocsSwaggerDefinitions.allFields ++ SwaggerDefinitionsJSON.allFields
                 val jsonAST = SwaggerJSONFactory.loadDefinitions(resourceDocJsonList, allSwaggerDefinitionCaseClasses)
                 val swaggerDocJsonJValue = Extraction.decompose(swaggerResourceDoc) merge jsonAST
                 val jsonString = json.compactRender(swaggerDocJsonJValue)
@@ -3211,7 +3204,6 @@ trait APIMethods310 {
                 swaggerDocJsonJValue
               }
             }
-             
           } yield {
             // Merge both results and return
             (swaggerJValue, HttpCode.`200`(callContext))

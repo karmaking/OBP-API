@@ -31,7 +31,7 @@ connector=star
 #hikari.keepaliveTime=
 #hikari.maxLifetime=
 
-## if connector = star, then need to set which connectors will be used. For now, obp support rest, akka, kafka. If you set kafka, then you need to start the kafka server.
+## if connector = star, then need to set which connectors will be used. For now, obp support rest, akka. 
 starConnector_supported_types=mapped,internal
 
 ## whether export LocalMappedConnector methods as endpoints, it is just for develop, default is false
@@ -125,33 +125,12 @@ long_endpoint_timeout = 55000
 ## Scheduler will be disabled if delay is not set.
 #transaction_status_scheduler_delay=300
 
-## If using kafka, set the brokers
-#kafka.bootstrap_hosts=localhost:9092
-# WARNING: if this number does not match the partitions in Kafka config, you will SUFFER !
-#kafka.partitions=3
-
-#This is the api instance, we create kafka topic based on this number, each instance should have each own id. use it in load balancing + Kafka setup
-#This is also used for scheduler.
-#OBP set the default as the non-persistent UUID string.
-#api_instance_id=7uy8a7e4-6d02-40e3-a129-0b2bf89de8uh
-#If a value is set, OBP will concatenate the UUID string with the value.
-#api_instance_id=1
-#When the value is set to conclude with "final," OBP will preserve that value.
-#api_instance_id=1_final
-
-## DEPRECATED
-## Enable user authentication via kafka
-#kafka.user.authentication=true
-
 
 ## Enable user authentication via the connector
 #connector.user.authentication=true
 
 ## Enable SSL for JWT, if set to true must set paths for the keystore locations
 jwt.use.ssl=false
-
-## Enable SSL for kafka, if set to true must set paths for the keystore locations
-#kafka.use.ssl=true
 
 ## Enable SSL for rabbitmq, if set to true must set paths for the keystore locations
 #rabbitmq.use.ssl=false
@@ -710,9 +689,6 @@ autocomplete_at_login_form_enabled=false
 # To BYPASS this security features (for local development only), set this property to true to skip the email address validation.
 #authUser.skipEmailValidation=false
 
-# If using Kafka but want to get counterparties from OBP, set this to true
-#get_counterparties_from_OBP_DB=true
-
 # control the create and access to public views.
 # allow_public_views=false
 
@@ -756,7 +732,7 @@ dauth.host=127.0.0.1
 # }
 # When is enabled we show all messages in a chain. For instance:
 # {
-#   "error": "OBP-30001: Bank not found. Please specify a valid value for BANK_ID. <- Full(Kafka_TimeoutExceptionjava.util.concurrent.TimeoutException: The stream has not been completed in 1550 milliseconds.)"
+#   "error": "OBP-30001: Bank not found. Please specify a valid value for BANK_ID. <- Full(TimeoutExceptionjava.util.concurrent.TimeoutException: The stream has not been completed in 1550 milliseconds.)"
 # }
 display_internal_errors=false
 # -------------------------------------- Display internal errors --
