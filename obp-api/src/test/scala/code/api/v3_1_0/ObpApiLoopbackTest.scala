@@ -53,7 +53,7 @@ class ObpApiLoopbackTest extends V310ServerSetup {
       Then("We should get a 400")
       response310.code should equal(400)
       val connectorVersion = APIUtil.getPropsValue("connector").openOrThrowException("connector props filed `connector` not set")
-      val errorMessage = s"${NotImplemented}for connector ${connectorVersion}"
+      val errorMessage = s"${NotImplemented}"
       And("error should be " + errorMessage)
       response310.body.extract[ErrorMessage].message should equal (errorMessage)
     }

@@ -278,10 +278,6 @@ Support for on premise OAuth2 provider e.g. MitreId. See the glossary.
 ### Message Docs (for Akka)
 Message Docs (which define Core Banking System Akka messages) are now available independent of the connector being used on the API instance. See [here](https://apiexplorersandbox.openbankproject.com/?ignoredefcat=true&tags=#v2_2_0-getMessageDocs)
 
-
-### Message Docs (for Kafka)
-Message Docs (which define Core Banking System Kafka messages) are now available independent of the connector being used on the API instance. See [here](https://apiexplorersandbox.openbankproject.com/?ignoredefcat=true&tags=#v2_2_0-getMessageDocs)
-
 ### Endpoint config and cleanup
 Endpoints can now be enabled / disabled explicitly using Props file.
 We removed old versions including v1.0, v1.1 and v.1.2.
@@ -302,14 +298,10 @@ We added Custom code folders so that bank specific forks can more easily git mer
 
 
 ### API Tester
-API Tester is a Python/Djano App for testing an OBP API instance from the outside. Partiularly useful when using a non-sandbox (e.g. kafka) connector. It supports a variety of authentication methods so you can test outside a gateway. You can configure different data profiles for specifying parameters such as bank_id, account_id etc. See [here](https://github.com/OpenBankProject/API-Tester) for the source code and installation instructions.
+API Tester is a Python/Djano App for testing an OBP API instance from the outside. Partiularly useful when using a non-sandbox (e.g. RabbitMq) connector. It supports a variety of authentication methods so you can test outside a gateway. You can configure different data profiles for specifying parameters such as bank_id, account_id etc. See [here](https://github.com/OpenBankProject/API-Tester) for the source code and installation instructions.
 
 ### Extend Swagger support
 We improved the information contained in the Swagger (and Resource Doc) endpoints. They are also available from the API Explorer. See [here](https://apiexplorersandbox.openbankproject.com/?ignoredefcat=true&tags=#v1_4_0-getResourceDocsSwagger)
-
-
-### Kafka versioning
-The built in kafka connectors now provide message versioning
 
 ### Akka Remote data (Three tier architechture)
 Most OBP data access now happens over Akka. This allows the API layer to be physically separated from the storage layer with the API layer only able to call a specified set of data access functions with only the storage layer having JDBC / SQL access.
@@ -426,13 +418,6 @@ is used to explore and interact with the OBP API. See [API Explorer on Sandbox](
 
 ### Endpoints for API documentation
 See [Resource Docs endpoint](https://api.openbankproject.com/obp/v1.4.0/resource-docs/obp)
-
-
-### Kafka connector
-
-*   Get transactions via Kafka bus and language neutral connector on the south side of the MQ
-
-See [Docker obp-full-kafka](https://hub.docker.com/r/openbankproject/obp-full-kafka/)
 
 
 ### Version 1.4.0

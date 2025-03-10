@@ -438,12 +438,12 @@ trait APIMethods220 {
       "GET",
       "/message-docs/CONNECTOR",
       "Get Message Docs",
-      """These message docs provide example messages sent by OBP to the (Kafka) message queue for processing by the Core Banking / Payment system Adapter - together with an example expected response and possible error codes.
+      """These message docs provide example messages sent by OBP to the (RabbitMq) message queue for processing by the Core Banking / Payment system Adapter - together with an example expected response and possible error codes.
         | Integrators can use these messages to build Adapters that provide core banking services to OBP.
         |
         | Note: API Explorer provides a Message Docs page where these messages are displayed.
         | 
-        | `CONNECTOR`: kafka_vSept2018, stored_procedure_vDec2019 ...
+        | `CONNECTOR`: rest_vMar2019, stored_procedure_vDec2019 ...
       """.stripMargin,
       EmptyBody,
       messageDocsJson,
@@ -457,7 +457,7 @@ trait APIMethods220 {
           implicit val ec = EndpointContext(Some(cc))
           for {
             connectorObject <- Future(tryo{Connector.getConnectorInstance(connector)}) map { i =>
-              val msg = s"$InvalidConnector Current Input is $connector. It should be eg: kafka_vSept2018..."
+              val msg = s"$InvalidConnector Current Input is $connector. It should be eg: rest_vMar2019..."
               unboxFullOrFail(i, cc.callContext, msg)
             }
           } yield {

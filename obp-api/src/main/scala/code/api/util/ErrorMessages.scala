@@ -682,21 +682,15 @@ object ErrorMessages {
   // Exceptions (OBP-50XXX)
   val UnknownError = "OBP-50000: Unknown Error."
   val FutureTimeoutException = "OBP-50001: Future Timeout Exception."
-  val KafkaMessageClassCastException = "OBP-50002: Kafka Response Message Class Cast Exception."
   val AdapterOrCoreBankingSystemException = "OBP-50003: Adapter Or Core Banking System Exception. Failed to get a valid response from the south side Adapter or Core Banking System."
   // This error may not be shown to user, just for debugging.
   val CurrentUserNotFoundException = "OBP-50004: Method (AuthUser.getCurrentUser) can not find the current user in the current context!"
   val AnUnspecifiedOrInternalErrorOccurred = "OBP-50005: An unspecified or internal error occurred."
-  val KafkaInterruptedException = "OBP-50006: Kafka interrupted exception."
-  val KafkaExecutionException = "OBP-50007: Kafka execution exception."
-  val KafkaStreamTimeoutException = "OBP-50008: Akka Kafka stream timeout exception."
-  val KafkaUnknownError = "OBP-50009: Kafka Unknown Error."
   val ScalaEmptyBoxToLiftweb = "OBP-50010: Scala return Empty box to Liftweb."
   val NoCallContext = "OBP-50012: Can not get the CallContext object here."
   val UnspecifiedCbsError = "OBP-50013: The Core Banking System returned an unspecified error or response."
   val RefreshUserError = "OBP-50014: Can not refresh User."
   val InternalServerError = "OBP-50015: The server encountered an unexpected condition which prevented it from fulfilling the request."
-  val KafkaServerUnavailable = "OBP-50016: The kafka server is unavailable."
   val NotAllowedEndpoint = "OBP-50017: The endpoint is forbidden at this API instance."
   val UnderConstructionError = "OBP-50018: Under Construction Error."
   val DatabaseConnectionClosedError = "OBP-50019: Cannot connect to the OBP database."
@@ -727,7 +721,6 @@ object ErrorMessages {
   val InvalidConnectorResponseForGetStatus = "OBP-50222: Connector method getStatus did not return the data we requested."
   
   // Adapter Exceptions (OBP-6XXXX)
-  // Reserved for adapter (south of Kafka) messages
   // Also used for connector == mapped, and show it as the Internal errors.
   val GetStatusException = "OBP-60001: Save Transaction Exception. "
   val GetChargeValueException = "OBP-60002: Get ChargeValue Exception. "

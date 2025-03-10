@@ -30,7 +30,7 @@ trait ChallengeProvider {
   def getChallengesByBasketId(basketId: String): Box[List[ChallengeTrait]]
 
   /**
-    * There is another method:  Connector.validateChallengeAnswer, it validate the challenge over Kafka.
+    * There is another method:  Connector.validateChallengeAnswer, it validates the challenge over CBS.
     * This method, will validate the answer in OBP side. 
     */
   def validateChallenge(challengeId: String, challengeAnswer: String, userId: Option[String]) : Box[ChallengeTrait] 

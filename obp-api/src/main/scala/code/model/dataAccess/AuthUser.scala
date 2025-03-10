@@ -1122,7 +1122,7 @@ def restoreSomeSessions(): Unit = {
                 S.error(S.?(ErrorMessages.UsernameHasBeenLocked))
                 loginRedirect(ObpS.param("Referer").or(S.param("Referer")))
 
-              // Check if user came from kafka/obpjvm/stored_procedure and
+              // Check if user came from CBS and
               // if User is NOT locked. Then check username and password
               // from connector in case they changed on the south-side
               case Full(user) if externalUserIsValidatedAndNotLocked(usernameFromGui, user) && testExternalPassword(usernameFromGui, passwordFromGui) =>
@@ -1131,7 +1131,7 @@ def restoreSomeSessions(): Unit = {
                   val preLoginState = capturePreLoginState()
                   logger.info("login redirect: " + loginRedirect.get)
                   val redirect = redirectUri(user.user.foreign)
-                  //This method is used for connector = kafka* || obpjvm*
+                  //This method is used for connector = cbs* || obpjvm*
                   //It will update the views and createAccountHolder ....
                   registeredUserHelper(user.getProvider(),user.username.get)
                   // User init actions
@@ -1150,8 +1150,7 @@ def restoreSomeSessions(): Unit = {
 
 
               // If user cannot be found locally, try to authenticate user via connector
-              case Empty if (APIUtil.getPropsAsBoolValue("connector.user.authentication", false) ||
-                APIUtil.getPropsAsBoolValue("kafka.user.authentication", false) ) =>
+              case Empty if (APIUtil.getPropsAsBoolValue("connector.user.authentication", false)) =>
 
                 val preLoginState = capturePreLoginState()
                 logger.info("login redirect: " + loginRedirect.get)
@@ -1235,7 +1234,7 @@ def restoreSomeSessions(): Unit = {
     * This method will update the views and createAccountHolder ....
     */
   def registeredUserHelper(provider: String,  username: String) = {
-    if (connector.startsWith("kafka")) {
+    if (connector.startsWith("rest_vMar2019")) {
       for {
        u <- Users.users.vend.getUserByProviderAndUsername(provider, username)
       } yield {
