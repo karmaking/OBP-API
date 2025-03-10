@@ -1,19 +1,21 @@
 package code.api.util
 
 import code.api.{CertificateConstants, RequestHeader}
+import code.util.Helper.MdcLoggable
 import com.openbankproject.commons.model.User
 import net.liftweb.common.{Box, Failure, Full}
 import net.liftweb.http.provider.HTTPParam
 
+import java.util.Base64
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
 import java.security._
 import java.security.cert.{CertificateFactory, X509Certificate}
-import java.security.spec.PKCS8EncodedKeySpec
+import java.security.spec.{PKCS8EncodedKeySpec, X509EncodedKeySpec}
 import java.util.Base64
 import scala.util.matching.Regex
 
-object BerlinGroupSigning {
+object BerlinGroupSigning extends MdcLoggable {
 
   // Step 1: Calculate Digest (SHA-256 Hash of the Body)
   def calculateDigest(body: String): String = {
@@ -35,9 +37,9 @@ object BerlinGroupSigning {
       RequestHeader.Digest,
       RequestHeader.Date,
       RequestHeader.`X-Request-ID`,
-      RequestHeader.`TPP-Redirect-URL`,
+      //RequestHeader.`TPP-Redirect-URL`,
     ) // Example fields to be signed
-    orderedKeys.flatMap(headers.get).mkString(" ")
+    orderedKeys.flatMap(key => headers.get(key).map(value => s"${key.toLowerCase()}: $value")).mkString("\n")
   }
 
   // Step 3: Generate Signature using RSA Private Key
@@ -62,14 +64,20 @@ object BerlinGroupSigning {
   }
 
   // Step 4: Attach Certificate (Load from PEM String)
-  def loadCertificate(certPem: String): String = {
+  def loadCertificate(certPem: String) = {
     val certString = certPem
       .replaceAll("-----BEGIN CERTIFICATE-----", "") // Remove the BEGIN header
       .replaceAll("-----END CERTIFICATE-----", "")   // Remove the END footer
       .replaceAll("\\s", "") // Remove all whitespace and new lines
 
-    val certBytes = Base64.getDecoder.decode(certString)
-    Base64.getEncoder.encodeToString(certBytes)
+    // Decode Base64 public key
+    val keyBytes = Base64.getDecoder.decode(certPem)
+    val keySpec = new X509EncodedKeySpec(keyBytes)
+    val keyFactory = KeyFactory.getInstance("RSA")
+    val publicKey = keyFactory.generatePublic(keySpec)
+    publicKey
+    // val certBytes = Base64.getDecoder.decode(certString)
+    // Base64.getEncoder.encodeToString(certBytes)
   }
 
   // Step 5: Verify Request on ASPSP Side
@@ -120,15 +128,19 @@ object BerlinGroupSigning {
         X509.validate(certificatePem) match {
           case Full(true) => // PEM certificate is ok
             val digest = calculateDigest(body.getOrElse(""))
-            val headers = Map(
-              RequestHeader.Digest -> s"SHA-256=$digest",
-              RequestHeader.`X-Request-ID` -> getHeaderValue(RequestHeader.`X-Request-ID`, requestHeaders),
-              RequestHeader.Date -> getHeaderValue(RequestHeader.Date, requestHeaders),
-              RequestHeader.`TPP-Redirect-URL` -> getHeaderValue(RequestHeader.`TPP-Redirect-URL`, requestHeaders),
-            )
-            val signingString = createSigningString(headers)
+
+
             val signatureHeaderValue = getHeaderValue(RequestHeader.Signature, requestHeaders)
             val signature = parseSignatureHeader(signatureHeaderValue).getOrElse("signature", "NONE")
+            val headersss = parseSignatureHeader(signatureHeaderValue).getOrElse("headers", "").split(" ").toList
+            val headers = headersss.map(h =>
+              if(h.toLowerCase() == RequestHeader.Digest.toLowerCase()) {
+                s"$h: SHA-256=$digest"
+              } else {
+                s"$h: ${getHeaderValue(h, requestHeaders)}"
+              }
+            )
+            val signingString = headers.mkString("\n")
             val isVerified = verifySignature(signingString, signature, certificatePem)
             val isValidated = CertificateVerifier.validateCertificate(certificatePem)
             (isVerified, isValidated) match {
@@ -143,14 +155,33 @@ object BerlinGroupSigning {
   }
 
   def getHeaderValue(name: String, requestHeaders: List[HTTPParam]): String = {
-    requestHeaders.find(_.name == name).map(_.values.mkString).getOrElse("None")
+    requestHeaders.find(_.name.toLowerCase() == name.toLowerCase()).map(_.values.mkString).getOrElse("None")
   }
   def getPem(requestHeaders: List[HTTPParam]): String = {
     val certificate = getHeaderValue(RequestHeader.`TPP-Signature-Certificate`, requestHeaders)
-    s"""${CertificateConstants.BEGIN_CERT}
-       |$certificate
-       |${CertificateConstants.END_CERT}
-       |""".stripMargin
+    // Decode the Base64 string
+    val decodedBytes = Base64.getDecoder.decode(certificate)
+    // Convert the bytes to a string (it could be PEM format for public key)
+    val decodedString = new String(decodedBytes, StandardCharsets.UTF_8)
+
+    // Extract the certificate portion from the decoded string
+    val certStart = "-----BEGIN CERTIFICATE-----"
+    val certEnd = "-----END CERTIFICATE-----"
+
+    // Find the start and end indices of the certificate
+    val startIndex = decodedString.indexOf(certStart)
+    val endIndex = decodedString.indexOf(certEnd, startIndex) + certEnd.length
+
+    if (startIndex >= 0 && endIndex >= 0) {
+      // Extract and print the certificate part
+      val extractedCert = decodedString.substring(startIndex, endIndex)
+      logger.debug("Extracted Certificate:")
+      logger.debug(extractedCert)
+      extractedCert
+    } else {
+      logger.debug("Certificate not found in the decoded string.")
+      ""
+    }
   }
 
   def parseSignatureHeader(signatureHeader: String): Map[String, String] = {
