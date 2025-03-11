@@ -21,12 +21,12 @@ class AccountInformationServiceAISApiTest extends BerlinGroupServerSetupV1_3 wit
 
   object getAccountList extends Tag(nameOf(APIMethods_AccountInformationServiceAISApi.getAccountList))
   
-  object readAccountDetails extends Tag(nameOf(APIMethods_AccountInformationServiceAISApi.readAccountDetails))
+  object getAccountDetails extends Tag(nameOf(APIMethods_AccountInformationServiceAISApi.getAccountDetails))
 
   object getBalances extends Tag(nameOf(APIMethods_AccountInformationServiceAISApi.getBalances))
 
   object getTransactionList extends Tag(nameOf(APIMethods_AccountInformationServiceAISApi.getTransactionList))
-  
+
   object getTransactionDetails extends Tag(nameOf(APIMethods_AccountInformationServiceAISApi.getTransactionDetails))
 
   object getCardAccountTransactionList extends Tag(nameOf(APIMethods_AccountInformationServiceAISApi.getCardAccountTransactionList))
@@ -38,21 +38,21 @@ class AccountInformationServiceAISApiTest extends BerlinGroupServerSetupV1_3 wit
   object getConsentInformation extends Tag(nameOf(APIMethods_AccountInformationServiceAISApi.getConsentInformation))
 
   object getConsentStatus extends Tag(nameOf(APIMethods_AccountInformationServiceAISApi.getConsentStatus))
-  
+
   object startConsentAuthorisationTransactionAuthorisation extends Tag(nameOf(APIMethods_AccountInformationServiceAISApi.startConsentAuthorisationTransactionAuthorisation))
   object startConsentAuthorisationUpdatePsuAuthentication extends Tag(nameOf(APIMethods_AccountInformationServiceAISApi.startConsentAuthorisationUpdatePsuAuthentication))
   object startConsentAuthorisationSelectPsuAuthenticationMethod extends Tag(nameOf(APIMethods_AccountInformationServiceAISApi.startConsentAuthorisationSelectPsuAuthenticationMethod))
 
   object getConsentAuthorisation extends Tag(nameOf(APIMethods_AccountInformationServiceAISApi.getConsentAuthorisation))
-  
+
   object getConsentScaStatus extends Tag(nameOf(APIMethods_AccountInformationServiceAISApi.getConsentScaStatus))
-  
+
   object updateConsentsPsuDataTransactionAuthorisation extends Tag(nameOf(APIMethods_AccountInformationServiceAISApi.updateConsentsPsuDataTransactionAuthorisation))
   object updateConsentsPsuDataUpdatePsuAuthentication extends Tag(nameOf(APIMethods_AccountInformationServiceAISApi.updateConsentsPsuDataUpdatePsuAuthentication))
   object updateConsentsPsuDataUpdateSelectPsuAuthenticationMethod extends Tag(nameOf(APIMethods_AccountInformationServiceAISApi.updateConsentsPsuDataUpdateSelectPsuAuthenticationMethod))
   object updateConsentsPsuDataUpdateAuthorisationConfirmation extends Tag(nameOf(APIMethods_AccountInformationServiceAISApi.updateConsentsPsuDataUpdateAuthorisationConfirmation))
 
-  
+
   feature(s"BG v1.3 - $getAccountList") {
     scenario("Not Authentication User, test failed ", BerlinGroupV1_3, getAccountList) {
       val requestGet = (V1_3_BG / "accounts").GET
@@ -72,9 +72,9 @@ class AccountInformationServiceAISApiTest extends BerlinGroupServerSetupV1_3 wit
       response.body.extract[ErrorMessagesBG].tppMessages.head.text should startWith(NoViewReadAccountsBerlinGroup)
     }
   }
-  
-  feature(s"BG v1.3 - $readAccountDetails") {
-    scenario("Not Authentication User, test failed ", BerlinGroupV1_3, readAccountDetails) {
+
+  feature(s"BG v1.3 - $getAccountDetails") {
+    scenario("Not Authentication User, test failed ", BerlinGroupV1_3, getAccountDetails) {
       val requestGet = (V1_3_BG / "accounts" / "accountId").GET
       val response = makeGetRequest(requestGet)
 
@@ -83,7 +83,7 @@ class AccountInformationServiceAISApiTest extends BerlinGroupServerSetupV1_3 wit
       response.body.extract[ErrorMessagesBG].tppMessages.head.text should startWith(UserNotLoggedIn)
     }
 
-    scenario("Authentication User, test succeed", BerlinGroupV1_3, readAccountDetails) {
+    scenario("Authentication User, test succeed", BerlinGroupV1_3, getAccountDetails) {
       val bankId = APIUtil.defaultBankId
       val accountId = testAccountId0.value
       
