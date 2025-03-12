@@ -739,7 +739,7 @@ trait APIMethods500 {
       nameOf(getConsentByConsentRequestId),
       "GET",
       "/consumer/consent-requests/CONSENT_REQUEST_ID/consents",
-      "Get Consent By Consent Request Id via Consumner",
+      "Get Consent By Consent Request Id via Consumer",
       s"""
          |
          |This endpoint gets the Consent By consent request id.
