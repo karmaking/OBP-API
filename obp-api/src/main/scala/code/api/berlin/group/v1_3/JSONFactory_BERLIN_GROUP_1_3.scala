@@ -105,9 +105,9 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats {
   case class AccountBalance(
                              balanceAmount : AmountOfMoneyV13 = AmountOfMoneyV13("EUR","123"),
                              balanceType: String = "closingBooked",
-                             lastChangeDateTime: String = "2020-07-02T10:23:57.814Z",
-                             lastCommittedTransaction: String = "string",
-                             referenceDate: String = "2020-07-02",
+                             lastChangeDateTime: Option[String] = None,
+                             lastCommittedTransaction: Option[String] = None,
+                             referenceDate: Option[String] = None,
     
   )
   case class FromAccount(
@@ -315,8 +315,8 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats {
       x =>
         val (iBan: String, bBan: String) = getIbanAndBban(x)
         val commonPath = s"${OBP_BERLIN_GROUP_1_3.apiVersion.urlPrefix}/${OBP_BERLIN_GROUP_1_3.version}/accounts/${x.accountId.value}"
-        val balanceRef = LinkHrefJson(s"/$commonPath/accounts/${x.accountId.value}/balances")
-        val transactionRef = LinkHrefJson(s"/$commonPath/accounts/${x.accountId.value}/transactions")
+        val balanceRef = LinkHrefJson(s"/$commonPath/balances")
+        val transactionRef = LinkHrefJson(s"/$commonPath/transactions")
         val canReadTransactions = canReadTransactionsAccounts.map(_.accountId.value).contains(x.accountId.value)
 
       
@@ -401,9 +401,8 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats {
       `balances` = accountBalances.balances.map(accountBalance => AccountBalance(
         balanceAmount = AmountOfMoneyV13(accountBalance.balance.currency, accountBalance.balance.amount),
         balanceType = accountBalance.balanceType,
-        lastChangeDateTime = APIUtil.dateOrNull(bankAccount.lastUpdate),
-        referenceDate = APIUtil.dateOrNull(bankAccount.lastUpdate),
-        lastCommittedTransaction = "String"
+        lastChangeDateTime = APIUtil.dateOrNone(bankAccount.lastUpdate),
+        referenceDate = APIUtil.dateOrNone(bankAccount.lastUpdate),
       ) 
     ))
   }

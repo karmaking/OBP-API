@@ -56,7 +56,7 @@ object APIMethods_AccountInformationServiceAISApi extends RestHelper {
       getConsentStatus ::
       getTransactionDetails ::
       getTransactionList ::
-      readAccountDetails ::
+      getAccountDetails ::
       readCardAccount ::
       startConsentAuthorisationTransactionAuthorisation ::
       startConsentAuthorisationUpdatePsuAuthentication ::
@@ -78,7 +78,7 @@ object APIMethods_AccountInformationServiceAISApi extends RestHelper {
         unboxFullOrFail(_, callContext, s"$NoViewReadAccountsBerlinGroup ${viewId.value} userId : ${u.userId}. account : ${account.accountId}", 403)
       }
     }
-            
+
      resourceDocs += ResourceDoc(
        createConsent,
        apiVersion,
@@ -87,22 +87,22 @@ object APIMethods_AccountInformationServiceAISApi extends RestHelper {
        "/consents",
        "Create consent",
        s"""${mockedDataText(false)}
-This method create a consent resource, defining access rights to dedicated accounts of 
-a given PSU-ID. These accounts are addressed explicitly in the method as 
+This method create a consent resource, defining access rights to dedicated accounts of
+a given PSU-ID. These accounts are addressed explicitly in the method as
 parameters as a core function.
 
 **Side Effects**
-When this Consent Request is a request where the "recurringIndicator" equals "true", 
-and if it exists already a former consent for recurring access on account information 
-for the addressed PSU, then the former consent automatically expires as soon as the new 
+When this Consent Request is a request where the "recurringIndicator" equals "true",
+and if it exists already a former consent for recurring access on account information
+for the addressed PSU, then the former consent automatically expires as soon as the new
 consent request is authorised by the PSU.
 
 Optional Extension:
-As an option, an ASPSP might optionally accept a specific access right on the access on all psd2 related services for all available accounts. 
+As an option, an ASPSP might optionally accept a specific access right on the access on all psd2 related services for all available accounts.
 
-As another option an ASPSP might optionally also accept a command, where only access rights are inserted without mentioning the addressed account. 
-The relation to accounts is then handled afterwards between PSU and ASPSP. 
-This option is not supported for the Embedded SCA Approach. 
+As another option an ASPSP might optionally also accept a command, where only access rights are inserted without mentioning the addressed account.
+The relation to accounts is then handled afterwards between PSU and ASPSP.
+This option is not supported for the Embedded SCA Approach.
 As a last option, an ASPSP might in addition accept a command with access rights
   * to see the list of available payment accounts or
   * to see the list of available payment accounts with balances.
@@ -164,9 +164,9 @@ As a last option, an ASPSP might in addition accept a command with access rights
              validUntil <- NewStyle.function.tryons(failMsg, 400, callContext) {
                new SimpleDateFormat(DateWithDay).parse(consentJson.validUntil)
              }
-             
+
              _ <- NewStyle.function.getBankAccountsByIban(consentJson.access.accounts.getOrElse(Nil).map(_.iban.getOrElse("")), callContext)
-             
+
              createdConsent <- Future(Consents.consentProvider.vend.createBerlinGroupConsent(
                createdByUser,
                callContext.flatMap(_.consumer),
@@ -194,7 +194,7 @@ As a last option, an ASPSP might in addition accept a command with access rights
              _ <- Future(Consents.consentProvider.vend.setJsonWebToken(createdConsent.consentId, consentJWT)) map {
                i => connectorEmptyResponse(i, callContext)
              }
-             
+
 /*             _ <- Future(Authorisations.authorisationProvider.vend.createAuthorization(
                "",
                createdConsent.consentId,
@@ -210,7 +210,7 @@ As a last option, an ASPSP might in addition accept a command with access rights
            }
          }
        }
-            
+
      resourceDocs += ResourceDoc(
        deleteConsent,
        apiVersion,
@@ -243,7 +243,7 @@ As a last option, an ASPSP might in addition accept a command with access rights
            }
          }
        }
-            
+
      resourceDocs += ResourceDoc(
        getAccountList,
        apiVersion,
@@ -252,21 +252,21 @@ As a last option, an ASPSP might in addition accept a command with access rights
        "/accounts",
        "Read Account List",
        s"""${mockedDataText(false)}
-Read the identifiers of the available payment account together with 
+Read the identifiers of the available payment account together with
 booking balance information, depending on the consent granted.
 
-It is assumed that a consent of the PSU to this access is already given and stored on the ASPSP system. 
-The addressed list of accounts depends then on the PSU ID and the stored consent addressed by consentId, 
-respectively the OAuth2 access token. 
+It is assumed that a consent of the PSU to this access is already given and stored on the ASPSP system.
+The addressed list of accounts depends then on the PSU ID and the stored consent addressed by consentId,
+respectively the OAuth2 access token.
 
-Returns all identifiers of the accounts, to which an account access has been granted to through 
-the /consents endpoint by the PSU. 
-In addition, relevant information about the accounts and hyperlinks to corresponding account 
+Returns all identifiers of the accounts, to which an account access has been granted to through
+the /consents endpoint by the PSU.
+In addition, relevant information about the accounts and hyperlinks to corresponding account
 information resources are provided if a related consent has been already granted.
 
-Remark: Note that the /consents endpoint optionally offers to grant an access on all available 
-payment accounts of a PSU. 
-In this case, this endpoint will deliver the information about all available payment accounts 
+Remark: Note that the /consents endpoint optionally offers to grant an access on all available
+payment accounts of a PSU.
+In this case, this endpoint will deliver the information about all available payment accounts
 of the PSU at this ASPSP.
 """,
        EmptyBody,
@@ -320,7 +320,7 @@ of the PSU at this ASPSP.
                 attribute.`type`.equals("STRING")&&
                 attribute.value.equalsIgnoreCase("card")
               ).isEmpty)
-            
+
           } yield {
             (JSONFactory_BERLIN_GROUP_1_3.createAccountListJson(
               bankAccountsFiltered,
@@ -331,7 +331,7 @@ of the PSU at this ASPSP.
           }
          }
        }
-            
+
      resourceDocs += ResourceDoc(
        getBalances,
        apiVersion,
@@ -340,10 +340,10 @@ of the PSU at this ASPSP.
        "/accounts/ACCOUNT_ID/balances",
        "Read Balance",
        s"""${mockedDataText(false)}
-Reads account data from a given account addressed by "account-id". 
+Reads account data from a given account addressed by "account-id".
 
-**Remark:** This account-id can be a tokenised identification due to data protection reason since the path 
-information might be logged on intermediary servers within the ASPSP sphere. 
+**Remark:** This account-id can be a tokenised identification due to data protection reason since the path
+information might be logged on intermediary servers within the ASPSP sphere.
 This account-id then can be retrieved by the "GET Account List" call.
 
 The account-id is constant at least throughout the lifecycle of a given consent.
@@ -383,7 +383,7 @@ The account-id is constant at least throughout the lifecycle of a given consent.
            }
          }
        }
-            
+
      resourceDocs += ResourceDoc(
        getCardAccounts,
        apiVersion,
@@ -392,10 +392,10 @@ The account-id is constant at least throughout the lifecycle of a given consent.
        "/card-accounts",
        "Reads a list of card accounts",
        s"""${mockedDataText(false)}
-Reads a list of card accounts with additional information, e.g. balance information. 
-It is assumed that a consent of the PSU to this access is already given and stored on the ASPSP system. 
-The addressed list of card accounts depends then on the PSU ID and the stored consent addressed by consentId, 
-respectively the OAuth2 access token. 
+Reads a list of card accounts with additional information, e.g. balance information.
+It is assumed that a consent of the PSU to this access is already given and stored on the ASPSP system.
+The addressed list of card accounts depends then on the PSU ID and the stored consent addressed by consentId,
+respectively the OAuth2 access token.
 """,
        EmptyBody,
        json.parse("""{
@@ -434,19 +434,19 @@ respectively the OAuth2 access token.
              (_, callContext) <- NewStyle.function.getPhysicalCardsForUser(u, callContext)
              (accounts, callContext) <- NewStyle.function.getBankAccounts(availablePrivateAccounts, callContext)
              //also see `getAccountList` endpoint
-             bankAccountsFiltered = accounts.filter(bankAccount => 
-               bankAccount.attributes.toList.flatten.find(attribute=> 
-                   attribute.name.equals("CashAccountTypeCode")&& 
+             bankAccountsFiltered = accounts.filter(bankAccount =>
+               bankAccount.attributes.toList.flatten.find(attribute=>
+                   attribute.name.equals("CashAccountTypeCode")&&
                    attribute.`type`.equals("STRING")&&
-                 attribute.value.equalsIgnoreCase("card") 
+                 attribute.value.equalsIgnoreCase("card")
                ).isDefined)
            } yield {
              (JSONFactory_BERLIN_GROUP_1_3.createCardAccountListJson(bankAccountsFiltered, u), callContext)
            }
        }
      }
-       
-            
+
+
      resourceDocs += ResourceDoc(
        getCardAccountBalances,
        apiVersion,
@@ -455,13 +455,13 @@ respectively the OAuth2 access token.
        "/card-accounts/ACCOUNT_ID/balances",
        "Read card account balances",
        s"""${mockedDataText(false)}
-Reads balance data from a given card account addressed by 
-"account-id". 
+Reads balance data from a given card account addressed by
+"account-id".
 
-Remark: This account-id can be a tokenised identification due 
-to data protection reason since the path information might be 
-logged on intermediary servers within the ASPSP sphere. 
-This account-id then can be retrieved by the 
+Remark: This account-id can be a tokenised identification due
+to data protection reason since the path information might be
+logged on intermediary servers within the ASPSP sphere.
+This account-id then can be retrieved by the
 "GET Card Account List" call
 """,
        EmptyBody,
@@ -498,7 +498,7 @@ This account-id then can be retrieved by the
            }
        }
      }
-            
+
      resourceDocs += ResourceDoc(
        getCardAccountTransactionList,
        apiVersion,
@@ -596,7 +596,7 @@ Reads account data from a given card account addressed by "account-id".
            }
          }
        }
-            
+
      resourceDocs += ResourceDoc(
        getConsentAuthorisation,
        apiVersion,
@@ -629,7 +629,7 @@ This function returns an array of hyperlinks to all generated authorisation sub-
            }
          }
        }
-            
+
      resourceDocs += ResourceDoc(
        getConsentInformation,
        apiVersion,
@@ -638,8 +638,8 @@ This function returns an array of hyperlinks to all generated authorisation sub-
        "/consents/CONSENTID",
        "Get Consent Request",
        s"""${mockedDataText(false)}
-Returns the content of an account information consent object. 
-This is returning the data for the TPP especially in cases, 
+Returns the content of an account information consent object.
+This is returning the data for the TPP especially in cases,
 where the consent was directly managed between ASPSP and PSU e.g. in a re-direct SCA Approach.
 """,
        EmptyBody,
@@ -702,7 +702,7 @@ where the consent was directly managed between ASPSP and PSU e.g. in a re-direct
           .replace(ConsentStatus.REJECTED.toString, "failed")
         scaStatus
       }
-            
+
      resourceDocs += ResourceDoc(
        getConsentScaStatus,
        apiVersion,
@@ -738,7 +738,7 @@ This method returns the SCA status of a consent initiation's authorisation sub-r
            }
          }
        }
-            
+
      resourceDocs += ResourceDoc(
        getConsentStatus,
        apiVersion,
@@ -770,22 +770,22 @@ This method returns the SCA status of a consent initiation's authorisation sub-r
                .replace(ConsentStatus.REVOKED.toString.toLowerCase(), "revokedByPsu")
              (JSONFactory_BERLIN_GROUP_1_3.ConsentStatusJsonV13(status), HttpCode.`200`(callContext))
            }
-             
+
          }
        }
-            
+
      resourceDocs += ResourceDoc(
        getTransactionDetails,
        apiVersion,
        nameOf(getTransactionDetails),
-       "GET", 
-       "/accounts/ACCOUNT_ID/transactions/TRANSACTIONID", 
+       "GET",
+       "/accounts/ACCOUNT_ID/transactions/TRANSACTIONID",
        "Read Transaction Details",
        s"""${mockedDataText(false)}
-Reads transaction details from a given transaction addressed by "transactionId" on a given account addressed 
-by "account-id". This call is only available on transactions as reported in a JSON format. 
+Reads transaction details from a given transaction addressed by "transactionId" on a given account addressed
+by "account-id". This call is only available on transactions as reported in a JSON format.
 
-**Remark:** Please note that the PATH might be already given in detail by the corresponding entry of the response 
+**Remark:** Please note that the PATH might be already given in detail by the corresponding entry of the response
 of the "Read Transaction List" call within the _links subfield.
 
             """,
@@ -932,20 +932,20 @@ The ASPSP might add balance information, if transaction lists without balances a
             }
          }
        }
-            
+
      resourceDocs += ResourceDoc(
-       readAccountDetails,
+       getAccountDetails,
        apiVersion,
-       nameOf(readAccountDetails),
+       nameOf(getAccountDetails),
        "GET",
        "/accounts/ACCOUNT_ID",
        "Read Account Details",
        s"""${mockedDataText(false)}
-Reads details about an account, with balances where required. 
-It is assumed that a consent of the PSU to this access is already given and stored on the ASPSP system. 
-The addressed details of this account depends then on the stored consent addressed by consentId, 
-respectively the OAuth2 access token. **NOTE:** The account-id can represent a multicurrency account. 
-In this case the currency code is set to "XXX". Give detailed information about the addressed account. 
+Reads details about an account, with balances where required.
+It is assumed that a consent of the PSU to this access is already given and stored on the ASPSP system.
+The addressed details of this account depends then on the stored consent addressed by consentId,
+respectively the OAuth2 access token. **NOTE:** The account-id can represent a multicurrency account.
+In this case the currency code is set to "XXX". Give detailed information about the addressed account.
 Give detailed information about the addressed account together with balance information
 
             """,
@@ -972,7 +972,7 @@ Give detailed information about the addressed account together with balance info
        ApiTag("Account Information Service (AIS)")  :: apiTagBerlinGroupM :: Nil
      )
 
-     lazy val readAccountDetails : OBPEndpoint = {
+     lazy val getAccountDetails : OBPEndpoint = {
        case "accounts" :: accountId :: Nil JsonGet _ => {
          cc =>
            for {
