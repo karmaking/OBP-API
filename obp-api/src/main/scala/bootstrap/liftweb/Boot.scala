@@ -526,7 +526,7 @@ class Boot extends MdcLoggable {
     LiftRules.statelessDispatch.append(ResourceDocs510)
     ////////////////////////////////////////////////////
 
-    // 让 TesobeServer 运行在后台
+    //TesobeServer 
     import scala.concurrent.ExecutionContext.Implicits.global
     Future {
       bootstrap.http4s.StartHttp4sServer.run(Nil).unsafeRunSync()

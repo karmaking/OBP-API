@@ -4,6 +4,7 @@ import cats.effect.{Concurrent, ContextShift, Timer}
 import fs2.Stream
 import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.implicits._
+import org.http4s.server.Router
 import org.http4s.server.middleware.Logger
 
 import scala.language.higherKinds
@@ -18,9 +19,15 @@ object Http4sServer {
     // want to extract a segments not checked
     // in the underlying routes.
     val httpApp = (
-      RestRoutes.helloWorldRoutes[F](helloWorldAlg)
+//      RestRoutes.helloWorldRoutes[F](helloWorldAlg)
+      RestRoutes.getBankRoutes[F]()
       ).orNotFound
 
+//    val httpApp = Router(
+//      "/hello" -> RestRoutes.helloWorldRoutes[F](helloWorldAlg),
+//      "/banks"  -> RestRoutes.getBankRoutes[F]()
+//    ).orNotFound
+//    
     // With Middlewares in place
     val finalHttpApp = Logger.httpApp(logHeaders = true, logBody = true)(httpApp)
     for {
