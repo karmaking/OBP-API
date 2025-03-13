@@ -527,10 +527,10 @@ class Boot extends MdcLoggable {
     ////////////////////////////////////////////////////
 
     //TesobeServer 
-    import scala.concurrent.ExecutionContext.Implicits.global
-    Future {
-      bootstrap.http4s.StartHttp4sServer.run(Nil).unsafeRunSync()
-    }
+//    import scala.concurrent.ExecutionContext.Implicits.global
+//    Future {
+//      bootstrap.http4s.StartHttp4sServer.run(Nil).unsafeRunSync()
+//    }
     
     // LiftRules.statelessDispatch.append(Metrics) TODO: see metric menu entry below
     val accountCreation = {
