@@ -158,7 +158,7 @@ object BerlinGroupSigning extends MdcLoggable {
   def getHeaderValue(name: String, requestHeaders: List[HTTPParam]): String = {
     requestHeaders.find(_.name.toLowerCase() == name.toLowerCase()).map(_.values.mkString).getOrElse("None")
   }
-  def getPem(requestHeaders: List[HTTPParam]): String = {
+  private def getPem(requestHeaders: List[HTTPParam]): String = {
     val certificate = getHeaderValue(RequestHeader.`TPP-Signature-Certificate`, requestHeaders)
     // Decode the Base64 string
     val decodedBytes = Base64.getDecoder.decode(certificate)
@@ -182,6 +182,13 @@ object BerlinGroupSigning extends MdcLoggable {
     } else {
       logger.debug("Certificate not found in the decoded string.")
       ""
+    }
+  }
+
+  def getTppSignatureCertificate(requestHeaders: List[HTTPParam]): Option[String] = {
+    getPem(requestHeaders) match {
+      case value if value.isEmpty => None
+      case value => Some(value)
     }
   }
 

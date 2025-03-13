@@ -131,7 +131,7 @@ object Consent extends MdcLoggable {
    */
   def getCurrentConsumerViaMtls(callContext: CallContext): Box[Consumer] = {
     val clientCert: String = APIUtil.`getPSD2-CERT`(callContext.requestHeaders) // MTLS certificate QWAC (Qualified Website Authentication Certificate)
-      .orElse(APIUtil.getTppSignatureCertificate(callContext.requestHeaders)) // Signature certificate QSealC (Qualified Electronic Seal Certificate)
+      .orElse(BerlinGroupSigning.getTppSignatureCertificate(callContext.requestHeaders)) // Signature certificate QSealC (Qualified Electronic Seal Certificate)
       .getOrElse(SecureRandomUtil.csprng.nextLong().toString) // Force to fail
 
     { // 1st search is via the original value
