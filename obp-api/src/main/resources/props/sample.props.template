@@ -163,7 +163,7 @@ jwt.use.ssl=false
 # truststore.password.tpp_signature = truststore-password
 
 # Bypass TPP signature validation
-# bypass_tpp_signature_validation = true
+# bypass_tpp_signature_validation = false
 
 
 ## Enable writing API metrics (which APIs are called) to RDBMS
