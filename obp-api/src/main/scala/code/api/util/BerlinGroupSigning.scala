@@ -1,12 +1,11 @@
 package code.api.util
 
-import code.api.{CertificateConstants, RequestHeader}
+import code.api.RequestHeader
 import code.util.Helper.MdcLoggable
 import com.openbankproject.commons.model.User
 import net.liftweb.common.{Box, Failure, Full}
 import net.liftweb.http.provider.HTTPParam
 
-import java.util.Base64
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
 import java.security._
@@ -113,7 +112,7 @@ object BerlinGroupSigning extends MdcLoggable {
    * @param forwardResult Propagated result of calling function
    * @return Propagated result of calling function or signing request error
    */
-  def verifySignedRequest(body: Box[String], verb: String, url: String, reqHeaders: List[HTTPParam], forwardResult: (Box[User], Option[CallContext])) = {
+  def verifySignedRequest(body: Box[String], verb: String, url: String, reqHeaders: List[HTTPParam], forwardResult: (Box[User], Option[CallContext])): (Box[User], Option[CallContext]) = {
     def checkRequestIsSigned(requestHeaders: List[HTTPParam]): Boolean = {
       requestHeaders.exists(_.name == RequestHeader.`TPP-Signature-Certificate`) &&
       requestHeaders.exists(_.name == RequestHeader.Signature) &&
@@ -132,8 +131,8 @@ object BerlinGroupSigning extends MdcLoggable {
 
             val signatureHeaderValue = getHeaderValue(RequestHeader.Signature, requestHeaders)
             val signature = parseSignatureHeader(signatureHeaderValue).getOrElse("signature", "NONE")
-            val headersss = parseSignatureHeader(signatureHeaderValue).getOrElse("headers", "").split(" ").toList
-            val headers = headersss.map(h =>
+            val headersToSign = parseSignatureHeader(signatureHeaderValue).getOrElse("headers", "").split(" ").toList
+            val headers = headersToSign.map(h =>
               if(h.toLowerCase() == RequestHeader.Digest.toLowerCase()) {
                 s"$h: SHA-256=$digest"
               } else {
@@ -143,8 +142,10 @@ object BerlinGroupSigning extends MdcLoggable {
             val signingString = headers.mkString("\n")
             val isVerified = verifySignature(signingString, signature, certificatePem)
             val isValidated = CertificateVerifier.validateCertificate(certificatePem)
+            val bypassValidation = APIUtil.getPropsAsBoolValue("bypass_tpp_signature_validation", defaultValue = false)
             (isVerified, isValidated) match {
               case (true, true) => forwardResult
+              case (true, false) if bypassValidation => forwardResult
               case (true, false) => (Failure(ErrorMessages.X509PublicKeyCannotBeValidated), forwardResult._2)
               case (false, _) => (Failure(ErrorMessages.X509PublicKeyCannotVerify), forwardResult._2)
             }
@@ -157,7 +158,7 @@ object BerlinGroupSigning extends MdcLoggable {
   def getHeaderValue(name: String, requestHeaders: List[HTTPParam]): String = {
     requestHeaders.find(_.name.toLowerCase() == name.toLowerCase()).map(_.values.mkString).getOrElse("None")
   }
-  def getPem(requestHeaders: List[HTTPParam]): String = {
+  private def getPem(requestHeaders: List[HTTPParam]): String = {
     val certificate = getHeaderValue(RequestHeader.`TPP-Signature-Certificate`, requestHeaders)
     // Decode the Base64 string
     val decodedBytes = Base64.getDecoder.decode(certificate)
@@ -181,6 +182,13 @@ object BerlinGroupSigning extends MdcLoggable {
     } else {
       logger.debug("Certificate not found in the decoded string.")
       ""
+    }
+  }
+
+  def getTppSignatureCertificate(requestHeaders: List[HTTPParam]): Option[String] = {
+    getPem(requestHeaders) match {
+      case value if value.isEmpty => None
+      case value => Some(value)
     }
   }
 
