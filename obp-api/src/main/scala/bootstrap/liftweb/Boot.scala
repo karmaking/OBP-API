@@ -526,13 +526,10 @@ class Boot extends MdcLoggable {
     LiftRules.statelessDispatch.append(ResourceDocs510)
     ////////////////////////////////////////////////////
 
-    //TesobeServer 
-//    import scala.concurrent.ExecutionContext.Implicits.global
-//    import cats.effect.unsafe.implicits.global
-//    Future {
-//      bootstrap.http4s.Http4sServer.run(Nil)
-//    }
-//    
+    //Test the https code 
+    import cats.effect.unsafe.implicits.global
+    bootstrap.http4s.Http4sServer.run(Nil).unsafeToFuture()
+    
     // LiftRules.statelessDispatch.append(Metrics) TODO: see metric menu entry below
     val accountCreation = {
       if(APIUtil.getPropsAsBoolValue("allow_sandbox_account_creation", false)){

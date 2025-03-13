@@ -25,4 +25,10 @@ object Http4sServer extends IOApp {
     .as(ExitCode.Success)
 }
 
+//this is testing code
+object myApp extends App{
+  import cats.effect.unsafe.implicits.global
+  Http4sServer.run(Nil).unsafeRunSync()
+//  Http4sServer.run(Nil).unsafeToFuture()//.unsafeRunSync()
+}
 
