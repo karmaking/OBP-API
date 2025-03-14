@@ -13,7 +13,10 @@ import org.http4s.HttpRoutes
 import org.http4s.dsl.Http4sDsl
 
 import scala.language.higherKinds
-import cats.effect._, org.http4s._, org.http4s.dsl.io._
+import cats.effect._
+import code.api.v4_0_0.JSONFactory400
+import org.http4s._
+import org.http4s.dsl.io._
 import net.liftweb.json.JsonAST.{JValue, prettyRender}
 import net.liftweb.json.{Extraction, MappingException, compactRender, parse}
 
@@ -27,6 +30,19 @@ object RestRoutes {
 
   val bankServices: HttpRoutes[IO] = HttpRoutes.of[IO] {
     case GET -> Root / "banks"  =>
+      val banks = Connector.connector.vend.getBanksLegacy(None).map(_._1).openOrThrowException("xxxxx")
+      Ok(prettyRender(Extraction.decompose(banks)))
+    case GET -> Root / "banks"/ "future"  =>
+      import scala.concurrent.Future
+      import scala.concurrent.ExecutionContext.Implicits.global
+      Ok(IO.fromFuture(IO(
+        for {
+          (banks, callContext) <- code.api.util.NewStyle.function.getBanks(None)
+        } yield {
+          prettyRender(Extraction.decompose(JSONFactory400.createBanksJson(banks)))
+        }
+      )))
+      
       val banks = Connector.connector.vend.getBanksLegacy(None).map(_._1).openOrThrowException("xxxxx")
       Ok(prettyRender(Extraction.decompose(banks)))
     case GET -> Root / "banks" / IntVar(bankId) =>
