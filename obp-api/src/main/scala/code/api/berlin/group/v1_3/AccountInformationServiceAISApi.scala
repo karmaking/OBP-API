@@ -5,7 +5,7 @@ import code.api.APIFailureNewStyle
 import code.api.Constant.{SYSTEM_READ_ACCOUNTS_BERLIN_GROUP_VIEW_ID, SYSTEM_READ_BALANCES_BERLIN_GROUP_VIEW_ID, SYSTEM_READ_TRANSACTIONS_BERLIN_GROUP_VIEW_ID}
 import code.api.berlin.group.v1_3.JSONFactory_BERLIN_GROUP_1_3.{PostConsentResponseJson, _}
 import code.api.berlin.group.v1_3.model.{HrefType, LinksAll, ScaStatusResponse}
-import code.api.berlin.group.v1_3.{JSONFactory_BERLIN_GROUP_1_3, JvalueCaseClass, OBP_BERLIN_GROUP_1_3}
+import code.api.berlin.group.v1_3.{BgSpecValidation, JSONFactory_BERLIN_GROUP_1_3, JvalueCaseClass, OBP_BERLIN_GROUP_1_3}
 import code.api.berlin.group.v1_3.model._
 import code.api.util.APIUtil.{passesPsd2Aisp, _}
 import code.api.util.ApiTag._
@@ -169,9 +169,10 @@ recurringIndicator:
                  (consentJson.recurringIndicator == false && consentJson.frequencyPerDay == 1)
              }
 
-             failMsg = s"$InvalidDateFormat Current `validUntil` field is ${consentJson.validUntil}. Please use this format ${DateWithDayFormat.toPattern}!"
-             validUntil <- NewStyle.function.tryons(failMsg, 400, callContext) {
-               new SimpleDateFormat(DateWithDay).parse(consentJson.validUntil)
+             failMsg = BgSpecValidation.getErrorMessage(consentJson.validUntil)
+             validUntil = BgSpecValidation.getDate(consentJson.validUntil)
+             _ <- Helper.booleanToFuture(failMsg, 400, callContext) {
+               failMsg.isEmpty
              }
 
              _ <- NewStyle.function.getBankAccountsByIban(consentJson.access.accounts.getOrElse(Nil).map(_.iban.getOrElse("")), callContext)
