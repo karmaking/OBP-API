@@ -106,6 +106,15 @@ This option is not supported for the Embedded SCA Approach.
 As a last option, an ASPSP might in addition accept a command with access rights
   * to see the list of available payment accounts or
   * to see the list of available payment accounts with balances.
+
+frequencyPerDay:
+       This field indicates the requested maximum frequency for an access without PSU involvement per day.
+       For a one-off access, this attribute is set to "1".
+       The frequency needs to be greater equal to one.
+       If not otherwise agreed bilaterally between TPP and ASPSP, the frequency is less equal to 4.
+recurringIndicator:
+       "true", if the consent is for recurring access to the account data.
+       "false", if the consent is for one access to the account data.
 """,
        PostConsentJson(
          access = ConsentAccessJson(
@@ -150,9 +159,9 @@ As a last option, an ASPSP might in addition accept a command with access rights
              consentJson <- NewStyle.function.tryons(failMsg, 400, callContext) {
                json.extract[PostConsentJson]
              }
-
+             upperLimit = APIUtil.getPropsAsIntValue("berlin_group_frequency_per_day_upper_limit", 4)
              _ <- Helper.booleanToFuture(failMsg = FrequencyPerDayError, cc=callContext) {
-               consentJson.frequencyPerDay > 0
+               consentJson.frequencyPerDay > 0 && consentJson.frequencyPerDay <= upperLimit
              }
 
              _ <- Helper.booleanToFuture(failMsg = FrequencyPerDayMustBeOneError, cc=callContext) {

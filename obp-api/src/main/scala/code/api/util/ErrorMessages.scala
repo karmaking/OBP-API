@@ -208,7 +208,7 @@ object ErrorMessages {
   val ConsumerIsDisabled = "OBP-20058: Consumer is disabled."
   val CouldNotAssignAccountAccess = "OBP-20059: Could not assign account access. "
   val NoViewReadAccountsBerlinGroup = s"OBP-20060: User does not have access to the view:"
-  val FrequencyPerDayError = "OBP-20062: Frequency per day must be greater than 0."
+  val FrequencyPerDayError = s"OBP-20062: Frequency per day must be greater than 0 and less or equal to ${APIUtil.getPropsAsIntValue("berlin_group_frequency_per_day_upper_limit", 4)}"
   val FrequencyPerDayMustBeOneError = "OBP-20063: Frequency per day must be equal to 1 in case of one-off access."
 
   val UserIsDeleted = "OBP-20064: The user is deleted!"
