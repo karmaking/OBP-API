@@ -125,7 +125,7 @@ As a last option, an ASPSP might in addition accept a command with access rights
          recurringIndicator = true,
          validUntil = "2020-12-31",
          frequencyPerDay = 4,
-         combinedServiceIndicator = false
+         combinedServiceIndicator = Some(false)
        ),
        PostConsentResponseJson(
          consentId = "1234-wertiq-983",
@@ -173,7 +173,7 @@ As a last option, an ASPSP might in addition accept a command with access rights
                recurringIndicator = consentJson.recurringIndicator,
                validUntil = validUntil,
                frequencyPerDay = consentJson.frequencyPerDay,
-               combinedServiceIndicator = consentJson.combinedServiceIndicator,
+               combinedServiceIndicator = consentJson.combinedServiceIndicator.getOrElse(false),
                apiStandard = Some(apiVersion.apiStandard),
                apiVersion = Some(apiVersion.apiShortVersion)
              )) map {

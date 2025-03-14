@@ -247,7 +247,7 @@ class AccountInformationServiceAISApiTest extends BerlinGroupServerSetupV1_3 wit
         recurringIndicator = true,
         validUntil = "2020-12-31",
         frequencyPerDay = 4,
-        combinedServiceIndicator = false
+        combinedServiceIndicator = Some(false)
       )
       val requestPost = (V1_3_BG / "consents" ).POST <@ (user1)
       val response: APIResponse = makePostRequest(requestPost, write(postJsonBody))
@@ -283,7 +283,7 @@ class AccountInformationServiceAISApiTest extends BerlinGroupServerSetupV1_3 wit
         recurringIndicator = true,
         validUntil = "2020-12-31",
         frequencyPerDay = 4,
-        combinedServiceIndicator = false
+        combinedServiceIndicator = Some(false)
       )
       val requestPost = (V1_3_BG / "consents" ).POST <@ (user1)
       val response: APIResponse = makePostRequest(requestPost, write(postJsonBody))
@@ -328,7 +328,7 @@ class AccountInformationServiceAISApiTest extends BerlinGroupServerSetupV1_3 wit
         recurringIndicator = true,
         validUntil = "2020-12-31",
         frequencyPerDay = 4,
-        combinedServiceIndicator = false
+        combinedServiceIndicator = Some(false)
       )
       val requestPost = (V1_3_BG / "consents" ).POST <@ (user1)
       val response: APIResponse = makePostRequest(requestPost, write(postJsonBody))
@@ -376,7 +376,7 @@ class AccountInformationServiceAISApiTest extends BerlinGroupServerSetupV1_3 wit
           recurringIndicator = true,
           validUntil = "2020-12-31",
           frequencyPerDay = 4,
-          combinedServiceIndicator = false
+          combinedServiceIndicator = Some(false)
         )
         val requestPost = (V1_3_BG / "consents" ).POST <@ (user1)
         val response: APIResponse = makePostRequest(requestPost, write(postJsonBody))
@@ -434,7 +434,7 @@ class AccountInformationServiceAISApiTest extends BerlinGroupServerSetupV1_3 wit
           recurringIndicator = true,
           validUntil = "2020-12-31",
           frequencyPerDay = 4,
-          combinedServiceIndicator = false
+          combinedServiceIndicator = Some(false)
         )
         val requestPost = (V1_3_BG / "consents" ).POST <@ (user1)
         val response: APIResponse = makePostRequest(requestPost, write(postJsonBody))

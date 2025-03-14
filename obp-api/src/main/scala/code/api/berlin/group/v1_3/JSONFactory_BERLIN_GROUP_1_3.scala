@@ -228,7 +228,7 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats {
     recurringIndicator: Boolean,
     validUntil: String,
     frequencyPerDay: Int,
-    combinedServiceIndicator: Boolean
+    combinedServiceIndicator: Option[Boolean]
   )
   case class ConsentLinksV13(
     startAuthorisation: Option[Href] = None,
