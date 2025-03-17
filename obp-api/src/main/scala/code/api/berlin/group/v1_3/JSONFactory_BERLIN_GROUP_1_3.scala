@@ -22,7 +22,7 @@ case class JvalueCaseClass(jvalueToCaseclass: JValue)
 
 object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats {
 
-  case class ErrorMessageBG(category: String, code: Int, path: String, text: String)
+  case class ErrorMessageBG(category: String, code: String, path: Option[String], text: String)
   case class ErrorMessagesBG(tppMessages: List[ErrorMessageBG])
 
   case class PostSigningBasketJsonV13(
