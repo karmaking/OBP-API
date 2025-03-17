@@ -12,9 +12,16 @@ import cats.effect._
 import org.http4s._
 object Http4sServer extends IOApp {
 
-  val services: Kleisli[({type λ[β$0$] = OptionT[IO, β$0$]})#λ, Request[IO], Response[IO]] = bankServices <+> helloWorldService
+  val services: Kleisli[({type λ[β$0$] = OptionT[IO, β$0$]})#λ, Request[IO], Response[IO]] = 
+    bankServices <+> 
+      helloWorldService <+>
+      code.api.v1_3_0.Http4s130.v130Services
+      
   val httpApp: Kleisli[IO, Request[IO], Response[IO]] = (services).orNotFound
 
+  //Start OBP relevant objects, and settings
+  new bootstrap.liftweb.Boot().boot
+  
   override def run(args: List[String]): IO[ExitCode] = EmberServerBuilder
     .default[IO]
     .withHost(ipv4"0.0.0.0")
