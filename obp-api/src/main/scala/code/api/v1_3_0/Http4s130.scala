@@ -42,8 +42,7 @@ object Http4s130 {
   implicit val formats: Formats = CustomJsonFormats.formats
   implicit def convertAnyToJsonString(any: Any): String =  prettyRender(Extraction.decompose(any))
   
-//  val apiVersion: ScannedApiVersion = ApiVersion.v1_3_0
-  val apiVersion = "v1.3.0"
+  val apiVersion: ScannedApiVersion = ApiVersion.v1_3_0
   
   val v130Services: HttpRoutes[IO] = HttpRoutes.of[IO] {
     case GET -> Root / apiVersion /"root"   =>

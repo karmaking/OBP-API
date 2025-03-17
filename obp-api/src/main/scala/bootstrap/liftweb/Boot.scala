@@ -526,24 +526,7 @@ class Boot extends MdcLoggable {
     LiftRules.statelessDispatch.append(ResourceDocs510)
     ////////////////////////////////////////////////////
 
-    //Test the http4s code 
-//    import cats.effect.unsafe.implicits.global
-//    import cats.effect.IO
-//    import cats.effect.std.Dispatcher
-//    val dispatcher = Dispatcher[IO].allocated.unsafeRunSync()._1
-//    dispatcher.unsafeToFuture(bootstrap.http4s.Http4sServer.run(Nil))
     
-    
-    // LiftRules.statelessDispatch.append(Metrics) TODO: see metric menu entry below
-    val accountCreation = {
-      if(APIUtil.getPropsAsBoolValue("allow_sandbox_account_creation", false)){
-        //user must be logged in, as a created account needs an owner
-        // Not mentioning test and sandbox for App store purposes right now.
-        List(Menu("Sandbox Account Creation", "Create Bank Account") / "create-sandbox-account" >> AuthUser.loginFirst)
-      } else {
-        Nil
-      }
-    }
     
 
     // API Metrics (logs of API calls)
@@ -563,83 +546,6 @@ class Boot extends MdcLoggable {
     }
 
 
-    logger.info (s"props_identifier is : ${APIUtil.getPropsValue("props_identifier", "NONE-SET")}")
-
-    val commonMap = List(Menu.i("Home") / "index") ::: List(
-      Menu.i("Plain") / "plain",
-      Menu.i("Static") / "static",
-      Menu.i("SDKs") / "sdks",
-      Menu.i("Debug") / "debug",
-      Menu.i("debug-basic") / "debug" / "debug-basic",
-      Menu.i("debug-localization") / "debug" / "debug-localization",
-      Menu.i("debug-plain") / "debug" / "debug-plain",
-      Menu.i("debug-webui") / "debug" / "debug-webui",
-      Menu.i("Consumer Admin") / "admin" / "consumers" >> Admin.loginFirst >> LocGroup("admin")
-        submenus(Consumer.menus : _*),
-      Menu("Consumer Registration", Helper.i18n("consumer.registration.nav.name")) / "consumer-registration" >> AuthUser.loginFirst,
-      Menu("Consent Screen", Helper.i18n("consent.screen")) / "consent-screen" >> AuthUser.loginFirst,
-      Menu("Dummy user tokens", "Get Dummy user tokens") / "dummy-user-tokens" >> AuthUser.loginFirst,
-    
-      Menu("Validate OTP", "Validate OTP") / "otp" >> AuthUser.loginFirst,
-      Menu("User Information", "User Information") / "user-information",
-      Menu("User Invitation", "User Invitation") / "user-invitation",
-      Menu("User Invitation Info", "User Invitation Info") / "user-invitation-info",
-      Menu("User Invitation Invalid", "User Invitation Invalid") / "user-invitation-invalid",
-      Menu("User Invitation Warning", "User Invitation Warning") / "user-invitation-warning",
-      Menu("Already Logged In", "Already Logged In") / "already-logged-in",
-      Menu("Terms and Conditions", "Terms and Conditions") / "terms-and-conditions",
-      Menu("Privacy Policy", "Privacy Policy") / "privacy-policy",
-      // Menu.i("Metrics") / "metrics", //TODO: allow this page once we can make the account number anonymous in the URL
-      Menu.i("OAuth") / "oauth" / "authorize", //OAuth authorization page
-      Menu.i("Consent") / "consent" >> AuthUser.loginFirst,//OAuth consent page
-      OAuthWorkedThanks.menu, //OAuth thanks page that will do the redirect
-      Menu.i("Introduction") / "introduction",
-      Menu.i("add-user-auth-context-update-request") / "add-user-auth-context-update-request",
-      Menu.i("confirm-user-auth-context-update-request") / "confirm-user-auth-context-update-request",
-      Menu.i("confirm-bg-consent-request") / "confirm-bg-consent-request" >> AuthUser.loginFirst,//OAuth consent page,
-      Menu.i("confirm-bg-consent-request-sca") / "confirm-bg-consent-request-sca" >> AuthUser.loginFirst,//OAuth consent page,
-      Menu.i("confirm-vrp-consent-request") / "confirm-vrp-consent-request" >> AuthUser.loginFirst,//OAuth consent page,
-      Menu.i("confirm-vrp-consent") / "confirm-vrp-consent" >> AuthUser.loginFirst //OAuth consent page
-    ) ++ accountCreation ++ Admin.menus
-    
-    // Build SiteMap
-    val sitemap = APIUtil.getPropsValue("server_mode", "apis,portal") match {
-      case mode if mode == "portal" => commonMap
-      case mode if mode == "apis" => List()
-      case mode if mode.contains("apis") && mode.contains("portal") => commonMap
-      case _ => commonMap
-    }
-
-    def sitemapMutators = AuthUser.sitemapMutator
-
-    // set the sitemap.  Note if you don't want access control for
-    // each page, just comment this line out.
-    LiftRules.setSiteMapFunc(() => sitemapMutators(SiteMap(sitemap : _*)))
-    // Use jQuery 1.4
-    LiftRules.jsArtifacts = net.liftweb.http.js.jquery.JQueryArtifacts
-
-    //Show the spinny image when an Ajax call starts
-    LiftRules.ajaxStart =
-      Full(() => LiftRules.jsArtifacts.show("ajax-loader").cmd)
-
-    // Make the spinny image go away when it ends
-    LiftRules.ajaxEnd =
-      Full(() => LiftRules.jsArtifacts.hide("ajax-loader").cmd)
-
-    // Force the request to be UTF-8
-    LiftRules.early.append(_.setCharacterEncoding("UTF-8"))
-
-    // What is the function to test if a user is logged in?
-    LiftRules.loggedInTest = Full(() => AuthUser.loggedIn_?)
-
-    // Template(/Response?) encoding
-    LiftRules.early.append(_.setCharacterEncoding("utf-8"))
-
-    // Use HTML5 for rendering
-    LiftRules.htmlProperties.default.set((r: Req) =>
-      new Html5Properties(r.userAgent))
-
-    LiftRules.explicitlyParsedSuffixes = Helpers.knownSuffixes &~ (Set("com"))
 
     val locale = I18NUtil.getDefaultLocale()
     // Locale.setDefault(locale) // TODO Explain why this line of code introduce weird side effects
@@ -682,15 +588,7 @@ class Boot extends MdcLoggable {
     // Make a transaction span the whole HTTP request
     S.addAround(DB.buildLoanWrapper)
     logger.info("Note: We added S.addAround(DB.buildLoanWrapper) so each HTTP request uses ONE database transaction.")
-
-    try {
-      val useMessageQueue = APIUtil.getPropsAsBoolValue("messageQueue.createBankAccounts", false)
-      if(useMessageQueue)
-        BankAccountCreationListener.startListen
-    } catch {
-      case e: ExceptionInInitializerError => logger.warn(s"BankAccountCreationListener Exception: $e")
-    }
-
+    
     Mailer.devModeSend.default.set( (m : MimeMessage) => {
       logger.info("Would have sent email if not in dev mode: " + m.getContent)
     })
