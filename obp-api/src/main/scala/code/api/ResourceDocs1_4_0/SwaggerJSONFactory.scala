@@ -22,7 +22,6 @@ import code.api.ResourceDocs1_4_0.SwaggerDefinitionsJSON.{NotSupportedYet, notSu
 import code.api.STET.v1_4.OBP_STET_1_4
 import code.api.UKOpenBanking.v2_0_0.OBP_UKOpenBanking_200
 import code.api.UKOpenBanking.v3_1_0.OBP_UKOpenBanking_310
-import code.api.berlin.group.v1.OBP_BERLIN_GROUP_1
 import code.api.berlin.group.v1_3.{OBP_BERLIN_GROUP_1_3, OBP_BERLIN_GROUP_1_3_Alias}
 import code.api.v1_4_0.JSONFactory1_4_0
 import com.openbankproject.commons.model.JsonFieldReName
@@ -294,7 +293,6 @@ object SwaggerJSONFactory extends MdcLoggable {
                 "Creative Commons Attribution 3.0 Australia (CC BY 3.0 AU)"
               else if (apiVersion == OBP_BERLIN_GROUP_1_3.apiVersion  
                 || apiVersion == OBP_BERLIN_GROUP_1_3_Alias.apiVersion
-                || apiVersion == OBP_BERLIN_GROUP_1.apiVersion
               ) "Creative Commons Attribution-NoDerivatives 4.0 International (CC BY-ND)"
               else 
                 s"License: Unknown"

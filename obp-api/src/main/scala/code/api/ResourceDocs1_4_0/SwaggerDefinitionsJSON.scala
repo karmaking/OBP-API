@@ -4,7 +4,6 @@ import code.api.Constant
 import code.api.Constant._
 import code.api.UKOpenBanking.v2_0_0.JSONFactory_UKOpenBanking_200
 import code.api.UKOpenBanking.v2_0_0.JSONFactory_UKOpenBanking_200.{Account, AccountBalancesUKV200, AccountInner, AccountList, Accounts, BalanceJsonUKV200, BalanceUKOpenBankingJson, BankTransactionCodeJson, CreditLineJson, DataJsonUKV200, Links, MetaBisJson, MetaInnerJson, TransactionCodeJson, TransactionInnerJson, TransactionsInnerJson, TransactionsJsonUKV200}
-import code.api.berlin.group.v1.JSONFactory_BERLIN_GROUP_1.{AccountBalanceV1, AccountBalances, AmountOfMoneyV1, ClosingBookedBody, ExpectedBody, TransactionJsonV1, TransactionsJsonV1, ViewAccount}
 import code.api.dynamic.endpoint.helper.practise.PractiseEndpoint
 import code.api.util.APIUtil.{defaultJValue, _}
 import code.api.util.ApiRole._
@@ -12,8 +11,8 @@ import code.api.util.ExampleValue._
 import code.api.util.{ApiRole, ApiTrigger, ExampleValue}
 import code.api.v2_2_0.JSONFactory220.{AdapterImplementationJson, MessageDocJson, MessageDocsJson}
 import code.api.v3_0_0.JSONFactory300.createBranchJsonV300
-import code.api.v3_0_0.custom.JSONFactoryCustom300
 import code.api.v3_0_0._
+import code.api.v3_0_0.custom.JSONFactoryCustom300
 import code.api.v3_1_0._
 import code.api.v4_0_0._
 import code.api.v5_0_0._
@@ -27,9 +26,9 @@ import code.sandbox.SandboxData
 import com.github.dwickern.macros.NameOf.nameOf
 import com.openbankproject.commons.model
 import com.openbankproject.commons.model.PinResetReason.{FORGOT, GOOD_SECURITY_PRACTICE}
+import com.openbankproject.commons.model._
 import com.openbankproject.commons.model.enums.TransactionRequestTypes._
 import com.openbankproject.commons.model.enums.{AttributeCategory, CardAttributeType, ChallengeType}
-import com.openbankproject.commons.model._
 import com.openbankproject.commons.util.{ApiVersion, FieldNameApiVersions, ReflectUtils}
 import net.liftweb.json
 
@@ -3477,10 +3476,6 @@ object SwaggerDefinitionsJSON {
   
   val coreAccountsJsonV300 = CoreAccountsJsonV300(accounts = List(coreAccountJson))
 
-  val amountOfMoneyV1 = AmountOfMoneyV1(
-    currency = "String",
-    content = "String"
-  )
 
   val accountInnerJsonUKOpenBanking_v200 = AccountInner(
     SchemeName = "SortCodeAccountNumber",
@@ -3508,43 +3503,6 @@ object SwaggerDefinitionsJSON {
     Data = accountList,
     Links = links,
     Meta = metaUK
-  )
-  
-  val closingBookedBody = ClosingBookedBody(
-    amount = amountOfMoneyV1,
-    date = "2017-10-25"
-  )
-  
-  val expectedBody = ExpectedBody(
-    amount  = amountOfMoneyV1,
-    lastActionDateTime = DateWithDayExampleObject
-  )
-  
-  val accountBalanceV1 = AccountBalanceV1(
-    closingBooked = closingBookedBody,
-    expected = expectedBody
-  )
-  
-  val accountBalances = AccountBalances(
-    `balances` = List(accountBalanceV1)
-  )
-  
-  val transactionJsonV1 = TransactionJsonV1(
-    transactionId = "String",
-    creditorName = "String",
-    creditorAccount = ibanJson,
-    amount = amountOfMoneyV1,
-    bookingDate = DateWithDayExampleObject,
-    valueDate = DateWithDayExampleObject,
-    remittanceInformationUnstructured = "String"
-  )
-  
-  val viewAccount = ViewAccount(viewAccount = "/v1/accounts/3dc3d5b3-7023-4848-9853- f5400a64e80f")
-  
-  val transactionsJsonV1 = TransactionsJsonV1(
-    transactions_booked = List(transactionJsonV1),
-    transactions_pending =  List(transactionJsonV1),
-    _links = List(viewAccount)
   )
   
   val accountIdJson = AccountIdJson(

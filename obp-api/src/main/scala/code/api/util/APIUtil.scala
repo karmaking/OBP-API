@@ -34,7 +34,6 @@ import code.api.OAuthHandshake._
 import code.api.UKOpenBanking.v2_0_0.OBP_UKOpenBanking_200
 import code.api.UKOpenBanking.v3_1_0.OBP_UKOpenBanking_310
 import code.api._
-import code.api.berlin.group.v1.OBP_BERLIN_GROUP_1
 import code.api.berlin.group.v1_3.JSONFactory_BERLIN_GROUP_1_3.{ErrorMessageBG, ErrorMessagesBG}
 import code.api.cache.Caching
 import code.api.dynamic.endpoint.OBPAPIDynamicEndpoint
@@ -728,7 +727,12 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
     def composeErrorMessage() = {
       val path = callContextLight.map(_.url).getOrElse("")
       if (path.contains("berlin-group")) {
-        val errorMessagesBG = ErrorMessagesBG(tppMessages = List(ErrorMessageBG(category = "ERROR", code = code, path = callContextLight.map(_.url).getOrElse(""), text = message)))
+        val path =
+          if(APIUtil.getPropsAsBoolValue("berlin_group_error_message_show_path", defaultValue = true))
+            callContextLight.map(_.url)
+          else
+            None
+        val errorMessagesBG = ErrorMessagesBG(tppMessages = List(ErrorMessageBG(category = "ERROR", code = code.toString, path = path, text = message)))
         Extraction.decompose(errorMessagesBG)
       } else {
         Extraction.decompose(ErrorMessage(message = message, code = code))
@@ -4843,7 +4847,6 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
     ++ OBP_UKOpenBanking_310.allResourceDocs
     ++ code.api.Polish.v2_1_1_1.OBP_PAPI_2_1_1_1.allResourceDocs
     ++ code.api.STET.v1_4.OBP_STET_1_4.allResourceDocs
-    ++ OBP_BERLIN_GROUP_1.allResourceDocs
     ++ code.api.AUOpenBanking.v1_0_0.ApiCollector.allResourceDocs
     ++ code.api.MxOF.CNBV9_1_0_0.allResourceDocs
     ++ code.api.berlin.group.v1_3.OBP_BERLIN_GROUP_1_3.allResourceDocs

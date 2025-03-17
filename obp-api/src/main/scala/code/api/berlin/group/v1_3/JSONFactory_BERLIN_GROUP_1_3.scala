@@ -22,7 +22,7 @@ case class JvalueCaseClass(jvalueToCaseclass: JValue)
 
 object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats {
 
-  case class ErrorMessageBG(category: String, code: Int, path: String, text: String)
+  case class ErrorMessageBG(category: String, code: String, path: Option[String], text: String)
   case class ErrorMessagesBG(tppMessages: List[ErrorMessageBG])
 
   case class PostSigningBasketJsonV13(
@@ -228,7 +228,7 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats {
     recurringIndicator: Boolean,
     validUntil: String,
     frequencyPerDay: Int,
-    combinedServiceIndicator: Boolean
+    combinedServiceIndicator: Option[Boolean]
   )
   case class ConsentLinksV13(
     startAuthorisation: Option[Href] = None,

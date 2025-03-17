@@ -5,7 +5,7 @@ import code.api.APIFailureNewStyle
 import code.api.Constant.{SYSTEM_READ_ACCOUNTS_BERLIN_GROUP_VIEW_ID, SYSTEM_READ_BALANCES_BERLIN_GROUP_VIEW_ID, SYSTEM_READ_TRANSACTIONS_BERLIN_GROUP_VIEW_ID}
 import code.api.berlin.group.v1_3.JSONFactory_BERLIN_GROUP_1_3.{PostConsentResponseJson, _}
 import code.api.berlin.group.v1_3.model.{HrefType, LinksAll, ScaStatusResponse}
-import code.api.berlin.group.v1_3.{JSONFactory_BERLIN_GROUP_1_3, JvalueCaseClass, OBP_BERLIN_GROUP_1_3}
+import code.api.berlin.group.v1_3.{BgSpecValidation, JSONFactory_BERLIN_GROUP_1_3, JvalueCaseClass, OBP_BERLIN_GROUP_1_3}
 import code.api.berlin.group.v1_3.model._
 import code.api.util.APIUtil.{passesPsd2Aisp, _}
 import code.api.util.ApiTag._
@@ -106,6 +106,15 @@ This option is not supported for the Embedded SCA Approach.
 As a last option, an ASPSP might in addition accept a command with access rights
   * to see the list of available payment accounts or
   * to see the list of available payment accounts with balances.
+
+frequencyPerDay:
+       This field indicates the requested maximum frequency for an access without PSU involvement per day.
+       For a one-off access, this attribute is set to "1".
+       The frequency needs to be greater equal to one.
+       If not otherwise agreed bilaterally between TPP and ASPSP, the frequency is less equal to 4.
+recurringIndicator:
+       "true", if the consent is for recurring access to the account data.
+       "false", if the consent is for one access to the account data.
 """,
        PostConsentJson(
          access = ConsentAccessJson(
@@ -125,7 +134,7 @@ As a last option, an ASPSP might in addition accept a command with access rights
          recurringIndicator = true,
          validUntil = "2020-12-31",
          frequencyPerDay = 4,
-         combinedServiceIndicator = false
+         combinedServiceIndicator = Some(false)
        ),
        PostConsentResponseJson(
          consentId = "1234-wertiq-983",
@@ -150,9 +159,9 @@ As a last option, an ASPSP might in addition accept a command with access rights
              consentJson <- NewStyle.function.tryons(failMsg, 400, callContext) {
                json.extract[PostConsentJson]
              }
-
+             upperLimit = APIUtil.getPropsAsIntValue("berlin_group_frequency_per_day_upper_limit", 4)
              _ <- Helper.booleanToFuture(failMsg = FrequencyPerDayError, cc=callContext) {
-               consentJson.frequencyPerDay > 0
+               consentJson.frequencyPerDay > 0 && consentJson.frequencyPerDay <= upperLimit
              }
 
              _ <- Helper.booleanToFuture(failMsg = FrequencyPerDayMustBeOneError, cc=callContext) {
@@ -160,9 +169,10 @@ As a last option, an ASPSP might in addition accept a command with access rights
                  (consentJson.recurringIndicator == false && consentJson.frequencyPerDay == 1)
              }
 
-             failMsg = s"$InvalidDateFormat Current `validUntil` field is ${consentJson.validUntil}. Please use this format ${DateWithDayFormat.toPattern}!"
-             validUntil <- NewStyle.function.tryons(failMsg, 400, callContext) {
-               new SimpleDateFormat(DateWithDay).parse(consentJson.validUntil)
+             failMsg = BgSpecValidation.getErrorMessage(consentJson.validUntil)
+             validUntil = BgSpecValidation.getDate(consentJson.validUntil)
+             _ <- Helper.booleanToFuture(failMsg, 400, callContext) {
+               failMsg.isEmpty
              }
 
              _ <- NewStyle.function.getBankAccountsByIban(consentJson.access.accounts.getOrElse(Nil).map(_.iban.getOrElse("")), callContext)
@@ -173,7 +183,7 @@ As a last option, an ASPSP might in addition accept a command with access rights
                recurringIndicator = consentJson.recurringIndicator,
                validUntil = validUntil,
                frequencyPerDay = consentJson.frequencyPerDay,
-               combinedServiceIndicator = consentJson.combinedServiceIndicator,
+               combinedServiceIndicator = consentJson.combinedServiceIndicator.getOrElse(false),
                apiStandard = Some(apiVersion.apiStandard),
                apiVersion = Some(apiVersion.apiShortVersion)
              )) map {

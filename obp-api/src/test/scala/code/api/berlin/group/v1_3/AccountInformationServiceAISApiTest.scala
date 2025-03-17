@@ -17,6 +17,9 @@ import net.liftweb.json.Serialization.write
 import net.liftweb.mapper.By
 import org.scalatest.Tag
 
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+
 class AccountInformationServiceAISApiTest extends BerlinGroupServerSetupV1_3 with DefaultUsers {
 
   object getAccountList extends Tag(nameOf(APIMethods_AccountInformationServiceAISApi.getAccountList))
@@ -52,6 +55,10 @@ class AccountInformationServiceAISApiTest extends BerlinGroupServerSetupV1_3 wit
   object updateConsentsPsuDataUpdateSelectPsuAuthenticationMethod extends Tag(nameOf(APIMethods_AccountInformationServiceAISApi.updateConsentsPsuDataUpdateSelectPsuAuthenticationMethod))
   object updateConsentsPsuDataUpdateAuthorisationConfirmation extends Tag(nameOf(APIMethods_AccountInformationServiceAISApi.updateConsentsPsuDataUpdateAuthorisationConfirmation))
 
+  def getNextMonthDate(): String = {
+    val nextMonthDate = LocalDate.now().plusMonths(1)
+    nextMonthDate.format(DateTimeFormatter.ISO_LOCAL_DATE)
+  }
 
   feature(s"BG v1.3 - $getAccountList") {
     scenario("Not Authentication User, test failed ", BerlinGroupV1_3, getAccountList) {
@@ -245,9 +252,9 @@ class AccountInformationServiceAISApiTest extends BerlinGroupServerSetupV1_3 wit
           allPsd2 = None
         ),
         recurringIndicator = true,
-        validUntil = "2020-12-31",
+        validUntil = getNextMonthDate(),
         frequencyPerDay = 4,
-        combinedServiceIndicator = false
+        combinedServiceIndicator = Some(false)
       )
       val requestPost = (V1_3_BG / "consents" ).POST <@ (user1)
       val response: APIResponse = makePostRequest(requestPost, write(postJsonBody))
@@ -281,9 +288,9 @@ class AccountInformationServiceAISApiTest extends BerlinGroupServerSetupV1_3 wit
           allPsd2 = None
         ),
         recurringIndicator = true,
-        validUntil = "2020-12-31",
+        validUntil = getNextMonthDate(),
         frequencyPerDay = 4,
-        combinedServiceIndicator = false
+        combinedServiceIndicator = Some(false)
       )
       val requestPost = (V1_3_BG / "consents" ).POST <@ (user1)
       val response: APIResponse = makePostRequest(requestPost, write(postJsonBody))
@@ -326,9 +333,9 @@ class AccountInformationServiceAISApiTest extends BerlinGroupServerSetupV1_3 wit
           allPsd2 = None
         ),
         recurringIndicator = true,
-        validUntil = "2020-12-31",
+        validUntil = getNextMonthDate(),
         frequencyPerDay = 4,
-        combinedServiceIndicator = false
+        combinedServiceIndicator = Some(false)
       )
       val requestPost = (V1_3_BG / "consents" ).POST <@ (user1)
       val response: APIResponse = makePostRequest(requestPost, write(postJsonBody))
@@ -374,9 +381,9 @@ class AccountInformationServiceAISApiTest extends BerlinGroupServerSetupV1_3 wit
             allPsd2 = None
           ),
           recurringIndicator = true,
-          validUntil = "2020-12-31",
+          validUntil = getNextMonthDate(),
           frequencyPerDay = 4,
-          combinedServiceIndicator = false
+          combinedServiceIndicator = Some(false)
         )
         val requestPost = (V1_3_BG / "consents" ).POST <@ (user1)
         val response: APIResponse = makePostRequest(requestPost, write(postJsonBody))
@@ -432,9 +439,9 @@ class AccountInformationServiceAISApiTest extends BerlinGroupServerSetupV1_3 wit
             allPsd2 = None
           ),
           recurringIndicator = true,
-          validUntil = "2020-12-31",
+          validUntil = getNextMonthDate(),
           frequencyPerDay = 4,
-          combinedServiceIndicator = false
+          combinedServiceIndicator = Some(false)
         )
         val requestPost = (V1_3_BG / "consents" ).POST <@ (user1)
         val response: APIResponse = makePostRequest(requestPost, write(postJsonBody))
