@@ -35,7 +35,18 @@ import org.http4s._
 import org.http4s.dsl.io._
 import net.liftweb.json.JsonAST.{JValue, prettyRender}
 import net.liftweb.json.{Extraction, MappingException, compactRender, parse}
+import cats.effect._
+import cats.data.Kleisli
+import org.http4s._
+import org.http4s.dsl.io._
+import org.http4s.implicits._
+import org.http4s.ember.server.EmberServerBuilder
+import com.comcast.ip4s._
 
+import cats.effect.IO
+import org.http4s.{HttpRoutes, Request, Response}
+import org.http4s.dsl.io._
+import org.typelevel.vault.Key
 
 object Http4s130 {
 
@@ -43,17 +54,52 @@ object Http4s130 {
   implicit def convertAnyToJsonString(any: Any): String =  prettyRender(Extraction.decompose(any))
   
   val apiVersion: ScannedApiVersion = ApiVersion.v1_3_0
+
+  case class CallContext(userId: String, requestId: String)
+  import cats.effect.unsafe.implicits.global
+  val callContextKey: Key[CallContext] = Key.newKey[IO, CallContext].unsafeRunSync()
+  
+  object CallContextMiddleware {
+  
+
+    def withCallContext(routes: HttpRoutes[IO]): HttpRoutes[IO] = Kleisli { req: Request[IO] =>
+      val callContext = CallContext(userId = "example-user", requestId = java.util.UUID.randomUUID().toString)
+      val updatedAttributes = req.attributes.insert(callContextKey, callContext)
+      val updatedReq = req.withAttributes(updatedAttributes)
+      routes(updatedReq)
+    }
+  }
+  
   
   val v130Services: HttpRoutes[IO] = HttpRoutes.of[IO] {
-    case GET -> Root / apiVersion /"root"   =>
-        Ok(IO.fromFuture(IO(
-          for {
-            _ <- Future() // Just start async call
-          } yield {
-            convertAnyToJsonString(
-              JSONFactory.getApiInfoJSON(OBPAPI1_3_0.version, OBPAPI1_3_0.versionStatus)
-            )
-          }
-        )))
+    case req @ GET -> Root / apiVersion / "root" =>
+      import com.openbankproject.commons.ExecutionContext.Implicits.global
+      val callContext = req.attributes.lookup(callContextKey).get.asInstanceOf[CallContext]
+      Ok(IO.fromFuture(IO(
+        for {
+          _ <- Future() // Just start async call
+        } yield {
+          convertAnyToJsonString(
+            JSONFactory.getApiInfoJSON(OBPAPI1_3_0.version, s"Hello, ${callContext.userId}! Your request ID is ${callContext.requestId}.")
+          )
+        }
+      )))
+
+//    case req @ GET -> Root / apiVersion / "cards" => {
+//      Ok(IO.fromFuture(IO({
+//        val callContext = req.attributes.lookup(callContextKey).get.asInstanceOf[CallContext]
+//        import com.openbankproject.commons.ExecutionContext.Implicits.global
+//        for {
+//          (Full(u), callContext) <- authenticatedAccess(None)
+//          (cards, callContext) <- NewStyle.function.getPhysicalCardsForUser(u, callContext)
+//        } yield {
+//          convertAnyToJsonString(
+//          JSONFactory1_3_0.createPhysicalCardsJSON(cards, u)
+//          )
+//        }
+//      })))
+//    }
   }
+
+  val wrappedRoutesV130Services = CallContextMiddleware.withCallContext(v130Services)
 }
