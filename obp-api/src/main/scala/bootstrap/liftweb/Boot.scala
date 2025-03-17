@@ -526,9 +526,13 @@ class Boot extends MdcLoggable {
     LiftRules.statelessDispatch.append(ResourceDocs510)
     ////////////////////////////////////////////////////
 
-    //Test the https code 
+    //Test the http4s code 
     import cats.effect.unsafe.implicits.global
-    bootstrap.http4s.Http4sServer.run(Nil).unsafeToFuture()
+    import cats.effect.IO
+    import cats.effect.std.Dispatcher
+    val dispatcher = Dispatcher[IO].allocated.unsafeRunSync()._1
+    dispatcher.unsafeToFuture(bootstrap.http4s.Http4sServer.run(Nil))
+    
     
     // LiftRules.statelessDispatch.append(Metrics) TODO: see metric menu entry below
     val accountCreation = {
