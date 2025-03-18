@@ -281,17 +281,6 @@ class ResourceDocsTest extends ResourceDocsV140ServerSetup with PropsReset with 
       //This should not throw any exceptions
       responseDocs.resource_docs.map(responseDoc => stringToNodeSeq(responseDoc.description))
     }
-    
-    
-    scenario(s"We will test ${ApiEndpoint1.name} Api -BGv1", ApiEndpoint1, VersionOfApi) {
-      val requestGetObp = (ResourceDocsV4_0Request / "resource-docs" / "BGv1" / "obp").GET
-      val responseGetObp = makeGetRequest(requestGetObp)
-      And("We should get  200 and the response can be extract to case classes")
-      val responseDocs = responseGetObp.body.extract[ResourceDocsJson]
-      responseGetObp.code should equal(200)
-      //This should not throw any exceptions
-      responseDocs.resource_docs.map(responseDoc => stringToNodeSeq(responseDoc.description))
-    }
 
     scenario(s"We will test ${ApiEndpoint1.name} Api -v1.3", ApiEndpoint1, VersionOfApi) {
       val requestGetObp = (ResourceDocsV4_0Request / "resource-docs" / "v1.3" / "obp").GET
@@ -542,17 +531,6 @@ class ResourceDocsTest extends ResourceDocsV140ServerSetup with PropsReset with 
 
     scenario(s"We will test ${ApiEndpoint2.name} Api -OBPv1.2.1", ApiEndpoint1, VersionOfApi) {
       val requestGetObp = (ResourceDocsV1_4Request /"banks"/ testBankId1.value/ "resource-docs" / "OBPv1.2.1" / "obp").GET
-      val responseGetObp = makeGetRequest(requestGetObp)
-      And("We should get  200 and the response can be extract to case classes")
-      val responseDocs = responseGetObp.body.extract[ResourceDocsJson]
-      responseGetObp.code should equal(200)
-      //This should not throw any exceptions
-      responseDocs.resource_docs.map(responseDoc => stringToNodeSeq(responseDoc.description))
-    }
-
-
-    scenario(s"We will test ${ApiEndpoint2.name} Api -BGv1", ApiEndpoint1, VersionOfApi) {
-      val requestGetObp = (ResourceDocsV1_4Request /"banks"/ testBankId1.value/ "resource-docs" / "BGv1" / "obp").GET
       val responseGetObp = makeGetRequest(requestGetObp)
       And("We should get  200 and the response can be extract to case classes")
       val responseDocs = responseGetObp.body.extract[ResourceDocsJson]
