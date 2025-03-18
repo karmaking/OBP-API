@@ -600,7 +600,6 @@ super_admin_user_ids=USER_ID1,USER_ID2,
 # "OBPv4.0.0" or "v4.0.0"
 # "OBPv3.1.0" or "v3.1.0"
 # "OBPv3.0.0" or "v3.0.0"
-# "BGv1" or "v1"
 # "BGv1.3" or "v1.3"
 # "PAPIv2.1.1.1" or "v2.1.1.1"
 # "STETv1.4" or "v1.4"
