@@ -2,7 +2,7 @@ package code.api.util
 
 import code.api.RequestHeader
 import com.openbankproject.commons.model.User
-import net.liftweb.common.{Box, Failure}
+import net.liftweb.common.{Box, Empty, Failure}
 import net.liftweb.http.provider.HTTPParam
 
 object BerlinGroupCheck {
@@ -33,7 +33,7 @@ object BerlinGroupCheck {
 
   def validate(body: Box[String], verb: String, url: String, reqHeaders: List[HTTPParam], forwardResult: (Box[User], Option[CallContext])): (Box[User], Option[CallContext]) = {
     validateHeaders(verb, url, reqHeaders, forwardResult) match {
-      case (user, _) if user.isDefined => // All good. Chain another check
+      case (user, _) if user.isDefined || user == Empty => // All good. Chain another check
         // Verify signed request (Berlin Group)
         BerlinGroupSigning.verifySignedRequest(body, verb, url, reqHeaders, forwardResult)
       case forwardError => // Forward error case
