@@ -2898,9 +2898,9 @@ trait APIMethods510 {
 
 
     staticResourceDocs += ResourceDoc(
-      createConsumerDynamicRegistraion,
+      createConsumerDynamicRegistration,
       implementedInApiVersion,
-      nameOf(createConsumerDynamicRegistraion),
+      nameOf(createConsumerDynamicRegistration),
       "POST",
       "/dynamic-registration/consumers",
       "Create a Consumer(Dynamic Registration)",
@@ -2930,7 +2930,7 @@ trait APIMethods510 {
       Some(Nil))
 
 
-    lazy val createConsumerDynamicRegistraion: OBPEndpoint = {
+    lazy val createConsumerDynamicRegistration: OBPEndpoint = {
       case "dynamic-registration" :: "consumers" :: Nil JsonPost json -> _ => {
         cc =>
           implicit val ec = EndpointContext(Some(cc))
