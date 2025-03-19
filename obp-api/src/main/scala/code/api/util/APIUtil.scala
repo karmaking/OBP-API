@@ -3244,8 +3244,8 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
       val verb = result._2.map(_.verb).getOrElse("None")
       val body = result._2.flatMap(_.httpBody)
       val reqHeaders = result._2.map(_.requestHeaders).getOrElse(Nil)
-      // Verify signed request (Berlin Group)
-      BerlinGroupSigning.verifySignedRequest(body, verb, url, reqHeaders, result)
+      // Berlin Group checks
+      BerlinGroupCheck.validate(body, verb, url, reqHeaders, result)
     } map {
       result =>
         val excludeFunctions = getPropsValue("rate_limiting.exclude_endpoints", "root").split(",").toList
@@ -3300,8 +3300,8 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
       val verb = result._2.map(_.verb).getOrElse("None")
       val body = result._2.flatMap(_.httpBody)
       val reqHeaders = result._2.map(_.requestHeaders).getOrElse(Nil)
-      // Verify signed request if need be
-      BerlinGroupSigning.verifySignedRequest(body, verb, url, reqHeaders, result)
+      // Berlin Group checks
+      BerlinGroupCheck.validate(body, verb, url, reqHeaders, result)
     } map { result =>
       result._1 match {
         case Empty if result._2.flatMap(_.consumer).isDefined => // There is no error and Consumer is defined

@@ -1120,6 +1120,10 @@ default_auth_context_update_request_key=CUSTOMER_NUMBER
 # Show the path inside of Berlin Group error message
 #berlin_group_error_message_show_path = true
 
+# Check presence of the mandatory headers
+#berlin_group_mandatory_headers = X-Request-ID,PSU-IP-Address,PSU-Device-ID,PSU-Device-Name
+#berlin_group_mandatory_header_consent = TPP-Redirect-URL
+
 ## Berlin Group Create Consent Frequency per Day Upper Limit
 #berlin_group_frequency_per_day_upper_limit = 4
 
