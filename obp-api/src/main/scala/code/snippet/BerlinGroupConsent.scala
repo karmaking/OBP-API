@@ -170,14 +170,14 @@ class BerlinGroupConsent extends MdcLoggable with RestHelper with APIMethods510 
           case Some(accounts) if accounts.isEmpty => // Access is requested
             updateConsentPayloadValue.set(true)
             accessAccountsDefinedVar.set(true)
-            userIbans.toList
+            List()
           case Some(accounts) if accounts.flatMap(_.iban).toSet.subsetOf(userIbans) => // Access is requested for specific IBANs
             accessAccountsDefinedVar.set(true)
             accounts.flatMap(_.iban)
           case Some(accounts) => // Logged in user is not an owner of IBAN/IBANs
             userIsOwnerOfAccountsValue.set(false)
             accessAccountsDefinedVar.set(true)
-            accounts.flatMap(_.iban)
+            accounts.flatMap(_.iban) //even if not the owner, we will also show them in the page.
           case None => // Access is not requested
             accessAccountsDefinedVar.set(false)
             List()
@@ -186,7 +186,7 @@ class BerlinGroupConsent extends MdcLoggable with RestHelper with APIMethods510 
           case Some(balances) if balances.isEmpty => // Access is requested
             updateConsentPayloadValue.set(true)
             accessBalancesDefinedVar.set(true)
-            userIbans.toList
+            List()
           case Some(balances) if balances.flatMap(_.iban).toSet.subsetOf(userIbans) => // Access is requested for specific IBANs
             accessBalancesDefinedVar.set(true)
             balances.flatMap(_.iban)
@@ -202,7 +202,7 @@ class BerlinGroupConsent extends MdcLoggable with RestHelper with APIMethods510 
           case Some(transactions) if transactions.isEmpty => // Access is requested
             updateConsentPayloadValue.set(true)
             accessTransactionsDefinedVar.set(true)
-            userIbans.toList
+            List()
           case Some(transactions) if transactions.flatMap(_.iban).toSet.subsetOf(userIbans) => // Access is requested for specific IBANs
             accessTransactionsDefinedVar.set(true)
             transactions.flatMap(_.iban)
@@ -215,41 +215,52 @@ class BerlinGroupConsent extends MdcLoggable with RestHelper with APIMethods510 
             List()
         }
 
+        // all Selected IBANs
+        val ibansFromGetConsentResponseJson = (canReadAccountsIbans ::: canReadBalancesIbans ::: canReadTransactionsIbans).distinct
+
         /**
          * Generates toggle switches for IBAN lists.
          *
          * @param scope        The scope of the IBANs (e.g., "canReadAccountsIbans").
          * @param ibans        List of IBANs to display.
          * @param selectedList Set of currently selected IBANs.
-         * @param sessionVar   Session variable to update when toggling.
          * @return Sequence of NodeSeq representing the toggle switches.
          */
-        def generateCheckboxes(scope: String, ibans: List[String], selectedList: Set[String], sessionVar: SessionVar[Set[String]]): immutable.Seq[NodeSeq] = {
-          ibans.map { iban =>
-            if (updateConsentPayloadValue.is) {
-              // Show toggle switch when updateConsentPayloadValue is true
-              <div class="toggle-container">
-                <label class="switch">
-                  {SHtml.ajaxCheckbox(selectedList.contains(iban), checked => {
-                  if (checked) {
-                    sessionVar.set(selectedList + iban) // Add to selected
-                  } else {
-                    sessionVar.set(selectedList - iban) // Remove from selected
-                  }
-                  JsCmds.Noop // Prevents page reload
-                }, "id" -> (iban + scope), "class" -> "toggle-input")}<span class="slider round"></span>
-                </label>
+        def generateCheckboxes(scope: String, ibans: List[String], selectedList: Set[String], sessionVar: SessionVar[Set[String]], ibansFromGetConsentResponseJson:List[String]): immutable.Seq[NodeSeq] = {
+          if (ibansFromGetConsentResponseJson.isEmpty) {
+            ibans.map { iban =>
+              if (updateConsentPayloadValue.is) {
+                // Show toggle switch when updateConsentPayloadValue is true
+                <div class="toggle-container">
+                  <label class="switch">
+                    {SHtml.ajaxCheckbox(selectedList.contains(iban), checked => {
+                    if (checked) {
+                      sessionVar.set(selectedList + iban) // Add to selected
+                    } else {
+                      sessionVar.set(selectedList - iban) // Remove from selected
+                    }
+                    JsCmds.Noop // Prevents page reload
+                  }, "id" -> (iban + scope), "class" -> "toggle-input")}<span class="slider round"></span>
+                  </label>
+                  <span style="all: unset;" class="toggle-label">
+                    {iban}
+                  </span>
+                </div>
+              } else {
+                // Show only the IBAN text when updateConsentPayloadValue is false
                 <span style="all: unset;" class="toggle-label">
                   {iban}
                 </span>
-              </div>
-            } else {
+              }
+            }
+          } else {
+            ibansFromGetConsentResponseJson.map { iban =>
               // Show only the IBAN text when updateConsentPayloadValue is false
               <span style="all: unset;" class="toggle-label">
                 {iban}
               </span>
-            }
           }
+        }
         }
 
         // Form text and user details
@@ -280,7 +291,7 @@ class BerlinGroupConsent extends MdcLoggable with RestHelper with APIMethods510 
               <div>
                 <p><strong>Accounts</strong>:</p>
                 <div style="padding-left: 20px">
-                  {generateCheckboxes("canReadAccountsIbans", userIbans.toList, selectedAccountsIbansValue.is, selectedAccountsIbansValue)}
+                  {generateCheckboxes("canReadAccountsIbans", userIbans.toList, selectedAccountsIbansValue.is, selectedAccountsIbansValue, ibansFromGetConsentResponseJson)}
                 </div>
                 <br/>
               </div>
