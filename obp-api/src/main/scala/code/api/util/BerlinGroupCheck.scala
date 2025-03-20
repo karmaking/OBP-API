@@ -20,9 +20,9 @@ object BerlinGroupCheck {
   private def validateHeaders(verb: String, url: String, reqHeaders: List[HTTPParam], forwardResult: (Box[User], Option[CallContext])): (Box[User], Option[CallContext]) = {
     val headerMap = reqHeaders.map(h => h.name.toLowerCase -> h).toMap
     val missingHeaders = if(url.contains("berlin-group") && url.endsWith("/consent"))
-      berlinGroupMandatoryHeaders.filterNot(headerMap.contains)
-    else
       (berlinGroupMandatoryHeaders ++ berlinGroupMandatoryHeaderConsent).filterNot(headerMap.contains)
+    else
+      berlinGroupMandatoryHeaders.filterNot(headerMap.contains)
 
     if (missingHeaders.isEmpty) {
       forwardResult // All mandatory headers are present

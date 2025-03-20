@@ -57,6 +57,10 @@ trait ServerSetup extends FeatureSpec with SendServerRequests
   setPropsValues("api_instance_id" -> "1_final")
   setPropsValues("starConnector_supported_types" -> "mapped,internal")
   setPropsValues("connector" -> "star")
+
+  // Berlin Group
+  setPropsValues("berlin_group_mandatory_headers" -> "")
+  setPropsValues("berlin_group_mandatory_header_consent" -> "")
   
   val server = TestServer
   def baseRequest = host(server.host, server.port)
