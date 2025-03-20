@@ -266,6 +266,7 @@ object ErrorMessages {
   val Oauth2ValidateAccessTokenError = "OBP-20215: There was a problem validating the OAuth2 access token. "
 
   val AuthorizationHeaderAmbiguity = "OBP-20250: Request headers used for authorization are ambiguous. "
+  val MissingMandatoryBerlinGroupHeaders= "OBP-20251: Missing mandatory request headers. "
 
   // X.509
   val X509GeneralError = "OBP-20300: PEM Encoded Certificate issue."

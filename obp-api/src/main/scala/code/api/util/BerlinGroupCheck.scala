@@ -1,8 +1,9 @@
 package code.api.util
 
-import code.api.RequestHeader
+import code.api.APIFailureNewStyle
+import code.api.util.APIUtil.fullBoxOrException
 import com.openbankproject.commons.model.User
-import net.liftweb.common.{Box, Empty, Failure}
+import net.liftweb.common.{Box, Empty}
 import net.liftweb.http.provider.HTTPParam
 
 object BerlinGroupCheck {
@@ -27,7 +28,7 @@ object BerlinGroupCheck {
     if (missingHeaders.isEmpty) {
       forwardResult // All mandatory headers are present
     } else {
-      (Failure(s"Missing mandatory headers: ${missingHeaders.mkString(", ")}"), forwardResult._2)
+      (fullBoxOrException(Empty ~> APIFailureNewStyle(s"${ErrorMessages.MissingMandatoryBerlinGroupHeaders}(${missingHeaders.mkString(", ")})", 400, forwardResult._2.map(_.toLight))), forwardResult._2)
     }
   }
 
