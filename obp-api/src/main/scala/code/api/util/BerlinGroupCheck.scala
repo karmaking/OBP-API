@@ -32,12 +32,16 @@ object BerlinGroupCheck {
   }
 
   def validate(body: Box[String], verb: String, url: String, reqHeaders: List[HTTPParam], forwardResult: (Box[User], Option[CallContext])): (Box[User], Option[CallContext]) = {
-    validateHeaders(verb, url, reqHeaders, forwardResult) match {
-      case (user, _) if user.isDefined || user == Empty => // All good. Chain another check
-        // Verify signed request (Berlin Group)
-        BerlinGroupSigning.verifySignedRequest(body, verb, url, reqHeaders, forwardResult)
-      case forwardError => // Forward error case
-        forwardError
+    if(url.contains("berlin-group")) {
+      validateHeaders(verb, url, reqHeaders, forwardResult) match {
+        case (user, _) if user.isDefined || user == Empty => // All good. Chain another check
+          // Verify signed request (Berlin Group)
+          BerlinGroupSigning.verifySignedRequest(body, verb, url, reqHeaders, forwardResult)
+        case forwardError => // Forward error case
+          forwardError
+      }
+    } else {
+      forwardResult
     }
   }
 
