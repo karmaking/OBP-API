@@ -897,10 +897,31 @@ object LocalMappedConnector extends Connector with MdcLoggable {
     }
   }
 
-  def getBankAccountCommon(bankId: BankId, accountId: AccountId, callContext: Option[CallContext]) = {
-    MappedBankAccount
-      .find(By(MappedBankAccount.bank, bankId.value), By(MappedBankAccount.theAccountId, accountId.value))
-      .map(bankAccount => (bankAccount, callContext))
+  def getBankAccountCommon(bankId: BankId, accountId: AccountId, callContext: Option[CallContext]): Box[(MappedBankAccount, Option[CallContext])] = {
+
+    def getByBankAndAccount(): Box[(MappedBankAccount, Option[CallContext])] = {
+      MappedBankAccount
+        .find(By(MappedBankAccount.bank, bankId.value), By(MappedBankAccount.theAccountId, accountId.value))
+        .map(bankAccount => (bankAccount, callContext))
+    }
+
+    if(APIUtil.checkIfStringIsUUID(accountId.value)) {
+      // Find bank accounts by accountId first
+      val bankAccounts = MappedBankAccount.findAll(By(MappedBankAccount.theAccountId, accountId.value))
+
+      // If exactly one account is found, return it, else filter by bankId
+      bankAccounts match {
+        case account :: Nil =>
+          // If exactly one account is found, return it
+          Some(account, callContext)
+        case _ =>
+          // If multiple or no accounts are found, filter by bankId
+          getByBankAndAccount()
+      }
+    } else {
+      getByBankAndAccount()
+    }
+
   }
 
   override def getBankAccounts(bankIdAccountIds: List[BankIdAccountId], callContext: Option[CallContext]): OBPReturnType[Box[List[BankAccount]]] = {

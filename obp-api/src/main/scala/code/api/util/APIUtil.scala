@@ -3783,7 +3783,7 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
    *A Version 1 UUID is a universally unique identifier that is generated using 
    * a timestamp and the MAC address of the computer on which it was generated.
    */
-  def checkIfStringIsUUIDVersion1(value: String): Boolean = {
+  def checkIfStringIsUUID(value: String): Boolean = {
     Pattern.compile("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
       .matcher(value).matches()
   }
