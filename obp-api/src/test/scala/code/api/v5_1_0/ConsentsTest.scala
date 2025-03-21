@@ -65,7 +65,8 @@ class ConsentsTest extends V510ServerSetup with PropsReset{
   object ApiEndpoint5 extends Tag(nameOf(Implementations4_0_0.getUsers))
   object ApiEndpoint6 extends Tag(nameOf(Implementations5_1_0.revokeConsentAtBank))
   object ApiEndpoint7 extends Tag(nameOf(Implementations5_1_0.getConsentByConsentId))
-  object ApiEndpoint8 extends Tag(nameOf(Implementations5_1_0.getMyConsents))
+  object ApiEndpoint8 extends Tag(nameOf(Implementations5_1_0.getMyConsentsByBank))
+  object getMyConsents extends Tag(nameOf(Implementations5_1_0.getMyConsents))
   object ApiEndpoint9 extends Tag(nameOf(Implementations5_1_0.getConsentsAtBank))
   object GetConsents extends Tag(nameOf(Implementations5_1_0.getConsents))
   object UpdateConsentStatusByConsent extends Tag(nameOf(Implementations5_1_0.updateConsentStatusByConsent))
@@ -92,7 +93,8 @@ class ConsentsTest extends V510ServerSetup with PropsReset{
   def getConsentByRequestIdUrl(requestId:String) = (v5_1_0_Request / "consumer"/ "consent-requests"/requestId/"consents").GET<@(user1)
   def getConsentByIdUrl(requestId:String) = (v5_1_0_Request / "consumer" / "current" / "consents" / requestId ).GET<@(user1)
   def revokeConsentUrl(consentId: String) = (v5_1_0_Request / "banks" / bankId / "consents" / consentId).DELETE
-  def getMyConsents(consentId: String) = (v5_1_0_Request / "banks" / bankId / "my" / "consents").GET
+  def getMyConsentAtBank(consentId: String) = (v5_1_0_Request / "banks" / bankId / "my" / "consents").GET
+  def getMyConsent(consentId: String) = (v5_1_0_Request / "my" / "consents").GET
   def getConsentsAtBAnk(consentId: String) = (v5_1_0_Request / "management"/ "consents" / "banks" / bankId).GET
   def getConsents(consentId: String) = (v5_1_0_Request / "management"/ "consents").GET
   def updateConsentStatusByConsent(consentId: String) = (v5_1_0_Request / "management" / "banks" / bankId / "consents" / consentId).PUT
@@ -120,7 +122,7 @@ class ConsentsTest extends V510ServerSetup with PropsReset{
   feature(s"test $ApiEndpoint8 version $VersionOfApi - Unautenticated access") {
     scenario("We will call the endpoint without user credentials", ApiEndpoint8, VersionOfApi) {
       When(s"We make a request $ApiEndpoint8")
-      val response510 = makeGetRequest(getMyConsents("whatever"))
+      val response510 = makeGetRequest(getMyConsentAtBank("whatever"))
       Then("We should get a 401")
       response510.code should equal(401)
       response510.body.extract[ErrorMessage].message should equal(UserNotLoggedIn)
@@ -129,7 +131,25 @@ class ConsentsTest extends V510ServerSetup with PropsReset{
   feature(s"test $ApiEndpoint8 version $VersionOfApi - Autenticated access") {
     scenario("We will call the endpoint with user credentials", ApiEndpoint8, VersionOfApi) {
       When(s"We make a request $ApiEndpoint1")
-      val response510 = makeGetRequest(getMyConsents("whatever")<@(user1))
+      val response510 = makeGetRequest(getMyConsentAtBank("whatever")<@(user1))
+      Then("We should get a 200")
+      response510.code should equal(200)
+    }
+  }
+
+  feature(s"test $getMyConsents version $VersionOfApi - Unautenticated access") {
+    scenario("We will call the endpoint without user credentials", getMyConsents, VersionOfApi) {
+      When(s"We make a request $getMyConsents")
+      val response510 = makeGetRequest(getMyConsent("whatever"))
+      Then("We should get a 401")
+      response510.code should equal(401)
+      response510.body.extract[ErrorMessage].message should equal(UserNotLoggedIn)
+    }
+  }
+  feature(s"test $getMyConsents version $VersionOfApi - Autenticated access") {
+    scenario("We will call the endpoint with user credentials", getMyConsents, VersionOfApi) {
+      When(s"We make a request $ApiEndpoint1")
+      val response510 = makeGetRequest(getMyConsent("whatever")<@(user1))
       Then("We should get a 200")
       response510.code should equal(200)
     }

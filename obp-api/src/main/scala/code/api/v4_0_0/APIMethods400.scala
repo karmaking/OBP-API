@@ -8188,11 +8188,48 @@ trait APIMethods400 extends MdcLoggable {
       }
     }
     staticResourceDocs += ResourceDoc(
+      getConsentInfosByBank,
+      implementedInApiVersion,
+      nameOf(getConsentInfosByBank),
+      "GET",
+      "/banks/BANK_ID/my/consent-infos",
+      "Get My Consents Info By Bank",
+      s"""
+         |
+         |This endpoint gets the Consents that the current User created.
+         |
+         |${userAuthenticationMessage(true)}
+         |
+      """.stripMargin,
+      EmptyBody,
+      consentInfosJsonV400,
+      List(
+        $UserNotLoggedIn,
+        $BankNotFound,
+        UnknownError
+      ),
+      List(apiTagConsent, apiTagPSD2AIS, apiTagPsd2))
+
+    lazy val getConsentInfosByBank: OBPEndpoint = {
+      case "banks" :: BankId(bankId) :: "my" :: "consent-infos" :: Nil JsonGet _ => {
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            consents <- Future { Consents.consentProvider.vend.getConsentsByUser(cc.userId)
+              .sortBy(i => (i.creationDateTime, i.apiStandard)).reverse
+            }
+          } yield {
+            val consentsOfBank = Consent.filterByBankId(consents, bankId)
+            (JSONFactory400.createConsentInfosJsonV400(consentsOfBank), HttpCode.`200`(cc))
+          }
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
       getConsentInfos,
       implementedInApiVersion,
       nameOf(getConsentInfos),
       "GET",
-      "/banks/BANK_ID/my/consent-infos",
+      "/my/consent-infos",
       "Get My Consents Info",
       s"""
          |
@@ -8211,15 +8248,14 @@ trait APIMethods400 extends MdcLoggable {
       List(apiTagConsent, apiTagPSD2AIS, apiTagPsd2))
 
     lazy val getConsentInfos: OBPEndpoint = {
-      case "banks" :: BankId(bankId) :: "my" :: "consent-infos" :: Nil JsonGet _ => {
+      case "my" :: "consent-infos" :: Nil JsonGet _ => {
         cc => implicit val ec = EndpointContext(Some(cc))
           for {
             consents <- Future { Consents.consentProvider.vend.getConsentsByUser(cc.userId)
               .sortBy(i => (i.creationDateTime, i.apiStandard)).reverse
             }
           } yield {
-            val consentsOfBank = Consent.filterByBankId(consents, bankId)
-            (JSONFactory400.createConsentInfosJsonV400(consentsOfBank), HttpCode.`200`(cc))
+            (JSONFactory400.createConsentInfosJsonV400(consents), HttpCode.`200`(cc))
           }
       }
     }
