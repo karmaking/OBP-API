@@ -27,7 +27,7 @@ package code.api.v5_1_0
 
 import code.api.ResourceDocs1_4_0.SwaggerDefinitionsJSON
 import code.api.util.APIUtil.OAuth._
-import code.api.util.ApiRole.{canCreateConsumer, canGetConsumers, canUpdateConsumerLogoUrl, canUpdateConsumerRedirectUrl}
+import code.api.util.ApiRole.{canCreateConsumer, canGetConsumers, canUpdateConsumerLogoUrl, canUpdateConsumerName, canUpdateConsumerRedirectUrl}
 import code.api.util.ErrorMessages.{InvalidJsonFormat, UserNotLoggedIn}
 import code.api.v3_1_0.ConsumerJsonV310
 import code.api.v5_1_0.OBPAPI5_1_0.Implementations5_1_0
@@ -51,10 +51,11 @@ class ConsumerTest extends V510ServerSetup {
   object ApiEndpoint2 extends Tag(nameOf(Implementations5_1_0.getConsumers))
   object ApiEndpoint3 extends Tag(nameOf(Implementations5_1_0.updateConsumerRedirectURL))
   object ApiEndpoint4 extends Tag(nameOf(Implementations5_1_0.updateConsumerLogoURL))
+  object UpdateConsumerName extends Tag(nameOf(Implementations5_1_0.updateConsumerName))
   object GetConsumer extends Tag(nameOf(Implementations5_1_0.getConsumer))
 
   feature("Test all error cases ") {
-    scenario("We test the authentication errors", GetConsumer, ApiEndpoint1, ApiEndpoint2, ApiEndpoint3, ApiEndpoint4,  VersionOfApi) {
+    scenario("We test the authentication errors", UpdateConsumerName, GetConsumer, ApiEndpoint1, ApiEndpoint2, ApiEndpoint3, ApiEndpoint4,  VersionOfApi) {
       When("We make a request v5.1.0")
       lazy val postApiCollectionJson = SwaggerDefinitionsJSON.postApiCollectionJson400
       val requestApiEndpoint1 = (v5_1_0_Request / "management" / "consumers").POST
@@ -69,6 +70,9 @@ class ConsumerTest extends V510ServerSetup {
       val requestApiEndpoint4 = (v5_1_0_Request /"management" / "consumers" / "CONSUMER_ID" / "consumer" / "logo_url").PUT
       val responseApiEndpoint4 = makePutRequest(requestApiEndpoint4, write(postApiCollectionJson))
 
+      val requestApiUpdateConsumerName = (v5_1_0_Request /"management" / "consumers" / "CONSUMER_ID" / "consumer" / "name").PUT
+      val responseApiUpdateConsumerName = makePutRequest(requestApiUpdateConsumerName, write(postApiCollectionJson))
+
       Then(s"we should get the error messages")
       responseApiEndpoint1.code should equal(401)
       responseApiEndpoint2.code should equal(401)
@@ -79,6 +83,9 @@ class ConsumerTest extends V510ServerSetup {
       responseApiEndpoint3.body.toString contains(s"$UserNotLoggedIn") should be (true)
       responseApiEndpoint4.body.toString contains(s"$UserNotLoggedIn") should be (true)
 
+      responseApiUpdateConsumerName.code should equal(401)
+      responseApiUpdateConsumerName.body.toString contains(s"$UserNotLoggedIn") should be (true)
+
       // Endpoint GetConsumer
       val requestApiEndpoint5 = (v5_1_0_Request / "management" / "consumers" / "whatever").GET
       val responseApiEndpoint5 = makeGetRequest(requestApiEndpoint5)
@@ -86,7 +93,7 @@ class ConsumerTest extends V510ServerSetup {
       responseApiEndpoint5.body.toString contains(s"$UserNotLoggedIn") should be (true)
     }
     
-    scenario("We test the missing roles errors", GetConsumer, ApiEndpoint1, ApiEndpoint2, ApiEndpoint3, ApiEndpoint4,  VersionOfApi) {
+    scenario("We test the missing roles errors", UpdateConsumerName, GetConsumer, ApiEndpoint1, ApiEndpoint2, ApiEndpoint3, ApiEndpoint4,  VersionOfApi) {
       When("We make a request v5.1.0")
 
       lazy val wrongJsonForTesting = SwaggerDefinitionsJSON.routing
@@ -101,6 +108,9 @@ class ConsumerTest extends V510ServerSetup {
       
       val requestApiEndpoint4 = (v5_1_0_Request /"management" / "consumers" / "CONSUMER_ID" / "consumer" / "logo_url").PUT<@ (user1)
       val responseApiEndpoint4 = makePutRequest(requestApiEndpoint4, write(wrongJsonForTesting))
+
+      val requestApiUpdateConsumerName = (v5_1_0_Request /"management" / "consumers" / "CONSUMER_ID" / "consumer" / "name").PUT<@ (user1)
+      val responseApiUpdateConsumerName = makePutRequest(requestApiUpdateConsumerName, write(wrongJsonForTesting))
       
       Then(s"we should get the error messages")
       responseApiEndpoint1.code should equal(403)
@@ -111,6 +121,8 @@ class ConsumerTest extends V510ServerSetup {
       responseApiEndpoint3.body.toString contains(s"$canUpdateConsumerRedirectUrl") should be (true)
       responseApiEndpoint4.code should equal(403)
       responseApiEndpoint4.body.toString contains(s"$canUpdateConsumerLogoUrl") should be (true)
+      responseApiUpdateConsumerName.code should equal(403)
+      responseApiUpdateConsumerName.body.toString contains(s"$canUpdateConsumerName") should be (true)
 
       // Endpoint GetConsumer
       val requestApiEndpoint5 = (v5_1_0_Request / "management" / "consumers" / "whatever").GET <@ user1
@@ -119,12 +131,13 @@ class ConsumerTest extends V510ServerSetup {
       responseApiEndpoint5.body.toString contains (s"$canGetConsumers") should be(true)
     }
     
-    scenario("We added the proper roles, but wrong json", ApiEndpoint1, ApiEndpoint2, ApiEndpoint3, ApiEndpoint4,  VersionOfApi) {
+    scenario("We added the proper roles, but wrong json", UpdateConsumerName, ApiEndpoint1, ApiEndpoint2, ApiEndpoint3, ApiEndpoint4,  VersionOfApi) {
       When("we first grant the missing roles:")
       Entitlement.entitlement.vend.addEntitlement("", resourceUser1.userId, canCreateConsumer.toString)
       Entitlement.entitlement.vend.addEntitlement("", resourceUser1.userId, canUpdateConsumerLogoUrl.toString)
       Entitlement.entitlement.vend.addEntitlement("", resourceUser1.userId, canUpdateConsumerRedirectUrl.toString)
-      
+      Entitlement.entitlement.vend.addEntitlement("", resourceUser1.userId, canUpdateConsumerName.toString)
+
       When("We make a request v5.1.0")
       lazy val wrongJsonForTesting = SwaggerDefinitionsJSON.postApiCollectionJson400
       val requestApiEndpoint1 = (v5_1_0_Request / "management" / "consumers").POST<@ (user1)
@@ -135,7 +148,10 @@ class ConsumerTest extends V510ServerSetup {
       
       val requestApiEndpoint4 = (v5_1_0_Request /"management" / "consumers" / "CONSUMER_ID" / "consumer" / "logo_url").PUT<@ (user1)
       val responseApiEndpoint4 = makePutRequest(requestApiEndpoint4, write(wrongJsonForTesting))
-      
+
+      val requestApiUpdateConsumerName = (v5_1_0_Request / "management" / "consumers" / "CONSUMER_ID" / "consumer" / "name").PUT <@ (user1)
+      val responseApiUpdateConsumerName = makePutRequest(requestApiUpdateConsumerName, write(wrongJsonForTesting))
+
       Then(s"we should get the error messages")
       responseApiEndpoint1.code should equal(400)
       responseApiEndpoint1.body.toString contains(s"$InvalidJsonFormat") should be (true)
@@ -143,21 +159,25 @@ class ConsumerTest extends V510ServerSetup {
       responseApiEndpoint3.body.toString contains(s"$InvalidJsonFormat") should be (true)
       responseApiEndpoint4.code should equal(400)
       responseApiEndpoint4.body.toString contains(s"$InvalidJsonFormat") should be (true)
+      responseApiUpdateConsumerName.code should equal(400)
+      responseApiUpdateConsumerName.body.toString contains(s"$InvalidJsonFormat") should be (true)
     }
   }
   
   feature(s"test all successful cases") {
-    scenario("we create, update and get consumers", GetConsumer, ApiEndpoint1, ApiEndpoint2, ApiEndpoint3, ApiEndpoint4, VersionOfApi) {
+    scenario("we create, update and get consumers", UpdateConsumerName, GetConsumer, ApiEndpoint1, ApiEndpoint2, ApiEndpoint3, ApiEndpoint4, VersionOfApi) {
 
       When("we first grant the missing roles:")
       Entitlement.entitlement.vend.addEntitlement("", resourceUser1.userId, canCreateConsumer.toString)
       Entitlement.entitlement.vend.addEntitlement("", resourceUser1.userId, canGetConsumers.toString)
       Entitlement.entitlement.vend.addEntitlement("", resourceUser1.userId, canUpdateConsumerLogoUrl.toString)
       Entitlement.entitlement.vend.addEntitlement("", resourceUser1.userId, canUpdateConsumerRedirectUrl.toString)
+      Entitlement.entitlement.vend.addEntitlement("", resourceUser1.userId, canUpdateConsumerName.toString)
 
       lazy val createConsumerRequestJsonV510 = SwaggerDefinitionsJSON.createConsumerRequestJsonV510
       lazy val consumerRedirectUrlJSON = SwaggerDefinitionsJSON.consumerRedirectUrlJSON
       lazy val consumerLogoUrlJson = SwaggerDefinitionsJSON.consumerLogoUrlJson
+      lazy val consumerNameJson = SwaggerDefinitionsJSON.consumerNameJson
       val requestApiEndpoint1 = (v5_1_0_Request / "management" / "consumers").POST<@ (user1)
       val responseApiEndpoint1 = makePostRequest(requestApiEndpoint1, write(createConsumerRequestJsonV510))
       val consumerId = responseApiEndpoint1.body.extract[ConsumerJsonV510].consumer_id
@@ -175,6 +195,11 @@ class ConsumerTest extends V510ServerSetup {
       val responseApiEndpoint4 = makePutRequest(requestApiEndpoint4, write(consumerLogoUrlJson))
       val logoUrl = responseApiEndpoint4.body.extract[ConsumerJsonV510].logo_url
       logoUrl.head shouldBe(consumerLogoUrlJson.logo_url)
+
+      val requestApiUpdateConsumerName = (v5_1_0_Request /"management" / "consumers" / consumerId / "consumer" / "name").PUT<@ (user1)
+      val responseApiUpdateConsumerName = makePutRequest(requestApiUpdateConsumerName, write(consumerNameJson))
+      val name = responseApiUpdateConsumerName.body.extract[ConsumerJsonV510].app_name
+      name shouldBe(consumerNameJson.app_name)
       
       Then(s"we should get the error messages")
       responseApiEndpoint1.code should equal(201)

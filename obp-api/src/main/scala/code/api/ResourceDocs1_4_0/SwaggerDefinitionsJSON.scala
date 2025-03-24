@@ -5508,6 +5508,9 @@ object SwaggerDefinitionsJSON {
   val consumerLogoUrlJson = ConsumerLogoUrlJson(
     "http://localhost:8888"
   )
+  val consumerNameJson = ConsumerNameJson(
+    "App name"
+  )
   
   val consumersJsonV510 = ConsumersJsonV510(
     List(consumerJsonV510)

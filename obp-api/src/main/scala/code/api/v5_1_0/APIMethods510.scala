@@ -3198,6 +3198,53 @@ trait APIMethods510 {
       }
     }
 
+    staticResourceDocs += ResourceDoc(
+      updateConsumerName,
+      implementedInApiVersion,
+      nameOf(updateConsumerName),
+      "PUT",
+      "/management/consumers/CONSUMER_ID/consumer/name",
+      "Update Consumer Name",
+      s"""Update an existing name for a Consumer specified by CONSUMER_ID.
+         |
+         | ${consumerDisabledText()}
+         |
+         | CONSUMER_ID can be obtained after you register the application.
+         |
+         | Or use the endpoint 'Get Consumers' to get it
+         |
+       """.stripMargin,
+      consumerNameJson,
+      consumerJsonV510,
+      List(
+        $UserNotLoggedIn,
+        UserHasMissingRoles,
+        UnknownError
+      ),
+      List(apiTagConsumer),
+      Some(List(canUpdateConsumerName))
+    )
+
+    lazy val updateConsumerName: OBPEndpoint = {
+      case "management" :: "consumers" :: consumerId :: "consumer" :: "name" :: Nil JsonPut json -> _ => {
+        cc =>
+          implicit val ec = EndpointContext(Some(cc))
+          for {
+            postJson <- NewStyle.function.tryons(InvalidJsonFormat, 400, cc.callContext) {
+              json.extract[ConsumerNameJson]
+            }
+            consumer <- NewStyle.function.getConsumerByConsumerId(consumerId, cc.callContext)
+            updatedConsumer <- NewStyle.function.updateConsumer(
+              id = consumer.id.get,
+              name = Some(postJson.app_name),
+              callContext = cc.callContext
+            )
+          } yield {
+            (JSONFactory510.createConsumerJSON(updatedConsumer), HttpCode.`200`(cc.callContext))
+          }
+      }
+    }
+
 
     staticResourceDocs += ResourceDoc(
       getConsumer,
