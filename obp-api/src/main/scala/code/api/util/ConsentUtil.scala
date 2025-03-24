@@ -440,7 +440,7 @@ object Consent extends MdcLoggable {
   }
   
   def getConsentJwtValueByConsentId(consentId: String): Option[MappedConsent] = {
-    APIUtil.checkIfStringIsUUIDVersion1(consentId) match {
+    APIUtil.checkIfStringIsUUID(consentId) match {
       case true => // String is a UUID
         Consents.consentProvider.vend.getConsentByConsentId(consentId) match {
           case Full(consent) => Some(consent) 

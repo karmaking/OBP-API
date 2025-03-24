@@ -1518,11 +1518,50 @@ trait APIMethods510 {
 
 
     staticResourceDocs += ResourceDoc(
+      getMyConsentsByBank,
+      implementedInApiVersion,
+      nameOf(getMyConsentsByBank),
+      "GET",
+      "/banks/BANK_ID/my/consents",
+      "Get My Consents at Bank",
+      s"""
+         |
+         |This endpoint gets the Consents created by a current User.
+         |
+         |${userAuthenticationMessage(true)}
+         |
+      """.stripMargin,
+      EmptyBody,
+      consentsJsonV400,
+      List(
+        $UserNotLoggedIn,
+        $BankNotFound,
+        UnknownError
+      ),
+      List(apiTagConsent, apiTagPSD2AIS, apiTagPsd2))
+
+    lazy val getMyConsentsByBank: OBPEndpoint = {
+      case "banks" :: BankId(bankId) :: "my" :: "consents" :: Nil JsonGet _ => {
+        cc =>
+          implicit val ec = EndpointContext(Some(cc))
+          for {
+            consents <- Future {
+              Consents.consentProvider.vend.getConsentsByUser(cc.userId)
+                .sortBy(i => (i.creationDateTime, i.apiStandard)).reverse
+            }
+          } yield {
+            val consentsOfBank = Consent.filterByBankId(consents, bankId)
+            (createConsentsInfoJsonV510(consentsOfBank), HttpCode.`200`(cc))
+          }
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
       getMyConsents,
       implementedInApiVersion,
       nameOf(getMyConsents),
       "GET",
-      "/banks/BANK_ID/my/consents",
+      "/my/consents",
       "Get My Consents",
       s"""
          |
@@ -1541,7 +1580,7 @@ trait APIMethods510 {
       List(apiTagConsent, apiTagPSD2AIS, apiTagPsd2))
 
     lazy val getMyConsents: OBPEndpoint = {
-      case "banks" :: BankId(bankId) :: "my" :: "consents" :: Nil JsonGet _ => {
+      case "my" :: "consents" :: Nil JsonGet _ => {
         cc =>
           implicit val ec = EndpointContext(Some(cc))
           for {
@@ -1550,8 +1589,7 @@ trait APIMethods510 {
                 .sortBy(i => (i.creationDateTime, i.apiStandard)).reverse
             }
           } yield {
-            val consentsOfBank = Consent.filterByBankId(consents, bankId)
-            (createConsentsInfoJsonV510(consentsOfBank), HttpCode.`200`(cc))
+            (createConsentsInfoJsonV510(consents), HttpCode.`200`(cc))
           }
       }
     }
@@ -3156,6 +3194,53 @@ trait APIMethods510 {
             )
           } yield {
             (JSONFactory510.createConsumerJSON(updatedConsumer), HttpCode.`200`(callContext))
+          }
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
+      updateConsumerName,
+      implementedInApiVersion,
+      nameOf(updateConsumerName),
+      "PUT",
+      "/management/consumers/CONSUMER_ID/consumer/name",
+      "Update Consumer Name",
+      s"""Update an existing name for a Consumer specified by CONSUMER_ID.
+         |
+         | ${consumerDisabledText()}
+         |
+         | CONSUMER_ID can be obtained after you register the application.
+         |
+         | Or use the endpoint 'Get Consumers' to get it
+         |
+       """.stripMargin,
+      consumerNameJson,
+      consumerJsonV510,
+      List(
+        $UserNotLoggedIn,
+        UserHasMissingRoles,
+        UnknownError
+      ),
+      List(apiTagConsumer),
+      Some(List(canUpdateConsumerName))
+    )
+
+    lazy val updateConsumerName: OBPEndpoint = {
+      case "management" :: "consumers" :: consumerId :: "consumer" :: "name" :: Nil JsonPut json -> _ => {
+        cc =>
+          implicit val ec = EndpointContext(Some(cc))
+          for {
+            postJson <- NewStyle.function.tryons(InvalidJsonFormat, 400, cc.callContext) {
+              json.extract[ConsumerNameJson]
+            }
+            consumer <- NewStyle.function.getConsumerByConsumerId(consumerId, cc.callContext)
+            updatedConsumer <- NewStyle.function.updateConsumer(
+              id = consumer.id.get,
+              name = Some(postJson.app_name),
+              callContext = cc.callContext
+            )
+          } yield {
+            (JSONFactory510.createConsumerJSON(updatedConsumer), HttpCode.`200`(cc.callContext))
           }
       }
     }

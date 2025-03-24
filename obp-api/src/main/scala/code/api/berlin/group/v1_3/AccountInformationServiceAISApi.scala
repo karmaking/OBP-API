@@ -704,15 +704,6 @@ where the consent was directly managed between ASPSP and PSU e.g. in a re-direct
        }
 
 
-
-      def tweakStatusNames(status: String) = {
-        val scaStatus = status
-          .replace(ConsentStatus.INITIATED.toString, "started")
-          .replace(ConsentStatus.ACCEPTED.toString, "finalised")
-          .replace(ConsentStatus.REJECTED.toString, "failed")
-        scaStatus
-      }
-
      resourceDocs += ResourceDoc(
        getConsentScaStatus,
        apiVersion,
