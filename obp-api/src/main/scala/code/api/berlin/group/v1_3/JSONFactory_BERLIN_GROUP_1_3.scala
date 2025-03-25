@@ -548,7 +548,8 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats {
           _links = ConsentLinksV13(
             scaRedirect = Some(Href(s"$scaRedirectUrl")),
             status = Some(Href(s"/v1.3/consents/${consent.consentId}/status")),
-            scaStatus = Some(Href(s"/v1.3/consents/${consent.consentId}/authorisations/AUTHORISATIONID")),
+            // TODO Introduce a working link
+            // scaStatus = Some(Href(s"/v1.3/consents/${consent.consentId}/authorisations/AUTHORISATIONID")),
           )
         )
       case Full("redirection_with_dedicated_start_of_authorization") =>
