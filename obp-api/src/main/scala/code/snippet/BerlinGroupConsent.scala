@@ -284,11 +284,26 @@ class BerlinGroupConsent extends MdcLoggable with RestHelper with APIMethods510 
               </p>
               <div>
                 <p><strong>Allowed actions:</strong></p>
-                <p style="padding-left: 20px">Read account details</p>
-                <p style={if (accessBalancesDefinedVar.is) "padding-left: 20px;" else "padding-left: 20px; display: none;"}>Read account balances</p>
-                <p style={if (accessTransactionsDefinedVar.is) "padding-left: 20px;" else "padding-left: 20px; display: none;"}>Read transactions</p>
+                <p style="padding-left: 20px">
+                  Read account details
+                  <div style={if (!updateConsentPayloadValue.is) "padding-left: 40px; display: block;" else "display: none;"}>
+                    {scala.xml.Unparsed(canReadAccountsIbans.map(iban => s"- $iban").mkString("<br/>"))}
+                  </div>
+                </p>
+                <p style={if (accessBalancesDefinedVar.is) "padding-left: 20px;" else "padding-left: 20px; display: none;"}>
+                  Read account balances
+                  <div style={if (!updateConsentPayloadValue.is) "padding-left: 40px; display: block;" else "display: none;"}>
+                    {scala.xml.Unparsed(canReadBalancesIbans.map(iban => s"- $iban").mkString("<br/>"))}
+                  </div>
+                </p>
+                <p style={if (accessTransactionsDefinedVar.is) "padding-left: 20px;" else "padding-left: 20px; display: none;"}>
+                  Read transactions
+                  <div style={if (!updateConsentPayloadValue.is) "padding-left: 40px; display: block;" else "display: none;"}>
+                    {scala.xml.Unparsed(canReadTransactionsIbans.map(iban => s"- $iban").mkString("<br/>"))}
+                  </div>
+                </p>
               </div>
-              <div>
+              <div style={if (updateConsentPayloadValue.is) "display: block;" else "display: none;"}>
                 <p><strong>Accounts</strong>:</p>
                 <div style="padding-left: 20px">
                   {generateCheckboxes("canReadAccountsIbans", userIbans.toList, selectedAccountsIbansValue.is, selectedAccountsIbansValue, ibansFromGetConsentResponseJson)}
