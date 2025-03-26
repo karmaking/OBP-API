@@ -3,11 +3,11 @@
 ## Overview
 OAuth 2.0 Client Credentials Flow is used when a client application (such as a backend service) needs to authenticate and request access to resources without user interaction. This flow is typically used for machine-to-machine (M2M) authentication.
 
-## Prerequisites
+## Prerequisites / Assumptions
 Before making requests, ensure you have:
 - A valid **client_id** and **client_secret**.
-- The authorization server running on **localhost:7070**.
-- The required endpoint available: `/realms/master/protocol/openid-connect/token`.
+- This example assumes the authorization server (Keycloak) is running on **localhost:7070**. Replace this with the actual auth server URL.
+- A realm needs to been configured (e.g. 'master') and respective endpoint available: `/realms/master/protocol/openid-connect/token`.
 
 ## 1. Requesting an Access Token
 To obtain an access token, send a **POST** request to the token endpoint with the following details.
@@ -20,7 +20,7 @@ Content-Type: application/x-www-form-urlencoded
 Authorization: Basic Og==
 Content-Length: 104
 
-client_id=open-bank-project&client_secret=WWJ04UzMhWmLEqW2KIgBHwD4UNEotzXz&grant_type=client_credentials
+client_id=<client_id>&client_secret=<client_secret>&grant_type=client_credentials
 ```
 
 ### **Explanation of Parameters**
