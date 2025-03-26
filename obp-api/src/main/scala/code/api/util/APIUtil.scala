@@ -732,7 +732,8 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
             callContextLight.map(_.url)
           else
             None
-        val errorMessagesBG = ErrorMessagesBG(tppMessages = List(ErrorMessageBG(category = "ERROR", code = code.toString, path = path, text = message)))
+        val codeText = BerlinGroupError.translateToBerlinGroupError(code.toString, message)
+        val errorMessagesBG = ErrorMessagesBG(tppMessages = List(ErrorMessageBG(category = "ERROR", code = codeText, path = path, text = message)))
         Extraction.decompose(errorMessagesBG)
       } else {
         Extraction.decompose(ErrorMessage(message = message, code = code))
