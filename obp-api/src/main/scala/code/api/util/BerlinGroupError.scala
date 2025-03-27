@@ -72,6 +72,8 @@ object BerlinGroupError {
 
       case "404" if message.contains("OBP-30076") => "RESOURCE_UNKNOWN"
 
+      case "400" if message.contains("OBP-10005") => "TIMESTAMP_INVALID"
+
       case "400" if message.contains("OBP-10001") => "FORMAT_ERROR"
       case "400" if message.contains("OBP-20062") => "FORMAT_ERROR"
       case "400" if message.contains("OBP-20063") => "FORMAT_ERROR"
