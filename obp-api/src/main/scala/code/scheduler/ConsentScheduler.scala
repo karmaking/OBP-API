@@ -22,6 +22,7 @@ object ConsentScheduler extends MdcLoggable {
   // Starts multiple scheduled tasks with different intervals
   def startAll(): Unit = {
     startTask(interval = 60, () => unfinishedBerlinGroupConsents()) // Runs every 60 sec
+    startTask(interval = 60, () => expiredBerlinGroupConsents()) // Runs every 60 sec
   }
 
   // Generic method to schedule a task
@@ -66,6 +67,32 @@ object ConsentScheduler extends MdcLoggable {
       }
     } match {
       case Failure(ex) => logger.error("Error in unfinishedBerlinGroupConsents!", ex)
+      case Success(_) => logger.debug("|---> Task executed successfully")
+    }
+  }
+  private def expiredBerlinGroupConsents(): Unit = {
+    Try {
+      logger.debug("|---> Checking for expired Berlin Group consents...")
+
+      val expiredConsents = MappedConsent.findAll(
+        By(MappedConsent.mStatus, ConsentStatus.valid.toString),
+        By(MappedConsent.mApiStandard, ApiVersion.berlinGroupV13.apiStandard),
+        By_<(MappedConsent.mValidUntil, new Date())
+      )
+
+      logger.debug(s"|---> Found ${expiredConsents.size} expired consents")
+
+      expiredConsents.foreach { consent =>
+        Try {
+          consent.mStatus(ConsentStatus.expired.toString).save
+          logger.warn(s"|---> Changed status to ${ConsentStatus.expired.toString} for consent ID: ${consent.id}")
+        } match {
+          case Failure(ex) => logger.error(s"Failed to update consent ID: ${consent.id}", ex)
+          case Success(_) => // Already logged
+        }
+      }
+    } match {
+      case Failure(ex) => logger.error("Error in expiredBerlinGroupConsents!", ex)
       case Success(_) => logger.debug("|---> Task executed successfully")
     }
   }
