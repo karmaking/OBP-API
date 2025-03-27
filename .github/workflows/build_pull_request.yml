@@ -73,12 +73,15 @@ jobs:
 
           echo consents.allowed=true >> obp-api/src/main/resources/props/test.default.props
           MAVEN_OPTS="-Xmx3G -Xss2m" mvn clean package -Pprod
-      - name: Build the Docker image
+
+      - name: Save .war artifact
         run: |
-          echo "${{ secrets.DOCKER_HUB_TOKEN }}" | docker login -u "${{ secrets.DOCKER_HUB_USERNAME }}" --password-stdin docker.io
-          docker build . --file .github/Dockerfile_PreBuild --tag docker.io/${{ env.DOCKER_HUB_ORGANIZATION }}/obp-api-${{ env.USER_NAME }}:latest 
-          docker push docker.io/${{ env.DOCKER_HUB_ORGANIZATION }}/obp-api-${{ env.USER_NAME }} --all-tags
-          echo docker done
+          mkdir -p ./pull
+          cp obp-api/target/obp-api-1.*.war ./pull/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ github.sha }}
+          path: pull/
 
 
 
