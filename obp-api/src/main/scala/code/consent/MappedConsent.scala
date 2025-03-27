@@ -130,7 +130,7 @@ object MappedConsentProvider extends ConsentProvider {
         .create
         .mUserId(user.map(_.userId).getOrElse(null))
         .mConsumerId(consumer.map(_.consumerId.get).getOrElse(null))
-        .mStatus(ConsentStatus.RECEIVED.toString)
+        .mStatus(ConsentStatus.received.toString)
         .mRecurringIndicator(recurringIndicator)
         .mValidUntil(validUntil)
         .mFrequencyPerDay(frequencyPerDay)
