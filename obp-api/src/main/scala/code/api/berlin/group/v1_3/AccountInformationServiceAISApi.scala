@@ -1281,9 +1281,9 @@ Maybe in a later version the access path will change.
              )
              consent <- challenge.scaStatus match {
                case Some(status) if status == StrongCustomerAuthenticationStatus.finalised => // finalised
-                 Future(Consents.consentProvider.vend.updateConsentStatus(consentId, ConsentStatus.VALID))
+                 Future(Consents.consentProvider.vend.updateConsentStatus(consentId, ConsentStatus.valid))
                case Some(status) if status == StrongCustomerAuthenticationStatus.failed => // failed
-                 Future(Consents.consentProvider.vend.updateConsentStatus(consentId, ConsentStatus.REJECTED))
+                 Future(Consents.consentProvider.vend.updateConsentStatus(consentId, ConsentStatus.rejected))
                case _ => // all other cases
                  Future(Consents.consentProvider.vend.getConsentByConsentId(consentId))
              }
