@@ -165,6 +165,9 @@ jwt.use.ssl=false
 # Bypass TPP signature validation
 # bypass_tpp_signature_validation = false
 
+## Reject Berlin Group Consents in status "received" after defined time
+# berlin_group_outdated_consents_interval = 5
+
 
 ## Enable writing API metrics (which APIs are called) to RDBMS
 write_metrics=true

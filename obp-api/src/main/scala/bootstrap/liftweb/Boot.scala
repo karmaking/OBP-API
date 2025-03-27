@@ -107,7 +107,7 @@ import code.productfee.ProductFee
 import code.products.MappedProduct
 import code.ratelimiting.RateLimiting
 import code.regulatedentities.MappedRegulatedEntity
-import code.scheduler.{DataBaseCleanerScheduler, DatabaseDriverScheduler, JobScheduler, MetricsArchiveScheduler}
+import code.scheduler.{ConsentScheduler, DataBaseCleanerScheduler, DatabaseDriverScheduler, JobScheduler, MetricsArchiveScheduler}
 import code.scope.{MappedScope, MappedUserScope}
 import code.signingbaskets.{MappedSigningBasket, MappedSigningBasketConsent, MappedSigningBasketPayment}
 import code.snippet.{OAuthAuthorisation, OAuthWorkedThanks}
@@ -728,6 +728,8 @@ class Boot extends MdcLoggable {
       case Full(i) => DatabaseDriverScheduler.start(i)
       case _ => // Do not start it
     }
+    ConsentScheduler.startAll()
+
     
     APIUtil.getPropsAsBoolValue("enable_metrics_scheduler", true) match {
       case true =>
