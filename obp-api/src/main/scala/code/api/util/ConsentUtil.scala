@@ -22,6 +22,7 @@ import code.views.Views
 import com.nimbusds.jwt.JWTClaimsSet
 import com.openbankproject.commons.ExecutionContext.Implicits.global
 import com.openbankproject.commons.model._
+import com.openbankproject.commons.util.ApiVersion
 import net.liftweb.common.{Box, Empty, Failure, Full, ParamFailure}
 import net.liftweb.http.provider.HTTPParam
 import net.liftweb.json.JsonParser.ParseException
@@ -219,6 +220,9 @@ object Consent extends MdcLoggable {
           case false =>
             Failure(ErrorMessages.ConsentVerificationIssue)
         }
+      case Full(c) if c.apiStandard == ApiVersion.berlinGroupV13.apiStandard && // Berlin Group Consent
+        c.status.toLowerCase() != ConsentStatus.valid.toString =>
+        Failure(s"${ErrorMessages.ConsentStatusIssue}${ConsentStatus.valid.toString}.")
       case Full(c) if c.mStatus.toString().toUpperCase() != ConsentStatus.ACCEPTED.toString =>
         Failure(s"${ErrorMessages.ConsentStatusIssue}${ConsentStatus.ACCEPTED.toString}.")
       case _ => 

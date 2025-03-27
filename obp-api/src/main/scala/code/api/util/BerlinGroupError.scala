@@ -64,6 +64,7 @@ object BerlinGroupError {
       case "401" if message.contains("OBP-35017") => "CONSENT_INVALID"
       case "401" if message.contains("OBP-35019") => "CONSENT_INVALID"
       case "401" if message.contains("OBP-35018") => "CONSENT_INVALID"
+      case "401" if message.contains("OBP-35005") => "CONSENT_INVALID"
 
       case "401" if message.contains("OBP-20060") => "ROLE_INVALID"
 
