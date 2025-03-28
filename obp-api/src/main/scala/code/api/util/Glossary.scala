@@ -3513,15 +3513,25 @@ object Glossary extends MdcLoggable  {
 			.replaceAll("getObpApiRoot", getObpApiRoot)
 	}
 
-	private def getListOfFiles():List[File] = {
+  import java.nio.file.Paths
+
+  private def getListOfFiles(): List[File] = {
     val currentDir = new File(".").getCanonicalPath
-		val d = new File(currentDir + "/obp-api/src/main/docs/glossary")
-		if (d.exists && d.isDirectory) {
-			d.listFiles.filter(_.isFile).filter(_.getName.endsWith(".md")).toList
-		} else {
-			List[File]()
-		}
-	}
+    logger.info(s"|---> Current directory: $currentDir")
+
+    val glossaryPath = Paths.get(currentDir, "obp-api/src/main/docs/glossary").toFile
+    logger.info(s"|---> Glossary path: $glossaryPath")
+
+    if (glossaryPath.exists && glossaryPath.isDirectory) {
+      Option(glossaryPath.listFiles())
+        .getOrElse(Array.empty) // Avoid NullPointerException
+        .filter(_.isFile)
+        .filter(_.getName.endsWith(".md"))
+        .toList
+    } else {
+      List.empty[File]
+    }
+  }
 	
 	// Append all files from /OBP-API/docs/glossary as items
 	// File name is used as a title
