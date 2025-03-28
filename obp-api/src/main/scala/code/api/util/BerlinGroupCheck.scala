@@ -3,6 +3,7 @@ package code.api.util
 import code.api.APIFailureNewStyle
 import code.api.util.APIUtil.fullBoxOrException
 import com.openbankproject.commons.model.User
+import com.openbankproject.commons.util.ApiVersion
 import net.liftweb.common.{Box, Empty}
 import net.liftweb.http.provider.HTTPParam
 
@@ -20,7 +21,7 @@ object BerlinGroupCheck {
 
   private def validateHeaders(verb: String, url: String, reqHeaders: List[HTTPParam], forwardResult: (Box[User], Option[CallContext])): (Box[User], Option[CallContext]) = {
     val headerMap = reqHeaders.map(h => h.name.toLowerCase -> h).toMap
-    val missingHeaders = if(url.contains("berlin-group") && url.endsWith("/consent"))
+    val missingHeaders = if(url.contains(ApiVersion.berlinGroupV13.urlPrefix) && url.endsWith("/consent"))
       (berlinGroupMandatoryHeaders ++ berlinGroupMandatoryHeaderConsent).filterNot(headerMap.contains)
     else
       berlinGroupMandatoryHeaders.filterNot(headerMap.contains)
@@ -33,7 +34,7 @@ object BerlinGroupCheck {
   }
 
   def validate(body: Box[String], verb: String, url: String, reqHeaders: List[HTTPParam], forwardResult: (Box[User], Option[CallContext])): (Box[User], Option[CallContext]) = {
-    if(url.contains("berlin-group")) {
+    if(url.contains(ApiVersion.berlinGroupV13.urlPrefix)) {
       validateHeaders(verb, url, reqHeaders, forwardResult) match {
         case (user, _) if user.isDefined || user == Empty => // All good. Chain another check
           // Verify signed request (Berlin Group)
