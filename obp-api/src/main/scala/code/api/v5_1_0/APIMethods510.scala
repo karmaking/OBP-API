@@ -1773,7 +1773,8 @@ trait APIMethods510 {
             consent <- Future { Consents.consentProvider.vend.getConsentByConsentId(consentId)} map {
               unboxFullOrFail(_, cc.callContext, ConsentNotFound, 404)
             }
-            _ <- Helper.booleanToFuture(failMsg = s"${consent.mConsumerId.get} != ${cc.consumer.map(_.consumerId.get).getOrElse("None")}", failCode = 404, cc = cc.callContext) {
+            errorMessage = s" ${consent.mConsumerId.get} != ${cc.consumer.map(_.consumerId.get).getOrElse("None")}"
+            _ <- Helper.booleanToFuture(failMsg = ConsentNotFound + errorMessage, failCode = 404, cc = cc.callContext) {
               consent.mConsumerId.get == cc.consumer.map(_.consumerId.get).getOrElse("None")
             }
           } yield {
