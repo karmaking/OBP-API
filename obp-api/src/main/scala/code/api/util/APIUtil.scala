@@ -254,16 +254,6 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
       case _ => None
     }
   }
-  /**
-   * Purpose of this helper function is to get the PSD2-CERT value from a Request Headers.
-   * @return the PSD2-CERT value from a Request Header as a String
-   */
-  def getTppSignatureCertificate(requestHeaders: List[HTTPParam]): Option[String] = {
-    requestHeaders.toSet.filter(_.name == RequestHeader.`TPP-Signature-Certificate`).toList match {
-      case x :: Nil => Some(x.values.mkString(", "))
-      case _ => None
-    }
-  }
 
   def getRequestHeader(name: String, requestHeaders: List[HTTPParam]): String = {
     requestHeaders.toSet.filter(_.name.toLowerCase == name.toLowerCase).toList match {
@@ -2995,7 +2985,7 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
     val authHeaders = AuthorisationUtil.getAuthorisationHeaders(reqHeaders)
 
     // Identify consumer via certificate
-    val consumerByCertificate = Consent.getCurrentConsumerViaMtls(callContext = cc)
+    val consumerByCertificate = Consent.getCurrentConsumerViaMtlsOrTppSignatureCert(callContext = cc)
 
     val res =
       if (authHeaders.size > 1) { // Check Authorization Headers ambiguity
@@ -3011,7 +3001,7 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
               // Note: At this point we are getting the Consumer from the Consumer in the Consent.
               // This may later be cross checked via the value in consumer_validation_method_for_consent.
               // Get the source of truth for Consumer (e.g. CONSUMER_CERTIFICATE) as early as possible.
-              cc.copy(consumer = Consent.getCurrentConsumerViaMtls(callContext = cc))
+              cc.copy(consumer = Consent.getCurrentConsumerViaMtlsOrTppSignatureCert(callContext = cc))
             )
           case _ =>
             JwtUtil.checkIfStringIsJWTValue(consentValue.getOrElse("")).isDefined match {

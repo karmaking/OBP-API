@@ -130,20 +130,20 @@ object Consent extends MdcLoggable {
    * Purpose of this helper function is to get the Consumer via MTLS info i.e. PEM certificate.
    * @return the boxed Consumer 
    */
-  def getCurrentConsumerViaMtls(callContext: CallContext): Box[Consumer] = {
+  def getCurrentConsumerViaMtlsOrTppSignatureCert(callContext: CallContext): Box[Consumer] = {
     val clientCert: String = APIUtil.`getPSD2-CERT`(callContext.requestHeaders) // MTLS certificate QWAC (Qualified Website Authentication Certificate)
       .orElse(BerlinGroupSigning.getTppSignatureCertificate(callContext.requestHeaders)) // Signature certificate QSealC (Qualified Electronic Seal Certificate)
       .getOrElse(SecureRandomUtil.csprng.nextLong().toString) // Force to fail
 
     { // 1st search is via the original value
       logger.debug(s"getConsumerByPemCertificate ${clientCert}")
-      Consumers.consumers.vend.getConsumerByPemCertificate(clientCert) 
+      Consumers.consumers.vend.getConsumerByPemCertificate(clientCert)
     }.or { // 2nd search is via the original value we normalize
       logger.debug(s"getConsumerByPemCertificate ${CertificateUtil.normalizePemX509Certificate(clientCert)}")
-      Consumers.consumers.vend.getConsumerByPemCertificate(CertificateUtil.normalizePemX509Certificate(clientCert)) 
+      Consumers.consumers.vend.getConsumerByPemCertificate(CertificateUtil.normalizePemX509Certificate(clientCert))
     }
   }
-  
+
   private def verifyHmacSignedJwt(jwtToken: String, c: MappedConsent): Boolean = {
     logger.debug(s"code.api.util.Consent.verifyHmacSignedJwt beginning:: jwtToken($jwtToken), MappedConsent($c)")
     val result = JwtUtil.verifyHmacSignedJwt(jwtToken, c.secret)
@@ -225,7 +225,7 @@ object Consent extends MdcLoggable {
         Failure(s"${ErrorMessages.ConsentStatusIssue}${ConsentStatus.valid.toString}.")
       case Full(c) if c.mStatus.toString().toUpperCase() != ConsentStatus.ACCEPTED.toString =>
         Failure(s"${ErrorMessages.ConsentStatusIssue}${ConsentStatus.ACCEPTED.toString}.")
-      case _ => 
+      case _ =>
         Failure(ErrorMessages.ConsentNotFound)
     }
     logger.debug(s"code.api.util.Consent.checkConsent.consentBox.result: result($result)")
@@ -268,7 +268,7 @@ object Consent extends MdcLoggable {
               val bankId = if (role.requiresBankId) entitlement.bank_id else ""
               Entitlement.entitlement.vend.addEntitlement(bankId, user.userId, entitlement.role_name) match {
                 case Full(_) => (entitlement, "AddedOrExisted")
-                case _ => 
+                case _ =>
                   (entitlement, "Cannot add the entitlement: " + entitlement)
               }
             case true =>
@@ -291,7 +291,7 @@ object Consent extends MdcLoggable {
         val failedToAdd: List[(Role, String)] = triedToAdd.filter(_._2 != "AddedOrExisted")
         failedToAdd match {
           case Nil => Full(user)
-          case _ => 
+          case _ =>
             Failure("The entitlements cannot be added. " + failedToAdd.map(i => (i._1, i._2)).mkString(", "))
         }
       case _ =>
@@ -315,7 +315,7 @@ object Consent extends MdcLoggable {
         Views.views.vend.systemView(ViewId(view.view_id)) match {
           case Full(systemView) =>
             Views.views.vend.grantAccessToSystemView(BankId(view.bank_id), AccountId(view.account_id), systemView, user)
-          case _ => 
+          case _ =>
             // It's not system view
             Views.views.vend.grantAccessToCustomView(bankIdAccountIdViewId, user)
         }
@@ -327,7 +327,7 @@ object Consent extends MdcLoggable {
     }
     if (errorMessages.isEmpty) Full(user) else Failure(CouldNotAssignAccountAccess + errorMessages.mkString(", "))
   }
- 
+
   private def applyConsentRulesCommonOldStyle(consentIdAsJwt: String, calContext: CallContext): Box[User] = {
     implicit val dateFormats = CustomJsonFormats.formats
 
@@ -372,8 +372,8 @@ object Consent extends MdcLoggable {
       case _ =>
         Failure("Cannot extract data from: " + consentIdAsJwt)
     }
-  } 
-  
+  }
+
   private def applyConsentRulesCommon(consentAsJwt: String, callContext: CallContext): Future[(Box[User], Option[CallContext])] = {
     implicit val dateFormats = CustomJsonFormats.formats
 
@@ -412,7 +412,7 @@ object Consent extends MdcLoggable {
           val consent = net.liftweb.json.parse(jsonAsString).extract[ConsentJWT]
           logger.debug(s"applyConsentRulesCommon.End of net.liftweb.json.parse(jsonAsString).extract[ConsentJWT]: $consent")
           // Set Consumer into Call Context
-          val consumer = getCurrentConsumerViaMtls(callContext)
+          val consumer = getCurrentConsumerViaMtlsOrTppSignatureCert(callContext)
           val updatedCallContext = callContext.copy(consumer = consumer)
           checkConsent(consent, consentAsJwt, updatedCallContext) match { // Check is it Consent-JWT expired
             case (Full(true)) => // OK
@@ -433,7 +433,7 @@ object Consent extends MdcLoggable {
         Future(Failure("Cannot extract data from: " + consentAsJwt), Some(callContext))
     }
   }
-  
+
   def applyRules(consentJwt: Option[String], callContext: CallContext): Future[(Box[User], Option[CallContext])] = {
     val allowed = APIUtil.getPropsAsBoolValue(nameOfProperty="consents.allowed", defaultValue=false)
     (consentJwt, allowed) match {
@@ -442,12 +442,12 @@ object Consent extends MdcLoggable {
       case (None, _) => Future((Failure(ErrorMessages.ConsentHeaderNotFound), Some(callContext)))
     }
   }
-  
+
   def getConsentJwtValueByConsentId(consentId: String): Option[MappedConsent] = {
     APIUtil.checkIfStringIsUUID(consentId) match {
       case true => // String is a UUID
         Consents.consentProvider.vend.getConsentByConsentId(consentId) match {
-          case Full(consent) => Some(consent) 
+          case Full(consent) => Some(consent)
           case _ => None // It's not valid UUID value
         }
       case false => None // It's not UUID at all
@@ -493,7 +493,7 @@ object Consent extends MdcLoggable {
           (Failure("Cannot create or get the user based on: " + consentId), Some(cc))
       }
     }
-    
+
     def checkFrequencyPerDay(storedConsent: consent.ConsentTrait) = {
       def isSameDay(date1: Date, date2: Date): Boolean = {
         val fmt = new SimpleDateFormat("yyyyMMdd")
@@ -504,7 +504,7 @@ object Consent extends MdcLoggable {
         case false => // The consent is for one access to the account data
           if(usesSoFarTodayCounter == 0) // Maximum value is "1".
             (true, 0) // All good
-          else 
+          else
             (false, 1) // Exceeded rate limit
         case true => // The consent is for recurring access to the account data
           if(!isSameDay(storedConsent.usesSoFarTodayCounterUpdatedAt, new Date())) {
@@ -521,7 +521,7 @@ object Consent extends MdcLoggable {
     Consents.consentProvider.vend.getConsentByConsentId(consentId) match {
       case Full(storedConsent) =>
         // Set Consumer into Call Context
-        val consumer = getCurrentConsumerViaMtls(callContext)
+        val consumer = getCurrentConsumerViaMtlsOrTppSignatureCert(callContext)
         val user = Users.users.vend.getUserByUserId(storedConsent.userId)
         logger.debug(s"applyBerlinGroupConsentRulesCommon.storedConsent.user : $user")
         val updatedCallContext = callContext.copy(consumer = consumer).copy(consenter = user)
