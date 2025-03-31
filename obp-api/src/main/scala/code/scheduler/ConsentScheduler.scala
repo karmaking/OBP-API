@@ -22,13 +22,13 @@ object ConsentScheduler extends MdcLoggable {
   // Starts multiple scheduled tasks with different intervals
   def startAll(): Unit = {
     startTask(interval = 60, () => unfinishedBerlinGroupConsents()) // Runs every 60 sec
-    startTask(interval = 60, () => expiredBerlinGroupConsents()) // Runs every 60 sec
+    startTask(interval = 60, () => expiredBerlinGroupConsents(), 10) // Start 10 seconds after previous job
   }
 
   // Generic method to schedule a task
-  private def startTask(interval: Long, task: () => Unit): Unit = {
+  private def startTask(interval: Long, task: () => Unit, initialDelay: Long = 0): Unit = {
     scheduler.schedule(
-      initialDelay = Duration(interval, TimeUnit.SECONDS),
+      initialDelay = Duration(initialDelay, TimeUnit.SECONDS),
       interval = Duration(interval, TimeUnit.SECONDS),
       runnable = new Runnable {
         def run(): Unit = task()
