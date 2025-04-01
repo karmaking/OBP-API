@@ -740,8 +740,9 @@ object NewStyle extends MdcLoggable{
                        redirectURL: Option[String] = None,
                        createdByUserId: Option[String] = None,
                        logoURL: Option[String] = None,
+                       certificate: Option[String] = None,
                        callContext: Option[CallContext]): Future[Consumer] = {
-      Future(Consumers.consumers.vend.updateConsumer(id, key, secret, isActive, name, appType, description, developerEmail, redirectURL, createdByUserId, logoURL)) map {
+      Future(Consumers.consumers.vend.updateConsumer(id, key, secret, isActive, name, appType, description, developerEmail, redirectURL, createdByUserId, logoURL, certificate)) map {
         unboxFullOrFail(_, callContext, UpdateConsumerError, 404)
       }
     }
