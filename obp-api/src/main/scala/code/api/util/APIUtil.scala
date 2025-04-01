@@ -2983,12 +2983,20 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
     val remoteIpAddress = getRemoteIpAddress()
 
     val authHeaders = AuthorisationUtil.getAuthorisationHeaders(reqHeaders)
+    val authHeadersWithEmptyValues = RequestHeadersUtil.checkEmptyRequestHeaderValues(reqHeaders)
+    val authHeadersWithEmptyNames = RequestHeadersUtil.checkEmptyRequestHeaderNames(reqHeaders)
 
     // Identify consumer via certificate
     val consumerByCertificate = Consent.getCurrentConsumerViaTppSignatureCertOrMtls(callContext = cc)
 
     val res =
-      if (authHeaders.size > 1) { // Check Authorization Headers ambiguity
+      if (authHeadersWithEmptyValues.nonEmpty) { // Check Authorization Headers Empty Values
+        val message = ErrorMessages.EmptyRequestHeaders + s"Header names: ${authHeadersWithEmptyValues.mkString}"
+        Future { (fullBoxOrException(Empty ~> APIFailureNewStyle(message, 400, Some(cc.toLight))), None) }
+      } else if (authHeadersWithEmptyNames.nonEmpty) { // Check Authorization Headers Empty Names
+        val message = ErrorMessages.EmptyRequestHeaders + s"Header values: ${authHeadersWithEmptyNames.mkString}"
+        Future { (fullBoxOrException(Empty ~> APIFailureNewStyle(message, 400, Some(cc.toLight))), None) }
+      } else if (authHeaders.size > 1) { // Check Authorization Headers ambiguity
         Future { (Failure(ErrorMessages.AuthorizationHeaderAmbiguity + s"${authHeaders}"), None) }
       } else if (APIUtil.`hasConsent-ID`(reqHeaders)) { // Berlin Group's Consent
         Consent.applyBerlinGroupRules(APIUtil.`getConsent-ID`(reqHeaders), cc.copy(consumer = consumerByCertificate))
