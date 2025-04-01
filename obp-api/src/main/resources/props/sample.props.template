@@ -165,8 +165,12 @@ jwt.use.ssl=false
 # Bypass TPP signature validation
 # bypass_tpp_signature_validation = false
 
-## Reject Berlin Group Consents in status "received" after defined time in minutes
-# berlin_group_outdated_consents_interval = 5
+## Reject Berlin Group consents with status "received" after a defined time (in seconds)
+# berlin_group_outdated_consents_time_in_seconds = 300
+# berlin_group_outdated_consents_interval_in_seconds =
+
+## Expire Berlin Group consents with status "valid"
+# berlin_group_expired_consents_interval_in_seconds =
 
 
 ## Enable writing API metrics (which APIs are called) to RDBMS
