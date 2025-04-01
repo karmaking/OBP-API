@@ -2985,13 +2985,13 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
     val authHeaders = AuthorisationUtil.getAuthorisationHeaders(reqHeaders)
 
     // Identify consumer via certificate
-    val consumerByCertificate = Consent.getCurrentConsumerViaMtlsOrTppSignatureCert(callContext = cc)
+    val consumerByCertificate = Consent.getCurrentConsumerViaTppSignatureCertOrMtls(callContext = cc)
 
     val res =
       if (authHeaders.size > 1) { // Check Authorization Headers ambiguity
         Future { (Failure(ErrorMessages.AuthorizationHeaderAmbiguity + s"${authHeaders}"), None) }
       } else if (APIUtil.`hasConsent-ID`(reqHeaders)) { // Berlin Group's Consent
-        Consent.applyBerlinGroupRules(APIUtil.`getConsent-ID`(reqHeaders), cc)
+        Consent.applyBerlinGroupRules(APIUtil.`getConsent-ID`(reqHeaders), cc.copy(consumer = consumerByCertificate))
       } else if (APIUtil.hasConsentJWT(reqHeaders)) { // Open Bank Project's Consent
         val consentValue = APIUtil.getConsentJWT(reqHeaders)
         Consent.getConsentJwtValueByConsentId(consentValue.getOrElse("")) match {
@@ -3001,12 +3001,12 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
               // Note: At this point we are getting the Consumer from the Consumer in the Consent.
               // This may later be cross checked via the value in consumer_validation_method_for_consent.
               // Get the source of truth for Consumer (e.g. CONSUMER_CERTIFICATE) as early as possible.
-              cc.copy(consumer = Consent.getCurrentConsumerViaMtlsOrTppSignatureCert(callContext = cc))
+              cc.copy(consumer = consumerByCertificate)
             )
           case _ =>
             JwtUtil.checkIfStringIsJWTValue(consentValue.getOrElse("")).isDefined match {
               case true => // It's JWT obtained via "Consent-JWT" request header
-                Consent.applyRules(APIUtil.getConsentJWT(reqHeaders), cc)
+                Consent.applyRules(APIUtil.getConsentJWT(reqHeaders), cc.copy(consumer = consumerByCertificate))
               case false => // Unrecognised consent value
                 Future { (Failure(ErrorMessages.ConsentHeaderValueInvalid), None) }
             }
@@ -3105,8 +3105,7 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
       }
       else if(Option(cc).flatMap(_.user).isDefined) {
         Future{(cc.user, Some(cc))}
-      }
-      else {
+      } else {
         if(hasAuthorizationHeader(reqHeaders)) {
           // We want to throw error in case of wrong or unsupported header. For instance:
           // - Authorization: mF_9.B5f-4.1JqM
