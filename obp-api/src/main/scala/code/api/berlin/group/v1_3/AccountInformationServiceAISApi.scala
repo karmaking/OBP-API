@@ -694,8 +694,10 @@ where the consent was directly managed between ASPSP and PSU e.g. in a re-direct
              consent <- Future(Consents.consentProvider.vend.getConsentByConsentId(consentId)) map {
                unboxFullOrFail(_, callContext, s"$ConsentNotFound ($consentId)")
              }
-             _ <- Helper.booleanToFuture(failMsg = s"${consent.mConsumerId.get} != ${cc.consumer.map(_.consumerId.get).getOrElse("None")}", failCode = 404, cc = cc.callContext) {
-               consent.mConsumerId.get == callContext.map(_.consumer.map(_.consumerId.get).getOrElse("None")).getOrElse("None")
+             consumerIdFromConsent = consent.mConsumerId.get
+             consumerIdFromCurrentCall = callContext.map(_.consumer.map(_.consumerId.get).getOrElse("None")).getOrElse("None")
+             _ <- Helper.booleanToFuture(failMsg = s"$ConsentNotFound $consumerIdFromConsent != $consumerIdFromCurrentCall", failCode = 403, cc = cc.callContext) {
+               consumerIdFromConsent == consumerIdFromCurrentCall
              }
            } yield {
              (createGetConsentResponseJson(consent), HttpCode.`200`(callContext))
