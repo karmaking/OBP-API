@@ -517,8 +517,16 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
    *
    */
   def getRequestHeadersToMirror(callContext: Option[CallContextLight]): CustomResponseHeaders = {
+    val mirrorByProperties = getPropsValue("mirror_request_headers_to_response", "").split(",").toList.map(_.trim)
+
     val mirrorRequestHeadersToResponse: List[String] =
-      getPropsValue("mirror_request_headers_to_response", "").split(",").toList.map(_.trim)
+      if (callContext.exists(_.url.contains(ApiVersion.berlinGroupV13.urlPrefix))) {
+        // Berlin Group Specification
+        RequestHeader.`X-Request-ID` :: mirrorByProperties
+      } else {
+        mirrorByProperties
+      }
+
     callContext match {
       case Some(cc) =>
         cc.requestHeaders match {
@@ -526,13 +534,14 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
           case _   =>
             val headers = cc.requestHeaders
               .filter(item => mirrorRequestHeadersToResponse.contains(item.name))
-              .map(item => (item.name, item.values.head))
+              .map(item => (item.name, item.values.headOption.getOrElse(""))) // Safe extraction
             CustomResponseHeaders(headers)
         }
       case None =>
         CustomResponseHeaders(Nil)
     }
   }
+
   /**
    *
    */
