@@ -9,51 +9,59 @@ import java.util.Date
 
 object BgSpecValidation {
 
-  val MaxValidDate: LocalDate = LocalDate.parse("9999-12-31")
+  val MaxValidDays: LocalDate = LocalDate.now().plusDays(180) // Max 180 days from today
   val DateFormat: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE
 
   def getErrorMessage(dateStr: String): String = {
     validateValidUntil(dateStr) match {
-      case Right(validDate) => ""
-      case Left(error) => error
+      case Right(_)  => ""
+      case Left(err) => err
     }
   }
+
   def getDate(dateStr: String): Date = {
     validateValidUntil(dateStr) match {
       case Right(validDate) =>
         Date.from(validDate.atStartOfDay(ZoneId.systemDefault).toInstant)
-      case Left(error) =>
-        null
+      case Left(_) => null
     }
   }
+
   private def validateValidUntil(dateStr: String): Either[String, LocalDate] = {
     try {
       val date = LocalDate.parse(dateStr, DateFormat)
       val today = LocalDate.now()
 
       if (date.isBefore(today)) {
-        Left(s"$InvalidDateFormat Current `validUntil` field is ${dateStr}. The date must not be in the past!")
-      } else if (date.isAfter(MaxValidDate)) {
-        Left(s"$InvalidDateFormat Current `validUntil` field is ${dateStr}. The maximum allowed date is $MaxValidDate.!")
+        Left(s"$InvalidDateFormat The `validUntil` date ($dateStr) cannot be in the past!")
+      } else if (date.isAfter(MaxValidDays)) {
+        Left(s"$InvalidDateFormat The `validUntil` date ($dateStr) exceeds the maximum allowed period of 180 days (until $MaxValidDays).")
       } else {
         Right(date) // Valid date
       }
     } catch {
-      case e: DateTimeParseException =>
-        Left(s"$InvalidDateFormat Current `validUntil` field is ${dateStr}. Please use this format ${DateWithDayFormat.toPattern}!")
+      case _: DateTimeParseException =>
+        Left(s"$InvalidDateFormat The `validUntil` date ($dateStr) is invalid. Please use the format: ${DateWithDayFormat.toPattern}.")
     }
   }
 
   // Example usage
   def main(args: Array[String]): Unit = {
-    val testDates = Seq("2025-05-10", "9999-12-31", "2015-01-01", "invalid-date", "2025-01-20T11:04:20Z")
+    val testDates = Seq(
+      "2025-05-10",  // ❌ More than 180 days ahead
+      "9999-12-31",  // ❌ Exceeds max allowed
+      "2015-01-01",  // ❌ In the past
+      "invalid-date", // ❌ Invalid format
+      LocalDate.now().plusDays(90).toString,  // ✅ Valid (within 180 days)
+      LocalDate.now().plusDays(180).toString, // ✅ Valid (exactly 180 days)
+      LocalDate.now().plusDays(181).toString  // ❌ More than 180 days
+    )
 
     testDates.foreach { date =>
       validateValidUntil(date) match {
-        case Right(validDate) => println(s"Valid date: $validDate")
-        case Left(error) => println(s"Error: $error")
+        case Right(validDate) => println(s"✅ Valid date: $validDate")
+        case Left(error)      => println(s"❌ Error: $error")
       }
     }
   }
 }
-

@@ -8,13 +8,14 @@ import code.api.v3_0_0.ViewJsonV300
 import code.api.v4_0_0.{PostAccountAccessJsonV400, PostViewJsonV400}
 import code.setup.ServerSetupWithTestData
 import code.views.Views
+import com.openbankproject.commons.util.ApiVersion
 import dispatch.Req
 import net.liftweb.json.Serialization.write
 import org.scalatest.Tag
 
 trait BerlinGroupServerSetupV1_3 extends ServerSetupWithTestData {
   object BerlinGroupV1_3 extends Tag("BerlinGroup_v1_3")
-  val V1_3_BG = baseRequest / "berlin-group" / "v1.3"
+  val V1_3_BG = baseRequest / ApiVersion.berlinGroupV13.urlPrefix / "v1.3"
   def v4_0_0_Request: Req = baseRequest / "obp" / "v4.0.0"
 
   override def beforeEach() = {
