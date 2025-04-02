@@ -3514,8 +3514,8 @@ object Glossary extends MdcLoggable  {
 	}
 
 	private def getListOfFiles():List[File] = {
-    val currentDir = new File(".").getCanonicalPath
-		val d = new File(currentDir + "/obp-api/src/main/docs/glossary")
+		val d = new File(getClass.getResource("").toURI.toString.replaceFirst("target/.*", "").replace("file:", ""),
+			"src/main/docs/glossary")
 		if (d.exists && d.isDirectory) {
 			d.listFiles.filter(_.isFile).filter(_.getName.endsWith(".md")).toList
 		} else {
