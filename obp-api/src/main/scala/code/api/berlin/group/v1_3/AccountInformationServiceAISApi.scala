@@ -242,10 +242,10 @@ recurringIndicator:
            for {
              (Full(user), callContext) <- authenticatedAccess(cc)
              _ <- passesPsd2Aisp(callContext)
-             consent <- Future(Consents.consentProvider.vend.getConsentByConsentId(consentId)) map {
+             _ <- Future(Consents.consentProvider.vend.getConsentByConsentId(consentId)) map {
                unboxFullOrFail(_, callContext, ConsentNotFound)
              }
-             consent <- Future(Consents.consentProvider.vend.revoke(consentId)) map {
+             _ <- Future(Consents.consentProvider.vend.revokeBerlinGroupConsent(consentId)) map {
                i => connectorEmptyResponse(i, callContext)
              }
            } yield {
@@ -767,8 +767,7 @@ This method returns the SCA status of a consent initiation's authorisation sub-r
                unboxFullOrFail(_, callContext, ConsentNotFound)
              }
            } yield {
-             val status = consent.status.toLowerCase()
-               .replace(ConsentStatus.REVOKED.toString.toLowerCase(), "revokedByPsu")
+             val status = consent.status
              (JSONFactory_BERLIN_GROUP_1_3.ConsentStatusJsonV13(status), HttpCode.`200`(callContext))
            }
 

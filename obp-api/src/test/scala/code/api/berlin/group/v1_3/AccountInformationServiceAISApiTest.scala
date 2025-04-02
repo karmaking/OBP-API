@@ -8,6 +8,7 @@ import code.api.util.APIUtil
 import code.api.util.APIUtil.OAuth._
 import code.api.util.ErrorMessages._
 import code.api.v4_0_0.PostViewJsonV400
+import code.consent.ConsentStatus
 import code.model.dataAccess.{BankAccountRouting, MappedBankAccount}
 import code.setup.{APIResponse, DefaultUsers}
 import com.github.dwickern.macros.NameOf.nameOf
@@ -262,7 +263,7 @@ class AccountInformationServiceAISApiTest extends BerlinGroupServerSetupV1_3 wit
       Then("We should get a 201 ")
       response.code should equal(201)
       response.body.extract[PostConsentResponseJson].consentId should not be (empty)
-      response.body.extract[PostConsentResponseJson].consentStatus should be ("received")
+      response.body.extract[PostConsentResponseJson].consentStatus should be (ConsentStatus.received.toString)
     }
   }
 
@@ -302,9 +303,15 @@ class AccountInformationServiceAISApiTest extends BerlinGroupServerSetupV1_3 wit
       val consentId =response.body.extract[PostConsentResponseJson].consentId
 
       Then("We test the delete consent ")  
-      val requestDelete = (V1_3_BG / "consents"/consentId ).DELETE <@ (user1)
+      val requestDelete = (V1_3_BG / "consents"/ consentId ).DELETE <@ (user1)
       val responseDelete = makeDeleteRequest(requestDelete)
       responseDelete.code should be (204)
+
+      Then(s"We test the $getConsentStatus")
+      val requestGetStatus = (V1_3_BG / "consents" / consentId / "status").GET <@ (user1)
+      val responseGetStatus = makeGetRequest(requestGetStatus)
+      responseGetStatus.code should be(200)
+      responseGetStatus.body.extract[ConsentStatusJsonV13].consentStatus should be(ConsentStatus.terminatedByTpp.toString)
 
       //TODO We can not delete one consent two time, will fix it later.
 //      val responseDeleteSecondTime = makeDeleteRequest(requestDelete)
@@ -350,13 +357,13 @@ class AccountInformationServiceAISApiTest extends BerlinGroupServerSetupV1_3 wit
       val requestGet = (V1_3_BG / "consents"/consentId ).GET <@ (user1)
       val responseGet = makeGetRequest(requestGet)
       responseGet.code should be (200)
-      responseGet.body.extract[GetConsentResponseJson].consentStatus should be ("received")
+      responseGet.body.extract[GetConsentResponseJson].consentStatus should be (ConsentStatus.received.toString)
 
       Then(s"We test the $getConsentStatus")
       val requestGetStatus = (V1_3_BG / "consents"/consentId /"status" ).GET <@ (user1)
       val responseGetStatus = makeGetRequest(requestGetStatus)
       responseGetStatus.code should be (200)
-      responseGetStatus.body.extract[ConsentStatusJsonV13].consentStatus should be ("received")
+      responseGetStatus.body.extract[ConsentStatusJsonV13].consentStatus should be (ConsentStatus.received.toString)
       
     }
   }
@@ -398,7 +405,7 @@ class AccountInformationServiceAISApiTest extends BerlinGroupServerSetupV1_3 wit
         val requestStartConsentAuthorisation = (V1_3_BG / "consents"/consentId /"authorisations" ).POST <@ (user1)
         val responseStartConsentAuthorisation = makePostRequest(requestStartConsentAuthorisation, """{"scaAuthenticationData":""}""")
         responseStartConsentAuthorisation.code should be (201)
-        responseStartConsentAuthorisation.body.extract[StartConsentAuthorisationJson].scaStatus should be ("received")
+        responseStartConsentAuthorisation.body.extract[StartConsentAuthorisationJson].scaStatus should be (ConsentStatus.received.toString)
       }
     }
   
@@ -456,7 +463,7 @@ class AccountInformationServiceAISApiTest extends BerlinGroupServerSetupV1_3 wit
         val requestStartConsentAuthorisation = (V1_3_BG / "consents"/consentId /"authorisations" ).POST <@ (user1)
         val responseStartConsentAuthorisation = makePostRequest(requestStartConsentAuthorisation, """{"scaAuthenticationData":""}""")
         responseStartConsentAuthorisation.code should be (201)
-        responseStartConsentAuthorisation.body.extract[StartConsentAuthorisationJson].scaStatus should be ("received")
+        responseStartConsentAuthorisation.body.extract[StartConsentAuthorisationJson].scaStatus should be (ConsentStatus.received.toString)
 
         Then(s"We test the $getConsentAuthorisation")
         val requestGetConsentAuthorisation = (V1_3_BG / "consents"/consentId /"authorisations" ).GET<@ (user1)
@@ -469,7 +476,7 @@ class AccountInformationServiceAISApiTest extends BerlinGroupServerSetupV1_3 wit
         val requestGetConsentScaStatus = (V1_3_BG / "consents"/consentId /"authorisations"/authorisationId ).GET <@ (user1)
         val responseGetConsentScaStatus = makeGetRequest(requestGetConsentScaStatus)
         responseGetConsentScaStatus.code should be (200)
-        responseGetConsentScaStatus.body.extract[ScaStatusJsonV13].scaStatus should be ("received")
+        responseGetConsentScaStatus.body.extract[ScaStatusJsonV13].scaStatus should be (ConsentStatus.received.toString)
       }
     }  
 
