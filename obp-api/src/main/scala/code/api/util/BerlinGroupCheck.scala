@@ -9,8 +9,10 @@ import net.liftweb.http.provider.HTTPParam
 
 object BerlinGroupCheck {
 
+
+  private val defaultMandatoryHeaders = "Content-Type,Date,Digest,PSU-Device-ID,PSU-Device-Name,PSU-IP-Address,Signature,TPP-Signature-Certificate,X-Request-ID"
   // Parse mandatory headers from a comma-separated string
-  private val berlinGroupMandatoryHeaders: List[String] = APIUtil.getPropsValue("berlin_group_mandatory_headers", defaultValue = "X-Request-ID,PSU-IP-Address,PSU-Device-ID,PSU-Device-Name")
+  private val berlinGroupMandatoryHeaders: List[String] = APIUtil.getPropsValue("berlin_group_mandatory_headers", defaultValue = defaultMandatoryHeaders)
     .split(",")
     .map(_.trim.toLowerCase)
     .toList.filterNot(_.isEmpty)
