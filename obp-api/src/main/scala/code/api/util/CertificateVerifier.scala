@@ -59,10 +59,8 @@ object CertificateVerifier extends MdcLoggable {
    * @param pemCertificate The X.509 certificate in PEM format.
    * @return `true` if the certificate is valid and trusted, otherwise `false`.
    */
-  def validateCertificate(pemCertificate: String): Boolean = {
+  def validateCertificate(certificate: X509Certificate): Boolean = {
     Try {
-      val certificate = parsePemToX509Certificate(pemCertificate)
-
       // Load trust store
       val trustStore = loadTrustStore()
         .getOrElse(throw new Exception("Trust store could not be loaded."))
@@ -140,11 +138,10 @@ object CertificateVerifier extends MdcLoggable {
     // change the following path if using this function to test on your localhost
     val certificatePath = "/path/to/certificate.pem"
     val pemCertificate = loadPemCertificateFromFile(certificatePath)
+    val certificate = BerlinGroupSigning.parseCertificate(pemCertificate.getOrElse(""))
 
-    pemCertificate.foreach { pem =>
-      val isValid = validateCertificate(pem)
-      logger.info(s"Certificate verification result: $isValid")
-    }
+    val isValid = validateCertificate(certificate)
+    logger.info(s"Certificate verification result: $isValid")
 
     loadTrustStore().foreach { trustStore =>
       logger.info(s"Trust Store contains ${trustStore.size()} certificates.")

@@ -10,23 +10,19 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
 import java.security._
 import java.security.cert.{CertificateFactory, X509Certificate}
-import java.security.spec.{PKCS8EncodedKeySpec, X509EncodedKeySpec}
-import java.util.Base64
+import java.security.spec.PKCS8EncodedKeySpec
+import java.text.SimpleDateFormat
+import java.util.{Base64, Date, UUID}
 import scala.util.matching.Regex
 
 object BerlinGroupSigning extends MdcLoggable {
 
   // Step 1: Calculate Digest (SHA-256 Hash of the Body)
-  def calculateDigest(body: String): String = {
-    def removeFirstAndLastQuotes(input: String): String = {
-      if (input.startsWith("\"") && input.endsWith("\"") && input.length > 1) {
-        input.tail.init
-      } else {
-        input
-      }
-    }
-    val digest = MessageDigest.getInstance("SHA-256").digest(removeFirstAndLastQuotes(body).getBytes(StandardCharsets.UTF_8))
-    Base64.getEncoder.encodeToString(digest)
+  def generateDigest(body: String): String = {
+    val sha256Digest = MessageDigest.getInstance("SHA-256")
+    val digest = sha256Digest.digest(body.getBytes("UTF-8"))
+    val base64Digest = Base64.getEncoder.encodeToString(digest)
+    s"SHA-256=$base64Digest"
   }
 
   // Step 2: Create Signing String (Concatenation of required headers)
@@ -63,42 +59,30 @@ object BerlinGroupSigning extends MdcLoggable {
   }
 
   // Step 4: Attach Certificate (Load from PEM String)
-  def loadCertificate(certPem: String) = {
-    val certString = certPem
-      .replaceAll("-----BEGIN CERTIFICATE-----", "") // Remove the BEGIN header
-      .replaceAll("-----END CERTIFICATE-----", "")   // Remove the END footer
-      .replaceAll("\\s", "") // Remove all whitespace and new lines
 
-    // Decode Base64 public key
-    val keyBytes = Base64.getDecoder.decode(certPem)
-    val keySpec = new X509EncodedKeySpec(keyBytes)
-    val keyFactory = KeyFactory.getInstance("RSA")
-    val publicKey = keyFactory.generatePublic(keySpec)
-    publicKey
-    // val certBytes = Base64.getDecoder.decode(certString)
-    // Base64.getEncoder.encodeToString(certBytes)
-  }
 
   // Step 5: Verify Request on ASPSP Side
-  def verifySignature(signingString: String, signatureStr: String, certPem: String): Boolean = {
-    val publicKey = loadPublicKeyFromCert(certPem)
+  def verifySignature(signingString: String, signatureStr: String, publicKey: PublicKey): Boolean = {
+    logger.debug(s"signingString: $signingString")
+    logger.debug(s"signatureStr: $signatureStr")
     val signature = Signature.getInstance("SHA256withRSA")
     signature.initVerify(publicKey)
     signature.update(signingString.getBytes(StandardCharsets.UTF_8))
     signature.verify(Base64.getDecoder.decode(signatureStr))
   }
 
-  // Extract Public Key from PEM Certificate String
-  def loadPublicKeyFromCert(certPem: String): PublicKey = {
-    val certString = certPem
-      .replaceAll("-----BEGIN CERTIFICATE-----", "") // Remove the BEGIN header
-      .replaceAll("-----END CERTIFICATE-----", "")   // Remove the END footer
-      .replaceAll("\\s", "") // Remove all whitespace and new lines
+  def parseCertificate(certString: String): X509Certificate = {
+    // Decode Base64 certificate
+    val certBytes = Base64.getDecoder.decode(
+      certString.replace("-----BEGIN CERTIFICATE-----", "")
+        .replace("-----END CERTIFICATE-----", "")
+        .replaceAll("\\s", "")
+    )
 
-    val certBytes = Base64.getDecoder.decode(certString)
+    // Parse certificate
     val certFactory = CertificateFactory.getInstance("X.509")
-    val cert = certFactory.generateCertificate(new java.io.ByteArrayInputStream(certBytes)).asInstanceOf[X509Certificate]
-    cert.getPublicKey
+    val certificate = certFactory.generateCertificate(new java.io.ByteArrayInputStream(certBytes)).asInstanceOf[X509Certificate]
+    certificate
   }
 
 
@@ -123,10 +107,10 @@ object BerlinGroupSigning extends MdcLoggable {
         forwardResult
       case true =>
         val requestHeaders = forwardResult._2.map(_.requestHeaders).getOrElse(Nil)
-        val certificatePem: String = getPem(requestHeaders)
-        X509.validate(certificatePem) match {
+        val certificate = getCertificateFromTppSignatureCertificate(requestHeaders)
+        X509.validateCertificate(certificate) match {
           case Full(true) => // PEM certificate is ok
-            val digest = calculateDigest(body.getOrElse(""))
+            val digest = generateDigest(body.getOrElse(""))
 
 
             val signatureHeaderValue = getHeaderValue(RequestHeader.Signature, requestHeaders)
@@ -134,14 +118,14 @@ object BerlinGroupSigning extends MdcLoggable {
             val headersToSign = parseSignatureHeader(signatureHeaderValue).getOrElse("headers", "").split(" ").toList
             val headers = headersToSign.map(h =>
               if(h.toLowerCase() == RequestHeader.Digest.toLowerCase()) {
-                s"$h: SHA-256=$digest"
+                s"$h: $digest"
               } else {
                 s"$h: ${getHeaderValue(h, requestHeaders)}"
               }
             )
             val signingString = headers.mkString("\n")
-            val isVerified = verifySignature(signingString, signature, certificatePem)
-            val isValidated = CertificateVerifier.validateCertificate(certificatePem)
+            val isVerified = verifySignature(signingString, signature, certificate.getPublicKey)
+            val isValidated = CertificateVerifier.validateCertificate(certificate)
             val bypassValidation = APIUtil.getPropsAsBoolValue("bypass_tpp_signature_validation", defaultValue = false)
             (isVerified, isValidated) match {
               case (true, true) => forwardResult
@@ -159,13 +143,18 @@ object BerlinGroupSigning extends MdcLoggable {
     requestHeaders.find(_.name.toLowerCase() == name.toLowerCase()).map(_.values.mkString)
       .getOrElse(SecureRandomUtil.csprng.nextLong().toString)
   }
-  private def getPem(requestHeaders: List[HTTPParam]): String = {
+  private def getCertificateFromTppSignatureCertificate(requestHeaders: List[HTTPParam]): X509Certificate = {
     val certificate = getHeaderValue(RequestHeader.`TPP-Signature-Certificate`, requestHeaders)
     // Decode the Base64 string
     val decodedBytes = Base64.getDecoder.decode(certificate)
     // Convert the bytes to a string (it could be PEM format for public key)
     val decodedString = new String(decodedBytes, StandardCharsets.UTF_8)
 
+    val certificatePemString = getCertificatePem(decodedString)
+    parseCertificate(certificatePemString)
+  }
+
+  private def getCertificatePem(decodedString: String) = {
     // Extract the certificate portion from the decoded string
     val certStart = "-----BEGIN CERTIFICATE-----"
     val certEnd = "-----END CERTIFICATE-----"
@@ -185,11 +174,24 @@ object BerlinGroupSigning extends MdcLoggable {
       ""
     }
   }
+  private def getPrivateKeyPem(decodedString: String) = {
+    // Extract the certificate portion from the decoded string
+    val certStart = "-----BEGIN PRIVATE KEY-----"
+    val certEnd = "-----END PRIVATE KEY-----"
 
-  def getTppSignatureCertificate(requestHeaders: List[HTTPParam]): Option[String] = {
-    getPem(requestHeaders) match {
-      case value if value.isEmpty => None
-      case value => Some(value)
+    // Find the start and end indices of the certificate
+    val startIndex = decodedString.indexOf(certStart)
+    val endIndex = decodedString.indexOf(certEnd, startIndex) + certEnd.length
+
+    if (startIndex >= 0 && endIndex >= 0) {
+      // Extract and print the certificate part
+      val extractedCert = decodedString.substring(startIndex, endIndex)
+      logger.debug("|---> Extracted Private Key:")
+      logger.debug(extractedCert)
+      extractedCert
+    } else {
+      logger.debug("|---> Private Key not found in the decoded string.")
+      ""
     }
   }
 
@@ -198,62 +200,59 @@ object BerlinGroupSigning extends MdcLoggable {
     regex.findAllMatchIn(signatureHeader).map(m => m.group("key") -> m.group("value")).toMap
   }
 
+  private def getCurrentDate: String = {
+    val sdf = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz")
+    sdf.format(new Date())
+  }
+
   // Example Usage
   def main(args: Array[String]): Unit = {
-    val requestBody = """"{
-                        |  "access": {
-                        |    "accounts": [
-                        |      {
-                        |        "iban": "RS35260005601001611379"
-                        |      }
-                        |    ],
-                        |    "balances": [
-                        |      {
-                        |        "iban": "RS35260005601001611379"
-                        |      }
-                        |    ]
-                        |  },
-                        |  "recurringIndicator": true,
-                        |  "validUntil": "2025-01-20T11:04:20Z",
-                        |  "frequencyPerDay": 10,
-                        |  "combinedServiceIndicator": false
-                        |}"""".stripMargin
-    val digest = calculateDigest(requestBody)
+    // Digest for request
+    val body = new String(Files.readAllBytes(Paths.get("/path/to/request_body.json")), "UTF-8")
+    val digest = generateDigest(body)
 
-    val xRequestId = "12345678"
-    val date = "Tue, 13 Feb 2024 10:00:00 GMT"
+    // Generate UUID for X-Request-ID
+    val xRequestId = UUID.randomUUID().toString
+
+    // Get current date in RFC 7231 format
+    val dateHeader = getCurrentDate
+
+
     val redirectUri = "www.redirect-uri.com"
     val headers = Map(
       RequestHeader.Digest -> s"SHA-256=$digest",
       RequestHeader.`X-Request-ID` -> xRequestId,
-      RequestHeader.Date -> date,
+      RequestHeader.Date -> dateHeader,
       RequestHeader.`TPP-Redirect-URL` -> redirectUri,
     )
 
     val signingString = createSigningString(headers)
 
     // Load PEM files as strings
-    val privateKeyPath = "/home/marko/Downloads/BerlinGroupSigning/private_key.pem"
-    val certificatePath = "/home/marko/Downloads/BerlinGroupSigning/certificate.pem"
+    val privateKeyPath = "/path/to/private_key.pem"
+    val certificatePath = "/path/to/certificate.pem"
 
-    val privateKeyPem = new String(Files.readAllBytes(Paths.get(privateKeyPath)))
-    val certificatePem = new String(Files.readAllBytes(Paths.get(certificatePath)))
+    val privateKeyPem = getPrivateKeyPem(new String(Files.readAllBytes(Paths.get(privateKeyPath))))
+
+    val certificateFullString = new String(Files.readAllBytes(Paths.get(certificatePath)))
+    val certificate: X509Certificate = parseCertificate(getCertificatePem(certificateFullString))
 
     val signature = signString(signingString, privateKeyPem)
-    val certificate = loadCertificate(certificatePem)
 
     println(s"1) Digest: SHA-256=$digest")
     println(s"2) ${RequestHeader.`X-Request-ID`}: $xRequestId")
-    println(s"3) ${RequestHeader.Date}: $date")
+    println(s"3) ${RequestHeader.Date}: $dateHeader")
     println(s"4) ${RequestHeader.`TPP-Redirect-URL`}: $redirectUri")
     val signatureHeaderValue =
-      s"""keyId="SN=4000000010FC01D520258AB15EAF, CA=CN=D-eSystemTrustIB, O=IP STISC 1003600096694, C-MD", algorithm="rsa-sha256", headers="digest date x-request-id tpp-redirect-uri", signature="$signature"""".stripMargin
+      s"""keyId="SN=43A, CA=CN=MAIB Prisacaru Sergiu (Test), O=MAIB", algorithm="rsa-sha256", headers="digest date x-request-id", signature="$signature""""
     println(s"5) Signature: $signatureHeaderValue")
-    println(s"6) TPP-Signature-Certificate: $certificate")
 
-    val isVerified = verifySignature(signingString, signature, certificatePem)
+    // Convert public certificate to Base64 for Signature-Certificate header
+    val certificateBase64 = Base64.getEncoder.encodeToString(certificateFullString.getBytes(StandardCharsets.UTF_8))
+    println(s"6) TPP-Signature-Certificate: $certificateBase64")
+
+    val isVerified = verifySignature(signingString, signature, certificate.getPublicKey)
     println(s"Signature Verification: $isVerified")
-
 
     val parsedSignature = parseSignatureHeader(signatureHeaderValue)
     println(s"Parsed Signature Header: $parsedSignature")
