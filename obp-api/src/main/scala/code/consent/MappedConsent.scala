@@ -230,7 +230,24 @@ object MappedConsentProvider extends ConsentProvider {
       case _ =>
         Failure(ErrorMessages.UnknownError)
     } 
-  }  
+  }
+  override def revokeBerlinGroupConsent(consentId: String): Box[MappedConsent] = {
+    MappedConsent.find(By(MappedConsent.mConsentId, consentId)) match {
+      case Full(consent) if consent.status == ConsentStatus.terminatedByTpp.toString =>
+        Failure(ErrorMessages.ConsentAlreadyRevoked)
+      case Full(consent) =>
+        tryo(consent
+          .mStatus(ConsentStatus.terminatedByTpp.toString)
+          .mLastActionDate(now)
+          .saveMe())
+      case Empty =>
+        Empty ?~! ErrorMessages.ConsentNotFound
+      case Failure(msg, _, _) =>
+        Failure(msg)
+      case _ =>
+        Failure(ErrorMessages.UnknownError)
+    }
+  }
   override def checkAnswer(consentId: String, challengeAnswer: String): Box[MappedConsent] = {
     def isAnswerCorrect(expectedAnswerHashed: String, answer: String, salt: String) = {
       val challengeAnswerHashed = BCrypt.hashpw(answer, salt).substring(0, 44)

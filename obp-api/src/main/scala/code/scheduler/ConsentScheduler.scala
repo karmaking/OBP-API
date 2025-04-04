@@ -5,6 +5,7 @@ import code.api.util.APIUtil
 import code.consent.{ConsentStatus, MappedConsent}
 import code.util.Helper.MdcLoggable
 import com.openbankproject.commons.util.ApiVersion
+import net.liftweb.common.Full
 import net.liftweb.mapper.{By, By_<}
 
 import java.util.concurrent.TimeUnit
@@ -21,8 +22,22 @@ object ConsentScheduler extends MdcLoggable {
 
   // Starts multiple scheduled tasks with different intervals
   def startAll(): Unit = {
-    startTask(interval = 60, () => unfinishedBerlinGroupConsents()) // Runs every 60 sec
-    startTask(interval = 60, () => expiredBerlinGroupConsents(), 10) // Start 10 seconds after previous job
+    APIUtil.getPropsAsIntValue("berlin_group_outdated_consents_interval_in_seconds") match {
+      case Full(interval) if interval > 0 =>
+        val time = APIUtil.getPropsAsIntValue("berlin_group_outdated_consents_time_in_seconds", 300)
+        startTask(interval = interval, () => unfinishedBerlinGroupConsents(time)) // Runs periodically
+      case _ =>
+        logger.warn("|---> Skipping unfinishedBerlinGroupConsents task: berlin_group_outdated_consents_interval_in_seconds not set or invalid")
+    }
+
+    APIUtil.getPropsAsIntValue("berlin_group_expired_consents_interval_in_seconds") match {
+      case Full(interval) if interval > 0 =>
+        startTask(interval = interval, () => expiredBerlinGroupConsents(), 10) // Delay for 10 seconds
+      case _ =>
+        logger.warn("|---> Skipping expiredBerlinGroupConsents task: berlin_group_expired_consents_interval_in_seconds not set or invalid")
+    }
+
+
   }
 
   // Generic method to schedule a task
@@ -37,21 +52,20 @@ object ConsentScheduler extends MdcLoggable {
   }
 
   // Calculate the timestamp 5 minutes ago
-  private val someMinutesAgo: Date = {
-    val minutes = APIUtil.getPropsAsIntValue("berlin_group_outdated_consents_interval", 5)
+  private def someSecondsAgo(seconds: Int): Date = {
     val cal = Calendar.getInstance()
-    cal.add(Calendar.MINUTE, -minutes)
+    cal.add(Calendar.SECOND, -seconds)
     cal.getTime
   }
 
-  private def unfinishedBerlinGroupConsents(): Unit = {
+  private def unfinishedBerlinGroupConsents(seconds: Int): Unit = {
     Try {
       logger.debug("|---> Checking for outdated Berlin Group consents...")
 
       val outdatedConsents = MappedConsent.findAll(
         By(MappedConsent.mStatus, ConsentStatus.received.toString),
         By(MappedConsent.mApiStandard, ApiVersion.berlinGroupV13.apiStandard),
-        By_<(MappedConsent.updatedAt, someMinutesAgo)
+        By_<(MappedConsent.updatedAt, someSecondsAgo(seconds))
       )
 
       logger.debug(s"|---> Found ${outdatedConsents.size} outdated consents")

@@ -165,8 +165,12 @@ jwt.use.ssl=false
 # Bypass TPP signature validation
 # bypass_tpp_signature_validation = false
 
-## Reject Berlin Group Consents in status "received" after defined time
-# berlin_group_outdated_consents_interval = 5
+## Reject Berlin Group consents with status "received" after a defined time (in seconds)
+# berlin_group_outdated_consents_time_in_seconds = 300
+# berlin_group_outdated_consents_interval_in_seconds =
+
+## Expire Berlin Group consents with status "valid"
+# berlin_group_expired_consents_interval_in_seconds =
 
 
 ## Enable writing API metrics (which APIs are called) to RDBMS
@@ -1124,7 +1128,7 @@ default_auth_context_update_request_key=CUSTOMER_NUMBER
 #berlin_group_error_message_show_path = true
 
 # Check presence of the mandatory headers
-#berlin_group_mandatory_headers = X-Request-ID,PSU-IP-Address,PSU-Device-ID,PSU-Device-Name
+#berlin_group_mandatory_headers = Content-Type,Date,Digest,PSU-Device-ID,PSU-Device-Name,PSU-IP-Address,Signature,TPP-Signature-Certificate,X-Request-ID
 #berlin_group_mandatory_header_consent = TPP-Redirect-URL
 
 ## Berlin Group Create Consent Frequency per Day Upper Limit

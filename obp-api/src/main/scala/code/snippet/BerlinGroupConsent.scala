@@ -75,8 +75,8 @@ class BerlinGroupConsent extends MdcLoggable with RestHelper with APIMethods510 
     }
   }
   private object accessAccountsDefinedVar extends SessionVar(true)
-  private object accessBalancesDefinedVar extends SessionVar(true)
-  private object accessTransactionsDefinedVar extends SessionVar(true)
+  private object accessBalancesDefinedVar extends SessionVar(false)
+  private object accessTransactionsDefinedVar extends SessionVar(false)
   /**
    * Creates a ConsentAccessJson object from lists of IBANs for accounts, balances, and transactions.
    *
@@ -167,9 +167,9 @@ class BerlinGroupConsent extends MdcLoggable with RestHelper with APIMethods510 
 
         // Determine which IBANs the user can access for accounts, balances, and transactions
         val canReadAccountsIbans: List[String] = json.access.accounts match {
-          case Some(accounts) if accounts.isEmpty => // Access is requested
+          case Some(accounts) if accounts.isEmpty => // Access is requested via "accounts": []
             updateConsentPayloadValue.set(true)
-            accessAccountsDefinedVar.set(true)
+            accessAccountsDefinedVar.set(true) // only account details access will be provided
             List()
           case Some(accounts) if accounts.flatMap(_.iban).toSet.subsetOf(userIbans) => // Access is requested for specific IBANs
             accessAccountsDefinedVar.set(true)
@@ -183,8 +183,10 @@ class BerlinGroupConsent extends MdcLoggable with RestHelper with APIMethods510 
             List()
         }
         val canReadBalancesIbans: List[String] = json.access.balances match {
-          case Some(balances) if balances.isEmpty => // Access is requested
+          case Some(balances) if balances.isEmpty => // Access is requested via "balances": []
             updateConsentPayloadValue.set(true)
+            // access to account details and balances will be provided
+            accessAccountsDefinedVar.set(true)
             accessBalancesDefinedVar.set(true)
             List()
           case Some(balances) if balances.flatMap(_.iban).toSet.subsetOf(userIbans) => // Access is requested for specific IBANs
@@ -199,8 +201,10 @@ class BerlinGroupConsent extends MdcLoggable with RestHelper with APIMethods510 
             List()
         }
         val canReadTransactionsIbans: List[String] = json.access.transactions match {
-          case Some(transactions) if transactions.isEmpty => // Access is requested
+          case Some(transactions) if transactions.isEmpty => // Access is requested via "transactions": []
             updateConsentPayloadValue.set(true)
+            // access to account details and transactions will be provided
+            accessAccountsDefinedVar.set(true)
             accessTransactionsDefinedVar.set(true)
             List()
           case Some(transactions) if transactions.flatMap(_.iban).toSet.subsetOf(userIbans) => // Access is requested for specific IBANs

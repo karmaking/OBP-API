@@ -1773,7 +1773,8 @@ trait APIMethods510 {
             consent <- Future { Consents.consentProvider.vend.getConsentByConsentId(consentId)} map {
               unboxFullOrFail(_, cc.callContext, ConsentNotFound, 404)
             }
-            _ <- Helper.booleanToFuture(failMsg = s"${consent.mConsumerId.get} != ${cc.consumer.map(_.consumerId.get).getOrElse("None")}", failCode = 404, cc = cc.callContext) {
+            errorMessage = s" ${consent.mConsumerId.get} != ${cc.consumer.map(_.consumerId.get).getOrElse("None")}"
+            _ <- Helper.booleanToFuture(failMsg = ConsentNotFound + errorMessage, failCode = 404, cc = cc.callContext) {
               consent.mConsumerId.get == cc.consumer.map(_.consumerId.get).getOrElse("None")
             }
           } yield {
@@ -3190,6 +3191,53 @@ trait APIMethods510 {
             updatedConsumer <- NewStyle.function.updateConsumer(
               id = consumer.id.get,
               logoURL = Some(postJson.logo_url),
+              callContext = callContext
+            )
+          } yield {
+            (JSONFactory510.createConsumerJSON(updatedConsumer), HttpCode.`200`(callContext))
+          }
+      }
+    }
+    staticResourceDocs += ResourceDoc(
+      updateConsumerCertificate,
+      implementedInApiVersion,
+      nameOf(updateConsumerCertificate),
+      "PUT",
+      "/management/consumers/CONSUMER_ID/consumer/certificate",
+      "Update Consumer Certificate",
+      s"""Update a Certificate for a Consumer specified by CONSUMER_ID.
+         |
+         | ${consumerDisabledText()}
+         |
+         | CONSUMER_ID can be obtained after you register the application.
+         |
+         | Or use the endpoint 'Get Consumers' to get it
+         |
+       """.stripMargin,
+      consumerCertificateJson,
+      consumerJsonV510,
+      List(
+        $UserNotLoggedIn,
+        UserHasMissingRoles,
+        UnknownError
+      ),
+      List(apiTagConsumer),
+      Some(List(canUpdateConsumerCertificate))
+    )
+
+    lazy val updateConsumerCertificate: OBPEndpoint = {
+      case "management" :: "consumers" :: consumerId :: "consumer" :: "certificate" :: Nil JsonPut json -> _ => {
+        cc =>
+          implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(u), callContext) <- authenticatedAccess(cc)
+            postJson <- NewStyle.function.tryons(InvalidJsonFormat, 400, callContext) {
+              json.extract[ConsumerCertificateJson]
+            }
+            consumer <- NewStyle.function.getConsumerByConsumerId(consumerId, callContext)
+            updatedConsumer <- NewStyle.function.updateConsumer(
+              id = consumer.id.get,
+              certificate = Some(postJson.certificate),
               callContext = callContext
             )
           } yield {

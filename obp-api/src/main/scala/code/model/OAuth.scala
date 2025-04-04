@@ -238,7 +238,8 @@ object MappedConsumersProvider extends ConsumersProvider with MdcLoggable {
                               developerEmail: Option[String],
                               redirectURL: Option[String],
                               createdByUserId: Option[String],
-                              logoURL: Option[String]
+                              logoURL: Option[String],
+                              certificate: Option[String],
   ): Box[Consumer] = {
     val consumer = Consumer.find(By(Consumer.id, id))
     consumer match {
@@ -258,6 +259,10 @@ object MappedConsumersProvider extends ConsumersProvider with MdcLoggable {
         }
         name match {
           case Some(v) => c.name(v)
+          case None =>
+        }
+        certificate match {
+          case Some(v) => c.clientCertificate(v)
           case None =>
         }
         appType match {
