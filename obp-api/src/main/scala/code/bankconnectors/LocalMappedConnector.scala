@@ -49,6 +49,7 @@ import code.productcollection.ProductCollectionX
 import code.productcollectionitem.ProductCollectionItems
 import code.productfee.ProductFeeX
 import code.products.MappedProduct
+import code.regulatedentities.MappedRegulatedEntityProvider
 import code.standingorders.StandingOrders
 import com.openbankproject.commons.model.StandingOrderTrait
 import code.taxresidence.TaxResidenceX
@@ -5345,5 +5346,22 @@ object LocalMappedConnector extends Connector with MdcLoggable {
       counterpartyId: String) map {
       (_, callContext)
     }
+
+  override def getRegulatedEntities(
+    callContext: Option[CallContext]
+  ): OBPReturnType[Box[List[RegulatedEntityTrait]]] = Future {
+    tryo {MappedRegulatedEntityProvider.getRegulatedEntities()}
+  } map {
+    (_, callContext)
+  }
+
+  override def getRegulatedEntityByEntityId(
+    regulatedEntityId: String,
+    callContext: Option[CallContext]
+  ): OBPReturnType[Box[RegulatedEntityTrait]] = Future {
+    MappedRegulatedEntityProvider.getRegulatedEntityByEntityId(regulatedEntityId)
+  } map {
+    (_, callContext)
+  } 
   
 }
