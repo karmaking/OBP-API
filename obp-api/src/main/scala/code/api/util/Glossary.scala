@@ -3513,13 +3513,9 @@ object Glossary extends MdcLoggable  {
 			.replaceAll("getObpApiRoot", getObpApiRoot)
 	}
 
-  import java.nio.file.Paths
-
   private def getListOfFiles(): List[File] = {
-    val currentDir = new File(".").getCanonicalPath
-    logger.info(s"|---> Current directory: $currentDir")
-
-    val glossaryPath = Paths.get(currentDir, "obp-api/src/main/docs/glossary").toFile
+    val glossaryPath = new File(getClass.getResource("").toURI.toString.replaceFirst("target/.*", "").replace("file:", ""),
+      "src/main/docs/glossary")
     logger.info(s"|---> Glossary path: $glossaryPath")
 
     if (glossaryPath.exists && glossaryPath.isDirectory) {
