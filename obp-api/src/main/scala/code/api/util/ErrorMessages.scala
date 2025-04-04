@@ -267,6 +267,7 @@ object ErrorMessages {
 
   val AuthorizationHeaderAmbiguity = "OBP-20250: Request headers used for authorization are ambiguous. "
   val MissingMandatoryBerlinGroupHeaders= "OBP-20251: Missing mandatory request headers. "
+  val EmptyRequestHeaders = "OBP-20252: Empty or null headers are not allowed. "
 
   // X.509
   val X509GeneralError = "OBP-20300: PEM Encoded Certificate issue."

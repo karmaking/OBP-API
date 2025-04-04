@@ -56,6 +56,9 @@ object BerlinGroupError {
       case "401" if message.contains("OBP-20207") => "PSU_CREDENTIALS_INVALID"
 
       case "401" if message.contains("OBP-20204") => "TOKEN_EXPIRED"
+      case "401" if message.contains("OBP-20215") => "TOKEN_INVALID"
+      case "401" if message.contains("OBP-20205") => "TOKEN_INVALID"
+      case "401" if message.contains("OBP-20204") => "TOKEN_INVALID"
 
       case "401" if message.contains("OBP-35003") => "CONSENT_EXPIRED"
 
@@ -65,6 +68,11 @@ object BerlinGroupError {
       case "401" if message.contains("OBP-35019") => "CONSENT_INVALID"
       case "401" if message.contains("OBP-35018") => "CONSENT_INVALID"
       case "401" if message.contains("OBP-35005") => "CONSENT_INVALID"
+
+      case "403" if message.contains("OBP-35001") => "CONSENT_UNKNOWN"
+
+      case "401" if message.contains("OBP-20312") => "CERTIFICATE_INVALID"
+      case "401" if message.contains("OBP-20310") => "SIGNATURE_INVALID"
 
       case "401" if message.contains("OBP-20060") => "ROLE_INVALID"
 
@@ -78,6 +86,8 @@ object BerlinGroupError {
       case "400" if message.contains("OBP-10001") => "FORMAT_ERROR"
       case "400" if message.contains("OBP-20062") => "FORMAT_ERROR"
       case "400" if message.contains("OBP-20063") => "FORMAT_ERROR"
+      case "400" if message.contains("OBP-20252") => "FORMAT_ERROR"
+      case "400" if message.contains("OBP-20251") => "FORMAT_ERROR"
 
       case "429" if message.contains("OBP-10018") => "ACCESS_EXCEEDED"
       case _ => code
