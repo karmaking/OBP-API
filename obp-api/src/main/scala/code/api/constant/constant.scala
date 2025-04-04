@@ -124,6 +124,10 @@ object CertificateConstants {
   final val BEGIN_CERT: String = "-----BEGIN CERTIFICATE-----"
   final val END_CERT: String = "-----END CERTIFICATE-----"
 }
+object PrivateKeyConstants {
+  final val BEGIN_KEY: String = "-----BEGIN PRIVATE KEY-----"
+  final val END_KEY: String = "-----END PRIVATE KEY-----"
+}
 
 object JedisMethod extends Enumeration {
   type JedisMethod = Value

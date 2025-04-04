@@ -45,6 +45,7 @@ import code.api.oauth1a.OauthParams._
 import code.api.util.APIUtil.ResourceDoc.{findPathVariableNames, isPathVariable}
 import code.api.util.ApiRole._
 import code.api.util.ApiTag.{ResourceDocTag, apiTagBank}
+import code.api.util.BerlinGroupSigning.getCertificateFromTppSignatureCertificate
 import code.api.util.FutureUtil.{EndpointContext, EndpointTimeout}
 import code.api.util.Glossary.GlossaryItem
 import code.api.v1_2.ErrorMessage
@@ -3925,9 +3926,23 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
   }
 
   private def passesPsd2ServiceProviderCommon(cc: Option[CallContext], serviceProvider: String) = {
-    val result: Box[Boolean] = getPropsAsBoolValue("requirePsd2Certificates", false) match {
-      case false => Full(true)
-      case true =>
+    val result = getPropsValue("requirePsd2Certificates", "NONE") match {
+      case value if value.toUpperCase == "ONLINE" =>
+        val requestHeaders = cc.map(_.requestHeaders).getOrElse(Nil)
+        val consumerName = cc.flatMap(_.consumer.map(_.name.get)).getOrElse("")
+        val certificate = getCertificateFromTppSignatureCertificate(requestHeaders)
+        val tpp = BerlinGroupSigning.checkTpp(consumerName, certificate)
+        if (tpp.nonEmpty) {
+          val hasRole = tpp.exists(_.services.contains(serviceProvider))
+          if (hasRole) {
+            Full(true)
+          } else {
+            Failure(X509ActionIsNotAllowed)
+          }
+        } else {
+          Failure("No valid Tpp")
+        }
+      case value if value.toUpperCase == "CERTIFICATE" =>
         `getPSD2-CERT`(cc.map(_.requestHeaders).getOrElse(Nil)) match {
           case Some(pem) =>
             logger.debug("PSD2-CERT pem: " + pem)
@@ -3947,6 +3962,8 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
             }
           case None => Failure(X509CannotGetCertificate)
         }
+      case _ =>
+        Full(true)
     }
     result
   }
@@ -3954,7 +3971,7 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
   def passesPsd2ServiceProvider(cc: Option[CallContext], serviceProvider: String): OBPReturnType[Box[Boolean]] = {
     val result = passesPsd2ServiceProviderCommon(cc, serviceProvider)
     Future(result) map {
-      x => (fullBoxOrException(x ~> APIFailureNewStyle(X509GeneralError, 400, cc.map(_.toLight))), cc)
+      x => (fullBoxOrException(x ~> APIFailureNewStyle(X509GeneralError, 401, cc.map(_.toLight))), cc)
     }
   }
   def passesPsd2Aisp(cc: Option[CallContext]): OBPReturnType[Box[Boolean]] = {

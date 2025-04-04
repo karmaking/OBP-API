@@ -1,8 +1,9 @@
 package code.api.util
 
 import code.api.RequestHeader
+import code.regulatedentities.MappedRegulatedEntityProvider
 import code.util.Helper.MdcLoggable
-import com.openbankproject.commons.model.User
+import com.openbankproject.commons.model.{RegulatedEntityTrait, User}
 import net.liftweb.common.{Box, Failure, Full}
 import net.liftweb.http.provider.HTTPParam
 
@@ -16,6 +17,17 @@ import java.util.{Base64, Date, UUID}
 import scala.util.matching.Regex
 
 object BerlinGroupSigning extends MdcLoggable {
+
+  lazy val p12Path = APIUtil.getPropsValue("truststore.path.tpp_signature")
+    .or(APIUtil.getPropsValue("truststore.path")).getOrElse("")
+  lazy val p12Password = APIUtil.getPropsValue("truststore.password.tpp_signature", "")
+  lazy val alias = APIUtil.getPropsValue("truststore.alias.tpp_signature", "")
+  // Load the private key and certificate from the keystore
+  lazy val (privateKey, certificate) = P12StoreUtil.loadPrivateKey(
+    p12Path = p12Path, // Replace with the actual file path
+    p12Password = p12Password, // Replace with the keystore password
+    alias = alias // Replace with the key alias
+  )
 
   // Step 1: Calculate Digest (SHA-256 Hash of the Body)
   def generateDigest(body: String): String = {
@@ -39,7 +51,7 @@ object BerlinGroupSigning extends MdcLoggable {
 
   // Step 3: Generate Signature using RSA Private Key
   def signString(signingString: String, privateKeyPem: String): String = {
-    val privateKey = loadPrivateKey(privateKeyPem)
+    val privateKey: PrivateKey = loadPrivateKey(privateKeyPem)
     val signature = Signature.getInstance("SHA256withRSA")
     signature.initSign(privateKey)
     signature.update(signingString.getBytes(StandardCharsets.UTF_8))
@@ -85,6 +97,23 @@ object BerlinGroupSigning extends MdcLoggable {
     certificate
   }
 
+  def checkTpp(consumerName: String, certificate: X509Certificate): List[RegulatedEntityTrait] = {
+    // Define a regular expression to extract the value of CN, allowing for optional spaces around '='
+    val cnPattern: Regex = """CN\s*=\s*([^,]+)""".r
+
+    // Use the regular expression to find the value of CN
+    val extractedCN = cnPattern.findFirstMatchIn(certificate.getIssuerDN.getName) match {
+      case Some(m) => m.group(1) // Extract the value of CN
+      case None => "CN not found"
+    }
+    val issuerCommonName = extractedCN // Certificate.caCert
+    val serialNumber = certificate.getSerialNumber.toString
+    val regulatedEntities: List[RegulatedEntityTrait] =
+      MappedRegulatedEntityProvider.getRegulatedEntities()
+        .filter(_.entityName == consumerName)
+    regulatedEntities
+  }
+
 
   /**
    * Verifies Signed Request. It assumes that Customers has a sored certificate.
@@ -112,12 +141,11 @@ object BerlinGroupSigning extends MdcLoggable {
           case Full(true) => // PEM certificate is ok
             val digest = generateDigest(body.getOrElse(""))
 
-
             val signatureHeaderValue = getHeaderValue(RequestHeader.Signature, requestHeaders)
             val signature = parseSignatureHeader(signatureHeaderValue).getOrElse("signature", "NONE")
             val headersToSign = parseSignatureHeader(signatureHeaderValue).getOrElse("headers", "").split(" ").toList
             val headers = headersToSign.map(h =>
-              if(h.toLowerCase() == RequestHeader.Digest.toLowerCase()) {
+              if (h.toLowerCase() == RequestHeader.Digest.toLowerCase()) {
                 s"$h: $digest"
               } else {
                 s"$h: ${getHeaderValue(h, requestHeaders)}"
@@ -143,7 +171,7 @@ object BerlinGroupSigning extends MdcLoggable {
     requestHeaders.find(_.name.toLowerCase() == name.toLowerCase()).map(_.values.mkString)
       .getOrElse(SecureRandomUtil.csprng.nextLong().toString)
   }
-  private def getCertificateFromTppSignatureCertificate(requestHeaders: List[HTTPParam]): X509Certificate = {
+  def getCertificateFromTppSignatureCertificate(requestHeaders: List[HTTPParam]): X509Certificate = {
     val certificate = getHeaderValue(RequestHeader.`TPP-Signature-Certificate`, requestHeaders)
     // Decode the Base64 string
     val decodedBytes = Base64.getDecoder.decode(certificate)
@@ -200,7 +228,7 @@ object BerlinGroupSigning extends MdcLoggable {
     regex.findAllMatchIn(signatureHeader).map(m => m.group("key") -> m.group("value")).toMap
   }
 
-  private def getCurrentDate: String = {
+  def getCurrentDate: String = {
     val sdf = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz")
     sdf.format(new Date())
   }
@@ -229,17 +257,13 @@ object BerlinGroupSigning extends MdcLoggable {
     val signingString = createSigningString(headers)
 
     // Load PEM files as strings
-    val privateKeyPath = "/path/to/private_key.pem"
     val certificatePath = "/path/to/certificate.pem"
-
-    val privateKeyPem = getPrivateKeyPem(new String(Files.readAllBytes(Paths.get(privateKeyPath))))
-
     val certificateFullString = new String(Files.readAllBytes(Paths.get(certificatePath)))
-    val certificate: X509Certificate = parseCertificate(getCertificatePem(certificateFullString))
 
-    val signature = signString(signingString, privateKeyPem)
 
-    println(s"1) Digest: SHA-256=$digest")
+    val signature = signString(signingString, P12StoreUtil.privateKeyToPEM(privateKey))
+
+    println(s"1) Digest: $digest")
     println(s"2) ${RequestHeader.`X-Request-ID`}: $xRequestId")
     println(s"3) ${RequestHeader.Date}: $dateHeader")
     println(s"4) ${RequestHeader.`TPP-Redirect-URL`}: $redirectUri")
@@ -249,7 +273,9 @@ object BerlinGroupSigning extends MdcLoggable {
 
     // Convert public certificate to Base64 for Signature-Certificate header
     val certificateBase64 = Base64.getEncoder.encodeToString(certificateFullString.getBytes(StandardCharsets.UTF_8))
-    println(s"6) TPP-Signature-Certificate: $certificateBase64")
+    println(s"6.1) TPP-Signature-Certificate: $certificateBase64")
+    val certificate2Base64 = Base64.getEncoder.encodeToString(P12StoreUtil.certificateToPEM(certificate).getBytes(StandardCharsets.UTF_8))
+    println(s"6.2) TPP-Signature-Certificate 2: ${certificate2Base64}")
 
     val isVerified = verifySignature(signingString, signature, certificate.getPublicKey)
     println(s"Signature Verification: $isVerified")
