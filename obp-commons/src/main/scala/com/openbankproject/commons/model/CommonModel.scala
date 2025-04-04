@@ -890,6 +890,21 @@ case class TransactionRequestTransferToAtm(
                                             to: ToAccountTransferToAtm
                                           ) extends TransactionRequestCommonBodyJSON
 
+case class RegulatedEntityTraitCommons(
+  entityId :String,
+  certificateAuthorityCaOwnerId :String,
+  entityName :String,
+  entityCode :String,
+  entityCertificatePublicKey :String,
+  entityType :String,
+  entityAddress :String,
+  entityTownCity :String,
+  entityPostCode :String,
+  entityCountry :String,
+  entityWebSite :String,
+  services :String) extends RegulatedEntityTrait
+object RegulatedEntityTraitCommons extends Converter[RegulatedEntityTrait, RegulatedEntityTraitCommons]
+
 //For COUNTERPARTY, it needs the counterparty_id to find the toCounterparty--> toBankAccount
 case class TransactionRequestCounterpartyId (counterparty_id : String)
 

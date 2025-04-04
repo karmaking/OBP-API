@@ -435,6 +435,8 @@ object ConnectorBuilderUtil {
       "getTransactionRequestTypeCharges",
       "getAccountsHeld",
       "getAccountsHeldByUser",
+      "getRegulatedEntities",
+      "getRegulatedEntityByEntityId",
     ).distinct
 
   /**

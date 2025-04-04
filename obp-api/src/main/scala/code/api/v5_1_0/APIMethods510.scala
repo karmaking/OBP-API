@@ -174,7 +174,7 @@ trait APIMethods510 {
       """Get Regulated Entity By REGULATED_ENTITY_ID
         """,
       EmptyBody,
-      regulatedEntitiesJsonV510,
+      regulatedEntityJsonV510,
       List(UnknownError),
       apiTagDirectory :: apiTagApi  :: Nil)
 

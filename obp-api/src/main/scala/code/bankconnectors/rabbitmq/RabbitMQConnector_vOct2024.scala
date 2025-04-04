@@ -60,17 +60,15 @@ trait RabbitMQConnector_vOct2024 extends Connector with MdcLoggable {
   // If we want to add a new message format, create a new file e.g. March2017_messages.scala
   // Then add a suffix to the connector value i.e. instead of RabbitMq we might have rest_vMar2019.
   // Then in this file, populate the different case classes depending on the connector name and send to CBS
-  val messageFormat: String = "Oct2024"
+  val messageFormat: String = "rabbitmq_vOct2024"
 
   override val messageDocs = ArrayBuffer[MessageDoc]()
 
   val authInfoExample = AuthInfo(userId = "userId", username = "username", cbsToken = "cbsToken")
   val errorCodeExample = "INTERNAL-OBP-ADAPTER-6001: ..."
 
-  val connectorName = "rabbitmq_vOct2024"
-
 //---------------- dynamic start -------------------please don't modify this line
-// ---------- created on 2025-01-14T19:52:36Z
+// ---------- created on 2025-04-04T14:01:22Z
 
   messageDocs += getAdapterInfoDoc
   def getAdapterInfoDoc = MessageDoc(
@@ -7070,8 +7068,81 @@ trait RabbitMQConnector_vOct2024 extends Connector with MdcLoggable {
         response.map(convertToTuple[Boolean](callContext))        
   }
           
-// ---------- created on 2025-01-14T19:52:36Z
-//---------------- dynamic end ---------------------please don't modify this line                                                          
+  messageDocs += getRegulatedEntitiesDoc
+  def getRegulatedEntitiesDoc = MessageDoc(
+    process = "obp.getRegulatedEntities",
+    messageFormat = messageFormat,
+    description = "Get Regulated Entities",
+    outboundTopic = None,
+    inboundTopic = None,
+    exampleOutboundMessage = (
+          OutBoundGetRegulatedEntities(MessageDocsSwaggerDefinitions.outboundAdapterCallContext)
+    ),
+    exampleInboundMessage = (
+     InBoundGetRegulatedEntities(inboundAdapterCallContext=MessageDocsSwaggerDefinitions.inboundAdapterCallContext,
+      status=MessageDocsSwaggerDefinitions.inboundStatus,
+      data=List( RegulatedEntityTraitCommons(entityId="string",
+      certificateAuthorityCaOwnerId="string",
+      entityName="string",
+      entityCode="string",
+      entityCertificatePublicKey="string",
+      entityType="string",
+      entityAddress="string",
+      entityTownCity="string",
+      entityPostCode="string",
+      entityCountry="string",
+      entityWebSite="string",
+      services="string")))
+    ),
+    adapterImplementation = Some(AdapterImplementation("- Core", 1))
+  )
+
+  override def getRegulatedEntities(callContext: Option[CallContext]): OBPReturnType[Box[List[RegulatedEntityTrait]]] = {
+        import com.openbankproject.commons.dto.{InBoundGetRegulatedEntities => InBound, OutBoundGetRegulatedEntities => OutBound}  
+        val req = OutBound(callContext.map(_.toOutboundAdapterCallContext).orNull)
+        val response: Future[Box[InBound]] = sendRequest[InBound]("obp_get_regulated_entities", req, callContext)
+        response.map(convertToTuple[List[RegulatedEntityTraitCommons]](callContext))        
+  }
+          
+  messageDocs += getRegulatedEntityByEntityIdDoc
+  def getRegulatedEntityByEntityIdDoc = MessageDoc(
+    process = "obp.getRegulatedEntityByEntityId",
+    messageFormat = messageFormat,
+    description = "Get Regulated Entity By Entity Id",
+    outboundTopic = None,
+    inboundTopic = None,
+    exampleOutboundMessage = (
+     OutBoundGetRegulatedEntityByEntityId(outboundAdapterCallContext=MessageDocsSwaggerDefinitions.outboundAdapterCallContext,
+      regulatedEntityId="string")
+    ),
+    exampleInboundMessage = (
+     InBoundGetRegulatedEntityByEntityId(inboundAdapterCallContext=MessageDocsSwaggerDefinitions.inboundAdapterCallContext,
+      status=MessageDocsSwaggerDefinitions.inboundStatus,
+      data= RegulatedEntityTraitCommons(entityId="string",
+      certificateAuthorityCaOwnerId="string",
+      entityName="string",
+      entityCode="string",
+      entityCertificatePublicKey="string",
+      entityType="string",
+      entityAddress="string",
+      entityTownCity="string",
+      entityPostCode="string",
+      entityCountry="string",
+      entityWebSite="string",
+      services="string"))
+    ),
+    adapterImplementation = Some(AdapterImplementation("- Core", 1))
+  )
+
+  override def getRegulatedEntityByEntityId(regulatedEntityId: String, callContext: Option[CallContext]): OBPReturnType[Box[RegulatedEntityTrait]] = {
+        import com.openbankproject.commons.dto.{InBoundGetRegulatedEntityByEntityId => InBound, OutBoundGetRegulatedEntityByEntityId => OutBound}  
+        val req = OutBound(callContext.map(_.toOutboundAdapterCallContext).orNull, regulatedEntityId)
+        val response: Future[Box[InBound]] = sendRequest[InBound]("obp_get_regulated_entity_by_entity_id", req, callContext)
+        response.map(convertToTuple[RegulatedEntityTraitCommons](callContext))        
+  }
+          
+// ---------- created on 2025-04-04T14:01:22Z
+//---------------- dynamic end ---------------------please don't modify this line                                                           
 
   private val availableOperation = DynamicEntityOperation.values.map(it => s""""$it"""").mkString("[", ", ", "]")
 
