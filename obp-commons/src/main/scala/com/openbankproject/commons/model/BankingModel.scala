@@ -128,6 +128,13 @@ case class TransactionTypeId(val value : String) {
 object TransactionTypeId {
   def unapply(id : String) = Some(TransactionTypeId(id))
 }
+case class RegulatedEntityId(val value : String) {
+  override def toString = value
+}
+
+object RegulatedEntityId {
+  def unapply(id : String) = Some(RegulatedEntityId(id))
+}
 
 case class AccountId(val value : String) {
   override def toString = value

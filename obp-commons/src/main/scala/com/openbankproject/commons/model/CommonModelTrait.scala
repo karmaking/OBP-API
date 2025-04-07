@@ -532,6 +532,15 @@ trait AtmAttributeTrait {
   def isActive: Option[Boolean]
 }
 
+trait RegulatedEntityAttributeTrait {
+  def regulatedEntityId: RegulatedEntityId
+  def regulatedEntityAttributeId: String
+  def attributeType: RegulatedEntityAttributeType.Value
+  def name: String
+  def value: String
+  def isActive: Option[Boolean]
+}
+
 trait BankAttributeTrait {
   def bankId: BankId
   def bankAttributeId: String
