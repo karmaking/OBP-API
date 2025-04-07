@@ -36,7 +36,7 @@ import com.openbankproject.commons.ExecutionContext.Implicits.global
 import com.openbankproject.commons.dto.{InBoundTrait, _}
 import com.openbankproject.commons.model.enums.StrongCustomerAuthenticationStatus.SCAStatus
 import com.openbankproject.commons.model.enums._
-import com.openbankproject.commons.model.{TopicTrait, _}
+import com.openbankproject.commons.model.{TopicTrait, RegulatedEntityAttributeSimple, _}
 import com.openbankproject.commons.util.ReflectUtils
 import net.liftweb.common.{Box, _}
 import net.liftweb.json._
@@ -7081,7 +7081,7 @@ trait RabbitMQConnector_vOct2024 extends Connector with MdcLoggable {
     exampleInboundMessage = (
      InBoundGetRegulatedEntities(inboundAdapterCallContext=MessageDocsSwaggerDefinitions.inboundAdapterCallContext,
       status=MessageDocsSwaggerDefinitions.inboundStatus,
-      data=List( RegulatedEntityTraitCommons(entityId = "0af807d7-3c39-43ef-9712-82bcfde1b9ca",
+      data=List(RegulatedEntityTraitCommons(entityId = "0af807d7-3c39-43ef-9712-82bcfde1b9ca",
         certificateAuthorityCaOwnerId = "CY_CBC",
         entityName = "EXAMPLE COMPANY LTD",
         entityCode = "PSD_PICY_CBC!12345",
@@ -7101,7 +7101,12 @@ trait RabbitMQConnector_vOct2024 extends Connector with MdcLoggable {
         entityPostCode = "1060",
         entityCountry = "CY",
         entityWebSite = "www.example.com",
-        services = """[{"CY":["PS_010","PS_020","PS_03C","PS_04C"]}]""")))
+        services = """[{"CY":["PS_010","PS_020","PS_03C","PS_04C"]}]""",
+        attributes = Some(List(RegulatedEntityAttributeSimple(
+          attributeType=attributeTypeExample.value,
+          name=attributeNameExample.value,
+          value=attributeValueExample.value)
+        )))))
     ),
     adapterImplementation = Some(AdapterImplementation("- Core", 1))
   )
@@ -7147,7 +7152,12 @@ trait RabbitMQConnector_vOct2024 extends Connector with MdcLoggable {
         entityPostCode = "1060",
         entityCountry = "CY",
         entityWebSite = "www.example.com",
-        services = """[{"CY":["PS_010","PS_020","PS_03C","PS_04C"]}]"""))
+        services = """[{"CY":["PS_010","PS_020","PS_03C","PS_04C"]}]""",
+        attributes = Some(List(RegulatedEntityAttributeSimple(
+          attributeType=attributeTypeExample.value,
+          name=attributeNameExample.value,
+          value=attributeValueExample.value)
+        ))))
     ),
     adapterImplementation = Some(AdapterImplementation("- Core", 1))
   )

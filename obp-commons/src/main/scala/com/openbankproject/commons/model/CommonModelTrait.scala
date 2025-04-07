@@ -114,6 +114,14 @@ trait SigningBasketConsentTrait {
   def consentId: String
 }
 
+//TODO, this is only from CBS yet, not use mapped mode, may need to be refactor.
+case class RegulatedEntityAttributeSimple(
+  attributeType: String,
+  name: String,
+  value: String,
+)
+
+
 trait RegulatedEntityTrait {
   def entityId: String
   def certificateAuthorityCaOwnerId: String
@@ -127,6 +135,7 @@ trait RegulatedEntityTrait {
   def entityCountry: String
   def entityWebSite: String
   def services: String
+  def attributes: Option[List[RegulatedEntityAttributeSimple]]
 }
 
 trait UserAttributeTrait {
