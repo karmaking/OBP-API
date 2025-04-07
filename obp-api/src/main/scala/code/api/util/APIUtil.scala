@@ -3930,9 +3930,8 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
         val requestHeaders = cc.map(_.requestHeaders).getOrElse(Nil)
         val consumerName = cc.flatMap(_.consumer.map(_.name.get)).getOrElse("")
         val certificate = getCertificateFromTppSignatureCertificate(requestHeaders)
-        val tpp = BerlinGroupSigning.checkTpp(consumerName, certificate, cc)
         for {
-          tpp <- BerlinGroupSigning.checkTpp(consumerName, certificate, cc)
+          tpp <- BerlinGroupSigning.checkTppByConsumerName(consumerName, certificate, cc)
         } yield {
           if (tpp.nonEmpty) {
             val hasRole = tpp.exists(_.services.contains(serviceProvider))

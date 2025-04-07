@@ -2,11 +2,14 @@ package code.api.util
 
 import code.api.RequestHeader
 import code.api.util.newstyle.RegulatedEntityNewStyle.getRegulatedEntitiesNewStyle
+import code.consumer.Consumers
+import code.model.Consumer
 import code.util.Helper.MdcLoggable
 import com.openbankproject.commons.ExecutionContext.Implicits.global
 import com.openbankproject.commons.model.{RegulatedEntityTrait, User}
 import net.liftweb.common.{Box, Failure, Full}
 import net.liftweb.http.provider.HTTPParam
+import net.liftweb.util.Helpers
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
@@ -30,6 +33,9 @@ object BerlinGroupSigning extends MdcLoggable {
     p12Password = p12Password, // Replace with the keystore password
     alias = alias // Replace with the key alias
   )
+
+  // Define a regular expression to extract the value of CN, allowing for optional spaces around '='
+  val cnPattern: Regex = """CN\s*=\s*([^,]+)""".r
 
   // Step 1: Calculate Digest (SHA-256 Hash of the Body)
   def generateDigest(body: String): String = {
@@ -99,10 +105,7 @@ object BerlinGroupSigning extends MdcLoggable {
     certificate
   }
 
-  def checkTpp(consumerName: String, certificate: X509Certificate, callContext: Option[CallContext]): Future[List[RegulatedEntityTrait]] = {
-    // Define a regular expression to extract the value of CN, allowing for optional spaces around '='
-    val cnPattern: Regex = """CN\s*=\s*([^,]+)""".r
-
+  def getTppByCertificate(certificate: X509Certificate, callContext: Option[CallContext]): Future[List[RegulatedEntityTrait]] = {
     // Use the regular expression to find the value of CN
     val extractedCN = cnPattern.findFirstMatchIn(certificate.getIssuerDN.getName) match {
       case Some(m) => m.group(1) // Extract the value of CN
@@ -110,11 +113,27 @@ object BerlinGroupSigning extends MdcLoggable {
     }
     val issuerCommonName = extractedCN // Certificate.caCert
     val serialNumber = certificate.getSerialNumber.toString
+    val regulatedEntities: Future[List[RegulatedEntityTrait]] = for {
+      (entities, _) <- getRegulatedEntitiesNewStyle(callContext)
+    } yield {
+      entities.filter { entity =>
+        val hasSerialNumber = entity.attributes.exists(_.exists(a =>
+          a.name == "CERTIFICATE_SERIAL_NUMBER" && a.value == serialNumber
+        ))
+        val hasCaName = entity.attributes.exists(_.exists(a =>
+          a.name == "CERTIFICATE_CA_NAME" && a.value == issuerCommonName
+        ))
+        hasSerialNumber && hasCaName
+      }
+    }
+    regulatedEntities
+  }
+  def checkTppByConsumerName(consumerName: String, certificate: X509Certificate, callContext: Option[CallContext]): Future[List[RegulatedEntityTrait]] = {
     val regulatedEntities: Future[List[RegulatedEntityTrait]] =
       for {
-        (entities, callContext) <- getRegulatedEntitiesNewStyle(callContext)
+        entities <- getTppByCertificate(certificate, callContext) // Find TPP via certificate
       } yield {
-        entities.filter(i => i.entityName == consumerName)
+        entities.filter(i => i.entityName == consumerName) // Match the name of TPP and Consumer name
       }
     regulatedEntities
   }
