@@ -3515,7 +3515,7 @@ object Glossary extends MdcLoggable  {
 
   private def getListOfFiles(): List[File] = {
     val glossaryPath = new File(getClass.getResource("").toURI.toString.replaceFirst("target/.*", "").replace("file:", ""),
-      "src/main/docs/glossary")
+      "/src/main/resources/docs/glossary")
     logger.info(s"|---> Glossary path: $glossaryPath")
 
     if (glossaryPath.exists && glossaryPath.isDirectory) {
@@ -3525,6 +3525,7 @@ object Glossary extends MdcLoggable  {
         .filter(_.getName.endsWith(".md"))
         .toList
     } else {
+			logger.error(s"Do not have any files under glossary path ($glossaryPath), please double check the folder: obp-api/src/main/resources/docs/glossary")
       List.empty[File]
     }
   }
