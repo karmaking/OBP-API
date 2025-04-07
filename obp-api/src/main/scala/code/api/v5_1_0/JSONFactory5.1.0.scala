@@ -559,6 +559,9 @@ case class APITags(
 case class ConsumerLogoUrlJson(
   logo_url: String
 )
+case class ConsumerCertificateJson(
+  certificate: String
+)
 case class ConsumerNameJson(app_name: String)
 
 case class TransactionRequestJsonV510(

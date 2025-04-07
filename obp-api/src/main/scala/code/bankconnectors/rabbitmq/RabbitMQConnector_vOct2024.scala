@@ -7081,28 +7081,19 @@ trait RabbitMQConnector_vOct2024 extends Connector with MdcLoggable {
     exampleInboundMessage = (
      InBoundGetRegulatedEntities(inboundAdapterCallContext=MessageDocsSwaggerDefinitions.inboundAdapterCallContext,
       status=MessageDocsSwaggerDefinitions.inboundStatus,
-       data = List(RegulatedEntityTraitCommons(entityId = "0af807d7-3c39-43ef-9712-82bcfde1b9ca",
-         certificateAuthorityCaOwnerId = "CY_CBC",
-         entityName = "EXAMPLE COMPANY LTD",
-         entityCode = "PSD_PICY_CBC!12345",
-         entityCertificatePublicKey =
-           """-----BEGIN CERTIFICATE-----MIICsjCCAZqgAwIBAgIGAYwQ62R0MA0GCSqGSIb3DQEBCwUAMBoxGDAWBgNVBAMMD2
-             |FwcC5leGFtcGxlLmNvbTAeFw0yMzExMjcxMzE1MTFaFw0yNTExMjYxMzE1MTFaMBoxGDAWBgNVBAMMD2FwcC5leGFtcGxlLmNvbTCCASIwDQ
-             |YJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAK9WIodZHWzKyCcf9YfWEhPURbfO6zKuMqzHN27GdqHsVVEGxP4F/J4mso+0ENcRr6ur4u81iRE
-             |aVdCc40rHDHVJNEtniD8Icbz7tcsqAewIVhc/q6WXGqImJpCq7hA0m247dDsaZT0lb/MVBiMoJxDEmAE/GYYnWTEn84R35WhJsMvuQ7QmLvNg6
-             |RkChY6POCT/YKe9NKwa1NqI1U+oA5RFzAaFtytvZCE3jtp+aR0brL7qaGfgxm6B7dEpGyhg0NcVCV7xMQNq2JxZTVdAr6lcsRGaAFulakmW3aN
-             |nmK+L35Wu8uW+OxNxwUuC6f3b4FVBa276FMuUTRfu7gc+k6kCAwEAATANBgkqhkiG9w0BAQsFAAOCAQEAAU5CjEyAoyTn7PgFpQD48ZNPuUsEQ
-             |19gzYgJvHMzFIoZ7jKBodjO5mCzWBcR7A4mpeAsdyiNBl2sTiZscSnNqxk61jVzP5Ba1D7XtOjjr7+3iqowrThj6BY40QqhYh/6BSY9fDzVZQi
-             |Hnvlo6ZUM5kUK6OavZOovKlp5DIl5sGqoP0qAJnpQ4nhB2WVVsKfPlOXc+2KSsbJ23g9l8zaTMr+X0umlvfEKqyEl1Fa2L1dO0y/KFQ+ILmxcZ
-             |LpRdq1hRAjd0quq9qGC8ucXhRWDgM4hslVpau0da68g0aItWNez3mc5lB82b3dcZpFMzO41bgw7gvw10AvvTfQDqEYIuQ==-----END CERTIFICATE----- """.stripMargin,
-         entityType = "PSD_PI",
-         entityAddress = "EXAMPLE COMPANY LTD, 5 SOME STREET",
-         entityTownCity = "SOME CITY",
-         entityPostCode = "1060",
-         entityCountry = "CY",
-         entityWebSite = "www.example.com",
-         services = "PISP,AISP")))
-      ),
+      data=List( RegulatedEntityTraitCommons(entityId="string",
+      certificateAuthorityCaOwnerId="string",
+      entityName="string",
+      entityCode="string",
+      entityCertificatePublicKey="string",
+      entityType="string",
+      entityAddress="string",
+      entityTownCity="string",
+      entityPostCode="string",
+      entityCountry="string",
+      entityWebSite="string",
+      services="string")))
+    ),
     adapterImplementation = Some(AdapterImplementation("- Core", 1))
   )
 
@@ -7126,29 +7117,20 @@ trait RabbitMQConnector_vOct2024 extends Connector with MdcLoggable {
     ),
     exampleInboundMessage = (
      InBoundGetRegulatedEntityByEntityId(inboundAdapterCallContext=MessageDocsSwaggerDefinitions.inboundAdapterCallContext,
-      status = MessageDocsSwaggerDefinitions.inboundStatus,
-       data = RegulatedEntityTraitCommons(entityId = "0af807d7-3c39-43ef-9712-82bcfde1b9ca",
-         certificateAuthorityCaOwnerId = "CY_CBC",
-         entityName = "EXAMPLE COMPANY LTD",
-         entityCode = "PSD_PICY_CBC!12345",
-         entityCertificatePublicKey =
-           """-----BEGIN CERTIFICATE-----MIICsjCCAZqgAwIBAgIGAYwQ62R0MA0GCSqGSIb3DQEBCwUAMBoxGDAWBgNVBAMMD2
-             |FwcC5leGFtcGxlLmNvbTAeFw0yMzExMjcxMzE1MTFaFw0yNTExMjYxMzE1MTFaMBoxGDAWBgNVBAMMD2FwcC5leGFtcGxlLmNvbTCCASIwDQ
-             |YJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAK9WIodZHWzKyCcf9YfWEhPURbfO6zKuMqzHN27GdqHsVVEGxP4F/J4mso+0ENcRr6ur4u81iRE
-             |aVdCc40rHDHVJNEtniD8Icbz7tcsqAewIVhc/q6WXGqImJpCq7hA0m247dDsaZT0lb/MVBiMoJxDEmAE/GYYnWTEn84R35WhJsMvuQ7QmLvNg6
-             |RkChY6POCT/YKe9NKwa1NqI1U+oA5RFzAaFtytvZCE3jtp+aR0brL7qaGfgxm6B7dEpGyhg0NcVCV7xMQNq2JxZTVdAr6lcsRGaAFulakmW3aN
-             |nmK+L35Wu8uW+OxNxwUuC6f3b4FVBa276FMuUTRfu7gc+k6kCAwEAATANBgkqhkiG9w0BAQsFAAOCAQEAAU5CjEyAoyTn7PgFpQD48ZNPuUsEQ
-             |19gzYgJvHMzFIoZ7jKBodjO5mCzWBcR7A4mpeAsdyiNBl2sTiZscSnNqxk61jVzP5Ba1D7XtOjjr7+3iqowrThj6BY40QqhYh/6BSY9fDzVZQi
-             |Hnvlo6ZUM5kUK6OavZOovKlp5DIl5sGqoP0qAJnpQ4nhB2WVVsKfPlOXc+2KSsbJ23g9l8zaTMr+X0umlvfEKqyEl1Fa2L1dO0y/KFQ+ILmxcZ
-             |LpRdq1hRAjd0quq9qGC8ucXhRWDgM4hslVpau0da68g0aItWNez3mc5lB82b3dcZpFMzO41bgw7gvw10AvvTfQDqEYIuQ==-----END CERTIFICATE----- """.stripMargin,
-         entityType = "PSD_PI",
-         entityAddress = "EXAMPLE COMPANY LTD, 5 SOME STREET",
-         entityTownCity = "SOME CITY",
-         entityPostCode = "1060",
-         entityCountry = "CY",
-         entityWebSite = "www.example.com",
-         services = "PISP,AISP"))
-      ),
+      status=MessageDocsSwaggerDefinitions.inboundStatus,
+      data= RegulatedEntityTraitCommons(entityId="string",
+      certificateAuthorityCaOwnerId="string",
+      entityName="string",
+      entityCode="string",
+      entityCertificatePublicKey="string",
+      entityType="string",
+      entityAddress="string",
+      entityTownCity="string",
+      entityPostCode="string",
+      entityCountry="string",
+      entityWebSite="string",
+      services="string"))
+    ),
     adapterImplementation = Some(AdapterImplementation("- Core", 1))
   )
 

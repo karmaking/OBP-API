@@ -48,6 +48,7 @@ trait ConsumersProvider {
     redirectURL: Option[String], 
     createdByUserId: Option[String],
     LogoURL: Option[String],
+    certificate: Option[String],
   ): Box[Consumer]
   def updateConsumerCallLimits(id: Long, perSecond: Option[String], perMinute: Option[String], perHour: Option[String], perDay: Option[String], perWeek: Option[String], perMonth: Option[String]): Future[Box[Consumer]]
   def getOrCreateConsumer(consumerId: Option[String], 

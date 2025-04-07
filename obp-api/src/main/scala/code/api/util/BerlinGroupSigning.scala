@@ -156,7 +156,8 @@ object BerlinGroupSigning extends MdcLoggable {
   }
 
   def getHeaderValue(name: String, requestHeaders: List[HTTPParam]): String = {
-    requestHeaders.find(_.name.toLowerCase() == name.toLowerCase()).map(_.values.mkString).getOrElse("None")
+    requestHeaders.find(_.name.toLowerCase() == name.toLowerCase()).map(_.values.mkString)
+      .getOrElse(SecureRandomUtil.csprng.nextLong().toString)
   }
   private def getPem(requestHeaders: List[HTTPParam]): String = {
     val certificate = getHeaderValue(RequestHeader.`TPP-Signature-Certificate`, requestHeaders)

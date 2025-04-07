@@ -254,16 +254,6 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
       case _ => None
     }
   }
-  /**
-   * Purpose of this helper function is to get the PSD2-CERT value from a Request Headers.
-   * @return the PSD2-CERT value from a Request Header as a String
-   */
-  def getTppSignatureCertificate(requestHeaders: List[HTTPParam]): Option[String] = {
-    requestHeaders.toSet.filter(_.name == RequestHeader.`TPP-Signature-Certificate`).toList match {
-      case x :: Nil => Some(x.values.mkString(", "))
-      case _ => None
-    }
-  }
 
   def getRequestHeader(name: String, requestHeaders: List[HTTPParam]): String = {
     requestHeaders.toSet.filter(_.name.toLowerCase == name.toLowerCase).toList match {
@@ -527,8 +517,16 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
    *
    */
   def getRequestHeadersToMirror(callContext: Option[CallContextLight]): CustomResponseHeaders = {
+    val mirrorByProperties = getPropsValue("mirror_request_headers_to_response", "").split(",").toList.map(_.trim)
+
     val mirrorRequestHeadersToResponse: List[String] =
-      getPropsValue("mirror_request_headers_to_response", "").split(",").toList.map(_.trim)
+      if (callContext.exists(_.url.contains(ApiVersion.berlinGroupV13.urlPrefix))) {
+        // Berlin Group Specification
+        RequestHeader.`X-Request-ID` :: mirrorByProperties
+      } else {
+        mirrorByProperties
+      }
+
     callContext match {
       case Some(cc) =>
         cc.requestHeaders match {
@@ -536,13 +534,14 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
           case _   =>
             val headers = cc.requestHeaders
               .filter(item => mirrorRequestHeadersToResponse.contains(item.name))
-              .map(item => (item.name, item.values.head))
+              .map(item => (item.name, item.values.headOption.getOrElse(""))) // Safe extraction
             CustomResponseHeaders(headers)
         }
       case None =>
         CustomResponseHeaders(Nil)
     }
   }
+
   /**
    *
    */
@@ -2993,15 +2992,23 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
     val remoteIpAddress = getRemoteIpAddress()
 
     val authHeaders = AuthorisationUtil.getAuthorisationHeaders(reqHeaders)
+    val authHeadersWithEmptyValues = RequestHeadersUtil.checkEmptyRequestHeaderValues(reqHeaders)
+    val authHeadersWithEmptyNames = RequestHeadersUtil.checkEmptyRequestHeaderNames(reqHeaders)
 
     // Identify consumer via certificate
-    val consumerByCertificate = Consent.getCurrentConsumerViaMtls(callContext = cc)
+    val consumerByCertificate = Consent.getCurrentConsumerViaTppSignatureCertOrMtls(callContext = cc)
 
     val res =
-      if (authHeaders.size > 1) { // Check Authorization Headers ambiguity
+      if (authHeadersWithEmptyValues.nonEmpty) { // Check Authorization Headers Empty Values
+        val message = ErrorMessages.EmptyRequestHeaders + s"Header names: ${authHeadersWithEmptyValues.mkString(", ")}"
+        Future { (fullBoxOrException(Empty ~> APIFailureNewStyle(message, 400, Some(cc.toLight))), None) }
+      } else if (authHeadersWithEmptyNames.nonEmpty) { // Check Authorization Headers Empty Names
+        val message = ErrorMessages.EmptyRequestHeaders + s"Header values: ${authHeadersWithEmptyNames.mkString(", ")}"
+        Future { (fullBoxOrException(Empty ~> APIFailureNewStyle(message, 400, Some(cc.toLight))), None) }
+      } else if (authHeaders.size > 1) { // Check Authorization Headers ambiguity
         Future { (Failure(ErrorMessages.AuthorizationHeaderAmbiguity + s"${authHeaders}"), None) }
       } else if (APIUtil.`hasConsent-ID`(reqHeaders)) { // Berlin Group's Consent
-        Consent.applyBerlinGroupRules(APIUtil.`getConsent-ID`(reqHeaders), cc)
+        Consent.applyBerlinGroupRules(APIUtil.`getConsent-ID`(reqHeaders), cc.copy(consumer = consumerByCertificate))
       } else if (APIUtil.hasConsentJWT(reqHeaders)) { // Open Bank Project's Consent
         val consentValue = APIUtil.getConsentJWT(reqHeaders)
         Consent.getConsentJwtValueByConsentId(consentValue.getOrElse("")) match {
@@ -3011,12 +3018,12 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
               // Note: At this point we are getting the Consumer from the Consumer in the Consent.
               // This may later be cross checked via the value in consumer_validation_method_for_consent.
               // Get the source of truth for Consumer (e.g. CONSUMER_CERTIFICATE) as early as possible.
-              cc.copy(consumer = Consent.getCurrentConsumerViaMtls(callContext = cc))
+              cc.copy(consumer = consumerByCertificate)
             )
           case _ =>
             JwtUtil.checkIfStringIsJWTValue(consentValue.getOrElse("")).isDefined match {
               case true => // It's JWT obtained via "Consent-JWT" request header
-                Consent.applyRules(APIUtil.getConsentJWT(reqHeaders), cc)
+                Consent.applyRules(APIUtil.getConsentJWT(reqHeaders), cc.copy(consumer = consumerByCertificate))
               case false => // Unrecognised consent value
                 Future { (Failure(ErrorMessages.ConsentHeaderValueInvalid), None) }
             }
@@ -3115,8 +3122,7 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
       }
       else if(Option(cc).flatMap(_.user).isDefined) {
         Future{(cc.user, Some(cc))}
-      }
-      else {
+      } else {
         if(hasAuthorizationHeader(reqHeaders)) {
           // We want to throw error in case of wrong or unsupported header. For instance:
           // - Authorization: mF_9.B5f-4.1JqM
