@@ -43,6 +43,14 @@ trait InBoundTrait[T] {
 
 //--------generated
 
+case class OutBoundGetRegulatedEntities (outboundAdapterCallContext: OutboundAdapterCallContext) extends TopicTrait
+case class InBoundGetRegulatedEntities (inboundAdapterCallContext: InboundAdapterCallContext, status: Status, data: List[RegulatedEntityTraitCommons]) extends InBoundTrait[List[RegulatedEntityTraitCommons]]
+
+
+case class OutBoundGetRegulatedEntityByEntityId (outboundAdapterCallContext: OutboundAdapterCallContext,
+  regulatedEntityId: String) extends TopicTrait
+case class InBoundGetRegulatedEntityByEntityId (inboundAdapterCallContext: InboundAdapterCallContext, status: Status, data: RegulatedEntityTraitCommons) extends InBoundTrait[RegulatedEntityTraitCommons]
+
 case class OutBoundGetObpConnectorLoopback(outboundAdapterCallContext: OutboundAdapterCallContext) extends TopicTrait
 
 case class InBoundGetObpConnectorLoopback(inboundAdapterCallContext: InboundAdapterCallContext, status: Status, data: ObpApiLoopback) extends InBoundTrait[ObpApiLoopback]

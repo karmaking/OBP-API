@@ -8,6 +8,10 @@ import code.model.{AppType, Consumer}
 import code.regulatedentities.MappedRegulatedEntityProvider
 import com.openbankproject.commons.model.RegulatedEntityTrait
 import net.liftweb.common.Box
+import code.bankconnectors.Connector
+import code.api.util.ErrorMessages.{InvalidConnectorResponse}
+import code.api.util.{APIUtil, CallContext}
+import com.github.dwickern.macros.NameOf.nameOf
 
 import scala.concurrent.Future
 
@@ -48,22 +52,19 @@ object RegulatedEntityNewStyle {
     }
   }
 
-  def getRegulatedEntitiesNewStyle(callContext: Option[CallContext]): OBPReturnType[List[RegulatedEntityTrait]] = {
-    Future {
-      MappedRegulatedEntityProvider.getRegulatedEntities()
-    } map {
-      (_, callContext)
+  def getRegulatedEntitiesNewStyle(
+    callContext: Option[CallContext]
+  ): OBPReturnType[List[RegulatedEntityTrait]] = {
+    Connector.connector.vend.getRegulatedEntities(callContext: Option[CallContext]) map { i =>
+      (unboxFullOrFail(i._1, callContext,s"$InvalidConnectorResponse ${nameOf(Connector.connector.vend.getRegulatedEntities _)} ", 400 ), i._2)
     }
   }
-  def getRegulatedEntityByEntityIdNewStyle(id: String,
-                                           callContext: Option[CallContext]
-                                          ): OBPReturnType[RegulatedEntityTrait] = {
-    Future {
-      MappedRegulatedEntityProvider.getRegulatedEntityByEntityId(id)
-    }  map {
-      (_, callContext)
-    } map {
-      x => (unboxFullOrFail(x._1, callContext, RegulatedEntityNotFound, 404), x._2)
+  def getRegulatedEntityByEntityIdNewStyle(
+    id: String,
+    callContext: Option[CallContext]
+  ): OBPReturnType[RegulatedEntityTrait] = {
+    Connector.connector.vend.getRegulatedEntityByEntityId(id, callContext: Option[CallContext]) map { i =>
+      (unboxFullOrFail(i._1, callContext,s"$InvalidConnectorResponse ${nameOf(Connector.connector.vend.getRegulatedEntityByEntityId _)} ", 400 ), i._2)
     }
   }
   def deleteRegulatedEntityNewStyle(id: String,

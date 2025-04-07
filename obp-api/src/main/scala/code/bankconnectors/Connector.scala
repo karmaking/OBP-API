@@ -1885,5 +1885,12 @@ trait Connector extends MdcLoggable {
     callContext: Option[CallContext]
   ): OBPReturnType[Box[Boolean]] = Future{(Failure(setUnimplementedError(nameOf(deleteCounterpartyLimit _))), callContext)}
 
-
+  def getRegulatedEntities(
+    callContext: Option[CallContext]
+  ): OBPReturnType[Box[List[RegulatedEntityTrait]]] = Future{(Failure(setUnimplementedError(nameOf(getRegulatedEntities _))), callContext)}
+  
+  def getRegulatedEntityByEntityId(
+    regulatedEntityId: String,
+    callContext: Option[CallContext]
+  ): OBPReturnType[Box[RegulatedEntityTrait]] = Future{(Failure(setUnimplementedError(nameOf(getRegulatedEntityByEntityId _))), callContext)}
 }
