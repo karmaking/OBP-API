@@ -1,8 +1,9 @@
 package code.api.util
 
 import code.api.RequestHeader
-import code.regulatedentities.MappedRegulatedEntityProvider
+import code.api.util.newstyle.RegulatedEntityNewStyle.getRegulatedEntitiesNewStyle
 import code.util.Helper.MdcLoggable
+import com.openbankproject.commons.ExecutionContext.Implicits.global
 import com.openbankproject.commons.model.{RegulatedEntityTrait, User}
 import net.liftweb.common.{Box, Failure, Full}
 import net.liftweb.http.provider.HTTPParam
@@ -14,6 +15,7 @@ import java.security.cert.{CertificateFactory, X509Certificate}
 import java.security.spec.PKCS8EncodedKeySpec
 import java.text.SimpleDateFormat
 import java.util.{Base64, Date, UUID}
+import scala.concurrent.Future
 import scala.util.matching.Regex
 
 object BerlinGroupSigning extends MdcLoggable {
@@ -97,7 +99,7 @@ object BerlinGroupSigning extends MdcLoggable {
     certificate
   }
 
-  def checkTpp(consumerName: String, certificate: X509Certificate): List[RegulatedEntityTrait] = {
+  def checkTpp(consumerName: String, certificate: X509Certificate, callContext: Option[CallContext]): Future[List[RegulatedEntityTrait]] = {
     // Define a regular expression to extract the value of CN, allowing for optional spaces around '='
     val cnPattern: Regex = """CN\s*=\s*([^,]+)""".r
 
@@ -108,9 +110,12 @@ object BerlinGroupSigning extends MdcLoggable {
     }
     val issuerCommonName = extractedCN // Certificate.caCert
     val serialNumber = certificate.getSerialNumber.toString
-    val regulatedEntities: List[RegulatedEntityTrait] =
-      MappedRegulatedEntityProvider.getRegulatedEntities()
-        .filter(_.entityName == consumerName)
+    val regulatedEntities: Future[List[RegulatedEntityTrait]] =
+      for {
+        (entities, callContext) <- getRegulatedEntitiesNewStyle(callContext)
+      } yield {
+        entities.filter(i => i.entityName == consumerName)
+      }
     regulatedEntities
   }
 

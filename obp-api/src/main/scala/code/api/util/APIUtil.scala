@@ -76,7 +76,6 @@ import com.openbankproject.commons.model._
 import com.openbankproject.commons.model.enums.StrongCustomerAuthentication.SCA
 import com.openbankproject.commons.model.enums.{ContentParam, PemCertificateRole, StrongCustomerAuthentication}
 import com.openbankproject.commons.util.Functions.Implicits._
-import com.openbankproject.commons.util.Functions.Memo
 import com.openbankproject.commons.util._
 import dispatch.url
 import javassist.expr.{ExprEditor, MethodCall}
@@ -107,8 +106,8 @@ import java.util.regex.Pattern
 import java.util.{Calendar, Date, UUID}
 import scala.collection.JavaConverters._
 import scala.collection.immutable.{List, Nil}
+import scala.collection.mutable
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
-import scala.collection.{immutable, mutable}
 import scala.concurrent.Future
 import scala.io.BufferedSource
 import scala.util.control.Breaks.{break, breakable}
@@ -3931,18 +3930,22 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
         val requestHeaders = cc.map(_.requestHeaders).getOrElse(Nil)
         val consumerName = cc.flatMap(_.consumer.map(_.name.get)).getOrElse("")
         val certificate = getCertificateFromTppSignatureCertificate(requestHeaders)
-        val tpp = BerlinGroupSigning.checkTpp(consumerName, certificate)
-        if (tpp.nonEmpty) {
-          val hasRole = tpp.exists(_.services.contains(serviceProvider))
-          if (hasRole) {
-            Full(true)
+        val tpp = BerlinGroupSigning.checkTpp(consumerName, certificate, cc)
+        for {
+          tpp <- BerlinGroupSigning.checkTpp(consumerName, certificate, cc)
+        } yield {
+          if (tpp.nonEmpty) {
+            val hasRole = tpp.exists(_.services.contains(serviceProvider))
+            if (hasRole) {
+              Full(true)
+            } else {
+              Failure(X509ActionIsNotAllowed)
+            }
           } else {
-            Failure(X509ActionIsNotAllowed)
+            Failure("No valid Tpp")
           }
-        } else {
-          Failure("No valid Tpp")
         }
-      case value if value.toUpperCase == "CERTIFICATE" =>
+      case value if value.toUpperCase == "CERTIFICATE" => Future {
         `getPSD2-CERT`(cc.map(_.requestHeaders).getOrElse(Nil)) match {
           case Some(pem) =>
             logger.debug("PSD2-CERT pem: " + pem)
@@ -3962,15 +3965,16 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
             }
           case None => Failure(X509CannotGetCertificate)
         }
+      }
       case _ =>
-        Full(true)
+        Future(Full(true))
     }
     result
   }
 
   def passesPsd2ServiceProvider(cc: Option[CallContext], serviceProvider: String): OBPReturnType[Box[Boolean]] = {
     val result = passesPsd2ServiceProviderCommon(cc, serviceProvider)
-    Future(result) map {
+    result map {
       x => (fullBoxOrException(x ~> APIFailureNewStyle(X509GeneralError, 401, cc.map(_.toLight))), cc)
     }
   }
@@ -3985,23 +3989,6 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
   }
   def passesPsd2Assp(cc: Option[CallContext]): OBPReturnType[Box[Boolean]] = {
     passesPsd2ServiceProvider(cc, PemCertificateRole.PSP_AS.toString())
-  }
-
-
-  def passesPsd2ServiceProviderOldStyle(cc: Option[CallContext], serviceProvider: String): Box[Boolean] = {
-    passesPsd2ServiceProviderCommon(cc, serviceProvider) ?~! X509GeneralError
-  }
-  def passesPsd2AispOldStyle(cc: Option[CallContext]): Box[Boolean] = {
-    passesPsd2ServiceProviderOldStyle(cc, PemCertificateRole.PSP_AI.toString())
-  }
-  def passesPsd2PispOldStyle(cc: Option[CallContext]): Box[Boolean] = {
-    passesPsd2ServiceProviderOldStyle(cc, PemCertificateRole.PSP_PI.toString())
-  }
-  def passesPsd2IcspOldStyle(cc: Option[CallContext]): Box[Boolean] = {
-    passesPsd2ServiceProviderOldStyle(cc, PemCertificateRole.PSP_IC.toString())
-  }
-  def passesPsd2AsspOldStyle(cc: Option[CallContext]): Box[Boolean] = {
-    passesPsd2ServiceProviderOldStyle(cc, PemCertificateRole.PSP_AS.toString())
   }
 
 
