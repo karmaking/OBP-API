@@ -133,10 +133,10 @@ import code.views.Views
 import code.views.system.{AccountAccess, ViewDefinition, ViewPermission}
 import code.webhook.{BankAccountNotificationWebhook, MappedAccountWebhook, SystemAccountNotificationWebhook}
 import code.webuiprops.WebUiProps
+import code.regulatedentities.attribute.RegulatedEntityAttribute
 import com.openbankproject.commons.model.ErrorMessage
 import com.openbankproject.commons.util.Functions.Implicits._
 import com.openbankproject.commons.util.{ApiVersion, Functions}
-
 import javax.mail.internet.MimeMessage
 import net.liftweb.common._
 import net.liftweb.db.{DB, DBLogEntry}
@@ -1124,7 +1124,8 @@ object ToSchemify {
     MappedCustomerDependant,
     AttributeDefinition,
     CustomerAccountLink,
-    TransactionIdMapping
+    TransactionIdMapping,
+    RegulatedEntityAttribute,
   )
 
   // start grpc server

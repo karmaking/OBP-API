@@ -902,7 +902,10 @@ case class RegulatedEntityTraitCommons(
   entityPostCode :String,
   entityCountry :String,
   entityWebSite :String,
-  services :String) extends RegulatedEntityTrait
+  services :String,
+  attributes :Option[List[RegulatedEntityAttributeSimple]]
+) extends RegulatedEntityTrait
+
 object RegulatedEntityTraitCommons extends Converter[RegulatedEntityTrait, RegulatedEntityTraitCommons]
 
 //For COUNTERPARTY, it needs the counterparty_id to find the toCounterparty--> toBankAccount

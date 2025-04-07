@@ -60,7 +60,12 @@ object SwaggerDefinitionsJSON {
     entity_post_code = "1060",
     entity_country = "CY",
     entity_web_site = "www.example.com",
-    services = json.parse("""[{"CY":["PS_010","PS_020","PS_03C","PS_04C"]}]""")
+    services = json.parse("""[{"CY":["PS_010","PS_020","PS_03C","PS_04C"]}]"""),
+    attributes = Some(List(RegulatedEntityAttributeSimple(
+        attributeType=attributeTypeExample.value,
+        name=attributeNameExample.value,
+        value=attributeValueExample.value)
+      ))
   )
 
   lazy val regulatedEntityPostJsonV510: RegulatedEntityPostJsonV510 = RegulatedEntityPostJsonV510(
@@ -74,7 +79,12 @@ object SwaggerDefinitionsJSON {
     entity_post_code = "1060",
     entity_country = "CY",
     entity_web_site = "www.example.com",
-    services = json.parse("""[{"CY":["PS_010","PS_020","PS_03C","PS_04C"]}]""")
+    services = json.parse("""[{"CY":["PS_010","PS_020","PS_03C","PS_04C"]}]"""),
+    attributes = Some(List(RegulatedEntityAttributeSimple(
+      attributeType=attributeTypeExample.value,
+      name=attributeNameExample.value,
+      value=attributeValueExample.value)
+    ))
   )
 
   val license =  License(

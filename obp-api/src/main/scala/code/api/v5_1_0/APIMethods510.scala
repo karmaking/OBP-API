@@ -202,7 +202,7 @@ trait APIMethods510 {
          |
          |""",
       regulatedEntityPostJsonV510,
-      regulatedEntitiesJsonV510,
+      regulatedEntityJsonV510,
       List(
         $UserNotLoggedIn,
         UserHasMissingRoles,

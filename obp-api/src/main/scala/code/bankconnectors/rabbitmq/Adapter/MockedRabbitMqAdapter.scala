@@ -77,7 +77,7 @@ class ServerCallback(val ch: Channel) extends DeliverCallback with MdcLoggable{
           ))
         }
 //---------------- dynamic start -------------------please don't modify this line
-// ---------- created on 2025-01-14T11:53:01Z
+// ---------- created on 2025-04-07T14:53:47Z
 
       } else if (obpMessageId.contains("get_adapter_info")) {
         val outBound = json.parse(message).extract[OutBoundGetAdapterInfo]
@@ -3109,6 +3109,48 @@ class ServerCallback(val ch: Channel) extends DeliverCallback with MdcLoggable{
             data = false
           ))
         }
+      } else if (obpMessageId.contains("get_regulated_entities")) {
+        val outBound = json.parse(message).extract[OutBoundGetRegulatedEntities]
+        val obpMappedResponse = code.bankconnectors.LocalMappedConnector.getRegulatedEntities(None).map(_._1.head)
+        
+        obpMappedResponse.map(response => InBoundGetRegulatedEntities(          
+          
+          inboundAdapterCallContext = InboundAdapterCallContext(
+            correlationId = outBound.outboundAdapterCallContext.correlationId
+          ),
+          status = Status("", Nil),
+          data = response
+        )).recoverWith {
+          case e: Exception => Future(InBoundGetRegulatedEntities(          
+          
+          inboundAdapterCallContext = InboundAdapterCallContext(
+            correlationId = outBound.outboundAdapterCallContext.correlationId
+          ),
+            status = Status(e.getMessage, Nil),
+            data = null
+          ))
+        }
+      } else if (obpMessageId.contains("get_regulated_entity_by_entity_id")) {
+        val outBound = json.parse(message).extract[OutBoundGetRegulatedEntityByEntityId]
+        val obpMappedResponse = code.bankconnectors.LocalMappedConnector.getRegulatedEntityByEntityId(outBound.regulatedEntityId,None).map(_._1.head)
+        
+        obpMappedResponse.map(response => InBoundGetRegulatedEntityByEntityId(          
+          
+          inboundAdapterCallContext = InboundAdapterCallContext(
+            correlationId = outBound.outboundAdapterCallContext.correlationId
+          ),
+          status = Status("", Nil),
+          data = response
+        )).recoverWith {
+          case e: Exception => Future(InBoundGetRegulatedEntityByEntityId(          
+          
+          inboundAdapterCallContext = InboundAdapterCallContext(
+            correlationId = outBound.outboundAdapterCallContext.correlationId
+          ),
+            status = Status(e.getMessage, Nil),
+            data = null
+          ))
+        }
       } else if (obpMessageId.contains("dynamic_entity_process")) {
         val outBound = json.parse(message).extract[OutBoundDynamicEntityProcess]
         val obpMappedResponse = code.bankconnectors.LocalMappedConnector.dynamicEntityProcess(outBound.operation,outBound.entityName,outBound.requestBody,outBound.entityId,None,None,None,false,None).map(_._1.head)
@@ -3130,8 +3172,8 @@ class ServerCallback(val ch: Channel) extends DeliverCallback with MdcLoggable{
             data = null
           ))
         }
-// ---------- created on 2025-01-14T11:53:01Z
-//---------------- dynamic end ---------------------please don't modify this line                      
+// ---------- created on 2025-04-07T14:53:47Z
+//---------------- dynamic end ---------------------please don't modify this line                       
       } else {  
         Future {
           1
