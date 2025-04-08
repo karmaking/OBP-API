@@ -894,7 +894,7 @@ object JSONFactory510 extends CustomJsonFormats {
   def createConsentsJsonV510(consents: List[MappedConsent]): ConsentsJsonV510 = {
     ConsentsJsonV510(
       consents.map { c =>
-        val jwtPayload: Box[ConsentJWT] = JwtUtil.getSignedPayloadAsJson(c.jsonWebToken).map(parse(_).extract[ConsentJWT])
+        val jwtPayload = JwtUtil.getSignedPayloadAsJson(c.jsonWebToken).map(parse(_).extract[ConsentJWT]).toOption
         AllConsentJsonV510(
           consent_reference_id = c.consentReferenceId,
           consumer_id = c.consumerId,

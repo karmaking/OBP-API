@@ -504,6 +504,11 @@ object SwaggerDefinitionsJSON {
   )
 
   val transactionRequestCounterpartyId = TransactionRequestCounterpartyId (counterparty_id = counterpartyIdExample.value)
+  
+  val transactionRequestAgentCashWithdrawal = TransactionRequestAgentCashWithdrawal(
+    bank_id = bankIdExample.value,
+    agent_number = agentNumberExample.value
+  )
 
   val transactionRequestIban =  TransactionRequestIban (iban = "String")
 
@@ -619,6 +624,7 @@ object SwaggerDefinitionsJSON {
     to_transfer_to_atm = Some(transactionRequestTransferToAtm),
     to_transfer_to_account = Some(transactionRequestTransferToAccount),
     to_sepa_credit_transfers = Some(sepaCreditTransfers),
+    to_agent = Some(transactionRequestAgentCashWithdrawal),
     value = amountOfMoney,
     description = descriptionExample.value
   )
@@ -1914,6 +1920,7 @@ object SwaggerDefinitionsJSON {
       role_name = "CanQueryOtherUser",
       bank_id = bankIdExample.value
     )
+    
   val entitlementJSONs = EntitlementJSONs(
     list = List(entitlementJSON)
   )
@@ -4185,6 +4192,61 @@ object SwaggerDefinitionsJSON {
     api_version = "v1.3"
   )
 
+  val helperInfoJson = HelperInfoJson(
+    counterparty_ids = List(counterpartyIdExample.value)
+  )
+  
+  val roleJsonV510 = code.api.util.Role(
+    role_name = roleNameExample.value,
+    bank_id = bankIdExample.value
+  )
+  
+  val httpParam = net.liftweb.http.provider.HTTPParam(
+    name = "tags", 
+    values = List("static")
+  )
+
+  val consentAccessAccountsJson =code.api.berlin.group.v1_3.JSONFactory_BERLIN_GROUP_1_3.ConsentAccessAccountsJson(
+    iban = Some(ibanExample.value),  
+    bban = Some("BARC12345612345678"),  
+    pan = Some("5409050000000000"),  
+    maskedPan = Some("123456xxxxxx1234"),  
+    msisdn = Some("+49 170 1234567"),  
+    currency = Some(currencyExample.value) 
+  )
+  
+  val consentAccessJson = code.api.berlin.group.v1_3.JSONFactory_BERLIN_GROUP_1_3.ConsentAccessJson(
+    accounts = Some(List(consentAccessAccountsJson)),
+    balances = Some(List(consentAccessAccountsJson)),
+    transactions = Some(List(consentAccessAccountsJson)),
+    availableAccounts = Some(accountIdExample.value),
+    allPsd2 = None
+  )
+  
+  val consentView = code.api.util.ConsentView(
+    bank_id = bankIdExample.value,
+    account_id = accountIdExample.value,
+    view_id = viewIdExample.value,
+    helper_info = Some(helperInfoJson)
+  )
+  
+  val consentJWT = code.api.util.ConsentJWT(
+    createdByUserId  = userIdExample.value,
+    sub = subExample.value,
+    iss = issExample.value,
+    aud = audExample.value,
+    jti = jtiExample.value,
+    iat = iatExample.value.toLong,
+    nbf = nbfExample.value.toLong,
+    exp = expExample.value.toLong,
+    request_headers = List(httpParam),
+    name = Some(nameExample.value),
+    email= Some(emailExample.value),
+    entitlements = List(roleJsonV510),
+    views = List(consentView),
+    access = Some(consentAccessJson)
+  )
+  
   val allConsentJsonV510 = AllConsentJsonV510(
     consent_reference_id = "9d429899-24f5-42c8-8565-943ffa6a7945",
     consumer_id = consumerIdExample.value,
@@ -4194,8 +4256,25 @@ object SwaggerDefinitionsJSON {
     status = ConsentStatus.INITIATED.toString,
     api_standard = "Berlin Group",
     api_version = "v1.3",
-    jwt_payload = SwaggerDefinitionsJsonUtil.jwtPayload,
+    jwt_payload = Some(consentJWT)
   )
+  val consentInfoJsonV510 = ConsentInfoJsonV510(
+    consent_id = consentIdExample.value,
+    consumer_id = consumerIdExample.value,
+    created_by_user_id = userIdExample.value,
+    status = statusExample.value,
+    last_action_date =  dateExample.value,
+    last_usage_date =  dateTimeExample.value,
+    jwt = jwtExample.value,
+    jwt_payload = Some(consentJWT),
+    api_standard = "Berlin Group",
+    api_version = "v1.3",
+  )
+  
+  val consentsInfoJsonV510 = ConsentsInfoJsonV510(
+    consents =  List(consentInfoJsonV510)
+  )
+  
   val consentsJsonV510 = ConsentsJsonV510(List(allConsentJsonV510))
 
   val revokedConsentJsonV310 = ConsentJsonV310(
@@ -5190,11 +5269,7 @@ object SwaggerDefinitionsJSON {
     consumer_id = consumerIdExample.value
   )
   
-  val helperInfoJson = HelperInfoJson(
-    counterparty_ids = List(counterpartyIdExample.value)
-  )
-  
-  val consentAccountAccessJson=  ConsentAccountAccessJson(
+  val consentAccountAccessJson = ConsentAccountAccessJson(
     bank_id = bankIdExample.value,
     account_id = accountIdExample.value,
     view_id = viewIdExample.value,
@@ -5213,7 +5288,7 @@ object SwaggerDefinitionsJSON {
     jwt = "eyJhbGciOiJIUzI1NiJ9.eyJlbnRpdGxlbWVudHMiOltdLCJjcmVhdGVkQnlVc2VySWQiOiJhYjY1MzlhOS1iMTA1LTQ0ODktYTg4My0wYWQ4ZDZjNjE2NTciLCJzdWIiOiIyMWUxYzhjYy1mOTE4LTRlYWMtYjhlMy01ZTVlZWM2YjNiNGIiLCJhdWQiOiJlanpuazUwNWQxMzJyeW9tbmhieDFxbXRvaHVyYnNiYjBraWphanNrIiwibmJmIjoxNTUzNTU0ODk5LCJpc3MiOiJodHRwczpcL1wvd3d3Lm9wZW5iYW5rcHJvamVjdC5jb20iLCJleHAiOjE1NTM1NTg0OTksImlhdCI6MTU1MzU1NDg5OSwianRpIjoiMDlmODhkNWYtZWNlNi00Mzk4LThlOTktNjYxMWZhMWNkYmQ1Iiwidmlld3MiOlt7ImFjY291bnRfaWQiOiJtYXJrb19wcml2aXRlXzAxIiwiYmFua19pZCI6ImdoLjI5LnVrLngiLCJ2aWV3X2lkIjoib3duZXIifSx7ImFjY291bnRfaWQiOiJtYXJrb19wcml2aXRlXzAyIiwiYmFua19pZCI6ImdoLjI5LnVrLngiLCJ2aWV3X2lkIjoib3duZXIifV19.8cc7cBEf2NyQvJoukBCmDLT7LXYcuzTcSYLqSpbxLp4",
     status = ConsentStatus.INITIATED.toString,
     consent_request_id = Some(consentRequestIdExample.value),
-    scopes = None,
+    scopes = Some(List(roleJsonV510)),
     consumer_id= consumerIdExample.value
   )
   
@@ -5574,7 +5649,7 @@ object SwaggerDefinitionsJSON {
   val minimalAgentsJsonV510 = MinimalAgentsJsonV510(
     agents = List(minimalAgentJsonV510)
   )
-  
+
   //The common error or success format.
   //Just some helper format to use in Json 
   case class NotSupportedYet()

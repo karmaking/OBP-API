@@ -912,7 +912,7 @@ object RegulatedEntityTraitCommons extends Converter[RegulatedEntityTrait, Regul
 case class TransactionRequestCounterpartyId (counterparty_id : String)
 
 //For AGENT_CASH_WITHDRAWAL, it needs the agent_number to find the toAgent--> toBankAccount
-case class transactionRequestAgentCashWithdrawal (bank_id: String , agent_number : String)
+case class TransactionRequestAgentCashWithdrawal (bank_id: String , agent_number : String)
 
 case class TransactionRequestSimple (
   otherBankRoutingScheme: String,
@@ -1026,7 +1026,7 @@ case class TransactionRequestBodyAllTypes (
                                             @optional
                                             to_sepa_credit_transfers: Option[SepaCreditTransfers]= None,//TODO not stable, from berlin Group
                                             @optional
-                                            to_agent: Option[transactionRequestAgentCashWithdrawal]= None,
+                                            to_agent: Option[TransactionRequestAgentCashWithdrawal]= None,
   
                                             value: AmountOfMoney,
                                             description: String

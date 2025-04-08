@@ -258,9 +258,9 @@ object ExampleValue {
   lazy val issExample = ConnectorField("String","The Issuer Identifier for the Issuer of the response.")
   lazy val audExample = ConnectorField("String","Identifies the audience that this ID token is intended for. It must be one of the OBP-API client IDs of your application.") 
   lazy val jtiExample = ConnectorField("String","(JWT ID) claim provides a unique identifier for the JWT.")
-  lazy val iatExample = ConnectorField("String","The iat (issued at) claim identifies the time at which the JWT was issued. Represented in Unix time (integer seconds).")
-  lazy val nbfExample = ConnectorField("String","The nbf (not before) claim identifies the time before which the JWT MUST NOT be accepted for processing. Represented in Unix time (integer seconds).")
-  lazy val expExample = ConnectorField("String","The exp (expiration time) claim identifies the expiration time on or after which the JWT MUST NOT be accepted for processing. Represented in Unix time (integer seconds).")
+  lazy val iatExample = ConnectorField("60","The iat (issued at) claim identifies the time at which the JWT was issued. Represented in Unix time (integer seconds).")
+  lazy val nbfExample = ConnectorField("60","The nbf (not before) claim identifies the time before which the JWT MUST NOT be accepted for processing. Represented in Unix time (integer seconds).")
+  lazy val expExample = ConnectorField("60","The exp (expiration time) claim identifies the expiration time on or after which the JWT MUST NOT be accepted for processing. Represented in Unix time (integer seconds).")
   lazy val emailVerifiedExample = ConnectorField("String","If the email is verified or not.")
   
   lazy val emailExample = ConnectorField(s"${userNameExample.value}@example.com", "An email address.")

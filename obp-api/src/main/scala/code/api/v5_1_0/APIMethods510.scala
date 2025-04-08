@@ -1532,7 +1532,7 @@ trait APIMethods510 {
          |
       """.stripMargin,
       EmptyBody,
-      consentsJsonV400,
+      consentsInfoJsonV510,
       List(
         $UserNotLoggedIn,
         $BankNotFound,
@@ -1571,7 +1571,7 @@ trait APIMethods510 {
          |
       """.stripMargin,
       EmptyBody,
-      consentsJsonV400,
+      consentsInfoJsonV510,
       List(
         $UserNotLoggedIn,
         $BankNotFound,
