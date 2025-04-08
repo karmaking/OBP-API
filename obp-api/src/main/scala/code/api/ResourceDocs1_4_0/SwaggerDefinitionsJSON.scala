@@ -1895,24 +1895,24 @@ object SwaggerDefinitionsJSON {
     satisfied = true,
     comments = "PlaceholderString"
   )
-  var kycChecksJSON = KycChecksJSON(checks = List(kycCheckJSON))
+  lazy val kycChecksJSON = KycChecksJSON(checks = List(kycCheckJSON))
 
-  var kycStatusJSON = KycStatusJSON(
+  lazy val kycStatusJSON = KycStatusJSON(
     customer_id = customerIdExample.value,
     customer_number = ExampleValue.customerNumberExample.value,
     ok = true,
     date = DateWithDayExampleObject
   )
-  var kycStatusesJSON = KycStatusesJSON(statuses = List(kycStatusJSON))
+  lazy val kycStatusesJSON = KycStatusesJSON(statuses = List(kycStatusJSON))
 
-  var socialMediaJSON = SocialMediaJSON(
+  lazy val socialMediaJSON = SocialMediaJSON(
     customer_number = ExampleValue.customerNumberExample.value,
     `type` = "PlaceholderString",
     handle = "PlaceholderString",
     date_added = DateWithDayExampleObject,
     date_activated = DateWithDayExampleObject
   )
-  var socialMediasJSON = SocialMediasJSON(checks = List(socialMediaJSON))
+  lazy val socialMediasJSON = SocialMediasJSON(checks = List(socialMediaJSON))
 
   lazy val entitlementJSON =
     code.api.v2_0_0.EntitlementJSON(
@@ -4171,12 +4171,12 @@ object SwaggerDefinitionsJSON {
   
   lazy val consentJsonV310 = ConsentJsonV310(
     consent_id = "9d429899-24f5-42c8-8565-943ffa6a7945",
-    jwt = "eyJhbGciOiJIUzI1NiJ9.eyJlbnRpdGxlbWVudHMiOltdLCJjcmVhdGVkQnlVc2VySWQiOiJhYjY1MzlhOS1iMTA1LTQ0ODktYTg4My0wYWQ4ZDZjNjE2NTciLCJzdWIiOiIyMWUxYzhjYy1mOTE4LTRlYWMtYjhlMy01ZTVlZWM2YjNiNGIiLCJhdWQiOiJlanpuazUwNWQxMzJyeW9tbmhieDFxbXRvaHVyYnNiYjBraWphanNrIiwibmJmIjoxNTUzNTU0ODk5LCJpc3MiOiJodHRwczpcL1wvd3d3Lm9wZW5iYW5rcHJvamVjdC5jb20iLCJleHAiOjE1NTM1NTg0OTksImlhdCI6MTU1MzU1NDg5OSwianRpIjoiMDlmODhkNWYtZWNlNi00Mzk4LThlOTktNjYxMWZhMWNkYmQ1Iiwidmlld3MiOlt7ImFjY291bnRfaWQiOiJtYXJrb19wcml2aXRlXzAxIiwiYmFua19pZCI6ImdoLjI5LnVrLngiLCJ2aWV3X2lkIjoib3duZXIifSx7ImFjY291bnRfaWQiOiJtYXJrb19wcml2aXRlXzAyIiwiYmFua19pZCI6ImdoLjI5LnVrLngiLCJ2aWV3X2lkIjoib3duZXIifV19.8cc7cBEf2NyQvJoukBCmDLT7LXYcuzTcSYLqSpbxLp4",
+    jwt = jwtExample.value,
     status = ConsentStatus.INITIATED.toString
   )   
   lazy val consentJsonV400 = ConsentJsonV400(
     consent_id = "9d429899-24f5-42c8-8565-943ffa6a7945",
-    jwt = "eyJhbGciOiJIUzI1NiJ9.eyJlbnRpdGxlbWVudHMiOltdLCJjcmVhdGVkQnlVc2VySWQiOiJhYjY1MzlhOS1iMTA1LTQ0ODktYTg4My0wYWQ4ZDZjNjE2NTciLCJzdWIiOiIyMWUxYzhjYy1mOTE4LTRlYWMtYjhlMy01ZTVlZWM2YjNiNGIiLCJhdWQiOiJlanpuazUwNWQxMzJyeW9tbmhieDFxbXRvaHVyYnNiYjBraWphanNrIiwibmJmIjoxNTUzNTU0ODk5LCJpc3MiOiJodHRwczpcL1wvd3d3Lm9wZW5iYW5rcHJvamVjdC5jb20iLCJleHAiOjE1NTM1NTg0OTksImlhdCI6MTU1MzU1NDg5OSwianRpIjoiMDlmODhkNWYtZWNlNi00Mzk4LThlOTktNjYxMWZhMWNkYmQ1Iiwidmlld3MiOlt7ImFjY291bnRfaWQiOiJtYXJrb19wcml2aXRlXzAxIiwiYmFua19pZCI6ImdoLjI5LnVrLngiLCJ2aWV3X2lkIjoib3duZXIifSx7ImFjY291bnRfaWQiOiJtYXJrb19wcml2aXRlXzAyIiwiYmFua19pZCI6ImdoLjI5LnVrLngiLCJ2aWV3X2lkIjoib3duZXIifV19.8cc7cBEf2NyQvJoukBCmDLT7LXYcuzTcSYLqSpbxLp4",
+    jwt = jwtExample.value,
     status = ConsentStatus.INITIATED.toString,
     api_standard = "Berlin Group",
     api_version = "v1.3"
@@ -4263,8 +4263,8 @@ object SwaggerDefinitionsJSON {
     consumer_id = consumerIdExample.value,
     created_by_user_id = userIdExample.value,
     status = statusExample.value,
-    last_action_date =  dateExample.value,
-    last_usage_date =  dateTimeExample.value,
+    last_action_date = dateExample.value,
+    last_usage_date = dateTimeExample.value,
     jwt = jwtExample.value,
     jwt_payload = Some(consentJWT),
     api_standard = "Berlin Group",
@@ -4279,7 +4279,7 @@ object SwaggerDefinitionsJSON {
 
   lazy val revokedConsentJsonV310 = ConsentJsonV310(
     consent_id = "9d429899-24f5-42c8-8565-943ffa6a7945",
-    jwt = "eyJhbGciOiJIUzI1NiJ9.eyJlbnRpdGxlbWVudHMiOltdLCJjcmVhdGVkQnlVc2VySWQiOiJhYjY1MzlhOS1iMTA1LTQ0ODktYTg4My0wYWQ4ZDZjNjE2NTciLCJzdWIiOiIyMWUxYzhjYy1mOTE4LTRlYWMtYjhlMy01ZTVlZWM2YjNiNGIiLCJhdWQiOiJlanpuazUwNWQxMzJyeW9tbmhieDFxbXRvaHVyYnNiYjBraWphanNrIiwibmJmIjoxNTUzNTU0ODk5LCJpc3MiOiJodHRwczpcL1wvd3d3Lm9wZW5iYW5rcHJvamVjdC5jb20iLCJleHAiOjE1NTM1NTg0OTksImlhdCI6MTU1MzU1NDg5OSwianRpIjoiMDlmODhkNWYtZWNlNi00Mzk4LThlOTktNjYxMWZhMWNkYmQ1Iiwidmlld3MiOlt7ImFjY291bnRfaWQiOiJtYXJrb19wcml2aXRlXzAxIiwiYmFua19pZCI6ImdoLjI5LnVrLngiLCJ2aWV3X2lkIjoib3duZXIifSx7ImFjY291bnRfaWQiOiJtYXJrb19wcml2aXRlXzAyIiwiYmFua19pZCI6ImdoLjI5LnVrLngiLCJ2aWV3X2lkIjoib3duZXIifV19.8cc7cBEf2NyQvJoukBCmDLT7LXYcuzTcSYLqSpbxLp4",
+    jwt = jwtExample.value,
     status = ConsentStatus.REJECTED.toString
   )
 
@@ -5278,14 +5278,14 @@ object SwaggerDefinitionsJSON {
   
   lazy val consentJsonV500 = ConsentJsonV500(
     consent_id = "9d429899-24f5-42c8-8565-943ffa6a7945",
-    jwt = "eyJhbGciOiJIUzI1NiJ9.eyJlbnRpdGxlbWVudHMiOltdLCJjcmVhdGVkQnlVc2VySWQiOiJhYjY1MzlhOS1iMTA1LTQ0ODktYTg4My0wYWQ4ZDZjNjE2NTciLCJzdWIiOiIyMWUxYzhjYy1mOTE4LTRlYWMtYjhlMy01ZTVlZWM2YjNiNGIiLCJhdWQiOiJlanpuazUwNWQxMzJyeW9tbmhieDFxbXRvaHVyYnNiYjBraWphanNrIiwibmJmIjoxNTUzNTU0ODk5LCJpc3MiOiJodHRwczpcL1wvd3d3Lm9wZW5iYW5rcHJvamVjdC5jb20iLCJleHAiOjE1NTM1NTg0OTksImlhdCI6MTU1MzU1NDg5OSwianRpIjoiMDlmODhkNWYtZWNlNi00Mzk4LThlOTktNjYxMWZhMWNkYmQ1Iiwidmlld3MiOlt7ImFjY291bnRfaWQiOiJtYXJrb19wcml2aXRlXzAxIiwiYmFua19pZCI6ImdoLjI5LnVrLngiLCJ2aWV3X2lkIjoib3duZXIifSx7ImFjY291bnRfaWQiOiJtYXJrb19wcml2aXRlXzAyIiwiYmFua19pZCI6ImdoLjI5LnVrLngiLCJ2aWV3X2lkIjoib3duZXIifV19.8cc7cBEf2NyQvJoukBCmDLT7LXYcuzTcSYLqSpbxLp4",
+    jwt = jwtExample.value,
     status = ConsentStatus.INITIATED.toString,
     consent_request_id = Some(consentRequestIdExample.value),
     account_access= Some(consentAccountAccessJson)
   )
   lazy val consentJsonV510 = ConsentJsonV510(
     consent_id = "9d429899-24f5-42c8-8565-943ffa6a7945",
-    jwt = "eyJhbGciOiJIUzI1NiJ9.eyJlbnRpdGxlbWVudHMiOltdLCJjcmVhdGVkQnlVc2VySWQiOiJhYjY1MzlhOS1iMTA1LTQ0ODktYTg4My0wYWQ4ZDZjNjE2NTciLCJzdWIiOiIyMWUxYzhjYy1mOTE4LTRlYWMtYjhlMy01ZTVlZWM2YjNiNGIiLCJhdWQiOiJlanpuazUwNWQxMzJyeW9tbmhieDFxbXRvaHVyYnNiYjBraWphanNrIiwibmJmIjoxNTUzNTU0ODk5LCJpc3MiOiJodHRwczpcL1wvd3d3Lm9wZW5iYW5rcHJvamVjdC5jb20iLCJleHAiOjE1NTM1NTg0OTksImlhdCI6MTU1MzU1NDg5OSwianRpIjoiMDlmODhkNWYtZWNlNi00Mzk4LThlOTktNjYxMWZhMWNkYmQ1Iiwidmlld3MiOlt7ImFjY291bnRfaWQiOiJtYXJrb19wcml2aXRlXzAxIiwiYmFua19pZCI6ImdoLjI5LnVrLngiLCJ2aWV3X2lkIjoib3duZXIifSx7ImFjY291bnRfaWQiOiJtYXJrb19wcml2aXRlXzAyIiwiYmFua19pZCI6ImdoLjI5LnVrLngiLCJ2aWV3X2lkIjoib3duZXIifV19.8cc7cBEf2NyQvJoukBCmDLT7LXYcuzTcSYLqSpbxLp4",
+    jwt = jwtExample.value,
     status = ConsentStatus.INITIATED.toString,
     consent_request_id = Some(consentRequestIdExample.value),
     scopes = Some(List(roleJsonV510)),
@@ -5660,7 +5660,7 @@ object SwaggerDefinitionsJSON {
     lazy val allFieldsThisFile = ReflectUtils.getValues(this, List(nameOf(allFields)))
                             .filter(it => it != null && it.isInstanceOf[AnyRef])
                             .map(_.asInstanceOf[AnyRef])
-    allFieldsThisFile ++ JSONFactoryCustom300.allFields ++ SandboxData.allFields 
+    allFieldsThisFile //++ JSONFactoryCustom300.allFields ++ SandboxData.allFields 
   }
 
 }

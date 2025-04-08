@@ -1010,7 +1010,13 @@ object ExampleValue {
   lazy val toTransferToAtmExample = ConnectorField(NoExampleProvided,NoDescriptionProvided)
   glossaryItems += makeGlossaryItem("to_transfer_to_atm", toTransferToAtmExample)
 
-  lazy val jwtExample = ConnectorField(NoExampleProvided,NoDescriptionProvided)
+  lazy val jwtExample = ConnectorField("eyJhbGciOiJIUzI1NiJ9.eyJlbnRpdGxlbWVudHMiOltdLCJjcmVhdGVkQnlVc2VySWQiOiJhYjY1Mz" +
+    "lhOS1iMTA1LTQ0ODktYTg4My0wYWQ4ZDZjNjE2NTciLCJzdWIiOiIyMWUxYzhjYy1mOTE4LTRlYWMtYjhlMy01ZTVlZWM2YjNiNGIiLCJhdWQiOiJ" +
+    "lanpuazUwNWQxMzJyeW9tbmhieDFxbXRvaHVyYnNiYjBraWphanNrIiwibmJmIjoxNTUzNTU0ODk5LCJpc3MiOiJodHRwczpcL1wvd3d3Lm9wZW5i" +
+    "YW5rcHJvamVjdC5jb20iLCJleHAiOjE1NTM1NTg0OTksImlhdCI6MTU1MzU1NDg5OSwianRpIjoiMDlmODhkNWYtZWNlNi00Mzk4LThlOTktNjYxMW" +
+    "ZhMWNkYmQ1Iiwidmlld3MiOlt7ImFjY291bnRfaWQiOiJtYXJrb19wcml2aXRlXzAxIiwiYmFua19pZCI6ImdoLjI5LnVrLngiLCJ2aWV3X2lkIjoi" +
+    "b3duZXIifSx7ImFjY291bnRfaWQiOiJtYXJrb19wcml2aXRlXzAyIiwiYmFua19pZCI6ImdoLjI5LnVrLngiLCJ2aWV3X2lkIjoib3duZXIifV19." +
+    "8cc7cBEf2NyQvJoukBCmDLT7LXYcuzTcSYLqSpbxLp4","JSON Web Token")
   glossaryItems += makeGlossaryItem("jwt", jwtExample)
 
   lazy val requestedCurrentValidEndDateExample = ConnectorField(NoExampleProvided,NoDescriptionProvided)
