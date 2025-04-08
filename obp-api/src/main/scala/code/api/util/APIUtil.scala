@@ -3238,7 +3238,7 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
    * @param cc The call context of an request
    * @return Failure in case we exceeded rate limit
    */
-  def anonymousAccess(cc: CallContext): Future[(Box[User], Option[CallContext])] = {
+  def anonymousAccess(cc: CallContext): OBPReturnType[Box[User]] = {
     getUserAndSessionContextFuture(cc)  map { result =>
       val url = result._2.map(_.url).getOrElse("None")
       val verb = result._2.map(_.verb).getOrElse("None")
@@ -3246,7 +3246,7 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
       val reqHeaders = result._2.map(_.requestHeaders).getOrElse(Nil)
       // Verify signed request
       JwsUtil.verifySignedRequest(body, verb, url, reqHeaders, result)
-    }  map { result =>
+    } flatMap { result =>
       val url = result._2.map(_.url).getOrElse("None")
       val verb = result._2.map(_.verb).getOrElse("None")
       val body = result._2.flatMap(_.httpBody)
@@ -3302,7 +3302,7 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
       val reqHeaders = result._2.map(_.requestHeaders).getOrElse(Nil)
       // Verify signed request if need be
       JwsUtil.verifySignedRequest(body, verb, url, reqHeaders, result)
-    }  map { result =>
+    } flatMap { result =>
       val url = result._2.map(_.url).getOrElse("None")
       val verb = result._2.map(_.verb).getOrElse("None")
       val body = result._2.flatMap(_.httpBody)
@@ -3931,7 +3931,7 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
         val consumerName = cc.flatMap(_.consumer.map(_.name.get)).getOrElse("")
         val certificate = getCertificateFromTppSignatureCertificate(requestHeaders)
         for {
-          tpp <- BerlinGroupSigning.checkTppByConsumerName(consumerName, certificate, cc)
+          tpp <- BerlinGroupSigning.getTppByCertificate(certificate, cc)
         } yield {
           if (tpp.nonEmpty) {
             val hasRole = tpp.exists(_.services.contains(serviceProvider))

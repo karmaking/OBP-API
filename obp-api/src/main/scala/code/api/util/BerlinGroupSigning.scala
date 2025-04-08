@@ -1,6 +1,7 @@
 package code.api.util
 
 import code.api.RequestHeader
+import code.api.util.APIUtil.OBPReturnType
 import code.api.util.newstyle.RegulatedEntityNewStyle.getRegulatedEntitiesNewStyle
 import code.consumer.Consumers
 import code.model.Consumer
@@ -36,6 +37,10 @@ object BerlinGroupSigning extends MdcLoggable {
 
   // Define a regular expression to extract the value of CN, allowing for optional spaces around '='
   val cnPattern: Regex = """CN\s*=\s*([^,]+)""".r
+  // Define a regular expression to extract the value of EMAILADDRESS, allowing for optional spaces around '='
+  val emailPattern: Regex = """EMAILADDRESS\s*=\s*([^,]+)""".r
+  // Define a regular expression to extract the value of Organization, allowing for optional spaces around '='
+  val organisationlPattern: Regex = """O\s*=\s*([^,]+)""".r
 
   // Step 1: Calculate Digest (SHA-256 Hash of the Body)
   def generateDigest(body: String): String = {
@@ -116,6 +121,7 @@ object BerlinGroupSigning extends MdcLoggable {
     val regulatedEntities: Future[List[RegulatedEntityTrait]] = for {
       (entities, _) <- getRegulatedEntitiesNewStyle(callContext)
     } yield {
+      logger.debug("Regulated Entities: " + entities)
       entities.filter { entity =>
         val hasSerialNumber = entity.attributes.exists(_.exists(a =>
           a.name == "CERTIFICATE_SERIAL_NUMBER" && a.value == serialNumber
@@ -126,15 +132,6 @@ object BerlinGroupSigning extends MdcLoggable {
         hasSerialNumber && hasCaName
       }
     }
-    regulatedEntities
-  }
-  def checkTppByConsumerName(consumerName: String, certificate: X509Certificate, callContext: Option[CallContext]): Future[List[RegulatedEntityTrait]] = {
-    val regulatedEntities: Future[List[RegulatedEntityTrait]] =
-      for {
-        entities <- getTppByCertificate(certificate, callContext) // Find TPP via certificate
-      } yield {
-        entities.filter(i => i.entityName == consumerName) // Match the name of TPP and Consumer name
-      }
     regulatedEntities
   }
 
@@ -255,6 +252,71 @@ object BerlinGroupSigning extends MdcLoggable {
   def getCurrentDate: String = {
     val sdf = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz")
     sdf.format(new Date())
+  }
+
+  def getOrCreateConsumer(requestHeaders: List[HTTPParam], forwardResult: (Box[User], Option[CallContext])): OBPReturnType[Box[User]] = {
+    val certificate = getCertificateFromTppSignatureCertificate(requestHeaders)
+    // Use the regular expression to find the value of EMAILADDRESS
+    val extractedEmail = emailPattern.findFirstMatchIn(certificate.getSubjectDN.getName) match {
+      case Some(m) => Some(m.group(1)) // Extract the value of EMAILADDRESS
+      case None => None
+    }
+    // Use the regular expression to find the value of Organisation
+    val extractOrganisation = organisationlPattern.findFirstMatchIn(certificate.getSubjectDN.getName) match {
+      case Some(m) => Some(m.group(1)) // Extract the value of Organisation
+      case None => None
+    }
+
+    for {
+      entities <- getTppByCertificate(certificate, forwardResult._2) // Find TPP via certificate
+    } yield {
+      // Certificate can be changed but this value is permanent per Regulated entity
+      val idno = entities.map(_.entityCode).headOption.getOrElse("")
+
+      val entityName = entities.map(_.entityName).headOption
+
+      // Get or create consumer by the unique key (azp, iss)
+      val consumer: Box[Consumer] = Consumers.consumers.vend.getOrCreateConsumer(
+        consumerId = None,
+        key = Some(Helpers.randomString(40).toLowerCase),
+        secret = Some(Helpers.randomString(40).toLowerCase),
+        aud = None,
+        azp = Some(idno), // The pair (azp, iss) is a unique key in case of Client of an Identity Provider
+        iss = Some(RequestHeader.`TPP-Signature-Certificate`),
+        sub = None,
+        Some(true),
+        name = entityName,
+        appType = None,
+        description = Some(s"Certificate serial number:${certificate.getSerialNumber}"),
+        developerEmail = extractedEmail,
+        redirectURL = None,
+        createdByUserId = None,
+        certificate = None
+      )
+
+      // Set or update certificate
+      consumer match {
+        case Full(consumer) =>
+          val certificateFromHeader = getHeaderValue(RequestHeader.`TPP-Signature-Certificate`, requestHeaders)
+          Consumers.consumers.vend.updateConsumer(
+            id = consumer.id.get,
+            name = entityName,
+            certificate = Some(certificateFromHeader)
+          ) match {
+            case Full(consumer) =>
+              // Update call context with a created consumer
+              (forwardResult._1, forwardResult._2.map(_.copy(consumer = Full(consumer))))
+            case error =>
+              logger.debug(error)
+              (Failure(s"${ErrorMessages.CreateConsumerError} Regulated entity: $idno"), forwardResult._2)
+          }
+        case error =>
+          logger.debug(error)
+          (Failure(s"${ErrorMessages.CreateConsumerError} Regulated entity: $idno"), forwardResult._2)
+      }
+    }
+
+
   }
 
   // Example Usage
