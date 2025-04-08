@@ -87,33 +87,33 @@ object SwaggerDefinitionsJSON {
     ))
   )
 
-  val license =  License(
+  lazy val license =  License(
     id = licenseIdExample.value,
     name = licenseNameExample.value
   )
 
-  val routing = Routing(
+  lazy val routing = Routing(
     scheme ="String",
     address ="String"
   )
 
-  val branchId = BranchId(value = ExampleValue.branchIdExample.value)
+  lazy val branchId = BranchId(value = ExampleValue.branchIdExample.value)
 
   // from code.model, not from normal version JSON Factory
   ///////////////////////////////////////////////////////////////////////////
   ///////////////////////////////////////////////////////////////////////////
 
-  val amountOfMoney = AmountOfMoney(
+  lazy val amountOfMoney = AmountOfMoney(
     currency = "EUR",
     amount = "100"
   )
 
-  val accountRouting =  AccountRouting(
+  lazy val accountRouting =  AccountRouting(
     scheme = "accountNumber",
     address = "123456"
   )
 
-  val coreAccount = CoreAccount(
+  lazy val coreAccount = CoreAccount(
     id ="123",
     label=" work",
     bankId="123123",
@@ -122,7 +122,7 @@ object SwaggerDefinitionsJSON {
   )
 
 
-  val accountHeld = AccountHeld(
+  lazy val accountHeld = AccountHeld(
     id = "5995d6a2-01b3-423c-a173-5481df49bdaf",
     label = "My Account",
     bankId = "gh.29.uk",
@@ -130,7 +130,7 @@ object SwaggerDefinitionsJSON {
     accountRoutings = List(accountRouting)
   )
 
-  val createViewJsonV300 = CreateViewJsonV300(
+  lazy val createViewJsonV300 = CreateViewJsonV300(
     name = "_test",
     description = "This view is for family",
     metadata_view ="_test",
@@ -221,9 +221,9 @@ object SwaggerDefinitionsJSON {
     )
   )
 
-  val createSystemViewJsonV300 = createViewJsonV300.copy(name = "test", metadata_view = "test", is_public = false)
+  lazy val createSystemViewJsonV300 = createViewJsonV300.copy(name = "test", metadata_view = "test", is_public = false)
 
-  val allowedActionsV500 = List(
+  lazy val allowedActionsV500 = List(
     "can_see_transaction_this_bank_account",
     "can_see_transaction_other_bank_account",
     "can_see_transaction_metadata",
@@ -318,7 +318,7 @@ object SwaggerDefinitionsJSON {
     "can_revoke_access_to_custom_views"
   )
   
-  val createCustomViewJson = CreateCustomViewJson(
+  lazy val createCustomViewJson = CreateCustomViewJson(
     name = viewNameExample.value,
     description= viewDescriptionExample.value,
     metadata_view= metadataViewExample.value,
@@ -328,7 +328,7 @@ object SwaggerDefinitionsJSON {
     allowed_permissions= allowedActionsV500,
   )
   
-  val customViewJsonV510 = CustomViewJsonV510(
+  lazy val customViewJsonV510 = CustomViewJsonV510(
     id = viewIdExample.value,
     name = viewNameExample.value,
     description = viewDescriptionExample.value,
@@ -339,7 +339,7 @@ object SwaggerDefinitionsJSON {
     allowed_permissions = allowedActionsV500
   )
   
-  val createSystemViewJsonV500 = CreateViewJsonV500(
+  lazy val createSystemViewJsonV500 = CreateViewJsonV500(
     name = viewNameExample.value,
     description = viewDescriptionExample.value,
     metadata_view =viewDescriptionExample.value,
@@ -352,7 +352,7 @@ object SwaggerDefinitionsJSON {
     can_revoke_access_to_views = Some(List(Constant.SYSTEM_OWNER_VIEW_ID))
   )
   
-  val updateCustomViewJson = UpdateCustomViewJson(
+  lazy val updateCustomViewJson = UpdateCustomViewJson(
     description = viewDescriptionExample.value,
     metadata_view = metadataViewExample.value,
     is_public = isPublicExample.value,
@@ -361,7 +361,7 @@ object SwaggerDefinitionsJSON {
     allowed_permissions = allowedActionsV500
   )
 
-  val updateViewJsonV300 = UpdateViewJsonV300(
+  lazy val updateViewJsonV300 = UpdateViewJsonV300(
     description = "this is for family",
     is_public = true,
     metadata_view = SYSTEM_OWNER_VIEW_ID,
@@ -442,7 +442,7 @@ object SwaggerDefinitionsJSON {
   )
   lazy val updateSystemViewJson310 = updateViewJsonV300.copy(is_public = false, is_firehose = Some(false))
   
-  val updateViewJsonV500 = UpdateViewJsonV500(
+  lazy val updateViewJsonV500 = UpdateViewJsonV500(
     description = "this is for family",
     is_public = true,
     metadata_view = SYSTEM_OWNER_VIEW_ID,
@@ -455,17 +455,17 @@ object SwaggerDefinitionsJSON {
   )
   lazy val updateSystemViewJson500 = updateViewJsonV500.copy(is_public = false, is_firehose = Some(false))
 
-  val transactionTypeIdSwagger = TransactionTypeId(value = "123")
+  lazy val transactionTypeIdSwagger = TransactionTypeId(value = "123")
 
-  val bankIdSwagger = BankId(value = "gh.uk.9j")
+  lazy val bankIdSwagger = BankId(value = "gh.uk.9j")
 
-  val transactionRequestIdSwagger = TransactionRequestId(value = "123")
+  lazy val transactionRequestIdSwagger = TransactionRequestId(value = "123")
 
-  val counterpartyIdSwagger = CounterpartyId(counterpartyIdExample.value)
+  lazy val counterpartyIdSwagger = CounterpartyId(counterpartyIdExample.value)
 
-  val accountIdSwagger = model.AccountId(value = "123")
+  lazy val accountIdSwagger = model.AccountId(value = "123")
 
-  val viewIdSwagger = ViewId(value = SYSTEM_OWNER_VIEW_ID)
+  lazy val viewIdSwagger = ViewId(value = SYSTEM_OWNER_VIEW_ID)
 
 
   // from code.TransactionTypes.TransactionType, not from normal version Factory
@@ -473,7 +473,7 @@ object SwaggerDefinitionsJSON {
   ///////////////////////////////////////////////////////////////////////////
   import code.TransactionTypes.TransactionType._
 
-  val transactionType = TransactionType(
+  lazy val transactionType = TransactionType(
     id = transactionTypeIdSwagger,
     bankId = bankIdSwagger,
     shortCode = "80080",
@@ -487,77 +487,77 @@ object SwaggerDefinitionsJSON {
   ///////////////////////////////////////////////////////////////////////////
   ///////////////////////////////////////////////////////////////////////////
 
-  val transactionRequestCharge = TransactionRequestCharge(
+  lazy val transactionRequestCharge = TransactionRequestCharge(
     summary = "String",
     value = amountOfMoney
   )
 
-  val transactionRequestChallenge = TransactionRequestChallenge(
+  lazy val transactionRequestChallenge = TransactionRequestChallenge(
     id= "String",
     allowed_attempts= 4,
     challenge_type= "String"
   )
 
-  val transactionRequestAccount = TransactionRequestAccount(
+  lazy val transactionRequestAccount = TransactionRequestAccount(
     bank_id= "String",
     account_id= "String"
   )
 
-  val transactionRequestCounterpartyId = TransactionRequestCounterpartyId (counterparty_id = counterpartyIdExample.value)
+  lazy val transactionRequestCounterpartyId = TransactionRequestCounterpartyId (counterparty_id = counterpartyIdExample.value)
   
-  val transactionRequestAgentCashWithdrawal = TransactionRequestAgentCashWithdrawal(
+  lazy val transactionRequestAgentCashWithdrawal = TransactionRequestAgentCashWithdrawal(
     bank_id = bankIdExample.value,
     agent_number = agentNumberExample.value
   )
 
-  val transactionRequestIban =  TransactionRequestIban (iban = "String")
+  lazy val transactionRequestIban =  TransactionRequestIban (iban = "String")
 
-  val transactionRequestBody = TransactionRequestBody(
+  lazy val transactionRequestBody = TransactionRequestBody(
     to = transactionRequestAccount,
     value= amountOfMoney,
     description= "String"
   )
 
 
-  val fromAccountTransfer = FromAccountTransfer(
+  lazy val fromAccountTransfer = FromAccountTransfer(
     mobile_phone_number = ExampleValue.mobileNumberExample.value,
     nickname = "String"
   )
 
-  val toAccountTransferToPhone = ToAccountTransferToPhone(
+  lazy val toAccountTransferToPhone = ToAccountTransferToPhone(
     mobile_phone_number = ExampleValue.mobileNumberExample.value,
   )
 
-  val toAccountTransferToAtmKycDocument = ToAccountTransferToAtmKycDocument(
+  lazy val toAccountTransferToAtmKycDocument = ToAccountTransferToAtmKycDocument(
     `type` = "String",
     number = "String",
   )
 
-  val toAccountTransferToAtm = ToAccountTransferToAtm(
+  lazy val toAccountTransferToAtm = ToAccountTransferToAtm(
     legal_name = ExampleValue.legalNameExample.value,
     date_of_birth = "20181230",
     mobile_phone_number = ExampleValue.mobileNumberExample.value,
     kyc_document = toAccountTransferToAtmKycDocument
   )
 
-  val toAccountTransferToAccountAccount = ToAccountTransferToAccountAccount(
+  lazy val toAccountTransferToAccountAccount = ToAccountTransferToAccountAccount(
     number = "String",
     iban = "String"
   )
 
-  val toAccountTransferToAccount = ToAccountTransferToAccount(
+  lazy val toAccountTransferToAccount = ToAccountTransferToAccount(
     name = "String",
     bank_code = "String",
     branch_number = "String",
     account = toAccountTransferToAccountAccount
   )
 
-  val amountOfMoneyJsonV121 = AmountOfMoneyJsonV121(
+  lazy val amountOfMoneyJsonV121 = AmountOfMoneyJsonV121(
     currency = "EUR",
     amount = "0"
   )
 
-  val transactionRequestTransferToPhone = TransactionRequestTransferToPhone(
+  lazy val transactionRequestTransferToPhone = TransactionRequestTransferToPhone(
     value = amountOfMoneyJsonV121,
     description = "String",
     message = "String",
@@ -565,7 +565,7 @@ object SwaggerDefinitionsJSON {
     to = toAccountTransferToPhone
   )
 
-  val transactionRequestTransferToAtm = TransactionRequestTransferToAtm(
+  lazy val transactionRequestTransferToAtm = TransactionRequestTransferToAtm(
     value = amountOfMoneyJsonV121,
     description = "String",
     message = "String",
@@ -573,7 +573,7 @@ object SwaggerDefinitionsJSON {
     to = toAccountTransferToAtm
   )
 
-  val transactionRequestTransferToAccount = TransactionRequestTransferToAccount(
+  lazy val transactionRequestTransferToAccount = TransactionRequestTransferToAccount(
     value = amountOfMoneyJsonV121,
     description = "String",
     transfer_type = "String",
@@ -581,21 +581,21 @@ object SwaggerDefinitionsJSON {
     to = toAccountTransferToAccount
   )
 
-  val sepaCreditTransfers = SepaCreditTransfers(
+  lazy val sepaCreditTransfers = SepaCreditTransfers(
     debtorAccount = PaymentAccount(iban = "12345"),
     instructedAmount = amountOfMoneyJsonV121,
     creditorAccount = PaymentAccount(iban = "54321"),
     creditorName = "John Miles"
   )
 
-  val sepaCreditTransfersBerlinGroupV13 = SepaCreditTransfersBerlinGroupV13(
+  lazy val sepaCreditTransfersBerlinGroupV13 = SepaCreditTransfersBerlinGroupV13(
     debtorAccount = PaymentAccount(iban = "GB33BUKB20201555555555"),
     instructedAmount = amountOfMoneyJsonV121,
     creditorAccount = PaymentAccount(iban = "DE75512108001245126199"),
     creditorName = "John Miles"
   )
 
-  val periodicSepaCreditTransfersBerlinGroupV13 = PeriodicSepaCreditTransfersBerlinGroupV13(
+  lazy val periodicSepaCreditTransfersBerlinGroupV13 = PeriodicSepaCreditTransfersBerlinGroupV13(
     debtorAccount = PaymentAccount(iban = "GB33BUKB20201555555555"),
     instructedAmount = amountOfMoneyJsonV121,
     creditorAccount = PaymentAccount(iban = "DE75512108001245126199"),
@@ -604,7 +604,7 @@ object SwaggerDefinitionsJSON {
     startDate ="2018-03-01",
   )
   
-  val transactionRequestSimple= TransactionRequestSimple(
+  lazy val transactionRequestSimple= TransactionRequestSimple(
     otherBankRoutingScheme = bankRoutingSchemeExample.value,
     otherBankRoutingAddress = bankRoutingAddressExample.value,
     otherBranchRoutingScheme = branchRoutingSchemeExample.value,
@@ -615,7 +615,7 @@ object SwaggerDefinitionsJSON {
     otherAccountSecondaryRoutingAddress = accountRoutingAddressExample.value
   )
 
-  val transactionRequestBodyAllTypes = TransactionRequestBodyAllTypes (
+  lazy val transactionRequestBodyAllTypes = TransactionRequestBodyAllTypes (
     to_sandbox_tan = Some(transactionRequestAccount),
     to_sepa = Some(transactionRequestIban),
     to_counterparty = Some(transactionRequestCounterpartyId),
@@ -629,9 +629,9 @@ object SwaggerDefinitionsJSON {
     description = descriptionExample.value
   )
 
-  val adapterImplementationJson = AdapterImplementationJson("CORE",3)
+  lazy val adapterImplementationJson = AdapterImplementationJson("CORE",3)
 
-  val messageDocJson = MessageDocJson(
+  lazy val messageDocJson = MessageDocJson(
     process = "getAccounts",
     message_format = "rest_vMar2019",
     inbound_topic = Some("from.obp.api.1.to.adapter.mf.caseclass.OutboundGetAccounts"),
@@ -649,48 +649,48 @@ object SwaggerDefinitionsJSON {
     requiredFieldInfo = Some(FieldNameApiVersions)
   )
 
-  val messageDocsJson = MessageDocsJson(message_docs = List(messageDocJson))
+  lazy val messageDocsJson = MessageDocsJson(message_docs = List(messageDocJson))
 
   //V121 - code.api.v1_2_1
   ///////////////////////////////////////////////////////////////////////////
   ///////////////////////////////////////////////////////////////////////////
   import code.api.v1_2_1._
 
-  val makePaymentJson = MakePaymentJson(
+  lazy val makePaymentJson = MakePaymentJson(
     bank_id = "gh.29.uk",
     account_id = "5995d6a2-01b3-423c-a173-5481df49bdaf",
     amount = "10"
   )
 
-  val transactionIdJson = TransactionIdJson(
+  lazy val transactionIdJson = TransactionIdJson(
     transaction_id = "123"
   )
 
-  val hostedBy = HostedBy(
+  lazy val hostedBy = HostedBy(
     organisation = "String",
     email = "String",
     phone = "String",
     organisation_website = "String"
   )  
   
-  val hostedBy400 = HostedBy400(
+  lazy val hostedBy400 = HostedBy400(
     organisation = "String",
     email = "String",
     phone = "String",
     organisation_website = "String"
   )
-  val hostedAt400 = HostedAt400(
+  lazy val hostedAt400 = HostedAt400(
     organisation = "Amazon",
     organisation_website = "https://aws.amazon.com/"
   )
-  val energySource400 = EnergySource400(
+  lazy val energySource400 = EnergySource400(
     organisation = "Stromio",
     organisation_website = "https://www.stromio.de/"
   )
 
-  val rateLimiting = RateLimiting(true, "REDIS", true, true)
+  lazy val rateLimiting = RateLimiting(true, "REDIS", true, true)
 
-  val apiInfoJson400 = APIInfoJson400(
+  lazy val apiInfoJson400 = APIInfoJson400(
     version = "String",
     version_status = "String",
     git_commit = "String",
@@ -702,7 +702,7 @@ object SwaggerDefinitionsJSON {
     energy_source = energySource400,
     resource_docs_requires_role = false
   )
-  val apiInfoJSON = APIInfoJSON(
+  lazy val apiInfoJSON = APIInfoJSON(
     version = "String",
     version_status = "String",
     git_commit = "String",
@@ -710,68 +710,68 @@ object SwaggerDefinitionsJSON {
     hosted_by = hostedBy
   )
 
-  /*  val aggregateMetricsJSON = AggregateMetricJSON(
+  /*  lazy val aggregateMetricsJSON = AggregateMetricJSON(
     total_api_calls = 591,
     average_duration = {"_1":["avg"],"_2":[["164.4940778341793570"]]},
     minimum_duration = {"_1":["min"],"_2":[["0"]]},
     maximum_duration = {"_1":["max"],"_2":[["2847"]]}
   )*/
 
-  val errorMessage = ErrorMessage(
+  lazy val errorMessage = ErrorMessage(
     code = 500,
     message = "Internal Server Error"
   )
 
-  val postTransactionImageJSON = PostTransactionImageJSON(
+  lazy val postTransactionImageJSON = PostTransactionImageJSON(
     label = "String",
     URL = "String"
   )
-  val postTransactionCommentJSON = PostTransactionCommentJSON(
+  lazy val postTransactionCommentJSON = PostTransactionCommentJSON(
     value = "String"
   )
-  val postTransactionTagJSON = PostTransactionTagJSON(
+  lazy val postTransactionTagJSON = PostTransactionTagJSON(
     value = "String"
   )
-  val postAccountTagJSON = PostAccountTagJSON(
+  lazy val postAccountTagJSON = PostAccountTagJSON(
     value = "String"
   )
-  val aliasJSON = AliasJSON(
+  lazy val aliasJSON = AliasJSON(
     alias = "String"
   )
-  val moreInfoJSON = MoreInfoJSON(
+  lazy val moreInfoJSON = MoreInfoJSON(
     more_info = "String"
   )
-  val urlJSON = UrlJSON(
+  lazy val urlJSON = UrlJSON(
     URL = "String"
   )
-  val imageUrlJSON = ImageUrlJSON(
+  lazy val imageUrlJSON = ImageUrlJSON(
     image_URL = "String"
   )
-  val openCorporateUrlJSON = OpenCorporateUrlJSON(
+  lazy val openCorporateUrlJSON = OpenCorporateUrlJSON(
     open_corporates_URL = "String"
   )
 
-  val accountRoutingJsonV121 = AccountRoutingJsonV121(
+  lazy val accountRoutingJsonV121 = AccountRoutingJsonV121(
     scheme = schemeExample.value,
     address = accountIdExample.value
   )
 
-  val bankAccountRoutingJson = BankAccountRoutingJson(
+  lazy val bankAccountRoutingJson = BankAccountRoutingJson(
     bank_id = Some(bankIdExample.value),
     account_routing = accountRoutingJsonV121
   )
 
-  val accountRuleJsonV300 = AccountRuleJsonV300(
+  lazy val accountRuleJsonV300 = AccountRuleJsonV300(
     scheme = "OVERDRAFT",
     value = "10"
   )
-  val userJSONV121 = UserJSONV121(
+  lazy val userJSONV121 = UserJSONV121(
     id = "5995d6a2-01b3-423c-a173-5481df49bdaf",
     provider = providerValueExample.value,
     display_name = "OBP"
   )
 
-  val viewJSONV121 = ViewJSONV121(
+  lazy val viewJSONV121 = ViewJSONV121(
     id = "123",
     short_name = "short_name",
     description = "description",
@@ -839,7 +839,7 @@ object SwaggerDefinitionsJSON {
     can_see_where_tag = true
   )
 
-  val createViewJsonV121 = CreateViewJsonV121(
+  lazy val createViewJsonV121 = CreateViewJsonV121(
     name = "_test",
     description = "This view is for family",
     is_public = true,
@@ -918,7 +918,7 @@ object SwaggerDefinitionsJSON {
     )
   )
 
-  val updateViewJsonV121 = UpdateViewJsonV121(
+  lazy val updateViewJsonV121 = UpdateViewJsonV121(
     description = "This view is for family",
     is_public = true,
     which_alias_to_use = "family",
@@ -995,37 +995,37 @@ object SwaggerDefinitionsJSON {
       "can_see_other_account_routing_address"
     )
   )
-  val viewsJSONV121 = ViewsJSONV121(
+  lazy val viewsJSONV121 = ViewsJSONV121(
     views = List(viewJSONV121)
   )
 
-  val accountJSON = AccountJSON(
+  lazy val accountJSON = AccountJSON(
     id = "123",
     label = "OBP",
     views_available = List(viewJSONV121),
     bank_id = bankIdExample.value
   )
 
-  val accountsJSON = AccountsJSON(
+  lazy val accountsJSON = AccountsJSON(
     accounts = List(accountJSON)
   )
 
-  val accountMinimalJson400 = AccountMinimalJson400(
+  lazy val accountMinimalJson400 = AccountMinimalJson400(
     bank_id = bankIdExample.value,
     account_id = accountIdExample.value,
     view_id = viewIdExample.value
   )
 
-  val accountsMinimalJson400 = AccountsMinimalJson400(
+  lazy val accountsMinimalJson400 = AccountsMinimalJson400(
     accounts = List(accountMinimalJson400)
   )
 
-  val bankRoutingJsonV121 = BankRoutingJsonV121(
+  lazy val bankRoutingJsonV121 = BankRoutingJsonV121(
     scheme = schemeExample.value,
     address = bankIdExample.value
   )
 
-  val bankJSON = BankJSON(
+  lazy val bankJSON = BankJSON(
     id = bankIdExample.value,
     short_name = "short_name ",
     full_name = "full_name",
@@ -1034,19 +1034,19 @@ object SwaggerDefinitionsJSON {
     bank_routing = bankRoutingJsonV121
   )
 
-  val banksJSON = BanksJSON(
+  lazy val banksJSON = BanksJSON(
     banks = List(bankJSON)
   )
-  val bankAttributeBankResponseJsonV400 = BankAttributeBankResponseJsonV400(
+  lazy val bankAttributeBankResponseJsonV400 = BankAttributeBankResponseJsonV400(
     name = nameExample.value,
     value = valueExample.value
   )
   
-  val bankAttributesResponseJson = BankAttributesResponseJson(
+  lazy val bankAttributesResponseJson = BankAttributesResponseJson(
     list = List(bankAttributeBankResponseJsonV400)
   )
   
-  val postBankJson400 = PostBankJson400(
+  lazy val postBankJson400 = PostBankJson400(
     id = bankIdExample.value,
     short_name = "short_name ",
     full_name = "full_name",
@@ -1054,7 +1054,7 @@ object SwaggerDefinitionsJSON {
     website = "www.openbankproject.com",
     bank_routings = List(bankRoutingJsonV121)
   )
-  val bankJson400 = BankJson400(
+  lazy val bankJson400 = BankJson400(
     id = bankIdExample.value,
     short_name = "short_name ",
     full_name = "full_name",
@@ -1063,7 +1063,7 @@ object SwaggerDefinitionsJSON {
     bank_routings = List(bankRoutingJsonV121),
     attributes = Some(List(bankAttributeBankResponseJsonV400))
   )  
-  val bankJson500 = BankJson500(
+  lazy val bankJson500 = BankJson500(
     id = bankIdExample.value,
     bank_code = bankCodeExample.value,
     full_name = bankFullNameExample.value,
@@ -1073,7 +1073,7 @@ object SwaggerDefinitionsJSON {
     attributes = Some(List(bankAttributeBankResponseJsonV400))
   ) 
   
-  val postBankJson500 = PostBankJson500(
+  lazy val postBankJson500 = PostBankJson500(
     id = Some(bankIdExample.value),
     bank_code = bankCodeExample.value,
     full_name = Some(fullNameExample.value),
@@ -1082,13 +1082,13 @@ object SwaggerDefinitionsJSON {
     bank_routings = Some(List(bankRoutingJsonV121))
   )
 
-  val banksJSON400 = BanksJson400(
+  lazy val banksJSON400 = BanksJson400(
     banks = List(bankJson400)
   )
   
-  val ibanCheckerPostJsonV400 = IbanAddress("DE75512108001245126199")
+  lazy val ibanCheckerPostJsonV400 = IbanAddress("DE75512108001245126199")
   
-  val ibanCheckerJsonV400 = IbanCheckerJsonV400(
+  lazy val ibanCheckerJsonV400 = IbanCheckerJsonV400(
     true, 
     Some(
       IbanDetailsJsonV400(
@@ -1112,17 +1112,17 @@ object SwaggerDefinitionsJSON {
     )
   )
 
-  val accountHolderJSON = AccountHolderJSON(
+  lazy val accountHolderJSON = AccountHolderJSON(
     name = "OBP",
     is_alias = true
   )
 
-  val minimalBankJSON = MinimalBankJSON(
+  lazy val minimalBankJSON = MinimalBankJSON(
     national_identifier = "OBP",
     name = "OBP"
   )
 
-  val moderatedAccountJSON = ModeratedAccountJSON(
+  lazy val moderatedAccountJSON = ModeratedAccountJSON(
     id = "5995d6a2-01b3-423c-a173-5481df49bdaf",
     label = "NoneLabel",
     number = "123",
@@ -1136,7 +1136,7 @@ object SwaggerDefinitionsJSON {
     account_routing = accountRoutingJsonV121
   )
 
-  val thisAccountJSON = ThisAccountJSON(
+  lazy val thisAccountJSON = ThisAccountJSON(
     id = "5995d6a2-01b3-423c-a173-5481df49bdaf",
     holders = List(accountHolderJSON),
     number = "123",
@@ -1146,14 +1146,14 @@ object SwaggerDefinitionsJSON {
     bank = minimalBankJSON
   )
 
-  val locationJSONV121 = LocationJSONV121(
+  lazy val locationJSONV121 = LocationJSONV121(
     latitude = 1.231,
     longitude = 1.231,
     date = DateWithDayExampleObject,
     user = userJSONV121
   )
 
-  val otherAccountMetadataJSON = OtherAccountMetadataJSON(
+  lazy val otherAccountMetadataJSON = OtherAccountMetadataJSON(
     public_alias = "NONE",
     private_alias = "NONE",
     more_info = "www.openbankproject.com",
@@ -1164,7 +1164,7 @@ object SwaggerDefinitionsJSON {
     physical_location = locationJSONV121
   )
 
-  val otherAccountJSON = OtherAccountJSON(
+  lazy val otherAccountJSON = OtherAccountJSON(
     id = "5995d6a2-01b3-423c-a173-5481df49bdaf",
     holder = accountHolderJSON,
     number = "123",
@@ -1175,7 +1175,7 @@ object SwaggerDefinitionsJSON {
     metadata = otherAccountMetadataJSON
   )
 
-  val transactionDetailsJSON = TransactionDetailsJSON(
+  lazy val transactionDetailsJSON = TransactionDetailsJSON(
     `type` = "AC",
     description = "this is for family",
     posted = DateWithDayExampleObject,
@@ -1184,7 +1184,7 @@ object SwaggerDefinitionsJSON {
     value = amountOfMoneyJsonV121
   )
 
-  val transactionImageJSON = TransactionImageJSON(
+  lazy val transactionImageJSON = TransactionImageJSON(
     id = "5995d6a2-01b3-423c-a173-5481df49bdaf",
     label = "NONE",
     URL = "www.openbankproject.com",
@@ -1192,39 +1192,39 @@ object SwaggerDefinitionsJSON {
     user = userJSONV121
   )
 
-  val transactionImagesJSON = TransactionImagesJSON(
+  lazy val transactionImagesJSON = TransactionImagesJSON(
     images = List(transactionImageJSON)
   )
 
-  val transactionCommentJSON = TransactionCommentJSON(
+  lazy val transactionCommentJSON = TransactionCommentJSON(
     id = "5995d6a2-01b3-423c-a173-5481df49bdaf",
     value = "OBP",
     date = DateWithDayExampleObject,
     user = userJSONV121
   )
 
-  val transactionTagJSON = TransactionTagJSON(
+  lazy val transactionTagJSON = TransactionTagJSON(
     id = "5995d6a2-01b3-423c-a173-5481df49bdaf",
     value = "OBP",
     date = DateWithDayExampleObject,
     user = userJSONV121
   )
 
-  val transactionTagsJSON = TransactionTagsJSON(
+  lazy val transactionTagsJSON = TransactionTagsJSON(
     tags = List(transactionTagJSON)
   )
 
-  val accountTagJSON = AccountTagJSON(
+  lazy val accountTagJSON = AccountTagJSON(
     id = "5995d6a2-01b3-423c-a173-5481df49bdaf",
     value = "OBP",
     date = DateWithDayExampleObject,
     user = userJSONV121
   )
-  val accountTagsJSON = AccountTagsJSON(
+  lazy val accountTagsJSON = AccountTagsJSON(
     tags = List(accountTagJSON)
   )
 
-  val transactionMetadataJSON = TransactionMetadataJSON(
+  lazy val transactionMetadataJSON = TransactionMetadataJSON(
     narrative = "NONE",
     comments = List(transactionCommentJSON),
     tags = List(transactionTagJSON),
@@ -1232,7 +1232,7 @@ object SwaggerDefinitionsJSON {
     where = locationJSONV121
   )
 
-  val transactionJSON = TransactionJSON(
+  lazy val transactionJSON = TransactionJSON(
     id = "5995d6a2-01b3-423c-a173-5481df49bdaf",
     this_account = thisAccountJSON,
     other_account = otherAccountJSON,
@@ -1240,63 +1240,63 @@ object SwaggerDefinitionsJSON {
     metadata = transactionMetadataJSON
   )
 
-  val transactionsJSON = TransactionsJSON(
+  lazy val transactionsJSON = TransactionsJSON(
     transactions = List(transactionJSON)
   )
 
-  val successMessage = SuccessMessage(
+  lazy val successMessage = SuccessMessage(
     success = "Success"
   )
 
-  val otherAccountsJSON = OtherAccountsJSON(
+  lazy val otherAccountsJSON = OtherAccountsJSON(
     other_accounts = List(otherAccountJSON)
   )
 
-  val transactionNarrativeJSON = TransactionNarrativeJSON(
+  lazy val transactionNarrativeJSON = TransactionNarrativeJSON(
     narrative = "narative"
   )
 
-  val transactionCommentsJSON = TransactionCommentsJSON(
+  lazy val transactionCommentsJSON = TransactionCommentsJSON(
     comments = List(transactionCommentJSON)
   )
 
-  val transactionWhereJSON = TransactionWhereJSON(
+  lazy val transactionWhereJSON = TransactionWhereJSON(
     where = locationJSONV121
   )
 
-  val permissionJSON = PermissionJSON(
+  lazy val permissionJSON = PermissionJSON(
     user = userJSONV121,
     views = List(viewJSONV121)
   )
 
-  val permissionsJSON = PermissionsJSON(
+  lazy val permissionsJSON = PermissionsJSON(
     permissions = List(permissionJSON)
   )
 
-  val updateAccountJSON = UpdateAccountJSON(
+  lazy val updateAccountJSON = UpdateAccountJSON(
     id = "123123",
     label = "label",
     bank_id = bankIdExample.value
   )
-  val updateAccountJsonV400 = UpdateAccountJsonV400(label = "updated label")
+  lazy val updateAccountJsonV400 = UpdateAccountJsonV400(label = "updated label")
 
-  val viewIdsJson = ViewIdsJson(
+  lazy val viewIdsJson = ViewIdsJson(
     views = List("_family" ,"_work")
   )
 
-  val locationPlainJSON = LocationPlainJSON(
+  lazy val locationPlainJSON = LocationPlainJSON(
     latitude = 1.532,
     longitude = 1.535
   )
 
-  val postTransactionWhereJSON = PostTransactionWhereJSON(
+  lazy val postTransactionWhereJSON = PostTransactionWhereJSON(
     where = locationPlainJSON
   )
 
-  val corporateLocationJSON = CorporateLocationJSON(
+  lazy val corporateLocationJSON = CorporateLocationJSON(
     corporate_location = locationPlainJSON
   )
-  val physicalLocationJSON = PhysicalLocationJSON(
+  lazy val physicalLocationJSON = PhysicalLocationJSON(
     physical_location = locationPlainJSON
   )
 
@@ -1305,21 +1305,21 @@ object SwaggerDefinitionsJSON {
   ///////////////////////////////////////////////////////////////////////////
   import code.api.v1_3_0._
 
-  val pinResetJSON = PinResetJSON(
+  lazy val pinResetJSON = PinResetJSON(
     requested_date = DateWithDayExampleObject,
     reason_requested = FORGOT.toString
   )
-  val pinResetJSON1 = PinResetJSON(
+  lazy val pinResetJSON1 = PinResetJSON(
     requested_date = new Date(),
     reason_requested = GOOD_SECURITY_PRACTICE.toString
   )
 
-  val replacementJSON = ReplacementJSON(
+  lazy val replacementJSON = ReplacementJSON(
     requested_date = DateWithDayExampleObject,
     reason_requested = CardReplacementReason.RENEW.toString
   )
 
-  val physicalCardJSON = PhysicalCardJSON(
+  lazy val physicalCardJSON = PhysicalCardJSON(
     bank_id = bankIdExample.value,
     bank_card_number = bankCardNumberExample.value,
     name_on_card = "String",
@@ -1340,11 +1340,11 @@ object SwaggerDefinitionsJSON {
     posted = DateWithDayExampleObject
   )
 
-  val physicalCardsJSON = PhysicalCardsJSON(
+  lazy val physicalCardsJSON = PhysicalCardsJSON(
     cards = List(physicalCardJSON)
   )
 
-  val postPhysicalCardJSON = PostPhysicalCardJSON(
+  lazy val postPhysicalCardJSON = PostPhysicalCardJSON(
     bank_card_number = bankCardNumberExample.value,
     name_on_card = "name_on_card",
     issue_number = issueNumberExample.value,
@@ -1367,13 +1367,13 @@ object SwaggerDefinitionsJSON {
   ///////////////////////////////////////////////////////////////////////////
   import code.api.v1_4_0.JSONFactory1_4_0._
 
-  val transactionRequestBodyJson = TransactionRequestBodyJson (
+  lazy val transactionRequestBodyJson = TransactionRequestBodyJson (
     to = transactionRequestAccount,
     value = amountOfMoney,
     description = "String"
   )
 
-  val transactionRequestJson = TransactionRequestJson(
+  lazy val transactionRequestJson = TransactionRequestJson(
     id = transactionRequestIdSwagger,
     `type` = "String",
     from = transactionRequestAccount,
@@ -1398,55 +1398,55 @@ object SwaggerDefinitionsJSON {
     is_beneficiary = true
   )
 
-  val customerFaceImageJson = CustomerFaceImageJson(
+  lazy val customerFaceImageJson = CustomerFaceImageJson(
     url = "www.openbankproject",
     date = DateWithDayExampleObject
   )
 
-  val locationJson = LocationJsonV140(
+  lazy val locationJson = LocationJsonV140(
     latitude = 11.45,
     longitude = 11.45
   )
 
-  val transactionRequestChargeJsonV140 = TransactionRequestChargeJsonV140(
+  lazy val transactionRequestChargeJsonV140 = TransactionRequestChargeJsonV140(
     summary = "The bank fixed charge",
     value = amountOfMoneyJsonV121 //amountOfMoneyJSON
   )
 
-  val transactionRequestTypeJsonV140 = TransactionRequestTypeJsonV140(
+  lazy val transactionRequestTypeJsonV140 = TransactionRequestTypeJsonV140(
     value = "10",
     charge = transactionRequestChargeJsonV140
   )
 
-  val transactionRequestTypesJsonV140 = TransactionRequestTypesJsonV140(
+  lazy val transactionRequestTypesJsonV140 = TransactionRequestTypesJsonV140(
     transaction_request_types = List(transactionRequestTypeJsonV140)
   )
 
-  val transactionRequestAccountJsonV140 = TransactionRequestAccountJsonV140(
+  lazy val transactionRequestAccountJsonV140 = TransactionRequestAccountJsonV140(
     bank_id = bankIdExample.value,
     account_id =accountIdExample.value
   )
 
-  val challengeJsonV140 = ChallengeJsonV140(
+  lazy val challengeJsonV140 = ChallengeJsonV140(
     id = "be1a183d-b301-4b83-b855-5eeffdd3526f",
     allowed_attempts = 3,
     challenge_type = SANDBOX_TAN.toString
   )
 
-  val driveUpJson = DriveUpStringJson(
+  lazy val driveUpJson = DriveUpStringJson(
     hours = "5"
   )
-  val licenseJson = LicenseJsonV140(
+  lazy val licenseJson = LicenseJsonV140(
     id = licenseIdExample.value,
     name = licenseNameExample.value
   )
-  val metaJson = MetaJsonV140(
+  lazy val metaJson = MetaJsonV140(
     license = licenseJson
   )
-  val lobbyJson = LobbyStringJson(
+  lazy val lobbyJson = LobbyStringJson(
     hours = "5"
   )
-  val addressJsonV140 = AddressJsonV140(
+  lazy val addressJsonV140 = AddressJsonV140(
     line_1 = "Osloer Straße 16/17",
     line_2 = "Wedding",
     line_3 = "",
@@ -1455,19 +1455,19 @@ object SwaggerDefinitionsJSON {
     postcode = "13359",
     country = "DE"
   )
-  val challengeAnswerJSON = ChallengeAnswerJSON(
+  lazy val challengeAnswerJSON = ChallengeAnswerJSON(
     id = "This is challenge.id, you can get it from `Create Transaction Request.` response, only is useful if status ==`INITIATED` there.",
     answer = "123"
   )
 
-  val challengeAnswerJson400 = ChallengeAnswerJson400(
+  lazy val challengeAnswerJson400 = ChallengeAnswerJson400(
     id = "This is challenge.id, you can get it from `Create Transaction Request.` response, only is useful if status ==`INITIATED` there.",
     answer = "123",
     Some("[Optional] Reason code for REJECT answer (e.g. 'CUST')"),
     Some("[Optional] Additional description for REJECT answer")
   )
 
-  val postCustomerJson = PostCustomerJson(
+  lazy val postCustomerJson = PostCustomerJson(
     customer_number = ExampleValue.customerNumberExample.value,
     legal_name = ExampleValue.legalNameExample.value,
     mobile_phone_number = ExampleValue.mobileNumberExample.value,
@@ -1483,7 +1483,7 @@ object SwaggerDefinitionsJSON {
     last_ok_date = oneYearAgoDate
   )
 
-  val customerJsonV140 = CustomerJsonV140(
+  lazy val customerJsonV140 = CustomerJsonV140(
     customer_id = "String",
     customer_number = ExampleValue.customerNumberExample.value,
     legal_name = ExampleValue.legalNameExample.value,
@@ -1500,11 +1500,11 @@ object SwaggerDefinitionsJSON {
     last_ok_date = oneYearAgoDate
   )
 
-  val customersJsonV140 = CustomersJsonV140(
+  lazy val customersJsonV140 = CustomersJsonV140(
     customers = List(customerJsonV140)
   )
 
-  val customerMessageJson = CustomerMessageJson(
+  lazy val customerMessageJson = CustomerMessageJson(
     id = "5995d6a2-01b3-423c-a173-5481df49bdaf",
     date = DateWithDayExampleObject,
     message = "String",
@@ -1512,22 +1512,22 @@ object SwaggerDefinitionsJSON {
     from_person = "String"
   )
 
-  val customerMessagesJson = CustomerMessagesJson(
+  lazy val customerMessagesJson = CustomerMessagesJson(
     messages = List(customerMessageJson)
   )
 
-  val addCustomerMessageJson = AddCustomerMessageJson(
+  lazy val addCustomerMessageJson = AddCustomerMessageJson(
     message = "String",
     from_department = "String",
     from_person = "String"
   )
 
-  val branchRoutingJsonV141 = BranchRoutingJsonV141(
+  lazy val branchRoutingJsonV141 = BranchRoutingJsonV141(
     scheme = schemeExample.value,
     address = branchIdExample.value
   )
 
-  val branchJson = BranchJson(
+  lazy val branchJson = BranchJson(
     id = "5995d6a2-01b3-423c-a173-5481df49bdaf",
     name = "String",
     address = addressJsonV140,
@@ -1543,7 +1543,7 @@ object SwaggerDefinitionsJSON {
 
 
 
-  val branchesJson = BranchesJson(branches = List(branchJson))
+  lazy val branchesJson = BranchesJson(branches = List(branchJson))
 
 
 
@@ -1551,16 +1551,16 @@ object SwaggerDefinitionsJSON {
   // Internal data examples (none JSON format).
   // Use transform... to convert these to our various json formats for different API versions
 
-  val meta: Meta =  Meta(license = License (id = licenseIdExample.value, name = licenseNameExample.value))  // Note the meta  is V140
-  val openingTimesV300 =OpeningTimesV300(
+  lazy val meta: Meta =  Meta(license = License (id = licenseIdExample.value, name = licenseNameExample.value))  // Note the meta  is V140
+  lazy val openingTimesV300 =OpeningTimesV300(
     opening_time = "10:00",
     closing_time = "18:00")
-  val openingTimes = OpeningTimes(
+  lazy val openingTimes = OpeningTimes(
     openingTime = "10:00",
     closingTime = "18:00"
   )
 
-  val address : Address = Address(
+  lazy val address : Address = Address(
     line1 = "No 1 the Road",
     line2 = "The Place",
     line3 = "The Hill",
@@ -1571,7 +1571,7 @@ object SwaggerDefinitionsJSON {
     countryCode = "DE"
   )
 
-  val lobby: Lobby = Lobby(
+  lazy val lobby: Lobby = Lobby(
     monday = List(openingTimes),
     tuesday = List(openingTimes),
     wednesday = List(openingTimes),
@@ -1582,7 +1582,7 @@ object SwaggerDefinitionsJSON {
   )
 
 
-  val driveUp: DriveUp = DriveUp(
+  lazy val driveUp: DriveUp = DriveUp(
     monday = openingTimes,
     tuesday = openingTimes,
     wednesday = openingTimes,
@@ -1592,29 +1592,29 @@ object SwaggerDefinitionsJSON {
     sunday = openingTimes
   )
 
-  val branchRouting = Routing("OBP", "123abc")
+  lazy val branchRouting = Routing("OBP", "123abc")
 
-  val basicResourceUser = BasicResourceUser(
+  lazy val basicResourceUser = BasicResourceUser(
     userId= "String", // Should come from Resource User Id
     provider= " String",
     username= " String"
   )
 
-  val location : Location = Location (
+  lazy val location : Location = Location (
     10.0,
     10.0,
     Some(DateWithDayExampleObject),
     Some(basicResourceUser))
 
-  val lobbyString = LobbyString (
+  lazy val lobbyString = LobbyString (
     hours ="String "
   )
 
-  val driveUpString = DriveUpString (
+  lazy val driveUpString = DriveUpString (
     hours ="String "
   )
 
-  val branch: Branch = Branch(
+  lazy val branch: Branch = Branch(
     branchId = BranchId("branch-id-123"),
     bankId = BankId("bank-id-123"),
     name = "Branch by the Lake",
@@ -1636,7 +1636,7 @@ object SwaggerDefinitionsJSON {
   )
 
 
-  val lobbyJsonV330 = LobbyJsonV330(
+  lazy val lobbyJsonV330 = LobbyJsonV330(
     monday = List(openingTimesV300),
     tuesday = List(openingTimesV300),
     wednesday = List(openingTimesV300),
@@ -1646,7 +1646,7 @@ object SwaggerDefinitionsJSON {
     sunday =  List(openingTimesV300)
   )
 
-  val driveUpJsonV330 = DriveUpJsonV330(
+  lazy val driveUpJsonV330 = DriveUpJsonV330(
     monday = openingTimesV300,
     tuesday = openingTimesV300,
     wednesday = openingTimesV300,
@@ -1657,10 +1657,10 @@ object SwaggerDefinitionsJSON {
   )
 
 
-  val branchJsonV300: BranchJsonV300 = createBranchJsonV300 (branch)
-  val branchesJsonV300 = BranchesJsonV300(branches = List(branchJsonV300))
+  lazy val branchJsonV300: BranchJsonV300 = createBranchJsonV300 (branch)
+  lazy val branchesJsonV300 = BranchesJsonV300(branches = List(branchJsonV300))
 
-  val postBranchJsonV300 = PostBranchJsonV300(
+  lazy val postBranchJsonV300 = PostBranchJsonV300(
     branchJsonV300.bank_id,
     branchJsonV300.name,
     branchJsonV300.address,
@@ -1678,7 +1678,7 @@ object SwaggerDefinitionsJSON {
 
 
 
-  val atmJson = AtmJson(
+  lazy val atmJson = AtmJson(
     id = "5995d6a2-01b3-423c-a173-5481df49bdaf",
     name = "String",
     address = addressJsonV140,
@@ -1686,11 +1686,11 @@ object SwaggerDefinitionsJSON {
     meta = metaJson
   )
 
-  val atmsJson = AtmsJson(atms = List(atmJson))
+  lazy val atmsJson = AtmsJson(atms = List(atmJson))
 
 
 
-  val addressJsonV300 = AddressJsonV300(
+  lazy val addressJsonV300 = AddressJsonV300(
     line_1 = "No 1 the Road",
     line_2 = "The Place",
     line_3 = "The Hill",
@@ -1702,7 +1702,7 @@ object SwaggerDefinitionsJSON {
     country_code = "DE"
   )
 
-  val customerAddressJsonV310 = CustomerAddressJsonV310(
+  lazy val customerAddressJsonV310 = CustomerAddressJsonV310(
     customer_address_id = "5995d6a2-01b3-423c-a173-5481df49bdaf",
     customer_id = customerIdExample.value, 
     line_1 = "No 1 the Road",
@@ -1718,9 +1718,9 @@ object SwaggerDefinitionsJSON {
     status = "OK",
     insert_date = DateWithDayExampleObject
   )
-  val customerAddressesJsonV310 = CustomerAddressesJsonV310(List(customerAddressJsonV310))
+  lazy val customerAddressesJsonV310 = CustomerAddressesJsonV310(List(customerAddressJsonV310))
 
-  val postCustomerAddressJsonV310 = PostCustomerAddressJsonV310(
+  lazy val postCustomerAddressJsonV310 = PostCustomerAddressJsonV310(
     line_1 = "No 1 the Road",
     line_2 = "The Place",
     line_3 = "The Hill",
@@ -1734,7 +1734,7 @@ object SwaggerDefinitionsJSON {
     status = "OK"
   )
   
-  val atmJsonV300 = AtmJsonV300(
+  lazy val atmJsonV300 = AtmJsonV300(
     id = "atm-id-123",
     bank_id = bankIdExample.value,
     name = "Atm by the Lake",
@@ -1755,9 +1755,9 @@ object SwaggerDefinitionsJSON {
     has_deposit_capability="true"
 
   )
-  val atmsJsonV300 = AtmsJsonV300(List(atmJsonV300))
+  lazy val atmsJsonV300 = AtmsJsonV300(List(atmJsonV300))
 
-  val productJson = ProductJson(
+  lazy val productJson = ProductJson(
     code = "String",
     name = "String",
     category = "String",
@@ -1767,10 +1767,10 @@ object SwaggerDefinitionsJSON {
     meta = metaJson
   )
 
-  val productsJson = ProductsJson(products = List(productJson))
+  lazy val productsJson = ProductsJson(products = List(productJson))
 
 
-  val crmEventJson = CrmEventJson(
+  lazy val crmEventJson = CrmEventJson(
     id = "5995d6a2-01b3-423c-a173-5481df49bdaf",
     bank_id = bankIdExample.value,
     customer_name = "String",
@@ -1783,22 +1783,22 @@ object SwaggerDefinitionsJSON {
     result = "String"
   )
 
-  val crmEventsJson = CrmEventsJson(crm_events = List(crmEventJson))
+  lazy val crmEventsJson = CrmEventsJson(crm_events = List(crmEventJson))
 
-  val implementedByJson = ImplementedByJson(
+  lazy val implementedByJson = ImplementedByJson(
     version = "1_4_0",
     function = "getBranches"
   )
   // Used to describe the OBP API calls for documentation and API discovery purposes
-  val canCreateCustomerSwagger = CanCreateCustomer()
+  lazy val canCreateCustomerSwagger = CanCreateCustomer()
 
-  val transactionRequestBodyJsonV140 = TransactionRequestBodyJsonV140(
+  lazy val transactionRequestBodyJsonV140 = TransactionRequestBodyJsonV140(
     to = transactionRequestAccountJsonV140,
     value = amountOfMoneyJsonV121,
     description = "String",
     challenge_type = "String"
   )
-  val transactionRequestJSON = TransactionRequestJsonV140(
+  lazy val transactionRequestJSON = TransactionRequestJsonV140(
     id = "5995d6a2-01b3-423c-a173-5481df49bdaf",
     `type` = "String",
     from = transactionRequestAccountJsonV140,
@@ -1816,27 +1816,27 @@ object SwaggerDefinitionsJSON {
   import code.api.v2_0_0.JSONFactory200._
   import code.api.v2_0_0._
 
-  val basicViewJSON = BasicViewJson(
+  lazy val basicViewJSON = BasicViewJson(
     id = "1",
     short_name = "HHH",
     is_public = true
   )
 
-  val basicAccountJSON = BasicAccountJSON(
+  lazy val basicAccountJSON = BasicAccountJSON(
     id = "8ca8a7e4-6d02-48e3-a029-0b2bf89de9f0",
     label = "NoneLabel",
     bank_id = bankIdExample.value,
     views_available = List(basicViewJSON)
   )
 
-  val coreAccountJSON = CoreAccountJSON(
+  lazy val coreAccountJSON = CoreAccountJSON(
     id = "8ca8a7e4-6d02-48e3-a029-0b2bf89de9f0",
     label = "NoneLabel",
     bank_id = bankIdExample.value,
     _links = defaultJValue
   )
 
-  val moderatedCoreAccountJSON = ModeratedCoreAccountJSON(
+  lazy val moderatedCoreAccountJSON = ModeratedCoreAccountJSON(
     id = "8ca8a7e4-6d02-48e3-a029-0b2bf89de9f0",
     label = "NoneLabel",
     number = "123",
@@ -1849,12 +1849,12 @@ object SwaggerDefinitionsJSON {
     account_routing = accountRoutingJsonV121
   )
 
-  val basicAccountsJSON = BasicAccountsJSON(
+  lazy val basicAccountsJSON = BasicAccountsJSON(
     accounts = List(basicAccountJSON)
   )
-  val coreAccountsJSON = CoreAccountsJSON(accounts = List(coreAccountJSON))
+  lazy val coreAccountsJSON = CoreAccountsJSON(accounts = List(coreAccountJSON))
 
-  val kycDocumentJSON = KycDocumentJSON(
+  lazy val kycDocumentJSON = KycDocumentJSON(
     bank_id = bankIdExample.value,
     customer_id = customerIdExample.value,
     id = "PlaceholderString",
@@ -1866,10 +1866,10 @@ object SwaggerDefinitionsJSON {
     expiry_date = DateWithDayExampleObject
   )
 
-  val kycDocumentsJSON = KycDocumentsJSON(
+  lazy val kycDocumentsJSON = KycDocumentsJSON(
     documents = List(kycDocumentJSON)
   )
-  val kycMediaJSON = KycMediaJSON(
+  lazy val kycMediaJSON = KycMediaJSON(
     bank_id = bankIdExample.value,
     customer_id = "PlaceholderString",
     id = "PlaceholderString",
@@ -1880,10 +1880,10 @@ object SwaggerDefinitionsJSON {
     relates_to_kyc_document_id = "PlaceholderString",
     relates_to_kyc_check_id = "PlaceholderString"
   )
-  val kycMediasJSON = KycMediasJSON(medias = List(kycMediaJSON))
+  lazy val kycMediasJSON = KycMediasJSON(medias = List(kycMediaJSON))
 
 
-  val kycCheckJSON = KycCheckJSON(
+  lazy val kycCheckJSON = KycCheckJSON(
     bank_id = bankIdExample.value,
     customer_id = customerIdExample.value,
     id = "PlaceholderString",
@@ -1914,18 +1914,18 @@ object SwaggerDefinitionsJSON {
   )
   var socialMediasJSON = SocialMediasJSON(checks = List(socialMediaJSON))
 
-  val entitlementJSON =
+  lazy val entitlementJSON =
     code.api.v2_0_0.EntitlementJSON(
       entitlement_id = "6fb17583-1e49-4435-bb74-a14fe0996723",
       role_name = "CanQueryOtherUser",
       bank_id = bankIdExample.value
     )
     
-  val entitlementJSONs = EntitlementJSONs(
+  lazy val entitlementJSONs = EntitlementJSONs(
     list = List(entitlementJSON)
   )
 
-  val userJsonV200 = UserJsonV200(
+  lazy val userJsonV200 = UserJsonV200(
     user_id = ExampleValue.userIdExample.value,
     email = ExampleValue.emailExample.value,
     provider_id = providerIdValueExample.value,
@@ -1934,21 +1934,21 @@ object SwaggerDefinitionsJSON {
     entitlements = entitlementJSONs
   )
   
-  val userAgreementJson = UserAgreementJson(
+  lazy val userAgreementJson = UserAgreementJson(
     ExampleValue.typeExample.value,
     ExampleValue.textExample.value,
   )
-  val viewJSON300 = ViewJSON300(
+  lazy val viewJSON300 = ViewJSON300(
     bank_id = bankIdExample.value,
     account_id = accountIdExample.value,
     view_id = viewIdExample.value
   )
 
-  val viewsJSON300 = ViewsJSON300(
+  lazy val viewsJSON300 = ViewsJSON300(
     list = List(viewJSON300)
   )
 
-  val userJsonV300 = UserJsonV300(
+  lazy val userJsonV300 = UserJsonV300(
     user_id = ExampleValue.userIdExample.value,
     email = ExampleValue.emailExample.value,
     provider_id = providerIdValueExample.value,
@@ -1958,7 +1958,7 @@ object SwaggerDefinitionsJSON {
     views = Some(viewsJSON300)
   )
   
-  val userJsonV400 = UserJsonV400(
+  lazy val userJsonV400 = UserJsonV400(
     user_id = ExampleValue.userIdExample.value,
     email = ExampleValue.emailExample.value,
     provider_id = providerIdValueExample.value,
@@ -1971,11 +1971,11 @@ object SwaggerDefinitionsJSON {
     last_marketing_agreement_signed_date = Some(DateWithDayExampleObject),
     is_locked = false
   )
-  val userIdJsonV400 = UserIdJsonV400(
+  lazy val userIdJsonV400 = UserIdJsonV400(
     user_id = ExampleValue.userIdExample.value
   )
   
-  val userInvitationPostJsonV400 = PostUserInvitationJsonV400(
+  lazy val userInvitationPostJsonV400 = PostUserInvitationJsonV400(
     first_name = ExampleValue.firstNameExample.value,
     last_name = ExampleValue.lastNameExample.value,
     email = ExampleValue.emailExample.value,
@@ -1983,7 +1983,7 @@ object SwaggerDefinitionsJSON {
     country = ExampleValue.countryExample.value,
     purpose = ExampleValue.purposeExample.value,
   ) 
-  val userInvitationJsonV400 = UserInvitationJsonV400(
+  lazy val userInvitationJsonV400 = UserInvitationJsonV400(
     first_name = ExampleValue.firstNameExample.value,
     last_name = ExampleValue.lastNameExample.value,
     email = ExampleValue.emailExample.value,
@@ -1993,7 +1993,7 @@ object SwaggerDefinitionsJSON {
     status = ExampleValue.statusExample.value,
   )
 
-  val entitlementRequestJSON =
+  lazy val entitlementRequestJSON =
     code.api.v3_0_0.EntitlementRequestJSON(
       user = userJsonV200,
       entitlement_request_id = "6fb17583-1e49-4435-bb74-a14fe0996723",
@@ -2002,10 +2002,10 @@ object SwaggerDefinitionsJSON {
       created = DateWithDayExampleObject
     )
 
-  val entitlementRequestsJSON = EntitlementRequestsJSON(entitlement_requests = List(entitlementRequestJSON))
+  lazy val entitlementRequestsJSON = EntitlementRequestsJSON(entitlement_requests = List(entitlementRequestJSON))
 
 
-  val coreTransactionDetailsJSON = CoreTransactionDetailsJSON(
+  lazy val coreTransactionDetailsJSON = CoreTransactionDetailsJSON(
     `type` = "AC",
     description = "OBP",
     posted = DateWithDayExampleObject,
@@ -2014,16 +2014,16 @@ object SwaggerDefinitionsJSON {
     value = amountOfMoneyJsonV121
   )
 
-  val coreAccountHolderJSON = CoreAccountHolderJSON(
+  lazy val coreAccountHolderJSON = CoreAccountHolderJSON(
     name = "ZACK"
   )
 
-  val createEntitlementJSON = CreateEntitlementJSON(
+  lazy val createEntitlementJSON = CreateEntitlementJSON(
     bank_id = bankIdExample.value,
     role_name = CanCreateBranch.toString()
   )
 
-  val coreCounterpartyJSON = CoreCounterpartyJSON(
+  lazy val coreCounterpartyJSON = CoreCounterpartyJSON(
     id = "123",
     holder = coreAccountHolderJSON,
     number = "1234",
@@ -2033,23 +2033,23 @@ object SwaggerDefinitionsJSON {
     bank = minimalBankJSON
   )
 
-  val coreTransactionJSON = CoreTransactionJSON(
+  lazy val coreTransactionJSON = CoreTransactionJSON(
     id = "123",
     account = thisAccountJSON,
     counterparty = coreCounterpartyJSON,
     details = coreTransactionDetailsJSON
   )
 
-  val coreTransactionsJSON = CoreTransactionsJSON(
+  lazy val coreTransactionsJSON = CoreTransactionsJSON(
     transactions = List(coreTransactionJSON)
   )
 
-  val transactionRequestChargeJsonV200 = TransactionRequestChargeJsonV200(
+  lazy val transactionRequestChargeJsonV200 = TransactionRequestChargeJsonV200(
     summary = "Rent the flat",
     value = amountOfMoneyJsonV121
   )
 
-  val transactionRequestWithChargeJson = TransactionRequestWithChargeJson(
+  lazy val transactionRequestWithChargeJson = TransactionRequestWithChargeJson(
     id = "82f92531-9c63-4246-abfc-96c20ec46188",
     `type` = SANDBOX_TAN.toString,
     from = transactionRequestAccountJsonV140,
@@ -2062,13 +2062,13 @@ object SwaggerDefinitionsJSON {
     charge = transactionRequestChargeJsonV200
   )
 
-  val transactionRequestBodyJsonV200 = TransactionRequestBodyJsonV200(
+  lazy val transactionRequestBodyJsonV200 = TransactionRequestBodyJsonV200(
     to = transactionRequestAccountJsonV140,
     value = amountOfMoneyJsonV121,
     description = "this is for work"
   )
 
-  val transactionTypeJsonV200 = TransactionTypeJsonV200(
+  lazy val transactionTypeJsonV200 = TransactionTypeJsonV200(
     id = transactionTypeIdSwagger,
     bank_id = bankIdExample.value,
     short_code = "PlaceholderString",
@@ -2077,25 +2077,25 @@ object SwaggerDefinitionsJSON {
     charge = amountOfMoneyJsonV121
   )
 
-  val transactionTypesJsonV200 = TransactionTypesJsonV200(
+  lazy val transactionTypesJsonV200 = TransactionTypesJsonV200(
     transaction_types = List(transactionTypeJsonV200)
   )
-  val linkJson = LinkJson(
+  lazy val linkJson = LinkJson(
     href = "String",
     rel = "String",
     method = "String"
   )
 
-  val linksJson = LinksJson(
+  lazy val linksJson = LinksJson(
     _links = List(linkJson)
   )
 
-  val resultAndLinksJson = ResultAndLinksJson(
+  lazy val resultAndLinksJson = ResultAndLinksJson(
     result = defaultJValue,
     links = linksJson
   )
 
-  val createUserJson = CreateUserJson(
+  lazy val createUserJson = CreateUserJson(
     email = emailExample.value,
     username = usernameExample.value,
     password = "String",
@@ -2103,27 +2103,27 @@ object SwaggerDefinitionsJSON {
     last_name = "Redfern"
   )
 
-  val createUserJSONs = CreateUsersJson(
+  lazy val createUserJSONs = CreateUsersJson(
     users = List(createUserJson)
   )
 
-  val createMeetingJson = CreateMeetingJson(
+  lazy val createMeetingJson = CreateMeetingJson(
     provider_id = providerIdValueExample.value,
     purpose_id = "String"
   )
 
-  val meetingKeysJSON = MeetingKeysJson(
+  lazy val meetingKeysJSON = MeetingKeysJson(
     session_id = "String",
     staff_token = "String",
     customer_token = "String"
   )
 
-  val meetingPresentJSON = MeetingPresentJson(
+  lazy val meetingPresentJSON = MeetingPresentJson(
     staff_user_id = userIdExample.value,
     customer_user_id = userIdExample.value
   )
 
-  val meetingJson = MeetingJson(
+  lazy val meetingJson = MeetingJson(
     meeting_id = "String",
     provider_id = providerIdValueExample.value,
     purpose_id = "String",
@@ -2133,12 +2133,12 @@ object SwaggerDefinitionsJSON {
     when = DateWithDayExampleObject
   )
 
-  val meetingsJson = MeetingsJson(
+  lazy val meetingsJson = MeetingsJson(
     meetings = List(meetingJson)
   )
 
 
-  val userCustomerLinkJson = UserCustomerLinkJson(
+  lazy val userCustomerLinkJson = UserCustomerLinkJson(
     user_customer_link_id = uuidExample.value,
     customer_id = customerIdExample.value,
     user_id = userIdExample.value,
@@ -2146,23 +2146,23 @@ object SwaggerDefinitionsJSON {
     is_active = true
   )
 
-  val userCustomerLinksJson = UserCustomerLinksJson(
+  lazy val userCustomerLinksJson = UserCustomerLinksJson(
     user_customer_links = List(userCustomerLinkJson)
   )
 
-  val createUserCustomerLinkJson = CreateUserCustomerLinkJson(
+  lazy val createUserCustomerLinkJson = CreateUserCustomerLinkJson(
     user_id = userIdExample.value,
     customer_id = customerIdExample.value
   )
 
-  val createAccountJSON = CreateAccountJSON(
+  lazy val createAccountJSON = CreateAccountJSON(
     user_id = userIdExample.value,
     label = "String",
     `type` = "String",
     balance = amountOfMoneyJsonV121
   )
 
-  val postKycDocumentJSON = PostKycDocumentJSON(
+  lazy val postKycDocumentJSON = PostKycDocumentJSON(
     customer_number = ExampleValue.customerNumberExample.value,
     `type` = "passport",
     number = "12345",
@@ -2171,7 +2171,7 @@ object SwaggerDefinitionsJSON {
     expiry_date = DateWithDayExampleObject
   )
 
-  val postKycMediaJSON = PostKycMediaJSON(
+  lazy val postKycMediaJSON = PostKycMediaJSON(
     customer_number = ExampleValue.customerNumberExample.value,
     `type` = "image",
     url = "http://www.example.com/id-docs/123/image.png",
@@ -2180,7 +2180,7 @@ object SwaggerDefinitionsJSON {
     relates_to_kyc_check_id = "123"
   )
 
-  val postKycCheckJSON = PostKycCheckJSON(
+  lazy val postKycCheckJSON = PostKycCheckJSON(
     customer_number = customerNumberExample.value,
     date = DateWithDayExampleObject,
     how = "online_meeting",
@@ -2190,13 +2190,13 @@ object SwaggerDefinitionsJSON {
     comments = "String"
   )
 
-  val postKycStatusJSON = PostKycStatusJSON(
+  lazy val postKycStatusJSON = PostKycStatusJSON(
     customer_number = customerNumberExample.value,
     ok = true,
     date = DateWithDayExampleObject
   )
 
-  val createCustomerJson = CreateCustomerJson(
+  lazy val createCustomerJson = CreateCustomerJson(
     title = ExampleValue.titleExample.value,
     branchId = ExampleValue.branchIdExample.value,
     nameSuffix = ExampleValue.nameSuffixExample.value,
@@ -2216,7 +2216,7 @@ object SwaggerDefinitionsJSON {
     last_ok_date = oneYearAgoDate
   )
 
-  val transactionRequestJsonV200 = TransactionRequestJsonV200(
+  lazy val transactionRequestJsonV200 = TransactionRequestJsonV200(
     id = "5995d6a2-01b3-423c-a173-5481df49bdaf",
     `type` = "String",
     from = transactionRequestAccountJsonV140,
@@ -2228,18 +2228,18 @@ object SwaggerDefinitionsJSON {
     challenge = challengeJsonV140
   )
 
-  val transactionRequestWithChargesJson = TransactionRequestWithChargesJson(
+  lazy val transactionRequestWithChargesJson = TransactionRequestWithChargesJson(
     transaction_requests_with_charges = List(transactionRequestWithChargeJson)
   )
 
-  val usersJsonV200 = UsersJsonV200(
+  lazy val usersJsonV200 = UsersJsonV200(
     users = List(userJsonV200)
   )
-  val usersJsonV400 = UsersJsonV400(
+  lazy val usersJsonV400 = UsersJsonV400(
     users = List(userJsonV400)
   )
 
-  val counterpartiesJSON = CounterpartiesJSON(
+  lazy val counterpartiesJSON = CounterpartiesJSON(
     counterparties = List(coreCounterpartyJSON)
   )
 
@@ -2248,14 +2248,14 @@ object SwaggerDefinitionsJSON {
   ///////////////////////////////////////////////////////////////////////////
   import code.api.v2_1_0._
 
-  val counterpartyIdJson = CounterpartyIdJson(
+  lazy val counterpartyIdJson = CounterpartyIdJson(
     counterparty_id = counterpartyIdExample.value
   )
-  val ibanJson = IbanJson(
+  lazy val ibanJson = IbanJson(
     iban = "123"
   )
 
-  val metricJson = MetricJson(
+  lazy val metricJson = MetricJson(
     user_id = ExampleValue.userIdExample.value,
     url = "www.openbankproject.com",
     date = DateWithDayExampleObject,
@@ -2270,7 +2270,7 @@ object SwaggerDefinitionsJSON {
     duration = 39
   )
 
-  val metricJson510 = MetricJsonV510(
+  lazy val metricJson510 = MetricJsonV510(
       user_id = ExampleValue.userIdExample.value,
       url = "www.openbankproject.com",
       date = DateWithDayExampleObject,
@@ -2288,7 +2288,7 @@ object SwaggerDefinitionsJSON {
       response_body = json.parse("""{"code":401,"message":"OBP-20001: User not logged in. Authentication is required!"}""")
   )
 
-  val resourceUserJSON = ResourceUserJSON(
+  lazy val resourceUserJSON = ResourceUserJSON(
     user_id = ExampleValue.userIdExample.value,
     email = ExampleValue.emailExample.value,
     provider_id = providerIdValueExample.value,
@@ -2296,26 +2296,26 @@ object SwaggerDefinitionsJSON {
     username = usernameExample.value
   )
 
-  val availableRoleJSON = AvailableRoleJSON(
+  lazy val availableRoleJSON = AvailableRoleJSON(
     role = "CanCreateBranch",
     requires_bank_id = true
   )
 
-  val transactionRequestTypeJSONV210 = TransactionRequestTypeJSONV210(
+  lazy val transactionRequestTypeJSONV210 = TransactionRequestTypeJSONV210(
     transaction_request_type = "SandboxTan"
   )
 
-  val transactionRequestTypesJSON = TransactionRequestTypesJSON(
+  lazy val transactionRequestTypesJSON = TransactionRequestTypesJSON(
     transaction_request_types = List(transactionRequestTypeJSONV210)
   )
 
-  val transactionRequestAttributeJsonV400 = TransactionRequestAttributeJsonV400(
+  lazy val transactionRequestAttributeJsonV400 = TransactionRequestAttributeJsonV400(
     name = transactionRequestAttributeNameExample.value,
     attribute_type = transactionRequestAttributeTypeExample.value,
     value = transactionRequestAttributeValueExample.value
   )
   
-  val transactionRequestBodyCounterpartyJSON = TransactionRequestBodyCounterpartyJSON(
+  lazy val transactionRequestBodyCounterpartyJSON = TransactionRequestBodyCounterpartyJSON(
     counterpartyIdJson,
     amountOfMoneyJsonV121,
     description = "A description for the transaction to the counterparty",
@@ -2324,14 +2324,14 @@ object SwaggerDefinitionsJSON {
     Some(List(transactionRequestAttributeJsonV400))
   )
 
-  val transactionRequestBodySEPAJSON = TransactionRequestBodySEPAJSON(
+  lazy val transactionRequestBodySEPAJSON = TransactionRequestBodySEPAJSON(
     amountOfMoneyJsonV121,
     ibanJson,
     "This is a SEPA Transaction Request",
     chargePolicyExample.value,
     Some(futureDateExample.value)
   )
-  val transactionRequestBodySEPAJsonV400 = TransactionRequestBodySEPAJsonV400(
+  lazy val transactionRequestBodySEPAJsonV400 = TransactionRequestBodySEPAJsonV400(
     amountOfMoneyJsonV121,
     ibanJson,
     description = "This is a SEPA Transaction Request",
@@ -2347,17 +2347,17 @@ object SwaggerDefinitionsJSON {
       )
     ))
   )
-  val transactionRequestBodyFreeFormJSON = TransactionRequestBodyFreeFormJSON(
+  lazy val transactionRequestBodyFreeFormJSON = TransactionRequestBodyFreeFormJSON(
     amountOfMoneyJsonV121,
     "This is a FREE_FORM Transaction Request",
   )
 
-  val customerCreditRatingJSON = CustomerCreditRatingJSON(
+  lazy val customerCreditRatingJSON = CustomerCreditRatingJSON(
     rating = "OBP",
     source = "OBP"
   )
 
-  val customerJsonV210 = CustomerJsonV210(
+  lazy val customerJsonV210 = CustomerJsonV210(
     bank_id = bankIdExample.value,
     customer_id = customerIdExample.value,
     customer_number = ExampleValue.customerNumberExample.value,
@@ -2377,15 +2377,15 @@ object SwaggerDefinitionsJSON {
     last_ok_date = oneYearAgoDate
   )
   
-  val customerJSONs = CustomerJSONs(customers = List(customerJsonV210))
+  lazy val customerJSONs = CustomerJSONs(customers = List(customerJsonV210))
 
-  val userJSONV210 = UserJSONV210(
+  lazy val userJSONV210 = UserJSONV210(
     id = "123",
     provider = providerValueExample.value,
     username = usernameExample.value
   )
 
-  val locationJsonV210 =
+  lazy val locationJsonV210 =
     LocationJsonV210(
       latitude = 11.45,
       longitude = 11.45,
@@ -2393,7 +2393,7 @@ object SwaggerDefinitionsJSON {
       user = userJSONV210
     )
 
-  val postCustomerJsonV210 =
+  lazy val postCustomerJsonV210 =
     PostCustomerJsonV210(
       user_id = ExampleValue.userIdExample.value,
       customer_number = ExampleValue.customerNumberExample.value,
@@ -2413,7 +2413,7 @@ object SwaggerDefinitionsJSON {
       last_ok_date = oneYearAgoDate
     )
 
-  val customerJsonV300 = CustomerJsonV300(
+  lazy val customerJsonV300 = CustomerJsonV300(
     bank_id = bankIdExample.value,
     customer_id = customerIdExample.value,
     customer_number = ExampleValue.customerNumberExample.value,
@@ -2436,15 +2436,15 @@ object SwaggerDefinitionsJSON {
     name_suffix = ExampleValue.nameSuffixExample.value
   )
 
-  val customersJsonV300 = code.api.v3_0_0.CustomerJSONsV300(List(customerJsonV300))
+  lazy val customersJsonV300 = code.api.v3_0_0.CustomerJSONsV300(List(customerJsonV300))
   
-  val customerMinimalJsonV400 = CustomerMinimalJsonV400(
+  lazy val customerMinimalJsonV400 = CustomerMinimalJsonV400(
     bank_id = bankIdExample.value,
     customer_id = customerIdExample.value
   )
-  val customersMinimalJsonV300 = code.api.v4_0_0.CustomersMinimalJsonV400(List(customerMinimalJsonV400))
+  lazy val customersMinimalJsonV300 = code.api.v4_0_0.CustomersMinimalJsonV400(List(customerMinimalJsonV400))
   
-  val postCustomerJsonV310 =
+  lazy val postCustomerJsonV310 =
     PostCustomerJsonV310(
       legal_name = ExampleValue.legalNameExample.value,
       mobile_phone_number = ExampleValue.mobileNumberExample.value,
@@ -2464,7 +2464,7 @@ object SwaggerDefinitionsJSON {
       branch_id = ExampleValue.branchIdExample.value,
       name_suffix = ExampleValue.nameSuffixExample.value
     )  
-  val postCustomerJsonV500 =
+  lazy val postCustomerJsonV500 =
     PostCustomerJsonV500(
       legal_name = ExampleValue.legalNameExample.value,
       customer_number = Some(ExampleValue.customerNumberExample.value),
@@ -2486,7 +2486,7 @@ object SwaggerDefinitionsJSON {
       name_suffix = Some(ExampleValue.nameSuffixExample.value)
     )
   
-  val customerJsonV310 = CustomerJsonV310(
+  lazy val customerJsonV310 = CustomerJsonV310(
     bank_id = bankIdExample.value,
     customer_id = ExampleValue.customerIdExample.value,
     customer_number = ExampleValue.customerNumberExample.value,
@@ -2509,14 +2509,14 @@ object SwaggerDefinitionsJSON {
     name_suffix = ExampleValue.nameSuffixExample.value
   )
 
-  val customerAttributeResponseJson = CustomerAttributeResponseJsonV300 (
+  lazy val customerAttributeResponseJson = CustomerAttributeResponseJsonV300 (
     customer_attribute_id = customerAttributeIdExample.value,
     name = customerAttributeNameExample.value,
     `type` = customerAttributeTypeExample.value,
     value = customerAttributeValueExample.value
   )
 
-  val accountAttributeResponseJson500 = AccountAttributeResponseJson500(
+  lazy val accountAttributeResponseJson500 = AccountAttributeResponseJson500(
     product_code = productCodeExample.value,
     account_attribute_id = "613c83ea-80f9-4560-8404-b9cd4ec42a7f",
     name = "OVERDRAFT_START_DATE",
@@ -2525,7 +2525,7 @@ object SwaggerDefinitionsJSON {
     contract_code = Some("LKJL98769F"),
   )
 
-  val customerOverviewFlatJsonV500 = CustomerOverviewFlatJsonV500(
+  lazy val customerOverviewFlatJsonV500 = CustomerOverviewFlatJsonV500(
     bank_id = bankIdExample.value,
     customer_id = ExampleValue.customerIdExample.value,
     customer_number = ExampleValue.customerNumberExample.value,
@@ -2553,7 +2553,7 @@ object SwaggerDefinitionsJSON {
     )
   )
   
-  val accountResponseJson500 = AccountResponseJson500(
+  lazy val accountResponseJson500 = AccountResponseJson500(
     account_id = accountIdExample.value,
     label = labelExample.value,
     product_code = parentProductCodeExample.value,
@@ -2563,7 +2563,7 @@ object SwaggerDefinitionsJSON {
     account_routings = List(accountRoutingJsonV121),
     account_attributes = List(accountAttributeResponseJson500)
   )
-  val customerOverviewJsonV500 = CustomerOverviewJsonV500(
+  lazy val customerOverviewJsonV500 = CustomerOverviewJsonV500(
     bank_id = bankIdExample.value,
     customer_id = ExampleValue.customerIdExample.value,
     customer_number = ExampleValue.customerNumberExample.value,
@@ -2588,7 +2588,7 @@ object SwaggerDefinitionsJSON {
     accounts = List(accountResponseJson500)
   )  
   
-  val customerWithAttributesJsonV310 = CustomerWithAttributesJsonV310(
+  lazy val customerWithAttributesJsonV310 = CustomerWithAttributesJsonV310(
     bank_id = bankIdExample.value,
     customer_id = ExampleValue.customerIdExample.value,
     customer_number = ExampleValue.customerNumberExample.value,
@@ -2612,7 +2612,7 @@ object SwaggerDefinitionsJSON {
     customer_attributes = List(customerAttributeResponseJson)
   )
 
-  val customerWithAttributesJsonV300 = CustomerWithAttributesJsonV300(
+  lazy val customerWithAttributesJsonV300 = CustomerWithAttributesJsonV300(
     bank_id = bankIdExample.value,
     customer_id = ExampleValue.customerIdExample.value,
     customer_number = ExampleValue.customerNumberExample.value,
@@ -2636,9 +2636,9 @@ object SwaggerDefinitionsJSON {
     customer_attributes = List(customerAttributeResponseJson)
   )
 
-  val customersWithAttributesJsonV300 = CustomersWithAttributesJsonV300(List(customerWithAttributesJsonV300))
+  lazy val customersWithAttributesJsonV300 = CustomersWithAttributesJsonV300(List(customerWithAttributesJsonV300))
 
-  val putUpdateCustomerDataJsonV310 = PutUpdateCustomerDataJsonV310(
+  lazy val putUpdateCustomerDataJsonV310 = PutUpdateCustomerDataJsonV310(
     face_image = customerFaceImageJson,
     relationship_status = ExampleValue.relationshipStatusExample.value,
     dependants = ExampleValue.dependantsExample.value.toInt,
@@ -2646,28 +2646,28 @@ object SwaggerDefinitionsJSON {
     employment_status = ExampleValue.employmentStatusExample.value
   )
 
-  val putCustomerBranchJsonV310 = PutUpdateCustomerBranchJsonV310(branch_id = "123")
-  val postCustomerNumberJsonV310 = PostCustomerNumberJsonV310(customer_number = ExampleValue.customerNumberExample.value)
-  val postCustomerLegalNameJsonV510 = PostCustomerLegalNameJsonV510(legal_name = ExampleValue.legalNameExample.value)
-  val postCustomerPhoneNumberJsonV400 = PostCustomerPhoneNumberJsonV400(mobile_phone_number = ExampleValue.mobileNumberExample.value)
-  val putUpdateCustomerEmailJsonV310 = PutUpdateCustomerEmailJsonV310("marko@tesobe.com")
-  val putUpdateCustomerNumberJsonV310 = PutUpdateCustomerNumberJsonV310(customerNumberExample.value)
-  val putUpdateCustomerMobileNumberJsonV310 = PutUpdateCustomerMobilePhoneNumberJsonV310("+381631954907")
-  val putUpdateCustomerCreditLimitJsonV310 = PutUpdateCustomerCreditLimitJsonV310(AmountOfMoney("EUR", "1000"))
-  val putUpdateCustomerCreditRatingAndSourceJsonV310 = PutUpdateCustomerCreditRatingAndSourceJsonV310("Good", "Bank")
-  val putUpdateCustomerIdentityJsonV310 = PutUpdateCustomerIdentityJsonV310(
+  lazy val putCustomerBranchJsonV310 = PutUpdateCustomerBranchJsonV310(branch_id = "123")
+  lazy val postCustomerNumberJsonV310 = PostCustomerNumberJsonV310(customer_number = ExampleValue.customerNumberExample.value)
+  lazy val postCustomerLegalNameJsonV510 = PostCustomerLegalNameJsonV510(legal_name = ExampleValue.legalNameExample.value)
+  lazy val postCustomerPhoneNumberJsonV400 = PostCustomerPhoneNumberJsonV400(mobile_phone_number = ExampleValue.mobileNumberExample.value)
+  lazy val putUpdateCustomerEmailJsonV310 = PutUpdateCustomerEmailJsonV310("marko@tesobe.com")
+  lazy val putUpdateCustomerNumberJsonV310 = PutUpdateCustomerNumberJsonV310(customerNumberExample.value)
+  lazy val putUpdateCustomerMobileNumberJsonV310 = PutUpdateCustomerMobilePhoneNumberJsonV310("+381631954907")
+  lazy val putUpdateCustomerCreditLimitJsonV310 = PutUpdateCustomerCreditLimitJsonV310(AmountOfMoney("EUR", "1000"))
+  lazy val putUpdateCustomerCreditRatingAndSourceJsonV310 = PutUpdateCustomerCreditRatingAndSourceJsonV310("Good", "Bank")
+  lazy val putUpdateCustomerIdentityJsonV310 = PutUpdateCustomerIdentityJsonV310(
     legal_name = ExampleValue.legalNameExample.value,
     date_of_birth = DateWithDayExampleObject,
     title  = ExampleValue.titleExample.value,
     name_suffix = ExampleValue.nameSuffixExample.value)
 
-  val taxResidenceV310 = TaxResidenceV310(domain = "Enter some domain", tax_number = "Enter some number", tax_residence_id = "902ba3bb-dedd-45e7-9319-2fd3f2cd98a1")
-  val postTaxResidenceJsonV310 = PostTaxResidenceJsonV310(domain = "Enter some domain", tax_number = "Enter some number")
-  val taxResidencesJsonV310 = TaxResidenceJsonV310(tax_residence = List(taxResidenceV310))
-  val postCustomerOverviewJsonV500 = PostCustomerOverviewJsonV500(customer_number = ExampleValue.customerNumberExample.value)
+  lazy val taxResidenceV310 = TaxResidenceV310(domain = "Enter some domain", tax_number = "Enter some number", tax_residence_id = "902ba3bb-dedd-45e7-9319-2fd3f2cd98a1")
+  lazy val postTaxResidenceJsonV310 = PostTaxResidenceJsonV310(domain = "Enter some domain", tax_number = "Enter some number")
+  lazy val taxResidencesJsonV310 = TaxResidenceJsonV310(tax_residence = List(taxResidenceV310))
+  lazy val postCustomerOverviewJsonV500 = PostCustomerOverviewJsonV500(customer_number = ExampleValue.customerNumberExample.value)
 
 
-  val transactionRequestWithChargeJSON210 = TransactionRequestWithChargeJSON210(
+  lazy val transactionRequestWithChargeJSON210 = TransactionRequestWithChargeJSON210(
     id = "4050046c-63b3-4868-8a22-14b4181d33a6",
     `type` = SANDBOX_TAN.toString,
     from = transactionRequestAccountJsonV140,
@@ -2680,18 +2680,18 @@ object SwaggerDefinitionsJSON {
     charge = transactionRequestChargeJsonV200
   )
 
-  val transactionRequestWithChargeJSONs210 =
+  lazy val transactionRequestWithChargeJSONs210 =
     TransactionRequestWithChargeJSONs210(
       transaction_requests_with_charges = List(
         transactionRequestWithChargeJSON210
       )
     )
 
-  val availableRolesJSON = AvailableRolesJSON(
+  lazy val availableRolesJSON = AvailableRolesJSON(
     roles = List(availableRoleJSON)
   )
 
-  val consumerJSON = ConsumerJsonV210(
+  lazy val consumerJSON = ConsumerJsonV210(
     consumer_id = 1213,
     app_name = "SOFI",
     app_type = "Web",
@@ -2713,7 +2713,7 @@ object SwaggerDefinitionsJSON {
     roles_info = Some("PEM Encoded Certificate does not contain PSD2 roles.")
   )
   
-  val consumerJsonV510: ConsumerJsonV510 = ConsumerJsonV510(
+  lazy val consumerJsonV510: ConsumerJsonV510 = ConsumerJsonV510(
     consumer_id = consumerIdExample.value,
     consumer_key = consumerKeyExample.value,
     app_name = appNameExample.value,
@@ -2730,7 +2730,7 @@ object SwaggerDefinitionsJSON {
     logo_url = Some(logoURLExample.value)
   )
   
-  val createConsumerRequestJsonV510 = CreateConsumerRequestJsonV510(
+  lazy val createConsumerRequestJsonV510 = CreateConsumerRequestJsonV510(
     appNameExample.value,
     appTypeExample.value,
     descriptionExample.value,
@@ -2744,11 +2744,11 @@ object SwaggerDefinitionsJSON {
     Some(logoURLExample.value)
   )
 
-  val consumersJson = ConsumersJson(
+  lazy val consumersJson = ConsumersJson(
     list = List(consumerJSON)
   )
 
-  val consumerJsonV310 = ConsumerJsonV310(
+  lazy val consumerJsonV310 = ConsumerJsonV310(
     consumer_id = "8e716299-4668-4efd-976a-67f57a9984ec",
     app_name = "SOFI",
     app_type = "Web",
@@ -2760,7 +2760,7 @@ object SwaggerDefinitionsJSON {
     created = DateWithDayExampleObject
   )
   
-  val consumerJsonV400 = ConsumerJson(
+  lazy val consumerJsonV400 = ConsumerJson(
     consumer_id = ExampleValue.consumerIdExample.value,
     key = ExampleValue.consumerSecretExample.value,
     secret = ExampleValue.consumerKeyExample.value,
@@ -2778,15 +2778,15 @@ object SwaggerDefinitionsJSON {
     created = DateWithDayExampleObject
   )
   
-  val consumersJson310 = ConsumersJsonV310(
+  lazy val consumersJson310 = ConsumersJsonV310(
     List(consumerJsonV310)
   )
 
-  val putEnabledJSON = PutEnabledJSON(
+  lazy val putEnabledJSON = PutEnabledJSON(
     enabled = false
   )
 
-  val productJsonV210 = ProductJsonV210(
+  lazy val productJsonV210 = ProductJsonV210(
     bank_id = "bankid123",
     code = "prod1",
     name = "product name",
@@ -2799,12 +2799,12 @@ object SwaggerDefinitionsJSON {
     meta = metaJson
   )
 
-  val productsJsonV210 = ProductsJsonV210(products = List(productJsonV210))
+  lazy val productsJsonV210 = ProductsJsonV210(products = List(productJsonV210))
 
 
 
 
-  val grandparentProductTreeJsonV310 = ProductTreeJsonV310(
+  lazy val grandparentProductTreeJsonV310 = ProductTreeJsonV310(
     bank_id="testBank2",
     code="GRANDPARENT_CODE",
     name="product name",
@@ -2817,7 +2817,7 @@ object SwaggerDefinitionsJSON {
     meta = metaJson,
     parent_product=None
   )
-  val parentProductTreeJsonV310 = ProductTreeJsonV310(
+  lazy val parentProductTreeJsonV310 = ProductTreeJsonV310(
     bank_id="testBank2",
     code="PARENT_CODE",
     name="product name",
@@ -2830,7 +2830,7 @@ object SwaggerDefinitionsJSON {
     meta = metaJson,
     parent_product=Some(grandparentProductTreeJsonV310)
   )
-  val childProductTreeJsonV310 = ProductTreeJsonV310(
+  lazy val childProductTreeJsonV310 = ProductTreeJsonV310(
     bank_id="testBank2",
     code="PRODUCT_CODE",
     name="product name",
@@ -2845,12 +2845,12 @@ object SwaggerDefinitionsJSON {
   )
   
   
-  val postCounterpartyBespokeJson = PostCounterpartyBespokeJson(
+  lazy val postCounterpartyBespokeJson = PostCounterpartyBespokeJson(
     key = "englishName",
     value = "english Name"
   )
   
-  val postCounterpartyJSON = PostCounterpartyJSON(
+  lazy val postCounterpartyJSON = PostCounterpartyJSON(
     name = "CounterpartyName",
     description ="My landlord",
     other_account_routing_scheme = counterpartyOtherAccountRoutingSchemeExample.value,
@@ -2865,7 +2865,7 @@ object SwaggerDefinitionsJSON {
     bespoke =  List(postCounterpartyBespokeJson)
   )
 
-  val postCounterpartyJson400 = PostCounterpartyJson400(
+  lazy val postCounterpartyJson400 = PostCounterpartyJson400(
     name = "CounterpartyName",
     description ="My landlord",
     currency = currencyExample.value,
@@ -2881,39 +2881,39 @@ object SwaggerDefinitionsJSON {
     bespoke =  List(postCounterpartyBespokeJson)
   )
 
-  val dynamicEndpointHostJson400 = DynamicEndpointHostJson400(
+  lazy val dynamicEndpointHostJson400 = DynamicEndpointHostJson400(
     host = "dynamic_entity"
   )
 
-  val endpointTagJson400 = EndpointTagJson400(
+  lazy val endpointTagJson400 = EndpointTagJson400(
     tag_name = tagNameExample.value
   )
   
-  val systemLevelEndpointTagResponseJson400 = SystemLevelEndpointTagResponseJson400(
+  lazy val systemLevelEndpointTagResponseJson400 = SystemLevelEndpointTagResponseJson400(
     endpoint_tag_id = endpointTagIdExample.value,
     operation_id = operationIdExample.value,
     tag_name = tagNameExample.value
   )
   
-  val bankLevelEndpointTagResponseJson400 = BankLevelEndpointTagResponseJson400(
+  lazy val bankLevelEndpointTagResponseJson400 = BankLevelEndpointTagResponseJson400(
     bank_id = bankIdExample.value,
     endpoint_tag_id = endpointTagIdExample.value,
     operation_id = operationIdExample.value,
     tag_name = tagNameExample.value
   )
   
-  val mySpaces = MySpaces(
+  lazy val mySpaces = MySpaces(
     bank_ids = List(bankIdExample.value),
   )
   
-  val metricsJson = MetricsJson(
+  lazy val metricsJson = MetricsJson(
     metrics = List(metricJson)
   )
-  val metricsJsonV510 = MetricsJsonV510(
+  lazy val metricsJsonV510 = MetricsJsonV510(
     metrics = List(metricJson510)
   )
 
-  val branchJsonPut = BranchJsonPutV210("gh.29.fi", "OBP",
+  lazy val branchJsonPut = BranchJsonPutV210("gh.29.fi", "OBP",
     addressJsonV140,
     locationJson,
     metaJson,
@@ -2921,7 +2921,7 @@ object SwaggerDefinitionsJSON {
     driveUpJson
   )
 
-  val branchJsonPost = BranchJsonPostV210("123", "gh.29.fi", "OBP",
+  lazy val branchJsonPost = BranchJsonPostV210("123", "gh.29.fi", "OBP",
     addressJsonV140,
     locationJson,
     metaJson,
@@ -2929,7 +2929,7 @@ object SwaggerDefinitionsJSON {
     driveUpJson
   )
 
-  val consumerRedirectUrlJSON = ConsumerRedirectUrlJSON(
+  lazy val consumerRedirectUrlJSON = ConsumerRedirectUrlJSON(
     "http://localhost:8888"
   )
 
@@ -2938,7 +2938,7 @@ object SwaggerDefinitionsJSON {
   ///////////////////////////////////////////////////////////////////////////
   import code.api.v2_2_0._
 
-  val viewJSONV220 = ViewJSONV220(
+  lazy val viewJSONV220 = ViewJSONV220(
     id = "1234",
     short_name = "short_name",
     description = "description",
@@ -3007,12 +3007,12 @@ object SwaggerDefinitionsJSON {
     can_see_where_tag = true
   )
 
-  val viewsJSONV220 = ViewsJSONV220(
+  lazy val viewsJSONV220 = ViewsJSONV220(
     views = List(viewJSONV220)
   )
 
 
-  val viewJsonV500 = ViewJsonV500(
+  lazy val viewJsonV500 = ViewJsonV500(
     id = "1234",
     short_name = "short_name",
     description = "description",
@@ -3100,16 +3100,16 @@ object SwaggerDefinitionsJSON {
     can_revoke_access_to_views = List(Constant.SYSTEM_OWNER_VIEW_ID)
   )
 
-  val viewsJsonV500 = ViewsJsonV500(
+  lazy val viewsJsonV500 = ViewsJsonV500(
     views = List(viewJsonV500)
   )
 
-  val viewIdJsonV500 = ViewIdJsonV500(id = Constant.SYSTEM_OWNER_VIEW_ID)
-  val viewIdsJsonV500 = ViewsIdsJsonV500(
+  lazy val viewIdJsonV500 = ViewIdJsonV500(id = Constant.SYSTEM_OWNER_VIEW_ID)
+  lazy val viewIdsJsonV500 = ViewsIdsJsonV500(
     views = List(viewIdJsonV500)
   )
 
-  val fXRateJSON = FXRateJsonV220(
+  lazy val fXRateJSON = FXRateJsonV220(
     bank_id = bankIdExample.value,
     from_currency_code = "EUR",
     to_currency_code = "GBP",
@@ -3118,9 +3118,9 @@ object SwaggerDefinitionsJSON {
     effective_date = DateWithDayExampleObject
   )
   
-  val currenciesJsonV510 = CurrenciesJsonV510(currencies = List(CurrencyJsonV510(alphanumeric_code = "EUR")))
+  lazy val currenciesJsonV510 = CurrenciesJsonV510(currencies = List(CurrencyJsonV510(alphanumeric_code = "EUR")))
 
-  val counterpartyJsonV220 = CounterpartyJsonV220(
+  lazy val counterpartyJsonV220 = CounterpartyJsonV220(
     name = postCounterpartyJSON.name,
     description = postCounterpartyJSON.description,
     created_by_user_id = ExampleValue.userIdExample.value,
@@ -3140,7 +3140,7 @@ object SwaggerDefinitionsJSON {
     bespoke = postCounterpartyJSON.bespoke
   )
 
-  val counterpartyJson400 = CounterpartyJson400(
+  lazy val counterpartyJson400 = CounterpartyJson400(
     name = postCounterpartyJson400.name,
     description = postCounterpartyJson400.description,
     currency = postCounterpartyJson400.currency,
@@ -3161,7 +3161,7 @@ object SwaggerDefinitionsJSON {
     bespoke = postCounterpartyJson400.bespoke
   )
   
-  val counterpartyMetadataJson = CounterpartyMetadataJson(
+  lazy val counterpartyMetadataJson = CounterpartyMetadataJson(
     public_alias = "String",
     more_info = "String",
     url = "String",
@@ -3172,7 +3172,7 @@ object SwaggerDefinitionsJSON {
     private_alias ="String"
   )
   
-  val counterpartyWithMetadataJson = CounterpartyWithMetadataJson(
+  lazy val counterpartyWithMetadataJson = CounterpartyWithMetadataJson(
     name = postCounterpartyJSON.name,
     description = postCounterpartyJSON.description,
     created_by_user_id = ExampleValue.userIdExample.value,
@@ -3193,7 +3193,7 @@ object SwaggerDefinitionsJSON {
     metadata = counterpartyMetadataJson
   )
 
-  val counterpartyWithMetadataJson400 = CounterpartyWithMetadataJson400(
+  lazy val counterpartyWithMetadataJson400 = CounterpartyWithMetadataJson400(
     name = postCounterpartyJson400.name,
     description = postCounterpartyJson400.description,
     currency = postCounterpartyJson400.currency,
@@ -3215,15 +3215,15 @@ object SwaggerDefinitionsJSON {
     metadata = counterpartyMetadataJson
   )
 
-  val counterpartiesJsonV220 = CounterpartiesJsonV220(
+  lazy val counterpartiesJsonV220 = CounterpartiesJsonV220(
     counterparties = List(counterpartyJsonV220)
   )
 
-  val counterpartiesJson400 = CounterpartiesJson400(
+  lazy val counterpartiesJson400 = CounterpartiesJson400(
     counterparties = List(counterpartyJson400)
   )
 
-  val bankJSONV220 = BankJSONV220(
+  lazy val bankJSONV220 = BankJSONV220(
     id = "gh.29.uk.x",
     full_name = "uk",
     short_name = "uk",
@@ -3237,7 +3237,7 @@ object SwaggerDefinitionsJSON {
     )
   )
 
-  val branchJsonV220 = BranchJsonV220(
+  lazy val branchJsonV220 = BranchJsonV220(
     id = "123",
     bank_id = bankIdExample.value,
     name = "OBP",
@@ -3250,7 +3250,7 @@ object SwaggerDefinitionsJSON {
   )
 
 
-  val atmJsonV220 = AtmJsonV220(
+  lazy val atmJsonV220 = AtmJsonV220(
     id = "123",
     bank_id = bankIdExample.value,
     name = "OBP",
@@ -3259,7 +3259,7 @@ object SwaggerDefinitionsJSON {
     meta = metaJson
   )
 
-  val productJsonV220 = ProductJsonV220(
+  lazy val productJsonV220 = ProductJsonV220(
     bank_id = bankIdExample.value,
     code = "prod1",
     name = "product name",
@@ -3271,7 +3271,7 @@ object SwaggerDefinitionsJSON {
     description = "Description",
     meta = metaJson
   )
-  val postPutProductJsonV310 = PostPutProductJsonV310(
+  lazy val postPutProductJsonV310 = PostPutProductJsonV310(
     name = "product name",
     parent_product_code = "parent product name",
     category = "category",
@@ -3283,9 +3283,9 @@ object SwaggerDefinitionsJSON {
     meta = metaJson
   )
 
-  val putProductCollectionsV310 = PutProductCollectionsV310("A", List("B", "C", "D"))
+  lazy val putProductCollectionsV310 = PutProductCollectionsV310("A", List("B", "C", "D"))
 
-  val postOrPutJsonSchemaV400 = JsonSchemaV400(
+  lazy val postOrPutJsonSchemaV400 = JsonSchemaV400(
     "http://json-schema.org/draft-07/schema",
     "The demo json-schema",
     "The demo schema",
@@ -3294,10 +3294,10 @@ object SwaggerDefinitionsJSON {
     Properties(XxxId("string", 2, 50,List("xxx_id_demo_value"))),
     true
   )
-  val responseJsonSchema = JsonValidationV400("OBPv4.0.0-createXxx", postOrPutJsonSchemaV400)
+  lazy val responseJsonSchema = JsonValidationV400("OBPv4.0.0-createXxx", postOrPutJsonSchemaV400)
 
 
-  val fxJsonV220 = FXRateJsonV220(
+  lazy val fxJsonV220 = FXRateJsonV220(
     bank_id = bankIdExample.value,
     from_currency_code = "EUR",
     to_currency_code = "USD",
@@ -3308,7 +3308,7 @@ object SwaggerDefinitionsJSON {
 
 
 
-  val createAccountJSONV220 = CreateAccountJSONV220(
+  lazy val createAccountJSONV220 = CreateAccountJSONV220(
     user_id = userIdExample.value,
     label = "Label",
     `type` = "CURRENT",
@@ -3323,45 +3323,45 @@ object SwaggerDefinitionsJSON {
     )
   )
   
-  val cachedFunctionJSON = CachedFunctionJSON(
+  lazy val cachedFunctionJSON = CachedFunctionJSON(
     function_name = "getBanks",
     ttl_in_seconds = 5
   )
-  val portJSON = PortJSON(
+  lazy val portJSON = PortJSON(
     property = "default",
     value = "8080"
   )
-  val akkaJSON = AkkaJSON(
+  lazy val akkaJSON = AkkaJSON(
     ports = List(portJSON),
     log_level = "Debug",
     remote_data_secret_matched = Some(true)
   )
-  val metricsJSON = MetricsJsonV220(
+  lazy val metricsJSON = MetricsJsonV220(
     property = "String",
     value = "Mapper"
   )
-  val warehouseJSON = WarehouseJSON(
+  lazy val warehouseJSON = WarehouseJSON(
     property = "String",
     value = "ElasticSearch"
   )
-  val elasticSearchJSON = ElasticSearchJSON(
+  lazy val elasticSearchJSON = ElasticSearchJSON(
     metrics = List(metricsJSON),
     warehouse = List(warehouseJSON)
   )
   
-  val scopesJSON = ScopesJSON(
+  lazy val scopesJSON = ScopesJSON(
     require_scopes_for_all_roles = true, 
     require_scopes_for_listed_roles = List(CanCreateUserAuthContextUpdate.toString())
   )
   
-  val configurationJSON = ConfigurationJSON(
+  lazy val configurationJSON = ConfigurationJSON(
     akka = akkaJSON,
     elastic_search = elasticSearchJSON,
     cache = List(cachedFunctionJSON),
     scopesJSON
   )
   
-  val connectorMetricJson = ConnectorMetricJson(
+  lazy val connectorMetricJson = ConnectorMetricJson(
     connector_name = "mapper",
     function_name = "getBanks",
     correlation_id = "12345",
@@ -3369,7 +3369,7 @@ object SwaggerDefinitionsJSON {
     duration = 1000
   )
   
-  val connectorMetricsJson = ConnectorMetricsJson(
+  lazy val connectorMetricsJson = ConnectorMetricsJson(
     metrics = List(connectorMetricJson)
   )
   
@@ -3378,7 +3378,7 @@ object SwaggerDefinitionsJSON {
   ///////////////////////////////////////////////////////////////////////////
   import code.api.v3_0_0._
 
-  val viewJsonV300 =  ViewJsonV300(
+  lazy val viewJsonV300 =  ViewJsonV300(
     id = "1234",
     short_name = "short_name",
     description = "description",
@@ -3464,25 +3464,25 @@ object SwaggerDefinitionsJSON {
     can_create_standing_order = true
   )
   
-  val viewsJsonV300 =  ViewsJsonV300(
+  lazy val viewsJsonV300 =  ViewsJsonV300(
     views = List(viewJsonV300)
   )
 
-  val coreAccountJsonV300 = CoreAccountJsonV300(
+  lazy val coreAccountJsonV300 = CoreAccountJsonV300(
     id = "5995d6a2-01b3-423c-a173-5481df49bdaf",
     label = "String",
     bank_id = bankIdExample.value,
     account_routings = List(accountRoutingJsonV121)
   )
   
-  val viewBasicV300 = ViewBasicV300(
+  lazy val viewBasicV300 = ViewBasicV300(
     id = viewIdExample.value,
     short_name =viewNameExample.value,
     description = viewDescriptionExample.value,
     is_public = false
   )
   
-  val coreAccountJson = CoreAccountJson(
+  lazy val coreAccountJson = CoreAccountJson(
     id = "5995d6a2-01b3-423c-a173-5481df49bdaf",
     label = "String",
     bank_id = bankIdExample.value,
@@ -3491,17 +3491,17 @@ object SwaggerDefinitionsJSON {
     views = List(viewBasicV300)
   )
   
-  val coreAccountsJsonV300 = CoreAccountsJsonV300(accounts = List(coreAccountJson))
+  lazy val coreAccountsJsonV300 = CoreAccountsJsonV300(accounts = List(coreAccountJson))
 
 
-  val accountInnerJsonUKOpenBanking_v200 = AccountInner(
+  lazy val accountInnerJsonUKOpenBanking_v200 = AccountInner(
     SchemeName = "SortCodeAccountNumber",
     Identification = "80200110203345",
     Name = "Mr Kevin",
     SecondaryIdentification = Some("00021")
   )
 
-  val accountJsonUKOpenBanking_v200 = Account(
+  lazy val accountJsonUKOpenBanking_v200 = Account(
     AccountId = "22289",
     Currency = "GBP",
     AccountType = "Personal",
@@ -3510,47 +3510,47 @@ object SwaggerDefinitionsJSON {
     Account = accountInnerJsonUKOpenBanking_v200
   )
 
-  val accountList = AccountList(List(accountJsonUKOpenBanking_v200))
+  lazy val accountList = AccountList(List(accountJsonUKOpenBanking_v200))
   
-  val links =  Links(Self = s"${Constant.HostName}/open-banking/v2.0/accounts/")
+  lazy val links =  Links(Self = s"${Constant.HostName}/open-banking/v2.0/accounts/")
   
-  val metaUK = JSONFactory_UKOpenBanking_200.MetaUK(1) 
+  lazy val metaUK = JSONFactory_UKOpenBanking_200.MetaUK(1) 
   
-  val accountsJsonUKOpenBanking_v200 = Accounts(
+  lazy val accountsJsonUKOpenBanking_v200 = Accounts(
     Data = accountList,
     Links = links,
     Meta = metaUK
   )
   
-  val accountIdJson = AccountIdJson(
+  lazy val accountIdJson = AccountIdJson(
     id = "5995d6a2-01b3-423c-a173-5481df49bdaf"
   )
   
-  val accountsIdsJsonV300 = AccountsIdsJsonV300(accounts = List(accountIdJson))
+  lazy val accountsIdsJsonV300 = AccountsIdsJsonV300(accounts = List(accountIdJson))
 
-  val logoutLinkV400 = LogoutLinkJson(link="127.0.0.1:8080/user_mgt/logout")
+  lazy val logoutLinkV400 = LogoutLinkJson(link="127.0.0.1:8080/user_mgt/logout")
 
-  val adapterInfoJsonV300 = AdapterInfoJsonV300(
+  lazy val adapterInfoJsonV300 = AdapterInfoJsonV300(
     name = "String",
     version = "String",
     git_commit = "String",
     date = "2013-01-21T23:08:00Z"
   )
-  val rateLimitingInfoV310 = RateLimitingInfoV310(
+  lazy val rateLimitingInfoV310 = RateLimitingInfoV310(
     enabled = true,
     technology = "REDIS",
     service_available = true,
     is_active = true
   )
   
-  val thisAccountJsonV300 = ThisAccountJsonV300(
+  lazy val thisAccountJsonV300 = ThisAccountJsonV300(
     id ="String",
     bank_routing = bankRoutingJsonV121,
     account_routings = List(accountRoutingJsonV121),
     holders =  List(accountHolderJSON)
   )
   
-  val otherAccountJsonV300 = OtherAccountJsonV300(
+  lazy val otherAccountJsonV300 = OtherAccountJsonV300(
     id = "5995d6a2-01b3-423c-a173-5481df49bdaf",
     holder = accountHolderJSON,
     bank_routing = bankRoutingJsonV121,
@@ -3558,11 +3558,11 @@ object SwaggerDefinitionsJSON {
     metadata = otherAccountMetadataJSON
   )
   
-  val otherAccountsJsonV300 = OtherAccountsJsonV300(
+  lazy val otherAccountsJsonV300 = OtherAccountsJsonV300(
     other_accounts = List(otherAccountJsonV300)
   )
   
-  val transactionJsonV300 = TransactionJsonV300(
+  lazy val transactionJsonV300 = TransactionJsonV300(
     id= "String",
     this_account = thisAccountJsonV300,
     other_account = otherAccountJsonV300,
@@ -3576,18 +3576,18 @@ object SwaggerDefinitionsJSON {
     ))
   )
   
-  val transactionsJsonV300 = TransactionsJsonV300(
+  lazy val transactionsJsonV300 = TransactionsJsonV300(
     transactions = List(transactionJsonV300)
   )
   
-  val coreCounterpartyJsonV300 = CoreCounterpartyJsonV300(
+  lazy val coreCounterpartyJsonV300 = CoreCounterpartyJsonV300(
     id = "5995d6a2-01b3-423c-a173-5481df49bdaf",
     holder = accountHolderJSON,
     bank_routing = bankRoutingJsonV121,
     account_routings = List(accountRoutingJsonV121)
   )
   
-  val coreTransactionJsonV300 = CoreTransactionJsonV300(
+  lazy val coreTransactionJsonV300 = CoreTransactionJsonV300(
     id = "5995d6a2-01b3-423c-a173-5481df49bdaf",
     this_account = thisAccountJsonV300,
     other_account = coreCounterpartyJsonV300,
@@ -3600,11 +3600,11 @@ object SwaggerDefinitionsJSON {
     ))
   )
   
-  val coreCounterpartiesJsonV300 =  CoreCounterpartiesJsonV300(
+  lazy val coreCounterpartiesJsonV300 =  CoreCounterpartiesJsonV300(
     counterparties = List(coreCounterpartyJsonV300)
   )
   
-  val coreTransactionsJsonV300 = CoreTransactionsJsonV300(
+  lazy val coreTransactionsJsonV300 = CoreTransactionsJsonV300(
     transactions = List(coreTransactionJsonV300)
   )
   
@@ -3613,7 +3613,7 @@ object SwaggerDefinitionsJSON {
   //stated -- account relevant case classes /////
   
   
-  val accountHeldJson  = AccountHeldJson(
+  lazy val accountHeldJson  = AccountHeldJson(
     id = "7b97bd26-583b-4c3b-8282-55ea9d934aad",
     label = "My Account",
     bank_id=  "123",
@@ -3621,10 +3621,10 @@ object SwaggerDefinitionsJSON {
     account_routings = List(accountRoutingJsonV121)
   )
   
-  val coreAccountsHeldJsonV300 = CoreAccountsHeldJsonV300(
+  lazy val coreAccountsHeldJsonV300 = CoreAccountsHeldJsonV300(
     accounts= List(accountHeldJson)
   )
-  val moderatedAccountJsonV300 = ModeratedAccountJsonV300(
+  lazy val moderatedAccountJsonV300 = ModeratedAccountJsonV300(
     id= "String",
     bank_id = bankIdExample.value,
     label = "String",
@@ -3636,13 +3636,13 @@ object SwaggerDefinitionsJSON {
     account_routings = List(accountRoutingJsonV121)
   )
 
-  val accountAttributeJson = AccountAttributeJson(
+  lazy val accountAttributeJson = AccountAttributeJson(
     name = "OVERDRAFT_START_DATE",
     `type` = "DATE_WITH_DAY",
     value = "2012-04-23",
     product_instance_code = Some("LKJL98769F"),
   )
-  val accountAttributeResponseJson = AccountAttributeResponseJson(
+  lazy val accountAttributeResponseJson = AccountAttributeResponseJson(
     product_code = productCodeExample.value,
     account_attribute_id = "613c83ea-80f9-4560-8404-b9cd4ec42a7f",
     name = "OVERDRAFT_START_DATE",
@@ -3651,7 +3651,7 @@ object SwaggerDefinitionsJSON {
     product_instance_code = Some("LKJL98769F"),
   )
   
-  val moderatedCoreAccountJsonV300 = ModeratedCoreAccountJsonV300(
+  lazy val moderatedCoreAccountJsonV300 = ModeratedCoreAccountJsonV300(
     id = accountIdExample.value,
     bank_id = bankIdExample.value,
     label= labelExample.value,
@@ -3664,9 +3664,9 @@ object SwaggerDefinitionsJSON {
     account_attributes= Some(List(accountAttributeResponseJson))
   )
   
-  val moderatedCoreAccountsJsonV300 = ModeratedCoreAccountsJsonV300(List(moderatedCoreAccountJsonV300))
+  lazy val moderatedCoreAccountsJsonV300 = ModeratedCoreAccountsJsonV300(List(moderatedCoreAccountJsonV300))
 
-  val moderatedFirehoseAccountJsonV400 = ModeratedFirehoseAccountJsonV400(
+  lazy val moderatedFirehoseAccountJsonV400 = ModeratedFirehoseAccountJsonV400(
     id = accountIdExample.value,
     bank_id = bankIdExample.value,
     label= labelExample.value,
@@ -3678,9 +3678,9 @@ object SwaggerDefinitionsJSON {
     account_rules = List(accountRuleJsonV300)
   )
 
-  val moderatedFirehoseAccountsJsonV400 = ModeratedFirehoseAccountsJsonV400(List(moderatedFirehoseAccountJsonV400))
+  lazy val moderatedFirehoseAccountsJsonV400 = ModeratedFirehoseAccountsJsonV400(List(moderatedFirehoseAccountJsonV400))
 
-  val fastFirehoseAccountJsonV400 = FastFirehoseAccountJsonV400(
+  lazy val fastFirehoseAccountJsonV400 = FastFirehoseAccountJsonV400(
     id = accountIdExample.value,
     bank_id = bankIdExample.value,
     label = labelExample.value,
@@ -3694,10 +3694,10 @@ object SwaggerDefinitionsJSON {
       
   )
 
-  val fastFirehoseAccountsJsonV400  = FastFirehoseAccountsJsonV400(
+  lazy val fastFirehoseAccountsJsonV400  = FastFirehoseAccountsJsonV400(
     List(fastFirehoseAccountJsonV400)
   )
-  val aggregateMetricsJSONV300 = AggregateMetricJSON(
+  lazy val aggregateMetricsJSONV300 = AggregateMetricJSON(
     count = 7076,
     average_response_time = 65.21,
     minimum_response_time = 1,
@@ -3706,23 +3706,23 @@ object SwaggerDefinitionsJSON {
   
   //APIMethods_UKOpenBanking_200 
   
-  val bankTransactionCodeJson = BankTransactionCodeJson(
+  lazy val bankTransactionCodeJson = BankTransactionCodeJson(
     Code = "ReceivedCreditTransfer",
     SubCode = "DomesticCreditTransfer"
   )
 
-  val balanceUKOpenBankingJson = BalanceUKOpenBankingJson(
+  lazy val balanceUKOpenBankingJson = BalanceUKOpenBankingJson(
     Amount = amountOfMoneyJsonV121,
     CreditDebitIndicator = "Credit",
     Type = "InterimBooked"
   )
 
-  val transactionCodeJson = TransactionCodeJson(
+  lazy val transactionCodeJson = TransactionCodeJson(
     Code = "Transfer",
     Issuer = "AlphaBank"
   )
   
-  val transactionInnerJson  = TransactionInnerJson(
+  lazy val transactionInnerJson  = TransactionInnerJson(
     AccountId = accountIdSwagger.value,
     TransactionId  = "123",
     TransactionReference = "Ref 1",
@@ -3737,29 +3737,29 @@ object SwaggerDefinitionsJSON {
     Balance = balanceUKOpenBankingJson
   )
 
-  val transactionsInnerJson =  TransactionsInnerJson(
+  lazy val transactionsInnerJson =  TransactionsInnerJson(
     Transaction = List(transactionInnerJson)
   )
 
-  val metaInnerJson  = MetaInnerJson(
+  lazy val metaInnerJson  = MetaInnerJson(
     TotalPages = 1,
     FirstAvailableDateTime = DateWithDayExampleObject,
     LastAvailableDateTime = DateWithDayExampleObject
   )
 
-  val transactionsJsonUKV200 = TransactionsJsonUKV200(
+  lazy val transactionsJsonUKV200 = TransactionsJsonUKV200(
     Data = transactionsInnerJson,
     Links = links.copy(s"${Constant.HostName}/open-banking/v2.0/accounts/22289/transactions/"),
     Meta = metaInnerJson
   )
   
-  val creditLineJson = CreditLineJson(
+  lazy val creditLineJson = CreditLineJson(
     Included = true,
     Amount = amountOfMoneyJsonV121,
     Type = "Pre-Agreed"
   )
   
-  val balanceJsonUK200 = BalanceJsonUKV200(
+  lazy val balanceJsonUK200 = BalanceJsonUKV200(
     AccountId = "22289",
     Amount = amountOfMoneyJsonV121,
     CreditDebitIndicator = "Credit",
@@ -3768,34 +3768,34 @@ object SwaggerDefinitionsJSON {
     CreditLine = List(creditLineJson)
   )
   
-  val dataJsonUK200 = DataJsonUKV200(
+  lazy val dataJsonUK200 = DataJsonUKV200(
     Balance = List(balanceJsonUK200)
   )
   
-  val metaBisJson =  MetaBisJson(
+  lazy val metaBisJson =  MetaBisJson(
     TotalPages = 1
   )
   
-  val accountBalancesUKV200 = AccountBalancesUKV200(
+  lazy val accountBalancesUKV200 = AccountBalancesUKV200(
     Data = dataJsonUK200,
     Links = links.copy(s"${Constant.HostName}/open-banking/v2.0/accounts/22289/balances/"),
     Meta = metaBisJson
   )
   
-  val createScopeJson =  CreateScopeJson(bank_id = bankIdExample.value, role_name = "CanGetEntitlementsForAnyUserAtOneBank")
+  lazy val createScopeJson =  CreateScopeJson(bank_id = bankIdExample.value, role_name = "CanGetEntitlementsForAnyUserAtOneBank")
    
-  val scopeJson = ScopeJson(
+  lazy val scopeJson = ScopeJson(
     scope_id = "88625da4-a671-435e-9d24-e5b6e5cc404f", 
     role_name = "CanGetEntitlementsForAnyUserAtOneBank", 
     bank_id = bankIdExample.value
   )
-  val scopeJsons = ScopeJsons(List(scopeJson))
+  lazy val scopeJsons = ScopeJsons(List(scopeJson))
   
   
   
   //V310 
   
-  val orderObjectJson = OrderObjectJson(
+  lazy val orderObjectJson = OrderObjectJson(
     order_id ="xjksajfkj",
     order_date = "07082013",
     number_of_checkbooks = "4",
@@ -3805,9 +3805,9 @@ object SwaggerDefinitionsJSON {
     shipping_code = "1"
   )
   
-  val orderJson = OrderJson(orderObjectJson)
+  lazy val orderJson = OrderJson(orderObjectJson)
   
-  val accountV310Json = AccountV310Json(
+  lazy val accountV310Json = AccountV310Json(
     bank_id = bankIdExample.value,
     account_id =accountIdExample.value ,
     account_type  ="330",
@@ -3815,28 +3815,28 @@ object SwaggerDefinitionsJSON {
     branch_routings = List(branchRoutingJsonV141)
   )
   
-  val checkbookOrdersJson = CheckbookOrdersJson(
+  lazy val checkbookOrdersJson = CheckbookOrdersJson(
     account = accountV310Json ,
     orders = List(orderJson)
   )
 
-  val checkFundsAvailableJson = CheckFundsAvailableJson(
+  lazy val checkFundsAvailableJson = CheckFundsAvailableJson(
     "yes",
     new Date(),
     "c4ykz59svsr9b7fmdxk8ezs7"
   )
   
-  val cardObjectJson = CardObjectJson(
+  lazy val cardObjectJson = CardObjectJson(
     card_type = "5",
     card_description= "good",
     use_type  ="3"
   )
   
-  val creditCardOrderStatusResponseJson = CreditCardOrderStatusResponseJson(
+  lazy val creditCardOrderStatusResponseJson = CreditCardOrderStatusResponseJson(
     cards = List(cardObjectJson)
   )
   
-  val creditLimitRequestJson = CreditLimitRequestJson(
+  lazy val creditLimitRequestJson = CreditLimitRequestJson(
     requested_current_rate_amount1 = "String",
     requested_current_rate_amount2 = "String",
     requested_current_valid_end_date = "String",
@@ -3846,58 +3846,58 @@ object SwaggerDefinitionsJSON {
     temporary_credit_documentation = "String",
   )
   
-  val creditLimitOrderResponseJson = CreditLimitOrderResponseJson(
+  lazy val creditLimitOrderResponseJson = CreditLimitOrderResponseJson(
     execution_time = "String",
     execution_date = "String",
     token = "String",
     short_reference = "String"
   )
   
-  val creditLimitOrderJson = CreditLimitOrderJson(
+  lazy val creditLimitOrderJson = CreditLimitOrderJson(
     rank_amount_1 = "String",
     nominal_interest_1 = "String",
     rank_amount_2 = "String",
     nominal_interest_2 = "String"
   )
   
-  val topApiJson = TopApiJson(
+  lazy val topApiJson = TopApiJson(
     count = 7076,
     Implemented_by_partial_function = "getBanks",
     implemented_in_version = "v1.2.1"
   )
   
-  val topApisJson = TopApisJson(List(topApiJson))
+  lazy val topApisJson = TopApisJson(List(topApiJson))
   
-  val topConsumerJson = TopConsumerJson(
+  lazy val topConsumerJson = TopConsumerJson(
     count = 7076,
     consumer_id = consumerIdExample.value,
     app_name = "Api Explorer",
     developer_email = emailExample.value,
   )
   
-  val topConsumersJson = TopConsumersJson(List(topConsumerJson))
+  lazy val topConsumersJson = TopConsumersJson(List(topConsumerJson))
 
-  val glossaryDescriptionJsonV300 =  GlossaryDescriptionJsonV300 (markdown= "String", html = "String")
+  lazy val glossaryDescriptionJsonV300 =  GlossaryDescriptionJsonV300 (markdown= "String", html = "String")
 
-  val glossaryItemJsonV300 = GlossaryItemJsonV300(
+  lazy val glossaryItemJsonV300 = GlossaryItemJsonV300(
     title = ExampleValue.titleExample.value,
     description = glossaryDescriptionJsonV300
   )
 
-  val glossaryItemsJsonV300 = GlossaryItemsJsonV300 (glossary_items = List(glossaryItemJsonV300))
+  lazy val glossaryItemsJsonV300 = GlossaryItemsJsonV300 (glossary_items = List(glossaryItemJsonV300))
   
-  val badLoginStatusJson = BadLoginStatusJson(
+  lazy val badLoginStatusJson = BadLoginStatusJson(
     username = usernameExample.value,
     bad_attempts_since_last_success_or_reset = 0,
     last_failure_date = DateWithMsExampleObject
   )  
-  val userLockStatusJson = UserLockStatusJson(
+  lazy val userLockStatusJson = UserLockStatusJson(
     user_id = userIdExample.value,
     type_of_lock = "lock_via_api",
     last_lock_date = DateWithMsExampleObject
   )
 
-  val callLimitPostJson = CallLimitPostJson(
+  lazy val callLimitPostJson = CallLimitPostJson(
     from_date = DateWithDayExampleObject,
     to_date = DateWithDayExampleObject,
     per_second_call_limit = "-1",
@@ -3907,7 +3907,7 @@ object SwaggerDefinitionsJSON {
     per_week_call_limit = "-1",
     per_month_call_limit = "-1"
   )
-  val callLimitPostJsonV400 = CallLimitPostJsonV400(
+  lazy val callLimitPostJsonV400 = CallLimitPostJsonV400(
     from_date = DateWithDayExampleObject,
     to_date = DateWithDayExampleObject,
     api_version = None,
@@ -3921,9 +3921,9 @@ object SwaggerDefinitionsJSON {
     per_month_call_limit = "-1"
   )
   
-  val rateLimit = RateLimit(Some(-1),Some(-1))
+  lazy val rateLimit = RateLimit(Some(-1),Some(-1))
   
-  val redisCallLimitJson = RedisCallLimitJson(
+  lazy val redisCallLimitJson = RedisCallLimitJson(
     Some(rateLimit),
     Some(rateLimit),
     Some(rateLimit),
@@ -3932,7 +3932,7 @@ object SwaggerDefinitionsJSON {
     Some(rateLimit)
   )
   
-  val callLimitJson = CallLimitJson(
+  lazy val callLimitJson = CallLimitJson(
     per_second_call_limit = "-1",
     per_minute_call_limit = "-1",
     per_hour_call_limit = "-1",
@@ -3942,7 +3942,7 @@ object SwaggerDefinitionsJSON {
     Some(redisCallLimitJson)
   )
 
-  val accountWebhookPostJson = AccountWebhookPostJson(
+  lazy val accountWebhookPostJson = AccountWebhookPostJson(
     account_id =accountIdExample.value,
     trigger_name = ApiTrigger.onBalanceChange.toString(),
     url = "https://localhost.openbankproject.com",
@@ -3950,11 +3950,11 @@ object SwaggerDefinitionsJSON {
     http_protocol = "HTTP/1.1",
     is_active = "true"
   )
-  val accountWebhookPutJson = AccountWebhookPutJson(
+  lazy val accountWebhookPutJson = AccountWebhookPutJson(
     account_webhook_id = "fc23a7e2-7dd2-4bdf-a0b4-ae31232a4762",
     is_active = "true"
   )
-  val accountWebhookJson =  AccountWebhookJson(
+  lazy val accountWebhookJson =  AccountWebhookJson(
     account_webhook_id = "613c83ea-80f9-4560-8404-b9cd4ec42a7f",
     bank_id = bankIdExample.value,
     account_id =accountIdExample.value,
@@ -3966,16 +3966,16 @@ object SwaggerDefinitionsJSON {
     is_active = true
   )
 
-  val accountWebhooksJson = AccountWebhooksJson(List(accountWebhookJson))
+  lazy val accountWebhooksJson = AccountWebhooksJson(List(accountWebhookJson))
   
-  val postUserAuthContextJson = PostUserAuthContextJson(
+  lazy val postUserAuthContextJson = PostUserAuthContextJson(
     key = "CUSTOMER_NUMBER",
     value = "78987432"
   )
 
-  val postUserAuthContextUpdateJsonV310 = PostUserAuthContextUpdateJsonV310(answer = "123")
+  lazy val postUserAuthContextUpdateJsonV310 = PostUserAuthContextUpdateJsonV310(answer = "123")
   
-  val userAuthContextJson = UserAuthContextJson(
+  lazy val userAuthContextJson = UserAuthContextJson(
     user_auth_context_id = "613c83ea-80f9-4560-8404-b9cd4ec42a7f",
     user_id = ExampleValue.userIdExample.value,
     key = "CUSTOMER_NUMBER",
@@ -3983,7 +3983,7 @@ object SwaggerDefinitionsJSON {
     time_stamp = parseDate(timeStampExample.value).getOrElse(sys.error("timeStampExample.value is not validate date format."))
   )
 
-  val userAuthContextUpdateJson = UserAuthContextUpdateJson(
+  lazy val userAuthContextUpdateJson = UserAuthContextUpdateJson(
     user_auth_context_update_id = "613c83ea-80f9-4560-8404-b9cd4ec42a7f",
     user_id = ExampleValue.userIdExample.value,
     key = "CUSTOMER_NUMBER",
@@ -3991,33 +3991,33 @@ object SwaggerDefinitionsJSON {
     status = UserAuthContextUpdateStatus.INITIATED.toString
   )
   
-  val userAuthContextsJson = UserAuthContextsJson(
+  lazy val userAuthContextsJson = UserAuthContextsJson(
     user_auth_contexts = List(userAuthContextJson)
   )
   
-  val obpApiLoopbackJson = ObpApiLoopbackJson("rest_vMar2019","f0acd4be14cdcb94be3433ec95c1ad65228812a0","10 ms")
+  lazy val obpApiLoopbackJson = ObpApiLoopbackJson("rest_vMar2019","f0acd4be14cdcb94be3433ec95c1ad65228812a0","10 ms")
   
-  val refresUserJson = RefreshUserJson("10 ms")
+  lazy val refresUserJson = RefreshUserJson("10 ms")
   
-  val productAttributeJson = ProductAttributeJson(
+  lazy val productAttributeJson = ProductAttributeJson(
     name = "OVERDRAFT_START_DATE",
     `type` = "DATE_WITH_DAY",
     value = "2012-04-23"
   )  
-  val productAttributeJsonV400 = ProductAttributeJsonV400(
+  lazy val productAttributeJsonV400 = ProductAttributeJsonV400(
     name = "OVERDRAFT_START_DATE",
     `type` = "DATE_WITH_DAY",
     value = "2012-04-23",
     is_active = Some(true)
   )
-  val productAttributeResponseJson = ProductAttributeResponseWithoutBankIdJson(
+  lazy val productAttributeResponseJson = ProductAttributeResponseWithoutBankIdJson(
     product_code = productCodeExample.value,
     product_attribute_id = "613c83ea-80f9-4560-8404-b9cd4ec42a7f",
     name = "OVERDRAFT_START_DATE",
     `type` = "DATE_WITH_DAY",
     value = "2012-04-23"
   )
-  val productAttributeResponseJsonV400 = ProductAttributeResponseJsonV400(
+  lazy val productAttributeResponseJsonV400 = ProductAttributeResponseJsonV400(
     bank_id = bankIdExample.value,
     product_code = productCodeExample.value,
     product_attribute_id = "613c83ea-80f9-4560-8404-b9cd4ec42a7f",
@@ -4026,7 +4026,7 @@ object SwaggerDefinitionsJSON {
     value = "2012-04-23",
     is_active = Some(true)
   )
-  val productAttributeResponseWithoutBankIdJsonV400 = ProductAttributeResponseWithoutBankIdJsonV400(
+  lazy val productAttributeResponseWithoutBankIdJsonV400 = ProductAttributeResponseWithoutBankIdJsonV400(
     product_code = productCodeExample.value,
     product_attribute_id = "613c83ea-80f9-4560-8404-b9cd4ec42a7f",
     name = "OVERDRAFT_START_DATE",
@@ -4035,19 +4035,19 @@ object SwaggerDefinitionsJSON {
     is_active = Some(true)
   )
 
-  val bankAttributeJsonV400 = BankAttributeJsonV400(
+  lazy val bankAttributeJsonV400 = BankAttributeJsonV400(
     name = "TAX_ID",
     `type` = "INTEGER",
     value = "12345678",
     is_active = Some(true)
   )
-  val atmAttributeJsonV510 = AtmAttributeJsonV510(
+  lazy val atmAttributeJsonV510 = AtmAttributeJsonV510(
     name = "TAX_ID",
     `type` = "INTEGER",
     value = "12345678",
     is_active = Some(true)
   )
-  val bankAttributeResponseJsonV400 = BankAttributeResponseJsonV400(
+  lazy val bankAttributeResponseJsonV400 = BankAttributeResponseJsonV400(
     bank_id = bankIdExample.value,
     bank_attribute_id = "613c83ea-80f9-4560-8404-b9cd4ec42a7f",
     name = "OVERDRAFT_START_DATE",
@@ -4055,9 +4055,9 @@ object SwaggerDefinitionsJSON {
     value = "2012-04-23",
     is_active = Some(true)
   )
-  val bankAttributesResponseJsonV400 = BankAttributesResponseJsonV400(List(bankAttributeResponseJsonV400))
+  lazy val bankAttributesResponseJsonV400 = BankAttributesResponseJsonV400(List(bankAttributeResponseJsonV400))
   
-  val atmAttributeResponseJsonV510 = AtmAttributeResponseJsonV510(
+  lazy val atmAttributeResponseJsonV510 = AtmAttributeResponseJsonV510(
     bank_id = bankIdExample.value,
     atm_id = atmIdExample.value,
     atm_attribute_id = atmAttributeIdExample.value,
@@ -4067,11 +4067,11 @@ object SwaggerDefinitionsJSON {
     is_active = Some(activeExample.value.toBoolean)
   )
 
-  val atmAttributesResponseJsonV510 = AtmAttributesResponseJsonV510(
+  lazy val atmAttributesResponseJsonV510 = AtmAttributesResponseJsonV510(
     List(atmAttributeResponseJsonV510)
   )
   
-  val moderatedAccountJSON310 = ModeratedAccountJSON310(
+  lazy val moderatedAccountJSON310 = ModeratedAccountJSON310(
     id = "5995d6a2-01b3-423c-a173-5481df49bdaf",
     label = "NoneLabel",
     number = "123",
@@ -4084,13 +4084,13 @@ object SwaggerDefinitionsJSON {
     account_attributes = List(accountAttributeResponseJson)
   )
 
-  val accountApplicationJson = AccountApplicationJson(
+  lazy val accountApplicationJson = AccountApplicationJson(
     product_code = productCodeExample.value,
     user_id = Some(ExampleValue.userIdExample.value),
     customer_id = Some(customerIdExample.value)
   )
 
-  val accountApplicationResponseJson = AccountApplicationResponseJson (
+  lazy val accountApplicationResponseJson = AccountApplicationResponseJson (
     account_application_id = "gc23a7e2-7dd2-4bdf-a0b4-ae31232a4763",
     product_code = productCodeExample.value,
     user = resourceUserJSON,
@@ -4098,13 +4098,13 @@ object SwaggerDefinitionsJSON {
     date_of_application = DateWithDayExampleObject,
     status = "REQUESTED"
   )
-  val accountApplicationUpdateStatusJson = AccountApplicationUpdateStatusJson(
+  lazy val accountApplicationUpdateStatusJson = AccountApplicationUpdateStatusJson(
     status = "ACCEPTED"
   )
 
-  val accountApplicationsJsonV310 = AccountApplicationsJsonV310(List(accountApplicationResponseJson))
+  lazy val accountApplicationsJsonV310 = AccountApplicationsJsonV310(List(accountApplicationResponseJson))
 
-  val productJsonV310 = ProductJsonV310(
+  lazy val productJsonV310 = ProductJsonV310(
     bank_id = bankIdExample.value,
     code = productCodeExample.value,
     parent_product_code = "parent",
@@ -4118,29 +4118,29 @@ object SwaggerDefinitionsJSON {
     meta = metaJson,
     Some(List(productAttributeResponseJson))
   )
-  val productsJsonV310 = ProductsJsonV310(products = List(productJsonV310))
+  lazy val productsJsonV310 = ProductsJsonV310(products = List(productJsonV310))
 
-  val productCollectionItemJsonV310 = ProductCollectionItemJsonV310(member_product_code = "A")
-  val productCollectionJsonV310 = ProductCollectionJsonV310(
+  lazy val productCollectionItemJsonV310 = ProductCollectionItemJsonV310(member_product_code = "A")
+  lazy val productCollectionJsonV310 = ProductCollectionJsonV310(
     collection_code = "C",
     product_code = productCodeExample.value, items = List(productCollectionItemJsonV310, productCollectionItemJsonV310.copy(member_product_code = "B"))
   )
-  val productCollectionsJsonV310 = ProductCollectionsJsonV310(product_collection = List(productCollectionJsonV310))
+  lazy val productCollectionsJsonV310 = ProductCollectionsJsonV310(product_collection = List(productCollectionJsonV310))
   
-  val productCollectionJsonTreeV310 = ProductCollectionJsonTreeV310(collection_code = "A", products = List(productJsonV310))
+  lazy val productCollectionJsonTreeV310 = ProductCollectionJsonTreeV310(collection_code = "A", products = List(productJsonV310))
   
-  val contactDetailsJson = ContactDetailsJson(
+  lazy val contactDetailsJson = ContactDetailsJson(
     name = "Simon ",
     mobile_phone = "+44 07972 444 876",
     email_address = ExampleValue.emailExample.value
   )
   
-  val inviteeJson = InviteeJson(
+  lazy val inviteeJson = InviteeJson(
     contactDetailsJson,
     "String, eg: Good"
   )
   
-  val createMeetingJsonV310 = CreateMeetingJsonV310(
+  lazy val createMeetingJsonV310 = CreateMeetingJsonV310(
     provider_id = providerIdValueExample.value,
     purpose_id = "String, eg: onboarding",
     date = DateWithMsExampleObject,
@@ -4148,7 +4148,7 @@ object SwaggerDefinitionsJSON {
     invitees = List(inviteeJson)
   )
   
-  val meetingJsonV310 = MeetingJsonV310(
+  lazy val meetingJsonV310 = MeetingJsonV310(
     meeting_id = "UUID-String",
     provider_id = providerIdValueExample.value,
     purpose_id = "String, eg: onboarding",
@@ -4160,28 +4160,28 @@ object SwaggerDefinitionsJSON {
     invitees = List(inviteeJson)
   )
   
-  val meetingsJsonV310 = MeetingsJsonV310(List(meetingJsonV310))
+  lazy val meetingsJsonV310 = MeetingsJsonV310(List(meetingJsonV310))
   
   case class SeverJWK(kty: String = "RSA",
                       e: String = "AQAB",
                       use: String = "sig",
                       kid: String = "fr6-BxXH5gikFeZ2O6rGk0LUmJpukeswASN_TMW8U_s",
                       n: String = "hrB0OWqg6AeNU3WCnhheG18R5EbQtdNYGOaSeylTjkj2lZr0_vkhNVYvase-CroxO4HOT06InxTYwLnmJiyv2cZxReuoVjTlk--olGu-9MZooiFiqWez0JzndyKxQ27OiAjFsMh0P04kaUXeHKhXRfiU7K2FqBshR1UlnWe7iHLkq2p9rrGjxQc7ff0w-Uc0f-8PWg36Y2Od7s65493iVQwnI13egqMaSvgB1s8_dgm08noEjhr8C5m1aKmr5oipWEPNi-SBV2VNuiCLR1IEPuXq0tOwwZfv31t34KPO-2H2bbaWmzGJy9mMOGqoNrbXyGiUZoyeHRELaNtm1GilyQ")
-  val severJWK = SeverJWK()
+  lazy val severJWK = SeverJWK()
   
-  val consentJsonV310 = ConsentJsonV310(
+  lazy val consentJsonV310 = ConsentJsonV310(
     consent_id = "9d429899-24f5-42c8-8565-943ffa6a7945",
     jwt = "eyJhbGciOiJIUzI1NiJ9.eyJlbnRpdGxlbWVudHMiOltdLCJjcmVhdGVkQnlVc2VySWQiOiJhYjY1MzlhOS1iMTA1LTQ0ODktYTg4My0wYWQ4ZDZjNjE2NTciLCJzdWIiOiIyMWUxYzhjYy1mOTE4LTRlYWMtYjhlMy01ZTVlZWM2YjNiNGIiLCJhdWQiOiJlanpuazUwNWQxMzJyeW9tbmhieDFxbXRvaHVyYnNiYjBraWphanNrIiwibmJmIjoxNTUzNTU0ODk5LCJpc3MiOiJodHRwczpcL1wvd3d3Lm9wZW5iYW5rcHJvamVjdC5jb20iLCJleHAiOjE1NTM1NTg0OTksImlhdCI6MTU1MzU1NDg5OSwianRpIjoiMDlmODhkNWYtZWNlNi00Mzk4LThlOTktNjYxMWZhMWNkYmQ1Iiwidmlld3MiOlt7ImFjY291bnRfaWQiOiJtYXJrb19wcml2aXRlXzAxIiwiYmFua19pZCI6ImdoLjI5LnVrLngiLCJ2aWV3X2lkIjoib3duZXIifSx7ImFjY291bnRfaWQiOiJtYXJrb19wcml2aXRlXzAyIiwiYmFua19pZCI6ImdoLjI5LnVrLngiLCJ2aWV3X2lkIjoib3duZXIifV19.8cc7cBEf2NyQvJoukBCmDLT7LXYcuzTcSYLqSpbxLp4",
     status = ConsentStatus.INITIATED.toString
   )   
-  val consentJsonV400 = ConsentJsonV400(
+  lazy val consentJsonV400 = ConsentJsonV400(
     consent_id = "9d429899-24f5-42c8-8565-943ffa6a7945",
     jwt = "eyJhbGciOiJIUzI1NiJ9.eyJlbnRpdGxlbWVudHMiOltdLCJjcmVhdGVkQnlVc2VySWQiOiJhYjY1MzlhOS1iMTA1LTQ0ODktYTg4My0wYWQ4ZDZjNjE2NTciLCJzdWIiOiIyMWUxYzhjYy1mOTE4LTRlYWMtYjhlMy01ZTVlZWM2YjNiNGIiLCJhdWQiOiJlanpuazUwNWQxMzJyeW9tbmhieDFxbXRvaHVyYnNiYjBraWphanNrIiwibmJmIjoxNTUzNTU0ODk5LCJpc3MiOiJodHRwczpcL1wvd3d3Lm9wZW5iYW5rcHJvamVjdC5jb20iLCJleHAiOjE1NTM1NTg0OTksImlhdCI6MTU1MzU1NDg5OSwianRpIjoiMDlmODhkNWYtZWNlNi00Mzk4LThlOTktNjYxMWZhMWNkYmQ1Iiwidmlld3MiOlt7ImFjY291bnRfaWQiOiJtYXJrb19wcml2aXRlXzAxIiwiYmFua19pZCI6ImdoLjI5LnVrLngiLCJ2aWV3X2lkIjoib3duZXIifSx7ImFjY291bnRfaWQiOiJtYXJrb19wcml2aXRlXzAyIiwiYmFua19pZCI6ImdoLjI5LnVrLngiLCJ2aWV3X2lkIjoib3duZXIifV19.8cc7cBEf2NyQvJoukBCmDLT7LXYcuzTcSYLqSpbxLp4",
     status = ConsentStatus.INITIATED.toString,
     api_standard = "Berlin Group",
     api_version = "v1.3"
   )    
-  val consentInfoJsonV400 = ConsentInfoJsonV400(
+  lazy val consentInfoJsonV400 = ConsentInfoJsonV400(
     consent_id = "9d429899-24f5-42c8-8565-943ffa6a7945",
     consumer_id = consumerIdExample.value,
     created_by_user_id = userIdExample.value,
@@ -4192,21 +4192,21 @@ object SwaggerDefinitionsJSON {
     api_version = "v1.3"
   )
 
-  val helperInfoJson = HelperInfoJson(
+  lazy val helperInfoJson = HelperInfoJson(
     counterparty_ids = List(counterpartyIdExample.value)
   )
   
-  val roleJsonV510 = code.api.util.Role(
+  lazy val roleJsonV510 = code.api.util.Role(
     role_name = roleNameExample.value,
     bank_id = bankIdExample.value
   )
   
-  val httpParam = net.liftweb.http.provider.HTTPParam(
+  lazy val httpParam = net.liftweb.http.provider.HTTPParam(
     name = "tags", 
     values = List("static")
   )
 
-  val consentAccessAccountsJson =code.api.berlin.group.v1_3.JSONFactory_BERLIN_GROUP_1_3.ConsentAccessAccountsJson(
+  lazy val consentAccessAccountsJson =code.api.berlin.group.v1_3.JSONFactory_BERLIN_GROUP_1_3.ConsentAccessAccountsJson(
     iban = Some(ibanExample.value),  
     bban = Some("BARC12345612345678"),  
     pan = Some("5409050000000000"),  
@@ -4215,7 +4215,7 @@ object SwaggerDefinitionsJSON {
     currency = Some(currencyExample.value) 
   )
   
-  val consentAccessJson = code.api.berlin.group.v1_3.JSONFactory_BERLIN_GROUP_1_3.ConsentAccessJson(
+  lazy val consentAccessJson = code.api.berlin.group.v1_3.JSONFactory_BERLIN_GROUP_1_3.ConsentAccessJson(
     accounts = Some(List(consentAccessAccountsJson)),
     balances = Some(List(consentAccessAccountsJson)),
     transactions = Some(List(consentAccessAccountsJson)),
@@ -4223,14 +4223,14 @@ object SwaggerDefinitionsJSON {
     allPsd2 = None
   )
   
-  val consentView = code.api.util.ConsentView(
+  lazy val consentView = code.api.util.ConsentView(
     bank_id = bankIdExample.value,
     account_id = accountIdExample.value,
     view_id = viewIdExample.value,
     helper_info = Some(helperInfoJson)
   )
   
-  val consentJWT = code.api.util.ConsentJWT(
+  lazy val consentJWT = code.api.util.ConsentJWT(
     createdByUserId  = userIdExample.value,
     sub = subExample.value,
     iss = issExample.value,
@@ -4247,7 +4247,7 @@ object SwaggerDefinitionsJSON {
     access = Some(consentAccessJson)
   )
   
-  val allConsentJsonV510 = AllConsentJsonV510(
+  lazy val allConsentJsonV510 = AllConsentJsonV510(
     consent_reference_id = "9d429899-24f5-42c8-8565-943ffa6a7945",
     consumer_id = consumerIdExample.value,
     created_by_user_id = userIdExample.value,
@@ -4258,7 +4258,7 @@ object SwaggerDefinitionsJSON {
     api_version = "v1.3",
     jwt_payload = Some(consentJWT)
   )
-  val consentInfoJsonV510 = ConsentInfoJsonV510(
+  lazy val consentInfoJsonV510 = ConsentInfoJsonV510(
     consent_id = consentIdExample.value,
     consumer_id = consumerIdExample.value,
     created_by_user_id = userIdExample.value,
@@ -4271,19 +4271,19 @@ object SwaggerDefinitionsJSON {
     api_version = "v1.3",
   )
   
-  val consentsInfoJsonV510 = ConsentsInfoJsonV510(
+  lazy val consentsInfoJsonV510 = ConsentsInfoJsonV510(
     consents =  List(consentInfoJsonV510)
   )
   
-  val consentsJsonV510 = ConsentsJsonV510(List(allConsentJsonV510))
+  lazy val consentsJsonV510 = ConsentsJsonV510(List(allConsentJsonV510))
 
-  val revokedConsentJsonV310 = ConsentJsonV310(
+  lazy val revokedConsentJsonV310 = ConsentJsonV310(
     consent_id = "9d429899-24f5-42c8-8565-943ffa6a7945",
     jwt = "eyJhbGciOiJIUzI1NiJ9.eyJlbnRpdGxlbWVudHMiOltdLCJjcmVhdGVkQnlVc2VySWQiOiJhYjY1MzlhOS1iMTA1LTQ0ODktYTg4My0wYWQ4ZDZjNjE2NTciLCJzdWIiOiIyMWUxYzhjYy1mOTE4LTRlYWMtYjhlMy01ZTVlZWM2YjNiNGIiLCJhdWQiOiJlanpuazUwNWQxMzJyeW9tbmhieDFxbXRvaHVyYnNiYjBraWphanNrIiwibmJmIjoxNTUzNTU0ODk5LCJpc3MiOiJodHRwczpcL1wvd3d3Lm9wZW5iYW5rcHJvamVjdC5jb20iLCJleHAiOjE1NTM1NTg0OTksImlhdCI6MTU1MzU1NDg5OSwianRpIjoiMDlmODhkNWYtZWNlNi00Mzk4LThlOTktNjYxMWZhMWNkYmQ1Iiwidmlld3MiOlt7ImFjY291bnRfaWQiOiJtYXJrb19wcml2aXRlXzAxIiwiYmFua19pZCI6ImdoLjI5LnVrLngiLCJ2aWV3X2lkIjoib3duZXIifSx7ImFjY291bnRfaWQiOiJtYXJrb19wcml2aXRlXzAyIiwiYmFua19pZCI6ImdoLjI5LnVrLngiLCJ2aWV3X2lkIjoib3duZXIifV19.8cc7cBEf2NyQvJoukBCmDLT7LXYcuzTcSYLqSpbxLp4",
     status = ConsentStatus.REJECTED.toString
   )
 
-  val postConsentEmailJsonV310 = PostConsentEmailJsonV310(
+  lazy val postConsentEmailJsonV310 = PostConsentEmailJsonV310(
     everything = false,
     views = List(PostConsentViewJsonV310(bankIdExample.value, accountIdExample.value, viewIdExample.value)),
     entitlements = List(PostConsentEntitlementJsonV310(bankIdExample.value, "CanGetCustomer")),
@@ -4293,7 +4293,7 @@ object SwaggerDefinitionsJSON {
     time_to_live = Some(3600)
   )
   
-  val postConsentPhoneJsonV310 = PostConsentPhoneJsonV310(
+  lazy val postConsentPhoneJsonV310 = PostConsentPhoneJsonV310(
     everything = false,
     views = List(PostConsentViewJsonV310(bankIdExample.value, accountIdExample.value, viewIdExample.value)),
     entitlements = List(PostConsentEntitlementJsonV310(bankIdExample.value, "CanGetCustomer")),
@@ -4303,7 +4303,7 @@ object SwaggerDefinitionsJSON {
     time_to_live = Some(3600)
   )
   
-  val postConsentImplicitJsonV310 = PostConsentImplicitJsonV310(
+  lazy val postConsentImplicitJsonV310 = PostConsentImplicitJsonV310(
     everything = false,
     views = List(PostConsentViewJsonV310(bankIdExample.value, accountIdExample.value, viewIdExample.value)),
     entitlements = List(PostConsentEntitlementJsonV310(bankIdExample.value, "CanGetCustomer")),
@@ -4311,26 +4311,26 @@ object SwaggerDefinitionsJSON {
     valid_from = Some(new Date()),
     time_to_live = Some(3600)
   )
-  val postConsentRequestJsonV310 = postConsentPhoneJsonV310.copy(consumer_id = None)
+  lazy val postConsentRequestJsonV310 = postConsentPhoneJsonV310.copy(consumer_id = None)
   
-  val consentsJsonV310 = ConsentsJsonV310(List(consentJsonV310))
+  lazy val consentsJsonV310 = ConsentsJsonV310(List(consentJsonV310))
   
-  val consentsJsonV400 = ConsentsJsonV400(List(consentJsonV400))
+  lazy val consentsJsonV400 = ConsentsJsonV400(List(consentJsonV400))
 
-  val consentInfosJsonV400 = ConsentInfosJsonV400(List(consentInfoJsonV400))
+  lazy val consentInfosJsonV400 = ConsentInfosJsonV400(List(consentInfoJsonV400))
 
-  val oAuth2ServerJWKURIJson = OAuth2ServerJWKURIJson("https://www.googleapis.com/oauth2/v3/certs")
+  lazy val oAuth2ServerJWKURIJson = OAuth2ServerJWKURIJson("https://www.googleapis.com/oauth2/v3/certs")
   
-  val oAuth2ServerJwksUrisJson = OAuth2ServerJwksUrisJson(List(oAuth2ServerJWKURIJson))
+  lazy val oAuth2ServerJwksUrisJson = OAuth2ServerJwksUrisJson(List(oAuth2ServerJWKURIJson))
   
-  val updateAccountRequestJsonV310 = UpdateAccountRequestJsonV310(
+  lazy val updateAccountRequestJsonV310 = UpdateAccountRequestJsonV310(
     label = "Label",
     `type` = "CURRENT",
     branch_id = "1234",
     account_routings = List(accountRoutingJsonV121)
   )
 
-  val updateAccountResponseJsonV310 = UpdateAccountResponseJsonV310(
+  lazy val updateAccountResponseJsonV310 = UpdateAccountResponseJsonV310(
     bank_id = bankIdExample.value,
     account_id =accountIdExample.value,
     label = "Label",
@@ -4338,7 +4338,7 @@ object SwaggerDefinitionsJSON {
     branch_id = "1234",
     account_routings = List(AccountRoutingJsonV121(accountRoutingSchemeExample.value, accountRoutingAddressExample.value))
   )
-  val createPhysicalCardJsonV310 = CreatePhysicalCardJsonV310(
+  lazy val createPhysicalCardJsonV310 = CreatePhysicalCardJsonV310(
     card_number = cardNumberExample.value,
     card_type = cardTypeExample.value,
     name_on_card = nameOnCardExample.value,
@@ -4359,7 +4359,7 @@ object SwaggerDefinitionsJSON {
     customer_id = customerIdExample.value,
   )
 
-  val updatePhysicalCardJsonV310 = UpdatePhysicalCardJsonV310(
+  lazy val updatePhysicalCardJsonV310 = UpdatePhysicalCardJsonV310(
     card_type = cardTypeExample.value,
     name_on_card = nameOnCardExample.value,
     issue_number = issueNumberExample.value,
@@ -4378,7 +4378,7 @@ object SwaggerDefinitionsJSON {
     customer_id = customerIdExample.value,
   )
   
-  val physicalCardJsonV310 = PhysicalCardJsonV310(
+  lazy val physicalCardJsonV310 = PhysicalCardJsonV310(
     card_id = cardIdExample.value,
     bank_id = bankIdExample.value,
     card_number = bankCardNumberExample.value,
@@ -4402,7 +4402,7 @@ object SwaggerDefinitionsJSON {
     customer_id = customerIdExample.value
   )
 
-  val createAccountResponseJsonV310 = CreateAccountResponseJsonV310(
+  lazy val createAccountResponseJsonV310 = CreateAccountResponseJsonV310(
     account_id = accountIdExample.value,
     user_id = userIdExample.value,
     label   = labelExample.value,
@@ -4413,9 +4413,9 @@ object SwaggerDefinitionsJSON {
     account_attributes=  List(accountAttributeResponseJson)
   )
   
-  val physicalCardsJsonV310 = PhysicalCardsJsonV310(List(physicalCardJsonV310))
+  lazy val physicalCardsJsonV310 = PhysicalCardsJsonV310(List(physicalCardJsonV310))
   
-  val newModeratedCoreAccountJsonV300 = NewModeratedCoreAccountJsonV300(
+  lazy val newModeratedCoreAccountJsonV300 = NewModeratedCoreAccountJsonV300(
     id = accountIdExample.value,
     bank_id= bankIdExample.value,
     label= labelExample.value,
@@ -4426,7 +4426,7 @@ object SwaggerDefinitionsJSON {
     account_routings = List(accountRoutingJsonV121),
     views_basic = List(viewBasicV300)
   )  
-  val moderatedCoreAccountJsonV400 = ModeratedCoreAccountJsonV400(
+  lazy val moderatedCoreAccountJsonV400 = ModeratedCoreAccountJsonV400(
     id = accountIdExample.value,
     bank_id= bankIdExample.value,
     label= labelExample.value,
@@ -4437,7 +4437,7 @@ object SwaggerDefinitionsJSON {
     views_basic = List(viewIdExample.value)
   )
 
-  val moderatedAccountJSON400 = ModeratedAccountJSON400(
+  lazy val moderatedAccountJSON400 = ModeratedAccountJSON400(
     id = "5995d6a2-01b3-423c-a173-5481df49bdaf",
     label = "NoneLabel",
     number = "123",
@@ -4451,17 +4451,17 @@ object SwaggerDefinitionsJSON {
     tags = List(accountTagJSON)
   )
 
-  val moderatedAccountsJSON400 = ModeratedAccountsJSON400(
+  lazy val moderatedAccountsJSON400 = ModeratedAccountsJSON400(
     accounts = List(moderatedAccountJSON400)
   )
 
-  val historicalTransactionAccountJsonV310 = HistoricalTransactionAccountJsonV310(
+  lazy val historicalTransactionAccountJsonV310 = HistoricalTransactionAccountJsonV310(
     bank_id = Some(bankIdExample.value),
     account_id = Some(accountIdExample.value),
     counterparty_id = Some(counterpartyIdExample.value)
   )
   
-  val postHistoricalTransactionJson = PostHistoricalTransactionJson(
+  lazy val postHistoricalTransactionJson = PostHistoricalTransactionJson(
     from = historicalTransactionAccountJsonV310,
     to = historicalTransactionAccountJsonV310,
     value = amountOfMoneyJsonV121,
@@ -4471,7 +4471,7 @@ object SwaggerDefinitionsJSON {
     `type`= SANDBOX_TAN.toString,
     charge_policy= chargePolicyExample.value
   )  
-  val postHistoricalTransactionAtBankJson = PostHistoricalTransactionAtBankJson(
+  lazy val postHistoricalTransactionAtBankJson = PostHistoricalTransactionAtBankJson(
     from_account_id = "",
     to_account_id = "",
     value = amountOfMoneyJsonV121,
@@ -4482,7 +4482,7 @@ object SwaggerDefinitionsJSON {
     charge_policy = chargePolicyExample.value
   )
 
-  val postHistoricalTransactionResponseJson = PostHistoricalTransactionResponseJson(
+  lazy val postHistoricalTransactionResponseJson = PostHistoricalTransactionResponseJson(
     transaction_id = transactionIdExample.value,
     from = historicalTransactionAccountJsonV310,
     to = historicalTransactionAccountJsonV310,
@@ -4494,22 +4494,22 @@ object SwaggerDefinitionsJSON {
     charge_policy = chargePolicyExample.value
   )
   
-  val viewBasicCommons = ViewBasic(
+  lazy val viewBasicCommons = ViewBasic(
     id = viewIdExample.value,
     name =viewNameExample.value,
     description = viewDescriptionExample.value,
   )
   
-  val accountBasicV310 = AccountBasicV310(
+  lazy val accountBasicV310 = AccountBasicV310(
     id = accountIdExample.value,
     label = labelExample.value,
     views_available = List(viewBasicCommons),
     bank_id =  bankIdExample.value
   )
 
-  val canGetCustomersJson = ApiRole.canGetCustomers
+  lazy val canGetCustomersJson = ApiRole.canGetCustomers
   
-  val cardAttributeCommons = CardAttributeCommons(
+  lazy val cardAttributeCommons = CardAttributeCommons(
     bankId = Some(BankId(bankIdExample.value)),
     cardId = Some(cardIdExample.value),
     cardAttributeId = Some(cardAttributeIdExample.value),
@@ -4518,7 +4518,7 @@ object SwaggerDefinitionsJSON {
     value = cardAttributeValueExample.value
   )
   
-  val physicalCardWithAttributesJsonV310 = PhysicalCardWithAttributesJsonV310(
+  lazy val physicalCardWithAttributesJsonV310 = PhysicalCardWithAttributesJsonV310(
     card_id = cardIdExample.value,
     bank_id = bankIdExample.value,
     card_number = bankCardNumberExample.value,
@@ -4542,13 +4542,13 @@ object SwaggerDefinitionsJSON {
     customer_id = customerIdExample.value,
     card_attributes = List(cardAttributeCommons)
   )
-  val emptyElasticSearch = EmptyElasticSearch(None)
+  lazy val emptyElasticSearch = EmptyElasticSearch(None)
   
-  val elasticSearchQuery = ElasticSearchQuery(emptyElasticSearch)
+  lazy val elasticSearchQuery = ElasticSearchQuery(emptyElasticSearch)
   
-  val elasticSearchJsonV300 = ElasticSearchJsonV300(elasticSearchQuery)
+  lazy val elasticSearchJsonV300 = ElasticSearchJsonV300(elasticSearchQuery)
 
-  val accountBalanceV310 = AccountBalanceV310(
+  lazy val accountBalanceV310 = AccountBalanceV310(
     id = accountIdExample.value,
     label = labelExample.value,
     bank_id = bankIdExample.value,
@@ -4556,14 +4556,14 @@ object SwaggerDefinitionsJSON {
     balance = amountOfMoney
   )
   
-  val accountBalancesV310Json = AccountsBalancesV310Json(
+  lazy val accountBalancesV310Json = AccountsBalancesV310Json(
     accounts = List(accountBalanceV310),
     overall_balance = amountOfMoney,
     overall_balance_date = DateWithMsExampleObject
   )
 
 
-  val accountBalanceV400 = AccountBalanceJsonV400(
+  lazy val accountBalanceV400 = AccountBalanceJsonV400(
     account_id = accountIdExample.value,
     label = labelExample.value,
     bank_id = bankIdExample.value,
@@ -4571,11 +4571,11 @@ object SwaggerDefinitionsJSON {
     balances = List(BalanceJsonV400(`type` = "", currency = "EUR", amount = "10"))
   )
 
-  val accountBalancesV400Json = AccountsBalancesJsonV400(
+  lazy val accountBalancesV400Json = AccountsBalancesJsonV400(
     accounts = List(accountBalanceV400)
   )
   
-  val postDirectDebitJsonV400 = PostDirectDebitJsonV400(
+  lazy val postDirectDebitJsonV400 = PostDirectDebitJsonV400(
     customer_id = customerIdExample.value,
     user_id = userIdExample.value,
     counterparty_id = counterpartyIdExample.value,
@@ -4583,7 +4583,7 @@ object SwaggerDefinitionsJSON {
     date_starts = DateWithDayExampleObject,
     date_expires = Some(DateWithDayExampleObject)
   )  
-  val directDebitJsonV400 = DirectDebitJsonV400(
+  lazy val directDebitJsonV400 = DirectDebitJsonV400(
     direct_debit_id = "aa0533bd-eb22-4bff-af75-d45240361b05",
     bank_id = bankIdExample.value,
     account_id = accountIdExample.value,
@@ -4596,7 +4596,7 @@ object SwaggerDefinitionsJSON {
     date_cancelled = new Date(),
     active = true
   )  
-  val postStandingOrderJsonV400 = PostStandingOrderJsonV400(
+  lazy val postStandingOrderJsonV400 = PostStandingOrderJsonV400(
     customer_id = customerIdExample.value,
     user_id = userIdExample.value,
     counterparty_id = counterpartyIdExample.value,
@@ -4606,7 +4606,7 @@ object SwaggerDefinitionsJSON {
     date_starts = DateWithDayExampleObject,
     date_expires = Some(DateWithDayExampleObject)
   )  
-  val standingOrderJsonV400 = StandingOrderJsonV400(
+  lazy val standingOrderJsonV400 = StandingOrderJsonV400(
     standing_order_id = "aa0533bd-eb22-4bff-af75-d45240361b05",
     bank_id = bankIdExample.value,
     account_id = accountIdExample.value,
@@ -4622,7 +4622,7 @@ object SwaggerDefinitionsJSON {
     active = true
   )
 
-  val createAccountRequestJsonV310 = CreateAccountRequestJsonV310(
+  lazy val createAccountRequestJsonV310 = CreateAccountRequestJsonV310(
     user_id = userIdExample.value,
     label   = labelExample.value,
     product_code = productCodeExample.value,
@@ -4630,7 +4630,7 @@ object SwaggerDefinitionsJSON {
     branch_id  = branchIdExample.value,
     account_routings = List(accountRoutingJsonV121)
   )
-  val createAccountRequestJsonV500 = CreateAccountRequestJsonV500(
+  lazy val createAccountRequestJsonV500 = CreateAccountRequestJsonV500(
     user_id = Some(userIdExample.value),
     label   = labelExample.value,
     product_code = productCodeExample.value,
@@ -4639,7 +4639,7 @@ object SwaggerDefinitionsJSON {
     account_routings = Some(List(accountRoutingJsonV121))
   )
 
-  val settlementAccountRequestJson = SettlementAccountRequestJson(
+  lazy val settlementAccountRequestJson = SettlementAccountRequestJson(
     user_id = userIdExample.value,
     payment_system = paymentSystemExample.value,
     balance = amountOfMoneyJsonV121,
@@ -4648,7 +4648,7 @@ object SwaggerDefinitionsJSON {
     account_routings = List(accountRoutingJsonV121)
   )
 
-  val settlementAccountResponseJson = SettlementAccountResponseJson(
+  lazy val settlementAccountResponseJson = SettlementAccountResponseJson(
     account_id = accountIdExample.value,
     user_id = userIdExample.value,
     payment_system = paymentSystemExample.value,
@@ -4659,7 +4659,7 @@ object SwaggerDefinitionsJSON {
     account_attributes = List(accountAttributeResponseJson)
   )
 
-  val settlementAccountJson = SettlementAccountJson(
+  lazy val settlementAccountJson = SettlementAccountJson(
     account_id = accountIdExample.value,
     payment_system = paymentSystemExample.value,
     balance = amountOfMoneyJsonV121,
@@ -4669,11 +4669,11 @@ object SwaggerDefinitionsJSON {
     account_attributes = List(accountAttributeResponseJson)
   )
 
-  val settlementAccountsJson = SettlementAccountsJson(
+  lazy val settlementAccountsJson = SettlementAccountsJson(
     settlement_accounts = List(settlementAccountJson)
   )
 
-  val doubleEntryTransactionJson = DoubleEntryTransactionJson(
+  lazy val doubleEntryTransactionJson = DoubleEntryTransactionJson(
     transaction_request = TransactionRequestBankAccountJson(
       bank_id = bankIdExample.value,
       account_id = accountIdExample.value,
@@ -4691,31 +4691,31 @@ object SwaggerDefinitionsJSON {
     )
   )
 
-  val postAccountAccessJsonV400 = PostAccountAccessJsonV400(userIdExample.value, PostViewJsonV400(ExampleValue.viewIdExample.value, true))
-  val postCreateUserAccountAccessJsonV400 = PostCreateUserAccountAccessJsonV400(
+  lazy val postAccountAccessJsonV400 = PostAccountAccessJsonV400(userIdExample.value, PostViewJsonV400(ExampleValue.viewIdExample.value, true))
+  lazy val postCreateUserAccountAccessJsonV400 = PostCreateUserAccountAccessJsonV400(
     usernameExample.value,
     s"dauth.${providerExample.value}",
     List(PostViewJsonV400(viewIdExample.value, isSystemExample.value.toBoolean))
   )
-  val postCreateUserWithRolesJsonV400 = PostCreateUserWithRolesJsonV400(
+  lazy val postCreateUserWithRolesJsonV400 = PostCreateUserWithRolesJsonV400(
     usernameExample.value,
     s"dauth.${providerExample.value}",
     List(createEntitlementJSON)
   )
-  val revokedJsonV400 = RevokedJsonV400(true)
+  lazy val revokedJsonV400 = RevokedJsonV400(true)
 
-  val postRevokeGrantAccountAccessJsonV400 = PostRevokeGrantAccountAccessJsonV400(List("ReadAccountsBasic"))
+  lazy val postRevokeGrantAccountAccessJsonV400 = PostRevokeGrantAccountAccessJsonV400(List("ReadAccountsBasic"))
 
-  val transactionRequestRefundTo = TransactionRequestRefundTo(
+  lazy val transactionRequestRefundTo = TransactionRequestRefundTo(
     bank_id = Some(bankIdExample.value),
     account_id = Some(accountIdExample.value),
     counterparty_id = Some(counterpartyIdExample.value)
   )
 
-  val transactionRequestRefundFrom = TransactionRequestRefundFrom(
+  lazy val transactionRequestRefundFrom = TransactionRequestRefundFrom(
     counterparty_id = counterpartyIdExample.value
   )
-  val transactionRequestBodyRefundJsonV400 = TransactionRequestBodyRefundJsonV400(
+  lazy val transactionRequestBodyRefundJsonV400 = TransactionRequestBodyRefundJsonV400(
     to = Some(transactionRequestRefundTo),
     from = Some(transactionRequestRefundFrom),
     value = amountOfMoneyJsonV121,
@@ -4723,7 +4723,7 @@ object SwaggerDefinitionsJSON {
     refund = RefundJson(transactionIdExample.value, transactionRequestRefundReasonCodeExample.value)
   )
 
-  val cardJsonV400 = CardJsonV400(
+  lazy val cardJsonV400 = CardJsonV400(
     card_type = cardTypeExample.value,
     brand = brandExample.value,
     cvv = cvvExample.value,
@@ -4733,83 +4733,83 @@ object SwaggerDefinitionsJSON {
     expiry_month = expiryMonthExample.value,
   )
   
-  val transactionRequestBodyCardJsonV400 = TransactionRequestBodyCardJsonV400(
+  lazy val transactionRequestBodyCardJsonV400 = TransactionRequestBodyCardJsonV400(
     card = cardJsonV400,
     to = counterpartyIdJson,
     value = amountOfMoneyJsonV121,
     description = "A card payment description. "
   )
-  val customerAttributesResponseJson = CustomerAttributesResponseJson (
+  lazy val customerAttributesResponseJson = CustomerAttributesResponseJson (
     customer_attributes = List(customerAttributeResponseJson)
   )
-  val customerAttributeJsonV400 = CustomerAttributeJsonV400(
+  lazy val customerAttributeJsonV400 = CustomerAttributeJsonV400(
     name = customerAttributeNameExample.value,
     `type` = customerAttributeTypeExample.value,
     value = customerAttributeValueExample.value
   )
 
 
-  val userAttributeResponseJson = UserAttributeResponseJsonV400 (
+  lazy val userAttributeResponseJson = UserAttributeResponseJsonV400 (
     user_attribute_id = userAttributeIdExample.value,
     name = userAttributeNameExample.value,
     `type` = userAttributeTypeExample.value,
     value = userAttributeValueExample.value,
     insert_date = new Date()
   )
-  val userAttributesResponseJson = UserAttributesResponseJson (
+  lazy val userAttributesResponseJson = UserAttributesResponseJson (
     user_attributes = List(userAttributeResponseJson)
   )
 
-  val userWithAttributesResponseJson = UserWithAttributesResponseJson(user_id = ExampleValue.userIdExample.value,
+  lazy val userWithAttributesResponseJson = UserWithAttributesResponseJson(user_id = ExampleValue.userIdExample.value,
     email = ExampleValue.emailExample.value,
     provider_id = providerIdValueExample.value,
     provider = providerValueExample.value,
     username = usernameExample.value,
     user_attributes = List(userAttributeResponseJson))
   
-  val customerAndUsersWithAttributesResponseJson = CustomerAndUsersWithAttributesResponseJson(
+  lazy val customerAndUsersWithAttributesResponseJson = CustomerAndUsersWithAttributesResponseJson(
     customer = customerJsonV310, users = List(userWithAttributesResponseJson)
   )
     
-  val correlatedUsersResponseJson = CorrelatedEntities(
+  lazy val correlatedUsersResponseJson = CorrelatedEntities(
     correlated_entities = List(customerAndUsersWithAttributesResponseJson)
   )
   
-  val userAttributeJsonV400 = UserAttributeJsonV400(
+  lazy val userAttributeJsonV400 = UserAttributeJsonV400(
     name = userAttributeNameExample.value,
     `type` = userAttributeTypeExample.value,
     value = userAttributeValueExample.value
   )
 
-  val transactionAttributeResponseJson = TransactionAttributeResponseJson(
+  lazy val transactionAttributeResponseJson = TransactionAttributeResponseJson(
     transaction_attribute_id = transactionAttributeIdExample.value,
     name = transactionAttributeNameExample.value,
     `type` = transactionAttributeTypeExample.value,
     value = transactionAttributeValueExample.value
   )
 
-  val transactionAttributesResponseJson =  TransactionAttributesResponseJson(
+  lazy val transactionAttributesResponseJson =  TransactionAttributesResponseJson(
     transaction_attributes = List(transactionAttributeResponseJson)
   )
 
-  val transactionAttributeJsonV400 = TransactionAttributeJsonV400(
+  lazy val transactionAttributeJsonV400 = TransactionAttributeJsonV400(
     name = transactionAttributeNameExample.value,
     `type` = transactionAttributeTypeExample.value,
     value = transactionAttributeValueExample.value
   )
 
-  val transactionRequestAttributeResponseJson = TransactionRequestAttributeResponseJson(
+  lazy val transactionRequestAttributeResponseJson = TransactionRequestAttributeResponseJson(
     transaction_request_attribute_id = transactionRequestAttributeIdExample.value,
     name = transactionRequestAttributeNameExample.value,
     `type` = transactionRequestAttributeTypeExample.value,
     value = transactionRequestAttributeValueExample.value
   )
 
-  val transactionRequestAttributesResponseJson = TransactionRequestAttributesResponseJson(
+  lazy val transactionRequestAttributesResponseJson = TransactionRequestAttributesResponseJson(
     transaction_request_attributes = List(transactionRequestAttributeResponseJson)
   )
   
-  val templateAttributeDefinitionJsonV400 = AttributeDefinitionJsonV400(
+  lazy val templateAttributeDefinitionJsonV400 = AttributeDefinitionJsonV400(
     name = customerAttributeNameExample.value,
     category = AttributeCategory.Customer.toString,
     `type` = customerAttributeTypeExample.value,
@@ -4818,7 +4818,7 @@ object SwaggerDefinitionsJSON {
     alias = attributeAliasExample.value,
     is_active = true
   )  
-  val templateAttributeDefinitionResponseJsonV400 = AttributeDefinitionResponseJsonV400(
+  lazy val templateAttributeDefinitionResponseJsonV400 = AttributeDefinitionResponseJsonV400(
     attribute_definition_id = uuidExample.value,
     bank_id = bankIdExample.value,
     name = templateAttributeNameExample.value,
@@ -4830,76 +4830,76 @@ object SwaggerDefinitionsJSON {
     is_active = true
   ) 
   
-  val customerAttributeDefinitionJsonV400 =
+  lazy val customerAttributeDefinitionJsonV400 =
     templateAttributeDefinitionJsonV400.copy(category = AttributeCategory.Customer.toString)
     
-  val customerAttributeDefinitionResponseJsonV400 =
+  lazy val customerAttributeDefinitionResponseJsonV400 =
     templateAttributeDefinitionResponseJsonV400.copy(category = AttributeCategory.Customer.toString)
   
-  val accountAttributeDefinitionJsonV400 =
+  lazy val accountAttributeDefinitionJsonV400 =
     templateAttributeDefinitionJsonV400.copy(category = AttributeCategory.Account.toString)
     
-  val accountAttributeDefinitionResponseJsonV400 =
+  lazy val accountAttributeDefinitionResponseJsonV400 =
     templateAttributeDefinitionResponseJsonV400.copy(category = AttributeCategory.Account.toString)
   
-  val productAttributeDefinitionJsonV400 =
+  lazy val productAttributeDefinitionJsonV400 =
     templateAttributeDefinitionJsonV400.copy(category = AttributeCategory.Product.toString)
   
-  val bankAttributeDefinitionJsonV400 =
+  lazy val bankAttributeDefinitionJsonV400 =
     templateAttributeDefinitionJsonV400.copy(category = AttributeCategory.Bank.toString)
   
-  val productAttributeDefinitionResponseJsonV400 =
+  lazy val productAttributeDefinitionResponseJsonV400 =
     templateAttributeDefinitionResponseJsonV400.copy(category = AttributeCategory.Product.toString)
   
-  val bankAttributeDefinitionResponseJsonV400 =
+  lazy val bankAttributeDefinitionResponseJsonV400 =
     templateAttributeDefinitionResponseJsonV400.copy(category = AttributeCategory.Bank.toString)
   
-  val transactionAttributeDefinitionJsonV400 = 
+  lazy val transactionAttributeDefinitionJsonV400 = 
     templateAttributeDefinitionJsonV400.copy(category = AttributeCategory.Transaction.toString)
   
-  val transactionAttributeDefinitionResponseJsonV400 =
+  lazy val transactionAttributeDefinitionResponseJsonV400 =
     templateAttributeDefinitionResponseJsonV400.copy(category = AttributeCategory.Transaction.toString)
   
-  val cardAttributeDefinitionJsonV400 = 
+  lazy val cardAttributeDefinitionJsonV400 = 
     templateAttributeDefinitionJsonV400.copy(category = AttributeCategory.Card.toString)
   
-  val cardAttributeDefinitionResponseJsonV400 =
+  lazy val cardAttributeDefinitionResponseJsonV400 =
     templateAttributeDefinitionResponseJsonV400.copy(category = AttributeCategory.Card.toString)
     
-  val transactionAttributeDefinitionsResponseJsonV400 = AttributeDefinitionsResponseJsonV400(
+  lazy val transactionAttributeDefinitionsResponseJsonV400 = AttributeDefinitionsResponseJsonV400(
     attributes = List(transactionAttributeDefinitionResponseJsonV400)
   )    
-  val cardAttributeDefinitionsResponseJsonV400 = AttributeDefinitionsResponseJsonV400(
+  lazy val cardAttributeDefinitionsResponseJsonV400 = AttributeDefinitionsResponseJsonV400(
     attributes = List(cardAttributeDefinitionResponseJsonV400)
   )
 
-  val transactionRequestAttributeDefinitionJsonV400 =
+  lazy val transactionRequestAttributeDefinitionJsonV400 =
     templateAttributeDefinitionJsonV400.copy(category = AttributeCategory.TransactionRequest.toString)
 
-  val transactionRequestAttributeDefinitionResponseJsonV400 =
+  lazy val transactionRequestAttributeDefinitionResponseJsonV400 =
     templateAttributeDefinitionResponseJsonV400.copy(category = AttributeCategory.TransactionRequest.toString)
 
-  val transactionRequestAttributeDefinitionsResponseJsonV400 = AttributeDefinitionsResponseJsonV400(
+  lazy val transactionRequestAttributeDefinitionsResponseJsonV400 = AttributeDefinitionsResponseJsonV400(
     attributes = List(transactionRequestAttributeDefinitionResponseJsonV400)
   )
   
-  val accountAttributeDefinitionsResponseJsonV400 = AttributeDefinitionsResponseJsonV400(
+  lazy val accountAttributeDefinitionsResponseJsonV400 = AttributeDefinitionsResponseJsonV400(
     attributes = List(accountAttributeDefinitionResponseJsonV400)
   )    
-  val customerAttributeDefinitionsResponseJsonV400 = AttributeDefinitionsResponseJsonV400(
+  lazy val customerAttributeDefinitionsResponseJsonV400 = AttributeDefinitionsResponseJsonV400(
     attributes = List(templateAttributeDefinitionResponseJsonV400)
   )    
-  val productAttributeDefinitionsResponseJsonV400 = AttributeDefinitionsResponseJsonV400(
+  lazy val productAttributeDefinitionsResponseJsonV400 = AttributeDefinitionsResponseJsonV400(
     attributes = List(productAttributeDefinitionResponseJsonV400)
   )
-  val challengeJsonV400 = ChallengeJsonV400(
+  lazy val challengeJsonV400 = ChallengeJsonV400(
     id = transactionIdExample.value,
     user_id = userIdExample.value,
     allowed_attempts =3,
     challenge_type = ChallengeType.OBP_TRANSACTION_REQUEST_CHALLENGE.toString,
     link = "/obp/v4.0.0/banks/BANK_ID/accounts/ACCOUNT_ID/VIEW_ID/transaction-request-types/TRANSACTION_REQUEST_TYPE/transaction-requests/TRANSACTION_REQUEST_ID/challenge"
   )
-  val transactionRequestWithChargeJSON400 = TransactionRequestWithChargeJSON400(
+  lazy val transactionRequestWithChargeJSON400 = TransactionRequestWithChargeJSON400(
     id = "4050046c-63b3-4868-8a22-14b4181d33a6",
     `type` = SANDBOX_TAN.toString,
     from = transactionRequestAccountJsonV140,
@@ -4913,7 +4913,7 @@ object SwaggerDefinitionsJSON {
     attributes=Some(List(bankAttributeBankResponseJsonV400)),
   )
 
-  val postSimpleCounterpartyJson400 = PostSimpleCounterpartyJson400(
+  lazy val postSimpleCounterpartyJson400 = PostSimpleCounterpartyJson400(
     name = counterpartyNameExample.value,
     description = transactionDescriptionExample.value,
     other_account_routing_scheme = counterpartyOtherAccountRoutingSchemeExample.value,
@@ -4926,7 +4926,7 @@ object SwaggerDefinitionsJSON {
     other_branch_routing_address = counterpartyOtherBranchRoutingAddressExample.value
   )
   
-  val transactionRequestBodySimpleJsonV400 = TransactionRequestBodySimpleJsonV400(
+  lazy val transactionRequestBodySimpleJsonV400 = TransactionRequestBodySimpleJsonV400(
     to= postSimpleCounterpartyJson400,
     amountOfMoneyJsonV121,
     descriptionExample.value,
@@ -4934,26 +4934,26 @@ object SwaggerDefinitionsJSON {
     Some(futureDateExample.value)
   )
   
-  val postApiCollectionJson400 = PostApiCollectionJson400(apiCollectionNameExample.value, true, Some(descriptionExample.value))
+  lazy val postApiCollectionJson400 = PostApiCollectionJson400(apiCollectionNameExample.value, true, Some(descriptionExample.value))
   
-  val apiCollectionJson400 = ApiCollectionJson400(apiCollectionIdExample.value, userIdExample.value, apiCollectionNameExample.value, true, descriptionExample.value)
-  val apiCollectionsJson400 = ApiCollectionsJson400(List(apiCollectionJson400))
+  lazy val apiCollectionJson400 = ApiCollectionJson400(apiCollectionIdExample.value, userIdExample.value, apiCollectionNameExample.value, true, descriptionExample.value)
+  lazy val apiCollectionsJson400 = ApiCollectionsJson400(List(apiCollectionJson400))
 
-  val postApiCollectionEndpointJson400 = PostApiCollectionEndpointJson400(operationIdExample.value)
+  lazy val postApiCollectionEndpointJson400 = PostApiCollectionEndpointJson400(operationIdExample.value)
 
-  val apiCollectionEndpointJson400 = ApiCollectionEndpointJson400(apiCollectionEndpointIdExample.value, apiCollectionIdExample.value, operationIdExample.value)
-  val apiCollectionEndpointsJson400 = ApiCollectionEndpointsJson400(List(apiCollectionEndpointJson400))
+  lazy val apiCollectionEndpointJson400 = ApiCollectionEndpointJson400(apiCollectionEndpointIdExample.value, apiCollectionIdExample.value, operationIdExample.value)
+  lazy val apiCollectionEndpointsJson400 = ApiCollectionEndpointsJson400(List(apiCollectionEndpointJson400))
 
-  val jsonScalaConnectorMethod  = JsonConnectorMethod(Some(connectorMethodIdExample.value),"getBank", connectorMethodBodyScalaExample.value, "Scala")
-  val jsonScalaConnectorMethodMethodBody  = JsonConnectorMethodMethodBody(connectorMethodBodyScalaExample.value, "Scala")
+  lazy val jsonScalaConnectorMethod  = JsonConnectorMethod(Some(connectorMethodIdExample.value),"getBank", connectorMethodBodyScalaExample.value, "Scala")
+  lazy val jsonScalaConnectorMethodMethodBody  = JsonConnectorMethodMethodBody(connectorMethodBodyScalaExample.value, "Scala")
   
-  val jsonJavaConnectorMethod  = JsonConnectorMethod(Some(connectorMethodIdExample.value),"getBank", connectorMethodBodyJavaExample.value, "Java")
-  val jsonJavaConnectorMethodMethodBody  = JsonConnectorMethodMethodBody(connectorMethodBodyJavaExample.value, "Java")
+  lazy val jsonJavaConnectorMethod  = JsonConnectorMethod(Some(connectorMethodIdExample.value),"getBank", connectorMethodBodyJavaExample.value, "Java")
+  lazy val jsonJavaConnectorMethodMethodBody  = JsonConnectorMethodMethodBody(connectorMethodBodyJavaExample.value, "Java")
   
-  val jsonJsConnectorMethod  = JsonConnectorMethod(Some(connectorMethodIdExample.value),"getBank", connectorMethodBodyJsExample.value, "Js")
-  val jsonJsConnectorMethodMethodBody  = JsonConnectorMethodMethodBody(connectorMethodBodyJsExample.value, "Js")
+  lazy val jsonJsConnectorMethod  = JsonConnectorMethod(Some(connectorMethodIdExample.value),"getBank", connectorMethodBodyJsExample.value, "Js")
+  lazy val jsonJsConnectorMethodMethodBody  = JsonConnectorMethodMethodBody(connectorMethodBodyJsExample.value, "Js")
   
-  val jsonDynamicResourceDoc = JsonDynamicResourceDoc(
+  lazy val jsonDynamicResourceDoc = JsonDynamicResourceDoc(
     bankId = Some(bankIdExample.value),
     dynamicResourceDocId = Some(dynamicResourceDocIdExample.value),
     methodBody = dynamicResourceDocMethodBodyExample.value,
@@ -4969,7 +4969,7 @@ object SwaggerDefinitionsJSON {
     roles = rolesExample.value
   )
   
-  val jsonDynamicMessageDoc = JsonDynamicMessageDoc(
+  lazy val jsonDynamicMessageDoc = JsonDynamicMessageDoc(
     bankId = Some(bankIdExample.value),
     dynamicMessageDocId = Some(dynamicMessageDocIdExample.value),
     process = processExample.value,
@@ -4986,24 +4986,24 @@ object SwaggerDefinitionsJSON {
     programmingLang = connectorMethodLangExample.value
   )
 
-  val jsonResourceDocFragment = ResourceDocFragment(
+  lazy val jsonResourceDocFragment = ResourceDocFragment(
     requestVerbExample.value,
     requestUrlExample.value,
     exampleRequestBody = Option(json.parse(exampleRequestBodyExample.value)),
     successResponseBody = Option(json.parse(successResponseBodyExample.value))
   )
 
-  val jsonCodeTemplateJson = JsonCodeTemplateJson(
+  lazy val jsonCodeTemplateJson = JsonCodeTemplateJson(
     URLEncoder.encode("""println("hello")""", "UTF-8")
   )
 
-  val supportedCurrenciesJson = SupportedCurrenciesJson(
+  lazy val supportedCurrenciesJson = SupportedCurrenciesJson(
     supportedCurrenciesExample.value
       .replaceAll(""""""","").replace("""[""","")
       .replace("""]""","").split(",").toList
   ) 
   
-  val atmSupportedCurrenciesJson = AtmSupportedCurrenciesJson(
+  lazy val atmSupportedCurrenciesJson = AtmSupportedCurrenciesJson(
     atmIdExample.value,
     supportedCurrenciesExample.value.replaceAll(""""""","")
       .replace("""[""","")
@@ -5011,13 +5011,13 @@ object SwaggerDefinitionsJSON {
       .split(",").toList
   )
 
-  val supportedLanguagesJson = SupportedLanguagesJson(
+  lazy val supportedLanguagesJson = SupportedLanguagesJson(
     supportedLanguagesExample.value
       .replaceAll(""""""","").replace("""[""","")
       .replace("""]""","").split(",").toList
   ) 
   
-  val atmSupportedLanguagesJson = AtmSupportedLanguagesJson(
+  lazy val atmSupportedLanguagesJson = AtmSupportedLanguagesJson(
     atmIdExample.value,
     supportedLanguagesExample.value.replaceAll(""""""","")
       .replace("""[""","")
@@ -5026,13 +5026,13 @@ object SwaggerDefinitionsJSON {
   )
   
 
-  val accessibilityFeaturesJson = AccessibilityFeaturesJson(
+  lazy val accessibilityFeaturesJson = AccessibilityFeaturesJson(
     accessibilityFeaturesExample.value
       .replaceAll(""""""","").replace("""[""","")
       .replace("""]""","").split(",").toList
   ) 
   
-  val atmAccessibilityFeaturesJson = AtmAccessibilityFeaturesJson(
+  lazy val atmAccessibilityFeaturesJson = AtmAccessibilityFeaturesJson(
     atmIdExample.value,
     accessibilityFeaturesExample.value.replaceAll(""""""","")
       .replace("""[""","")
@@ -5041,13 +5041,13 @@ object SwaggerDefinitionsJSON {
   )
 
 
-  val atmServicesJson = AtmServicesJsonV400(
+  lazy val atmServicesJson = AtmServicesJsonV400(
     atmServicesExample.value
       .replaceAll(""""""","").replace("""[""","")
       .replace("""]""","").split(",").toList
   )
 
-  val atmServicesResponseJson = AtmServicesResponseJsonV400(
+  lazy val atmServicesResponseJson = AtmServicesResponseJsonV400(
     atmIdExample.value,
     atmServicesExample.value.replaceAll(""""""","")
       .replace("""[""","")
@@ -5056,13 +5056,13 @@ object SwaggerDefinitionsJSON {
   )
 
 
-  val atmNotesJson = AtmNotesJsonV400(
+  lazy val atmNotesJson = AtmNotesJsonV400(
     atmNotesExample.value
       .replaceAll(""""""","").replace("""[""","")
       .replace("""]""","").split(",").toList
   )
 
-  val atmNotesResponseJson = AtmNotesResponseJsonV400(
+  lazy val atmNotesResponseJson = AtmNotesResponseJsonV400(
     atmIdExample.value,
     atmNotesExample.value.replaceAll(""""""","")
       .replace("""[""","")
@@ -5071,20 +5071,20 @@ object SwaggerDefinitionsJSON {
   )
   
 
-  val atmLocationCategoriesJsonV400 = AtmLocationCategoriesJsonV400(
+  lazy val atmLocationCategoriesJsonV400 = AtmLocationCategoriesJsonV400(
     atmLocationCategoriesExample.value
       .replaceAll(""""""","").replace("""[""","")
       .replace("""]""","").split(",").toList
   )
 
-  val atmLocationCategoriesResponseJsonV400 = AtmLocationCategoriesResponseJsonV400(
+  lazy val atmLocationCategoriesResponseJsonV400 = AtmLocationCategoriesResponseJsonV400(
     atmIdExample.value,
     atmLocationCategoriesExample.value.replaceAll(""""""","")
       .replace("""[""","")
       .replace("""]""","")
       .split(",").toList
   )
-  val atmJsonV400 = AtmJsonV400(
+  lazy val atmJsonV400 = AtmJsonV400(
     id = Some(atmIdExample.value),
     bank_id = bankIdExample.value,
     name = atmNameExample.value,
@@ -5119,16 +5119,16 @@ object SwaggerDefinitionsJSON {
     balance_inquiry_fee = balanceInquiryFeeExample.value
   )
 
-  val atmsJsonV400 = AtmsJsonV400(List(atmJsonV400))
+  lazy val atmsJsonV400 = AtmsJsonV400(List(atmJsonV400))
 
-  val productFeeValueJsonV400 =  ProductFeeValueJsonV400(
+  lazy val productFeeValueJsonV400 =  ProductFeeValueJsonV400(
     currency = currencyExample.value,
     amount = 10.12,
     frequency = frequencyExample.value,
     `type` = typeExample.value
   )
 
-  val productFeeJsonV400 = ProductFeeJsonV400(
+  lazy val productFeeJsonV400 = ProductFeeJsonV400(
     product_fee_id = Some(productFeeIdExample.value),
     name = nameExample.value,
     is_active = true,
@@ -5136,7 +5136,7 @@ object SwaggerDefinitionsJSON {
     value = productFeeValueJsonV400 
   )
   
-  val productFeeResponseJsonV400 = ProductFeeResponseJsonV400(
+  lazy val productFeeResponseJsonV400 = ProductFeeResponseJsonV400(
     bank_id = bankIdExample.value,
     product_code = productCodeExample.value,
     product_fee_id = productFeeIdExample.value,
@@ -5146,10 +5146,10 @@ object SwaggerDefinitionsJSON {
     value = productFeeValueJsonV400
   )
   
-  val productFeesResponseJsonV400 = ProductFeesResponseJsonV400(List(productFeeResponseJsonV400))
+  lazy val productFeesResponseJsonV400 = ProductFeesResponseJsonV400(List(productFeeResponseJsonV400))
   
   
-  val productJsonV400 = ProductJsonV400(
+  lazy val productJsonV400 = ProductJsonV400(
     bank_id = bankIdExample.value,
     product_code = productCodeExample.value,
     parent_product_code = parentProductCodeExample.value,
@@ -5162,9 +5162,9 @@ object SwaggerDefinitionsJSON {
     fees = Some(List(productFeeJsonV400))
   )
 
-  val productsJsonV400 = ProductsJsonV400(products = List(productJsonV400.copy(attributes = None, fees = None)))
+  lazy val productsJsonV400 = ProductsJsonV400(products = List(productJsonV400.copy(attributes = None, fees = None)))
 
-  val putProductJsonV400 = PutProductJsonV400(
+  lazy val putProductJsonV400 = PutProductJsonV400(
     parent_product_code = parentProductCodeExample.value,
     name = productNameExample.value,
     more_info_url = moreInfoUrlExample.value,
@@ -5172,7 +5172,7 @@ object SwaggerDefinitionsJSON {
     description = descriptionExample.value,
     meta = metaJson,
   )
-  val putProductJsonV500 = PutProductJsonV500(
+  lazy val putProductJsonV500 = PutProductJsonV500(
     parent_product_code = parentProductCodeExample.value,
     name = productNameExample.value,
     more_info_url = Some(moreInfoUrlExample.value),
@@ -5181,14 +5181,14 @@ object SwaggerDefinitionsJSON {
     meta = Some(metaJson)
   )
 
-  val createMessageJsonV400 = CreateMessageJsonV400(
+  lazy val createMessageJsonV400 = CreateMessageJsonV400(
     message = messageExample.value,
     transport = transportExample.value,
     from_department = fromDepartmentExample.value,
     from_person = fromPersonExample.value,
   )
 
-  val customerMessageJsonV400 = CustomerMessageJsonV400(
+  lazy val customerMessageJsonV400 = CustomerMessageJsonV400(
     id = customerMessageId.value,
     date = DateWithDayExampleObject,
     transport = transportExample.value,
@@ -5197,30 +5197,30 @@ object SwaggerDefinitionsJSON {
     from_person = fromPersonExample.value,
   )
 
-  val customerMessagesJsonV400 = CustomerMessagesJsonV400(
+  lazy val customerMessagesJsonV400 = CustomerMessagesJsonV400(
     messages = List(customerMessageJsonV400)
   )
 
-  val requestRootJsonClass = PractiseEndpoint.RequestRootJsonClass(name = nameExample.value, age=ageExample.value.toLong, Nil)
+  lazy val requestRootJsonClass = PractiseEndpoint.RequestRootJsonClass(name = nameExample.value, age=ageExample.value.toLong, Nil)
   
-  val entitlementJsonV400 = EntitlementJsonV400(
+  lazy val entitlementJsonV400 = EntitlementJsonV400(
     entitlement_id = entitlementIdExample.value,
     role_name = roleNameExample.value,
     bank_id = bankIdExample.value,
     user_id = userIdExample.value,
   )
 
-  val entitlementsJsonV400 =  EntitlementsJsonV400(
+  lazy val entitlementsJsonV400 =  EntitlementsJsonV400(
     list = List(entitlementJsonV400)
   )
   
-  val accountNotificationWebhookPostJson = AccountNotificationWebhookPostJson(
+  lazy val accountNotificationWebhookPostJson = AccountNotificationWebhookPostJson(
     url = "https://localhost.openbankproject.com",
     http_method = "POST",
     http_protocol = "HTTP/1.1"
   )
 
-  val systemAccountNotificationWebhookJson =  SystemAccountNotificationWebhookJson(
+  lazy val systemAccountNotificationWebhookJson =  SystemAccountNotificationWebhookJson(
     webhook_id = "fc23a7e2-7dd2-4bdf-a0b4-ae31232a4762",
     trigger_name = ApiTrigger.onCreateTransaction.toString(),
     url = "https://localhost.openbankproject.com",
@@ -5229,7 +5229,7 @@ object SwaggerDefinitionsJSON {
     created_by_user_id = ExampleValue.userIdExample.value
   )
 
-  val bankAccountNotificationWebhookJson =  BankAccountNotificationWebhookJson(
+  lazy val bankAccountNotificationWebhookJson =  BankAccountNotificationWebhookJson(
     webhook_id = "fc23a7e2-7dd2-4bdf-a0b4-ae31232a4762",
     bank_id = bankIdExample.value,
     trigger_name = ApiTrigger.onCreateTransaction.toString(),
@@ -5239,7 +5239,7 @@ object SwaggerDefinitionsJSON {
     created_by_user_id = ExampleValue.userIdExample.value
   )
 
-  val userAuthContextJsonV500 = UserAuthContextJsonV500(
+  lazy val userAuthContextJsonV500 = UserAuthContextJsonV500(
     user_auth_context_id = "613c83ea-80f9-4560-8404-b9cd4ec42a7f",
     user_id = ExampleValue.userIdExample.value,
     key = "CUSTOMER_NUMBER",
@@ -5248,7 +5248,7 @@ object SwaggerDefinitionsJSON {
     consumer_id = consumerIdExample.value
   )
 
-  val userAuthContextUpdateJsonV500 = UserAuthContextUpdateJsonV500(
+  lazy val userAuthContextUpdateJsonV500 = UserAuthContextUpdateJsonV500(
     user_auth_context_update_id = "613c83ea-80f9-4560-8404-b9cd4ec42a7f",
     user_id = ExampleValue.userIdExample.value,
     key = "CUSTOMER_NUMBER",
@@ -5257,33 +5257,33 @@ object SwaggerDefinitionsJSON {
     consumer_id = consumerIdExample.value
   )
   
-  val consentRequestResponseJson = ConsentRequestResponseJson(
+  lazy val consentRequestResponseJson = ConsentRequestResponseJson(
     consent_request_id = consentRequestIdExample.value,
     payload = json.parse(consentRequestPayloadExample.value), 
     consumer_id = consumerIdExample.value
     )
   
-  val vrpConsentRequestResponseJson = ConsentRequestResponseJson(
+  lazy val vrpConsentRequestResponseJson = ConsentRequestResponseJson(
     consent_request_id = consentRequestIdExample.value,
     payload = json.parse(vrpConsentRequestPayloadExample.value), 
     consumer_id = consumerIdExample.value
   )
   
-  val consentAccountAccessJson = ConsentAccountAccessJson(
+  lazy val consentAccountAccessJson = ConsentAccountAccessJson(
     bank_id = bankIdExample.value,
     account_id = accountIdExample.value,
     view_id = viewIdExample.value,
     helper_info = Some(helperInfoJson)
   )
   
-  val consentJsonV500 = ConsentJsonV500(
+  lazy val consentJsonV500 = ConsentJsonV500(
     consent_id = "9d429899-24f5-42c8-8565-943ffa6a7945",
     jwt = "eyJhbGciOiJIUzI1NiJ9.eyJlbnRpdGxlbWVudHMiOltdLCJjcmVhdGVkQnlVc2VySWQiOiJhYjY1MzlhOS1iMTA1LTQ0ODktYTg4My0wYWQ4ZDZjNjE2NTciLCJzdWIiOiIyMWUxYzhjYy1mOTE4LTRlYWMtYjhlMy01ZTVlZWM2YjNiNGIiLCJhdWQiOiJlanpuazUwNWQxMzJyeW9tbmhieDFxbXRvaHVyYnNiYjBraWphanNrIiwibmJmIjoxNTUzNTU0ODk5LCJpc3MiOiJodHRwczpcL1wvd3d3Lm9wZW5iYW5rcHJvamVjdC5jb20iLCJleHAiOjE1NTM1NTg0OTksImlhdCI6MTU1MzU1NDg5OSwianRpIjoiMDlmODhkNWYtZWNlNi00Mzk4LThlOTktNjYxMWZhMWNkYmQ1Iiwidmlld3MiOlt7ImFjY291bnRfaWQiOiJtYXJrb19wcml2aXRlXzAxIiwiYmFua19pZCI6ImdoLjI5LnVrLngiLCJ2aWV3X2lkIjoib3duZXIifSx7ImFjY291bnRfaWQiOiJtYXJrb19wcml2aXRlXzAyIiwiYmFua19pZCI6ImdoLjI5LnVrLngiLCJ2aWV3X2lkIjoib3duZXIifV19.8cc7cBEf2NyQvJoukBCmDLT7LXYcuzTcSYLqSpbxLp4",
     status = ConsentStatus.INITIATED.toString,
     consent_request_id = Some(consentRequestIdExample.value),
     account_access= Some(consentAccountAccessJson)
   )
-  val consentJsonV510 = ConsentJsonV510(
+  lazy val consentJsonV510 = ConsentJsonV510(
     consent_id = "9d429899-24f5-42c8-8565-943ffa6a7945",
     jwt = "eyJhbGciOiJIUzI1NiJ9.eyJlbnRpdGxlbWVudHMiOltdLCJjcmVhdGVkQnlVc2VySWQiOiJhYjY1MzlhOS1iMTA1LTQ0ODktYTg4My0wYWQ4ZDZjNjE2NTciLCJzdWIiOiIyMWUxYzhjYy1mOTE4LTRlYWMtYjhlMy01ZTVlZWM2YjNiNGIiLCJhdWQiOiJlanpuazUwNWQxMzJyeW9tbmhieDFxbXRvaHVyYnNiYjBraWphanNrIiwibmJmIjoxNTUzNTU0ODk5LCJpc3MiOiJodHRwczpcL1wvd3d3Lm9wZW5iYW5rcHJvamVjdC5jb20iLCJleHAiOjE1NTM1NTg0OTksImlhdCI6MTU1MzU1NDg5OSwianRpIjoiMDlmODhkNWYtZWNlNi00Mzk4LThlOTktNjYxMWZhMWNkYmQ1Iiwidmlld3MiOlt7ImFjY291bnRfaWQiOiJtYXJrb19wcml2aXRlXzAxIiwiYmFua19pZCI6ImdoLjI5LnVrLngiLCJ2aWV3X2lkIjoib3duZXIifSx7ImFjY291bnRfaWQiOiJtYXJrb19wcml2aXRlXzAyIiwiYmFua19pZCI6ImdoLjI5LnVrLngiLCJ2aWV3X2lkIjoib3duZXIifV19.8cc7cBEf2NyQvJoukBCmDLT7LXYcuzTcSYLqSpbxLp4",
     status = ConsentStatus.INITIATED.toString,
@@ -5292,7 +5292,7 @@ object SwaggerDefinitionsJSON {
     consumer_id= consumerIdExample.value
   )
   
-  val postConsentRequestJsonV500 = PostConsentRequestJsonV500(
+  lazy val postConsentRequestJsonV500 = PostConsentRequestJsonV500(
     everything = false,
     bank_id = None,
     account_access = List(AccountAccessV500(
@@ -5307,7 +5307,7 @@ object SwaggerDefinitionsJSON {
     time_to_live = Some(3600)
     )
 
-  val createPhysicalCardJsonV500 = CreatePhysicalCardJsonV500(
+  lazy val createPhysicalCardJsonV500 = CreatePhysicalCardJsonV500(
     card_number = bankCardNumberExample.value,
     card_type = cardTypeExample.value,
     name_on_card = nameOnCardExample.value,
@@ -5328,7 +5328,7 @@ object SwaggerDefinitionsJSON {
     brand = brandExample.value
   )
 
-  val physicalCardJsonV500 = PhysicalCardJsonV500(
+  lazy val physicalCardJsonV500 = PhysicalCardJsonV500(
     card_id = cardIdExample.value,
     bank_id = bankIdExample.value,
     card_number = bankCardNumberExample.value,
@@ -5354,7 +5354,7 @@ object SwaggerDefinitionsJSON {
     brand = brandExample.value
   )
 
-  val physicalCardWithAttributesJsonV500 = PhysicalCardWithAttributesJsonV500(
+  lazy val physicalCardWithAttributesJsonV500 = PhysicalCardWithAttributesJsonV500(
     card_id = cardIdExample.value,
     bank_id = bankIdExample.value,
     card_number = bankCardNumberExample.value,
@@ -5380,17 +5380,17 @@ object SwaggerDefinitionsJSON {
     brand = brandExample.value
   )
 
-  val createCustomerAccountLinkJson =  CreateCustomerAccountLinkJson(
+  lazy val createCustomerAccountLinkJson =  CreateCustomerAccountLinkJson(
     customer_id = customerIdExample.value,
     bank_id = bankIdExample.value,
     account_id = accountIdExample.value,
     relationship_type= relationshipTypeExample.value
   )
-  val updateCustomerAccountLinkJson = UpdateCustomerAccountLinkJson(
+  lazy val updateCustomerAccountLinkJson = UpdateCustomerAccountLinkJson(
     relationship_type= relationshipTypeExample.value
   )
 
-  val customerAccountLinkJson =  CustomerAccountLinkJson(
+  lazy val customerAccountLinkJson =  CustomerAccountLinkJson(
     customer_account_link_id = customerAccountLinkIdExample.value,
     customer_id = customerIdExample.value,
     bank_id = bankIdExample.value,
@@ -5398,11 +5398,11 @@ object SwaggerDefinitionsJSON {
     relationship_type= relationshipTypeExample.value
   )
 
-  val customerAccountLinksJson =  CustomerAccountLinksJson(
+  lazy val customerAccountLinksJson =  CustomerAccountLinksJson(
     List(customerAccountLinkJson)
   )
   
-  val inboundStatusMessage = InboundStatusMessage(
+  lazy val inboundStatusMessage = InboundStatusMessage(
     source = sourceExample.value,
     status = statusExample.value,
     errorCode = errorCodeExample.value,
@@ -5410,7 +5410,7 @@ object SwaggerDefinitionsJSON {
     duration = Some (BigDecimal(durationExample.value))
   )
   
-  val adapterInfoJsonV500 = AdapterInfoJsonV500(
+  lazy val adapterInfoJsonV500 = AdapterInfoJsonV500(
     name = nameExample.value,
     version = versionExample.value,
     git_commit = gitCommitExample.value,
@@ -5420,7 +5420,7 @@ object SwaggerDefinitionsJSON {
   )
 
 
-  val atmJsonV510 = AtmJsonV510(
+  lazy val atmJsonV510 = AtmJsonV510(
     id = Some(atmIdExample.value),
     bank_id = bankIdExample.value,
     name = atmNameExample.value,
@@ -5457,13 +5457,13 @@ object SwaggerDefinitionsJSON {
     attributes = Some(List(atmAttributeResponseJsonV510))
   )
 
-  val userAttributeJsonV510 = UserAttributeJsonV510(
+  lazy val userAttributeJsonV510 = UserAttributeJsonV510(
     name = userAttributeNameExample.value,
     `type` = userAttributeTypeExample.value,
     value = userAttributeValueExample.value
   )
 
-  val userAttributeResponseJsonV510 = UserAttributeResponseJsonV510(
+  lazy val userAttributeResponseJsonV510 = UserAttributeResponseJsonV510(
     user_attribute_id = userAttributeIdExample.value,
     name = userAttributeNameExample.value,
     `type` = userAttributeTypeExample.value,
@@ -5472,7 +5472,7 @@ object SwaggerDefinitionsJSON {
     insert_date = new Date()
   )
   
-  val postAtmJsonV510 = PostAtmJsonV510(
+  lazy val postAtmJsonV510 = PostAtmJsonV510(
       id = Some(atmIdExample.value),
       bank_id = bankIdExample.value,
       name = atmNameExample.value,
@@ -5507,7 +5507,7 @@ object SwaggerDefinitionsJSON {
       phone = phoneExample.value,
   )
   
-  val postCounterpartyLimitV510 = PostCounterpartyLimitV510(
+  lazy val postCounterpartyLimitV510 = PostCounterpartyLimitV510(
     currency = currencyExample.value,
     max_single_amount = maxSingleAmountExample.value,
     max_monthly_amount = maxMonthlyAmountExample.value,
@@ -5518,7 +5518,7 @@ object SwaggerDefinitionsJSON {
     max_number_of_transactions = maxNumberOfTransactionsExample.value.toInt
   )
   
-  val counterpartyLimitV510 = CounterpartyLimitV510(
+  lazy val counterpartyLimitV510 = CounterpartyLimitV510(
     counterparty_limit_id = counterpartyLimitIdExample.value,
     bank_id = bankIdExample.value,
     account_id = accountIdExample.value,
@@ -5534,7 +5534,7 @@ object SwaggerDefinitionsJSON {
     max_number_of_transactions = maxNumberOfTransactionsExample.value.toInt
   )
 
-  val counterpartyLimitStatus =  CounterpartyLimitStatus(
+  lazy val counterpartyLimitStatus =  CounterpartyLimitStatus(
     currency_status = currencyExample.value,
     max_monthly_amount_status = maxSingleAmountExample.value,
     max_number_of_monthly_transactions_status = maxNumberOfMonthlyTransactionsExample.value.toInt,
@@ -5544,7 +5544,7 @@ object SwaggerDefinitionsJSON {
     max_number_of_transactions_status = maxNumberOfTransactionsExample.value.toInt
   )
 
-  val counterpartyLimitStatusV510 = CounterpartyLimitStatusV510(
+  lazy val counterpartyLimitStatusV510 = CounterpartyLimitStatusV510(
     counterparty_limit_id = counterpartyLimitIdExample.value,
     bank_id = bankIdExample.value,
     account_id = accountIdExample.value,
@@ -5561,19 +5561,19 @@ object SwaggerDefinitionsJSON {
     status = counterpartyLimitStatus
   )
   
-  val atmsJsonV510 = AtmsJsonV510(
+  lazy val atmsJsonV510 = AtmsJsonV510(
     atms = List(atmJsonV510)
   )
   
-  val postAccountAccessJsonV510 = PostAccountAccessJsonV510(userIdExample.value,viewIdExample.value)
+  lazy val postAccountAccessJsonV510 = PostAccountAccessJsonV510(userIdExample.value,viewIdExample.value)
 
-  val consentRequestFromAccountJson = ConsentRequestFromAccountJson (
+  lazy val consentRequestFromAccountJson = ConsentRequestFromAccountJson (
     bank_routing = bankRoutingJsonV121,
     account_routing = accountRoutingJsonV121,
     branch_routing = branchRoutingJsonV141
   )
 
-  val consentRequestToAccountJson = ConsentRequestToAccountJson (
+  lazy val consentRequestToAccountJson = ConsentRequestToAccountJson (
     counterparty_name = counterpartyNameExample.value,
     bank_routing = bankRoutingJsonV121,
     account_routing = accountRoutingJsonV121,
@@ -5581,7 +5581,7 @@ object SwaggerDefinitionsJSON {
     limit = postCounterpartyLimitV510
   )
 
-  val postVRPConsentRequestJsonV510 = PostVRPConsentRequestJsonV510(
+  lazy val postVRPConsentRequestJsonV510 = PostVRPConsentRequestJsonV510(
     from_account = consentRequestFromAccountJson,
     to_account = consentRequestToAccountJson,
     email = Some(emailExample.value),
@@ -5590,26 +5590,26 @@ object SwaggerDefinitionsJSON {
     time_to_live = Some(3600)
   )
 
-  val consumerLogoUrlJson = ConsumerLogoUrlJson(
+  lazy val consumerLogoUrlJson = ConsumerLogoUrlJson(
     "http://localhost:8888"
   )
-  val consumerCertificateJson = ConsumerCertificateJson(
+  lazy val consumerCertificateJson = ConsumerCertificateJson(
     "QmFnIEF0dHJpYnV0ZXMNCiAgICBsb2NhbEtleUlEOiBFMSA3RiBCMyBCOCBEQiA4QyA2NCBGNiA4QyA1NSAzNCA3QSAyNiBCRSBEMCBCNCBENCBBMyBGRCA2NiANCnN1YmplY3Q9QyA9IE1ELCBPID0gTUFJQiwgQ04gPSBNQUlCIFByaXNhY2FydSBTZXJnaXUgKFRlc3QpDQoNCmlzc3Vlcj1DID0gTUQsIE8gPSBCTk0sIE9VID0gRFRJLCBDTiA9IEJOTSBDQSAodGVzdCksIGVtYWlsQWRkcmVzcyA9IGFkbWluQGJubS5tZA0KDQotLS0tLUJFR0lOIENFUlRJRklDQVRFLS0tLS0NCk1JSUdoVENDQkcyZ0F3SUJBZ0lDQkRvd0RRWUpLb1pJaHZjTkFRRUZCUUF3WGpFTE1Ba0dBMVVFQmhNQ1RVUXgNCkREQUtCZ05WQkFvTUEwSk9UVEVNTUFvR0ExVUVDd3dEUkZSSk1SWXdGQVlEVlFRRERBMUNUazBnUTBFZ0tIUmwNCmMzUXBNUnN3R1FZSktvWklodmNOQVFrQkZneGhaRzFwYmtCaWJtMHViV1F3SGhjTk1qUXdOREU0TVRFME5qUXgNCldoY05Nall3TkRFNE1URTBOalF4V2pCRE1Rc3dDUVlEVlFRR0V3Sk5SREVOTUFzR0ExVUVDZ3dFVFVGSlFqRWwNCk1DTUdBMVVFQXd3Y1RVRkpRaUJRY21sellXTmhjblVnVTJWeVoybDFJQ2hVWlhOMEtUQ0NBU0l3RFFZSktvWkkNCmh2Y05BUUVCQlFBRGdnRVBBRENDQVFvQ2dnRUJBTFdYMzlFSmZLNEg5MDZKSVpMbHRxTU56amxDd3NyMm0rZjMNCjVYdHZ4SVY1akEvUWlZSDdDVjBQK0E1U2grKytaNldUb1NnQStQemYwdTdWYWRVbWtyWEZBV0lzOXlPemduUjQNCmZ5TVVSNXR4UWJYdmZYcXVJUS9XQ0ZnRHBIU3I4eWN0UHlsOGdsUjFidVF0UmlTdEdMT0RnalhsTmhTMlhTYTMNCmFwVGhUVHAya3o1dEoyWjBXRnlxa1ZVM1FJNkdNVGU5eWhDdnVZQkI1QWJuUUU4bXVPb2NNaEJkRFREY2ZGdW0NCk5paUozelhLMXZzKzEzNW5sZEMxOXozWnBuaVBSeER2WGthR00wc0xiNnk5T1NIOUdmYTZHcXJnendTTmpubEkNCnZCeWFlK1dtbG16TzlBZXVKNVRaUFhPdzNwcFdpTWdTOVlZOWp1UUtFQUFBQUFBQTQ4c0NBd0VBQWFPQ0FtWXcNCmdnSmlNQkVHQ1dDR1NBR0crRUlCQVFRRUF3SUZvREFwQmdOVkhTVUVJakFnQmdnckJnRUZCUWNEQWdZSUt3WUINCkJRVUhBd1FHQ2lzR0FRUUJnamNVQWdJd0hRWURWUjBPQkJZRUZGR2ptcXM4OXUyMXcvZmNHVlgrb0pNZSsvWTYNCk1JR1FCZ05WSFNNRWdZZ3dnWVdBRkh1ckdvcWhWYVFUVkJwRVlObmNnRUl5Vkd3dG9XS2tZREJlTVFzd0NRWUQNClZRUUdFd0pOUkRFTU1Bb0dBMVVFQ2d3RFFrNU5NUXd3Q2dZRFZRUUxEQU5FVkVreEZqQVVCZ05WQkFNTURVSk8NClRTQkRRU0FvZEdWemRDa3hHekFaQmdrcWhraUc5dzBCQ1FFV0RHRmtiV2x1UUdKdWJTNXRaSUlKQUpuU0UxdVoNCkU1MU5NQlFHQTFVZEVnUU5NQXVCQ1VOQlFHSnViUzV0WkRBMkJnbGdoa2dCaHZoQ0FRUUVLUlluYUhSMGNEb3YNCkwzQnJhUzVpYm0wdWJXUXZjR3RwTDNCMVlpOWpjbXd2WTJGamNtd3VZM0pzTURZR0NXQ0dTQUdHK0VJQkF3UXANCkZpZG9kSFJ3T2k4dmNHdHBMbUp1YlM1dFpDOXdhMmt2Y0hWaUwyTnliQzlqWVdOeWJDNWpjbXd3T0FZRFZSMGYNCkJERXdMekF0b0N1Z0tZWW5hSFIwY0RvdkwzQnJhUzVpYm0wdWJXUXZjR3RwTDNCMVlpOWpjbXd2WTJGamNtd3UNClkzSnNNRU1HQ0NzR0FRVUZCd0VCQkRjd05UQXpCZ2dyQmdFRkJRY3dBb1luYUhSMGNEb3ZMM2QzZHk1aWJtMHUNCmJXUXZjSFZpTDJOaFkyVnlkQzlqWVdObGNuUXVZM0owTUZBR0NXQ0dTQUdHK0VJQkRRUkRGa0ZMWlhrZ1VHRnANCmNpQkhaVzVsY21GMFpXUWdZbmtnVlc1cFEzSjVjSFFnZGk0d0xqWXVPQzQySUdadmNpQlFTME5USXpFeUxXWnANCmJHVWdjM1J2Y21GblpUQUpCZ05WSFJNRUFqQUFNQTRHQTFVZER3RUIvd1FFQXdJR1FEQU5CZ2txaGtpRzl3MEINCkFRVUZBQU9DQWdFQUpTU0ZhRWZOOWVna2wyYVFEc3QvVEtWWmxSbFdWZWkrVmZwMnM1ZXpWNG9ibnZRUXI5QkcNCmZrNklqaU8zbGZHTjQyTkVZSTV6SGh3SDl2WTRiMjM2ZkdMZWltbmZDc2lGb0FyTEtGUDR6Y0dvS0ZJR2ZBNDINCnQzSmxIcENvbmNpMmxqUzg4MzN2c1k5M2xGSzFTa2NvUjBMT0s0NzdaNlBWMjVtdjVjdmhCN1ZkNWs4SWpLU3MNCllwWkpaSi9STWZNT3dPQUtqeDFhWDNxQUhhNVhTOUNINEJaMEl4SnBYcWZpMm5GUFVNRy8yU0JmSTN4dDhsM1UNClJtVy9qZVRoRG5tL0Vsb05sb3pObzdRS3AvbysyUVBFZDBUWkFBdUljQWFiM09waUptOWlrUlh3c21mNkFmS0INCnIwQmtHcTFiTi9RQk1DMDM4RHA4S1pKZmdmaTYxYnBiVUNFdDRsVWY0R252TW9FdjZnbTh1czE2VTI1d0Y0SUwNCnd5cmFBZHJUVHhaWEVydGY2c3pWY2JBRUY0QmdFM0hCVmF2V2FxbDZac1FFRFJoTGVtWVJwMHhleUtwYXI4d3INClhqN1oycmJteWpFci9ES1hMdHF2UlFIQVVrVDBEQXRST2R4NmpsNUtGSFVvbTM2QUZmeU5UcjJ6a0p2MkZWTlENCmc0TnJMRnk0WldidE84ZDc2M2NoMEpjaWYzZUdadnFmQnVETUs3Q25jUWluamxVcTg1cFpzeGlFUW56VTJOdGgNClRFUzBqZjZ6ZS9ibHpVaUsrRXlyeWpEeWNaYlk3RHlwWWVlTlJJbk9zVUVjZmtFT3BVL3dFTG83dnpNaGY1b2MNCmdjcUFKSzdOQWlEQzVHR0Iyb296ZzNSTTJBbGdPT1ZpRFZwRzRMaUxPenpqVStqaXlyclY3OGs9DQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tDQo="
   )
-  val consumerNameJson = ConsumerNameJson(
+  lazy val consumerNameJson = ConsumerNameJson(
     "App name"
   )
   
-  val consumersJsonV510 = ConsumersJsonV510(
+  lazy val consumersJsonV510 = ConsumersJsonV510(
     List(consumerJsonV510)
   )
 
-  val agentIdJson = AgentCashWithdrawalJson(
+  lazy val agentIdJson = AgentCashWithdrawalJson(
     bankIdExample.value,
     agentNumberExample.value
   )
   
-  val transactionRequestBodyAgentJsonV400 = TransactionRequestBodyAgentJsonV400(
+  lazy val transactionRequestBodyAgentJsonV400 = TransactionRequestBodyAgentJsonV400(
     to = agentIdJson,
     value = amountOfMoneyJsonV121,
     description =  descriptionExample.value,
@@ -5617,19 +5617,19 @@ object SwaggerDefinitionsJSON {
     future_date = Some(futureDateExample.value)
   )
   
-  val postAgentJsonV510  = PostAgentJsonV510(
+  lazy val postAgentJsonV510  = PostAgentJsonV510(
     legal_name = legalNameExample.value,
     mobile_phone_number = mobilePhoneNumberExample.value,
     agent_number = agentNumberExample.value,
     currency = currencyExample.value
   )
   
-  val putAgentJsonV510  = PutAgentJsonV510(
+  lazy val putAgentJsonV510  = PutAgentJsonV510(
     is_pending_agent = false,
     is_confirmed_agent = true
   )
   
-  val agentJsonV510  = AgentJsonV510(
+  lazy val agentJsonV510  = AgentJsonV510(
     agent_id = agentIdExample.value,
     bank_id = bankIdExample.value,
     legal_name = legalNameExample.value,
@@ -5640,13 +5640,13 @@ object SwaggerDefinitionsJSON {
     is_pending_agent = true
   )
   
-  val minimalAgentJsonV510 = MinimalAgentJsonV510(
+  lazy val minimalAgentJsonV510 = MinimalAgentJsonV510(
     agent_id = agentIdExample.value,
     legal_name = legalNameExample.value,
     agent_number = agentNumberExample.value
   )
   
-  val minimalAgentsJsonV510 = MinimalAgentsJsonV510(
+  lazy val minimalAgentsJsonV510 = MinimalAgentsJsonV510(
     agents = List(minimalAgentJsonV510)
   )
 
@@ -5654,10 +5654,10 @@ object SwaggerDefinitionsJSON {
   //Just some helper format to use in Json 
   case class NotSupportedYet()
   
-  val notSupportedYet = NotSupportedYet()
+  lazy val notSupportedYet = NotSupportedYet()
 
   lazy val allFields: Seq[AnyRef] ={
-    val allFieldsThisFile = ReflectUtils.getValues(this, List(nameOf(allFields)))
+    lazy val allFieldsThisFile = ReflectUtils.getValues(this, List(nameOf(allFields)))
                             .filter(it => it != null && it.isInstanceOf[AnyRef])
                             .map(_.asInstanceOf[AnyRef])
     allFieldsThisFile ++ JSONFactoryCustom300.allFields ++ SandboxData.allFields 
