@@ -1,6 +1,6 @@
 FROM maven:3-eclipse-temurin-11 as maven
 # Build the source using maven, source is copied from the 'repo' build.
-ADD . /usr/src/OBP-API
+COPY . /usr/src/OBP-API
 RUN cp /usr/src/OBP-API/obp-api/pom.xml /tmp/pom.xml # For Packaging a local repository within the image
 WORKDIR /usr/src/OBP-API
 RUN cp obp-api/src/main/resources/props/test.default.props.template obp-api/src/main/resources/props/test.default.props
