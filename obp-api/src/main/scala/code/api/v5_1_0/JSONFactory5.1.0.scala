@@ -83,7 +83,8 @@ case class RegulatedEntityJsonV510(
                                     entity_post_code: String,
                                     entity_country: String,
                                     entity_web_site: String,
-                                    services: JValue
+                                    services: JValue,
+                                    attributes: Option[List[RegulatedEntityAttributeSimple]]
                                   )
 case class RegulatedEntityPostJsonV510(
                                       certificate_authority_ca_owner_id: String,
@@ -96,7 +97,8 @@ case class RegulatedEntityPostJsonV510(
                                       entity_post_code: String,
                                       entity_country: String,
                                       entity_web_site: String,
-                                      services: JValue
+                                      services: JValue,
+                                      attributes: Option[List[RegulatedEntityAttributeSimple]]
                                     )
 case class RegulatedEntitiesJsonV510(entities: List[RegulatedEntityJsonV510])
 
@@ -989,7 +991,8 @@ object JSONFactory510 extends CustomJsonFormats {
       entity_post_code = entity.entityPostCode,
       entity_country = entity.entityCountry,
       entity_web_site = entity.entityWebSite,
-      services = json.parse(entity.services)
+      services = json.parse(entity.services),
+      attributes = entity.attributes
     )
   }
   def createRegulatedEntitiesJson(entities: List[RegulatedEntityTrait]): RegulatedEntitiesJsonV510 = {
