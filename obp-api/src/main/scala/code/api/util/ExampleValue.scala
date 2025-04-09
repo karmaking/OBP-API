@@ -258,9 +258,9 @@ object ExampleValue {
   lazy val issExample = ConnectorField("String","The Issuer Identifier for the Issuer of the response.")
   lazy val audExample = ConnectorField("String","Identifies the audience that this ID token is intended for. It must be one of the OBP-API client IDs of your application.") 
   lazy val jtiExample = ConnectorField("String","(JWT ID) claim provides a unique identifier for the JWT.")
-  lazy val iatExample = ConnectorField("String","The iat (issued at) claim identifies the time at which the JWT was issued. Represented in Unix time (integer seconds).")
-  lazy val nbfExample = ConnectorField("String","The nbf (not before) claim identifies the time before which the JWT MUST NOT be accepted for processing. Represented in Unix time (integer seconds).")
-  lazy val expExample = ConnectorField("String","The exp (expiration time) claim identifies the expiration time on or after which the JWT MUST NOT be accepted for processing. Represented in Unix time (integer seconds).")
+  lazy val iatExample = ConnectorField("60","The iat (issued at) claim identifies the time at which the JWT was issued. Represented in Unix time (integer seconds).")
+  lazy val nbfExample = ConnectorField("60","The nbf (not before) claim identifies the time before which the JWT MUST NOT be accepted for processing. Represented in Unix time (integer seconds).")
+  lazy val expExample = ConnectorField("60","The exp (expiration time) claim identifies the expiration time on or after which the JWT MUST NOT be accepted for processing. Represented in Unix time (integer seconds).")
   lazy val emailVerifiedExample = ConnectorField("String","If the email is verified or not.")
   
   lazy val emailExample = ConnectorField(s"${userNameExample.value}@example.com", "An email address.")
@@ -1010,7 +1010,13 @@ object ExampleValue {
   lazy val toTransferToAtmExample = ConnectorField(NoExampleProvided,NoDescriptionProvided)
   glossaryItems += makeGlossaryItem("to_transfer_to_atm", toTransferToAtmExample)
 
-  lazy val jwtExample = ConnectorField(NoExampleProvided,NoDescriptionProvided)
+  lazy val jwtExample = ConnectorField("eyJhbGciOiJIUzI1NiJ9.eyJlbnRpdGxlbWVudHMiOltdLCJjcmVhdGVkQnlVc2VySWQiOiJhYjY1Mz" +
+    "lhOS1iMTA1LTQ0ODktYTg4My0wYWQ4ZDZjNjE2NTciLCJzdWIiOiIyMWUxYzhjYy1mOTE4LTRlYWMtYjhlMy01ZTVlZWM2YjNiNGIiLCJhdWQiOiJ" +
+    "lanpuazUwNWQxMzJyeW9tbmhieDFxbXRvaHVyYnNiYjBraWphanNrIiwibmJmIjoxNTUzNTU0ODk5LCJpc3MiOiJodHRwczpcL1wvd3d3Lm9wZW5i" +
+    "YW5rcHJvamVjdC5jb20iLCJleHAiOjE1NTM1NTg0OTksImlhdCI6MTU1MzU1NDg5OSwianRpIjoiMDlmODhkNWYtZWNlNi00Mzk4LThlOTktNjYxMW" +
+    "ZhMWNkYmQ1Iiwidmlld3MiOlt7ImFjY291bnRfaWQiOiJtYXJrb19wcml2aXRlXzAxIiwiYmFua19pZCI6ImdoLjI5LnVrLngiLCJ2aWV3X2lkIjoi" +
+    "b3duZXIifSx7ImFjY291bnRfaWQiOiJtYXJrb19wcml2aXRlXzAyIiwiYmFua19pZCI6ImdoLjI5LnVrLngiLCJ2aWV3X2lkIjoib3duZXIifV19." +
+    "8cc7cBEf2NyQvJoukBCmDLT7LXYcuzTcSYLqSpbxLp4","JSON Web Token")
   glossaryItems += makeGlossaryItem("jwt", jwtExample)
 
   lazy val requestedCurrentValidEndDateExample = ConnectorField(NoExampleProvided,NoDescriptionProvided)

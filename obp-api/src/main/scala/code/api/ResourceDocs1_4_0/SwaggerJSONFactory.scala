@@ -32,6 +32,7 @@ import com.openbankproject.commons.model.ListResult
 import code.util.Helper.MdcLoggable
 import net.liftweb.common.Box.tryo
 import net.liftweb.common.{EmptyBox, Full}
+import net.liftweb.http.provider.HTTPParam
 import net.liftweb.json
 
 import scala.collection.GenTraversableLike
@@ -867,7 +868,7 @@ object SwaggerJSONFactory extends MdcLoggable {
       case Some(v) => getNestedRefEntities(v, excludeTypes)
       case Full(v) => getNestedRefEntities(v, excludeTypes)
       case coll: Coll[_] => coll.toList.flatMap(getNestedRefEntities(_, excludeTypes))
-      case v if(! ReflectUtils.isObpObject(v)) => Nil
+      case v if(! ReflectUtils.isObpObject(v) && !obj.isInstanceOf[HTTPParam]) => Nil
       case _ => {
         val entityType = ReflectUtils.getType(obj)
         val constructorParamList = ReflectUtils.getPrimaryConstructor(entityType).paramLists.headOption.getOrElse(Nil)

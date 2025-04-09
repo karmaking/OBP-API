@@ -394,7 +394,7 @@ class MappedTransactionRequest extends LongKeyedMapper[MappedTransactionRequest]
         agentNumber
       val agentNumberValue = if (agentNumberList.isEmpty) "" else agentNumberList.head
       val bankIdValue = if (bankIdList.isEmpty) "" else bankIdList.head
-      Some(transactionRequestAgentCashWithdrawal(
+      Some(TransactionRequestAgentCashWithdrawal(
         bank_id = bankIdValue,
         agent_number = agentNumberValue
       ))
