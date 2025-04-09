@@ -84,7 +84,7 @@ trait APIMethods510 {
     staticResourceDocs += ResourceDoc(
       root,
       implementedInApiVersion,
-      "root",
+      nameOf(root),
       "GET",
       "/root",
       "Get API Info (root)",
@@ -770,7 +770,7 @@ trait APIMethods510 {
     staticResourceDocs += ResourceDoc(
       getEntitlementsAndPermissions,
       implementedInApiVersion,
-      "getEntitlementsAndPermissions",
+      nameOf(getEntitlementsAndPermissions),
       "GET",
       "/users/USER_ID/entitlements-and-permissions",
       "Get Entitlements and Permissions for a User",
@@ -2538,7 +2538,7 @@ trait APIMethods510 {
     staticResourceDocs += ResourceDoc(
       getMetrics,
       implementedInApiVersion,
-      "getMetrics",
+      nameOf(getMetrics),
       "GET",
       "/management/metrics",
       "Get Metrics",
@@ -3095,7 +3095,7 @@ trait APIMethods510 {
     staticResourceDocs += ResourceDoc(
       updateConsumerRedirectURL,
       implementedInApiVersion,
-      "updateConsumerRedirectUrl",
+      nameOf(updateConsumerRedirectURL),
       "PUT",
       "/management/consumers/CONSUMER_ID/consumer/redirect_url",
       "Update Consumer RedirectURL",
