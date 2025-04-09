@@ -35,7 +35,7 @@ import code.entitlement.Entitlement
 import code.loginattempts.LoginAttempt
 import code.metrics.APIMetrics
 import code.metrics.MappedMetric.userId
-import code.model.AppType
+import code.model.{AppType, Consumer}
 import code.model.dataAccess.{AuthUser, MappedBankAccount}
 import code.regulatedentities.MappedRegulatedEntityProvider
 import code.userlocks.UserLocksProvider
@@ -2061,9 +2061,9 @@ trait APIMethods510 {
                 }
               )
             }
-            (consumerId, applicationText) <- consentJson.consumer_id match {
+            (consumerFromRequestBody: Option[Consumer], applicationText) <- consentJson.consumer_id match {
               case Some(id) => NewStyle.function.checkConsumerByConsumerId(id, callContext) map {
-                c => (Some(c.consumerId.get), c.description)
+                c => (Some(c), c.description)
               }
               case None => Future(None, "Any application")
             }
@@ -2073,7 +2073,7 @@ trait APIMethods510 {
               case Props.RunModes.Test => Consent.challengeAnswerAtTestEnvironment
               case _ => SecureRandomUtil.numeric()
             }
-            createdConsent <- Future(Consents.consentProvider.vend.createObpConsent(user, challengeAnswer, None)) map {
+            createdConsent <- Future(Consents.consentProvider.vend.createObpConsent(user, challengeAnswer, None, consumerFromRequestBody)) map {
               i => connectorEmptyResponse(i, callContext)
             }
             consentJWT =
@@ -2082,7 +2082,7 @@ trait APIMethods510 {
                 consentJson,
                 createdConsent.secret,
                 createdConsent.consentId,
-                consumerId,
+                consumerFromRequestBody.map(_.consumerId.get),
                 consentJson.valid_from,
                 consentJson.time_to_live.getOrElse(3600),
                 None,
