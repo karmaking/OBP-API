@@ -49,18 +49,18 @@ object SwaggerDefinitionsJSON {
 
   lazy val regulatedEntitiesJsonV510: RegulatedEntitiesJsonV510 = RegulatedEntitiesJsonV510(List(regulatedEntityJsonV510))
   lazy val regulatedEntityJsonV510: RegulatedEntityJsonV510 = RegulatedEntityJsonV510(
-    entity_id = "0af807d7-3c39-43ef-9712-82bcfde1b9ca",
-    certificate_authority_ca_owner_id = "CY_CBC",
-    entity_certificate_public_key = "-----BEGIN CERTIFICATE-----MIICsjCCAZqgAwIBAgIGAYwQ62R0MA0GCSqGSIb3DQEBCwUAMBoxGDAWBgNVBAMMD2FwcC5leGFtcGxlLmNvbTAeFw0yMzExMjcxMzE1MTFaFw0yNTExMjYxMzE1MTFaMBoxGDAWBgNVBAMMD2FwcC5leGFtcGxlLmNvbTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAK9WIodZHWzKyCcf9YfWEhPURbfO6zKuMqzHN27GdqHsVVEGxP4F/J4mso+0ENcRr6ur4u81iREaVdCc40rHDHVJNEtniD8Icbz7tcsqAewIVhc/q6WXGqImJpCq7hA0m247dDsaZT0lb/MVBiMoJxDEmAE/GYYnWTEn84R35WhJsMvuQ7QmLvNg6RkChY6POCT/YKe9NKwa1NqI1U+oA5RFzAaFtytvZCE3jtp+aR0brL7qaGfgxm6B7dEpGyhg0NcVCV7xMQNq2JxZTVdAr6lcsRGaAFulakmW3aNnmK+L35Wu8uW+OxNxwUuC6f3b4FVBa276FMuUTRfu7gc+k6kCAwEAATANBgkqhkiG9w0BAQsFAAOCAQEAAU5CjEyAoyTn7PgFpQD48ZNPuUsEQ19gzYgJvHMzFIoZ7jKBodjO5mCzWBcR7A4mpeAsdyiNBl2sTiZscSnNqxk61jVzP5Ba1D7XtOjjr7+3iqowrThj6BY40QqhYh/6BSY9fDzVZQiHnvlo6ZUM5kUK6OavZOovKlp5DIl5sGqoP0qAJnpQ4nhB2WVVsKfPlOXc+2KSsbJ23g9l8zaTMr+X0umlvfEKqyEl1Fa2L1dO0y/KFQ+ILmxcZLpRdq1hRAjd0quq9qGC8ucXhRWDgM4hslVpau0da68g0aItWNez3mc5lB82b3dcZpFMzO41bgw7gvw10AvvTfQDqEYIuQ==-----END CERTIFICATE-----",
-    entity_name = "EXAMPLE COMPANY LTD",
-    entity_code = "PSD_PICY_CBC!12345",
-    entity_type = "PSD_PI",
-    entity_address = "EXAMPLE COMPANY LTD, 5 SOME STREET",
-    entity_town_city = "SOME CITY",
-    entity_post_code = "1060",
-    entity_country = "CY",
-    entity_web_site = "www.example.com",
-    services = json.parse("""[{"CY":["PS_010","PS_020","PS_03C","PS_04C"]}]"""),
+    entity_id = entityIdExample.value,
+    certificate_authority_ca_owner_id = certificateAuthorityCaOwnerIdExample.value,
+    entity_certificate_public_key = entityCertificatePublicKeyExample.value,
+    entity_name = entityNameExample.value,
+    entity_code = entityCodeExample.value,
+    entity_type = entityTypeExample.value,
+    entity_address = entityAddressExample.value,
+    entity_town_city = entityTownCityExample.value,
+    entity_post_code = entityPostCodeExample.value,
+    entity_country = entityCountryExample.value,
+    entity_web_site = entityWebSiteExample.value,
+    services = json.parse(servicesExample.value),
     attributes = Some(List(RegulatedEntityAttributeSimple(
         attributeType=attributeTypeExample.value,
         name=attributeNameExample.value,
@@ -69,17 +69,17 @@ object SwaggerDefinitionsJSON {
   )
 
   lazy val regulatedEntityPostJsonV510: RegulatedEntityPostJsonV510 = RegulatedEntityPostJsonV510(
-    certificate_authority_ca_owner_id = "CY_CBC",
-    entity_certificate_public_key = "-----BEGIN CERTIFICATE-----MIICsjCCAZqgAwIBAgIGAYwQ62R0MA0GCSqGSIb3DQEBCwUAMBoxGDAWBgNVBAMMD2FwcC5leGFtcGxlLmNvbTAeFw0yMzExMjcxMzE1MTFaFw0yNTExMjYxMzE1MTFaMBoxGDAWBgNVBAMMD2FwcC5leGFtcGxlLmNvbTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAK9WIodZHWzKyCcf9YfWEhPURbfO6zKuMqzHN27GdqHsVVEGxP4F/J4mso+0ENcRr6ur4u81iREaVdCc40rHDHVJNEtniD8Icbz7tcsqAewIVhc/q6WXGqImJpCq7hA0m247dDsaZT0lb/MVBiMoJxDEmAE/GYYnWTEn84R35WhJsMvuQ7QmLvNg6RkChY6POCT/YKe9NKwa1NqI1U+oA5RFzAaFtytvZCE3jtp+aR0brL7qaGfgxm6B7dEpGyhg0NcVCV7xMQNq2JxZTVdAr6lcsRGaAFulakmW3aNnmK+L35Wu8uW+OxNxwUuC6f3b4FVBa276FMuUTRfu7gc+k6kCAwEAATANBgkqhkiG9w0BAQsFAAOCAQEAAU5CjEyAoyTn7PgFpQD48ZNPuUsEQ19gzYgJvHMzFIoZ7jKBodjO5mCzWBcR7A4mpeAsdyiNBl2sTiZscSnNqxk61jVzP5Ba1D7XtOjjr7+3iqowrThj6BY40QqhYh/6BSY9fDzVZQiHnvlo6ZUM5kUK6OavZOovKlp5DIl5sGqoP0qAJnpQ4nhB2WVVsKfPlOXc+2KSsbJ23g9l8zaTMr+X0umlvfEKqyEl1Fa2L1dO0y/KFQ+ILmxcZLpRdq1hRAjd0quq9qGC8ucXhRWDgM4hslVpau0da68g0aItWNez3mc5lB82b3dcZpFMzO41bgw7gvw10AvvTfQDqEYIuQ==-----END CERTIFICATE-----",
-    entity_name = "EXAMPLE COMPANY LTD",
-    entity_code = "PSD_PICY_CBC!12345",
-    entity_type = "PSD_PI",
-    entity_address = "EXAMPLE COMPANY LTD, 5 SOME STREET",
-    entity_town_city = "SOME CITY",
-    entity_post_code = "1060",
-    entity_country = "CY",
-    entity_web_site = "www.example.com",
-    services = json.parse("""[{"CY":["PS_010","PS_020","PS_03C","PS_04C"]}]"""),
+    certificate_authority_ca_owner_id = certificateAuthorityCaOwnerIdExample.value,
+    entity_certificate_public_key = entityCertificatePublicKeyExample.value,
+    entity_name = entityNameExample.value,
+    entity_code = entityCodeExample.value,
+    entity_type = entityTypeExample.value,
+    entity_address = entityAddressExample.value,
+    entity_town_city = entityTownCityExample.value,
+    entity_post_code = entityPostCodeExample.value,
+    entity_country = entityCountryExample.value,
+    entity_web_site = entityWebSiteExample.value,
+    services = json.parse(servicesExample.value),
     attributes = Some(List(RegulatedEntityAttributeSimple(
       attributeType=attributeTypeExample.value,
       name=attributeNameExample.value,
@@ -5645,9 +5645,29 @@ object SwaggerDefinitionsJSON {
     legal_name = legalNameExample.value,
     agent_number = agentNumberExample.value
   )
-  
+
   lazy val minimalAgentsJsonV510 = MinimalAgentsJsonV510(
     agents = List(minimalAgentJsonV510)
+  )
+
+  lazy val regulatedEntityAttributeRequestJsonV510 = RegulatedEntityAttributeRequestJsonV510(
+    name = regulatedEntityAttributeNameExample.value,
+    attribute_type = regulatedEntityAttributeTypeExample.value,
+    value = regulatedEntityAttributeValueExample.value,
+    is_active = Some(isActiveExample.value.toBoolean)
+  )
+
+  lazy val regulatedEntityAttributeResponseJsonV510 = RegulatedEntityAttributeResponseJsonV510(
+    regulated_entity_id = entityIdExample.value,
+    regulated_entity_attribute_id = regulatedEntityAttributeIdExample.value,
+    name = nameExample.value,
+    attribute_type = typeExample.value,
+    value = valueExample.value,
+    is_active = Some(activeExample.value.toBoolean)
+  )
+
+  lazy val regulatedEntityAttributesJsonV510 = RegulatedEntityAttributesJsonV510(
+    List(regulatedEntityAttributeResponseJsonV510)
   )
 
   //The common error or success format.

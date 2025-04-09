@@ -13,7 +13,7 @@ import scala.concurrent.Future
 
 object RegulatedEntityAttributeProvider extends RegulatedEntityAttributeProviderTrait {
 
-  override def getRegulatedEntityAttributesFromProvider(regulatedEntityId: RegulatedEntityId): Future[Box[List[RegulatedEntityAttribute]]] =
+  override def getRegulatedEntityAttributes(regulatedEntityId: RegulatedEntityId): Future[Box[List[RegulatedEntityAttribute]]] =
     Future {
       Box !! RegulatedEntityAttribute.findAll(
         By(RegulatedEntityAttribute.RegulatedEntityId_, regulatedEntityId.value)
