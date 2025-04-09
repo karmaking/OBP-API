@@ -20,7 +20,7 @@ object BerlinGroupCheck extends MdcLoggable {
     .split(",")
     .map(_.trim.toLowerCase)
     .toList.filterNot(_.isEmpty)
-  private val berlinGroupMandatoryHeaderConsent = APIUtil.getPropsValue("berlin_group_mandatory_header_consent", defaultValue = "TPP-Redirect-URL")
+  private val berlinGroupMandatoryHeaderConsent = APIUtil.getPropsValue("berlin_group_mandatory_header_consent", defaultValue = "TPP-Redirect-URI")
     .split(",")
     .map(_.trim.toLowerCase)
     .toList.filterNot(_.isEmpty)

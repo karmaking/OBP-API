@@ -57,7 +57,7 @@ object BerlinGroupSigning extends MdcLoggable {
       RequestHeader.Digest,
       RequestHeader.Date,
       RequestHeader.`X-Request-ID`,
-      //RequestHeader.`TPP-Redirect-URL`,
+      //RequestHeader.`TPP-Redirect-URI`,
     ) // Example fields to be signed
     orderedKeys.flatMap(key => headers.get(key).map(value => s"${key.toLowerCase()}: $value")).mkString("\n")
   }
@@ -340,7 +340,7 @@ object BerlinGroupSigning extends MdcLoggable {
       RequestHeader.Digest -> s"SHA-256=$digest",
       RequestHeader.`X-Request-ID` -> xRequestId,
       RequestHeader.Date -> dateHeader,
-      RequestHeader.`TPP-Redirect-URL` -> redirectUri,
+      RequestHeader.`TPP-Redirect-URI` -> redirectUri,
     )
 
     val signingString = createSigningString(headers)
@@ -355,7 +355,7 @@ object BerlinGroupSigning extends MdcLoggable {
     println(s"1) Digest: $digest")
     println(s"2) ${RequestHeader.`X-Request-ID`}: $xRequestId")
     println(s"3) ${RequestHeader.Date}: $dateHeader")
-    println(s"4) ${RequestHeader.`TPP-Redirect-URL`}: $redirectUri")
+    println(s"4) ${RequestHeader.`TPP-Redirect-URI`}: $redirectUri")
     val signatureHeaderValue =
       s"""keyId="SN=43A, CA=CN=MAIB Prisacaru Sergiu (Test), O=MAIB", algorithm="rsa-sha256", headers="digest date x-request-id", signature="$signature""""
     println(s"5) Signature: $signatureHeaderValue")

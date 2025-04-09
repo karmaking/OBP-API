@@ -767,7 +767,7 @@ object Consent extends MdcLoggable {
         )
       }
     }
-    val tppRedirectUrl: Option[HTTPParam] = callContext.map(_.requestHeaders).getOrElse(Nil).find(_.name == RequestHeader.`TPP-Redirect-URL`)
+    val tppRedirectUrl: Option[HTTPParam] = callContext.map(_.requestHeaders).getOrElse(Nil).find(_.name == RequestHeader.`TPP-Redirect-URI`)
     Future.sequence(accounts ::: balances ::: transactions) map { views =>
       val json = ConsentJWT(
         createdByUserId = user.map(_.userId).getOrElse(""),
