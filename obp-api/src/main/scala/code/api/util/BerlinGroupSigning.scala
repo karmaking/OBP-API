@@ -255,68 +255,71 @@ object BerlinGroupSigning extends MdcLoggable {
   }
 
   def getOrCreateConsumer(requestHeaders: List[HTTPParam], forwardResult: (Box[User], Option[CallContext])): OBPReturnType[Box[User]] = {
-    val certificate = getCertificateFromTppSignatureCertificate(requestHeaders)
-    // Use the regular expression to find the value of EMAILADDRESS
-    val extractedEmail = emailPattern.findFirstMatchIn(certificate.getSubjectDN.getName) match {
-      case Some(m) => Some(m.group(1)) // Extract the value of EMAILADDRESS
-      case None => None
-    }
-    // Use the regular expression to find the value of Organisation
-    val extractOrganisation = organisationlPattern.findFirstMatchIn(certificate.getSubjectDN.getName) match {
-      case Some(m) => Some(m.group(1)) // Extract the value of Organisation
-      case None => None
-    }
+    val tppSignatureCert: String = APIUtil.getRequestHeader(RequestHeader.`TPP-Signature-Certificate`, requestHeaders)
+    if (tppSignatureCert.isEmpty) {
+      Future(forwardResult)
+    } else { // Dynamic consumer creation/update works in case that RequestHeader.`TPP-Signature-Certificate is present in the current call
+      val certificate = getCertificateFromTppSignatureCertificate(requestHeaders)
+      // Use the regular expression to find the value of EMAILADDRESS
+      val extractedEmail = emailPattern.findFirstMatchIn(certificate.getSubjectDN.getName) match {
+        case Some(m) => Some(m.group(1)) // Extract the value of EMAILADDRESS
+        case None => None
+      }
+      // Use the regular expression to find the value of Organisation
+      val extractOrganisation = organisationlPattern.findFirstMatchIn(certificate.getSubjectDN.getName) match {
+        case Some(m) => Some(m.group(1)) // Extract the value of Organisation
+        case None => None
+      }
 
-    for {
-      entities <- getTppByCertificate(certificate, forwardResult._2) // Find TPP via certificate
-    } yield {
-      // Certificate can be changed but this value is permanent per Regulated entity
-      val idno = entities.map(_.entityCode).headOption.getOrElse("")
+      for {
+        entities <- getTppByCertificate(certificate, forwardResult._2) // Find TPP via certificate
+      } yield {
+        // Certificate can be changed but this value is permanent per Regulated entity
+        val idno = entities.map(_.entityCode).headOption.getOrElse("")
 
-      val entityName = entities.map(_.entityName).headOption
+        val entityName = entities.map(_.entityName).headOption
 
-      // Get or create consumer by the unique key (azp, iss)
-      val consumer: Box[Consumer] = Consumers.consumers.vend.getOrCreateConsumer(
-        consumerId = None,
-        key = Some(Helpers.randomString(40).toLowerCase),
-        secret = Some(Helpers.randomString(40).toLowerCase),
-        aud = None,
-        azp = Some(idno), // The pair (azp, iss) is a unique key in case of Client of an Identity Provider
-        iss = Some(RequestHeader.`TPP-Signature-Certificate`),
-        sub = None,
-        Some(true),
-        name = entityName,
-        appType = None,
-        description = Some(s"Certificate serial number:${certificate.getSerialNumber}"),
-        developerEmail = extractedEmail,
-        redirectURL = None,
-        createdByUserId = None,
-        certificate = None
-      )
+        // Get or create consumer by the unique key (azp, iss)
+        val consumer: Box[Consumer] = Consumers.consumers.vend.getOrCreateConsumer(
+          consumerId = None,
+          key = Some(Helpers.randomString(40).toLowerCase),
+          secret = Some(Helpers.randomString(40).toLowerCase),
+          aud = None,
+          azp = Some(idno), // The pair (azp, iss) is a unique key in case of Client of an Identity Provider
+          iss = Some(RequestHeader.`TPP-Signature-Certificate`),
+          sub = None,
+          Some(true),
+          name = entityName,
+          appType = None,
+          description = Some(s"Certificate serial number:${certificate.getSerialNumber}"),
+          developerEmail = extractedEmail,
+          redirectURL = None,
+          createdByUserId = None,
+          certificate = None
+        )
 
-      // Set or update certificate
-      consumer match {
-        case Full(consumer) =>
-          val certificateFromHeader = getHeaderValue(RequestHeader.`TPP-Signature-Certificate`, requestHeaders)
-          Consumers.consumers.vend.updateConsumer(
-            id = consumer.id.get,
-            name = entityName,
-            certificate = Some(certificateFromHeader)
-          ) match {
-            case Full(consumer) =>
-              // Update call context with a created consumer
-              (forwardResult._1, forwardResult._2.map(_.copy(consumer = Full(consumer))))
-            case error =>
-              logger.debug(error)
-              (Failure(s"${ErrorMessages.CreateConsumerError} Regulated entity: $idno"), forwardResult._2)
-          }
-        case error =>
-          logger.debug(error)
-          (Failure(s"${ErrorMessages.CreateConsumerError} Regulated entity: $idno"), forwardResult._2)
+        // Set or update certificate
+        consumer match {
+          case Full(consumer) =>
+            val certificateFromHeader = getHeaderValue(RequestHeader.`TPP-Signature-Certificate`, requestHeaders)
+            Consumers.consumers.vend.updateConsumer(
+              id = consumer.id.get,
+              name = entityName,
+              certificate = Some(certificateFromHeader)
+            ) match {
+              case Full(consumer) =>
+                // Update call context with a created consumer
+                (forwardResult._1, forwardResult._2.map(_.copy(consumer = Full(consumer))))
+              case error =>
+                logger.debug(error)
+                (Failure(s"${ErrorMessages.CreateConsumerError} Regulated entity: $idno"), forwardResult._2)
+            }
+          case error =>
+            logger.debug(error)
+            (Failure(s"${ErrorMessages.CreateConsumerError} Regulated entity: $idno"), forwardResult._2)
+        }
       }
     }
-
-
   }
 
   // Example Usage
