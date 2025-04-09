@@ -1,13 +1,17 @@
 package code.api.util
 
 import code.api.APIFailureNewStyle
-import code.api.util.APIUtil.fullBoxOrException
+import code.api.util.APIUtil.{OBPReturnType, fullBoxOrException}
+import code.util.Helper.MdcLoggable
 import com.openbankproject.commons.model.User
 import com.openbankproject.commons.util.ApiVersion
 import net.liftweb.common.{Box, Empty}
 import net.liftweb.http.provider.HTTPParam
 
-object BerlinGroupCheck {
+import scala.concurrent.Future
+import com.openbankproject.commons.ExecutionContext.Implicits.global
+
+object BerlinGroupCheck extends MdcLoggable {
 
 
   private val defaultMandatoryHeaders = "Content-Type,Date,Digest,PSU-Device-ID,PSU-Device-Name,PSU-IP-Address,Signature,TPP-Signature-Certificate,X-Request-ID"
@@ -35,17 +39,24 @@ object BerlinGroupCheck {
     }
   }
 
-  def validate(body: Box[String], verb: String, url: String, reqHeaders: List[HTTPParam], forwardResult: (Box[User], Option[CallContext])): (Box[User], Option[CallContext]) = {
+  def validate(body: Box[String], verb: String, url: String, reqHeaders: List[HTTPParam], forwardResult: (Box[User], Option[CallContext])): OBPReturnType[Box[User]] = {
     if(url.contains(ApiVersion.berlinGroupV13.urlPrefix)) {
       validateHeaders(verb, url, reqHeaders, forwardResult) match {
         case (user, _) if user.isDefined || user == Empty => // All good. Chain another check
           // Verify signed request (Berlin Group)
-          BerlinGroupSigning.verifySignedRequest(body, verb, url, reqHeaders, forwardResult)
+          BerlinGroupSigning.verifySignedRequest(body, verb, url, reqHeaders, forwardResult) match {
+            case (user, cc) if (user.isDefined || user == Empty) && cc.exists(_.consumer.isEmpty) => // There is no Consumer in the database
+              // Create Consumer on the fly on a first usage of RequestHeader.`TPP-Signature-Certificate`
+              logger.info(s"Start BerlinGroupSigning.getOrCreateConsumer")
+              BerlinGroupSigning.getOrCreateConsumer(reqHeaders, forwardResult)
+            case forwardError => // Forward error case
+              Future(forwardError)
+          }
         case forwardError => // Forward error case
-          forwardError
+          Future(forwardError)
       }
     } else {
-      forwardResult
+      Future(forwardResult)
     }
   }
 

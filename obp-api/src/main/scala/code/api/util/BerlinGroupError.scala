@@ -71,7 +71,9 @@ object BerlinGroupError {
 
       case "403" if message.contains("OBP-35001") => "CONSENT_UNKNOWN"
 
+      case "401" if message.contains("OBP-20300") => "CERTIFICATE_BLOCKED"
       case "401" if message.contains("OBP-20312") => "CERTIFICATE_INVALID"
+      case "401" if message.contains("OBP-20300") => "CERTIFICATE_INVALID"
       case "401" if message.contains("OBP-20310") => "SIGNATURE_INVALID"
 
       case "401" if message.contains("OBP-20060") => "ROLE_INVALID"

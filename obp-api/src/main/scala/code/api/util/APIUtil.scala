@@ -45,6 +45,7 @@ import code.api.oauth1a.OauthParams._
 import code.api.util.APIUtil.ResourceDoc.{findPathVariableNames, isPathVariable}
 import code.api.util.ApiRole._
 import code.api.util.ApiTag.{ResourceDocTag, apiTagBank}
+import code.api.util.BerlinGroupSigning.getCertificateFromTppSignatureCertificate
 import code.api.util.FutureUtil.{EndpointContext, EndpointTimeout}
 import code.api.util.Glossary.GlossaryItem
 import code.api.v1_2.ErrorMessage
@@ -75,7 +76,6 @@ import com.openbankproject.commons.model._
 import com.openbankproject.commons.model.enums.StrongCustomerAuthentication.SCA
 import com.openbankproject.commons.model.enums.{ContentParam, PemCertificateRole, StrongCustomerAuthentication}
 import com.openbankproject.commons.util.Functions.Implicits._
-import com.openbankproject.commons.util.Functions.Memo
 import com.openbankproject.commons.util._
 import dispatch.url
 import javassist.expr.{ExprEditor, MethodCall}
@@ -106,8 +106,8 @@ import java.util.regex.Pattern
 import java.util.{Calendar, Date, UUID}
 import scala.collection.JavaConverters._
 import scala.collection.immutable.{List, Nil}
+import scala.collection.mutable
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
-import scala.collection.{immutable, mutable}
 import scala.concurrent.Future
 import scala.io.BufferedSource
 import scala.util.control.Breaks.{break, breakable}
@@ -3238,7 +3238,7 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
    * @param cc The call context of an request
    * @return Failure in case we exceeded rate limit
    */
-  def anonymousAccess(cc: CallContext): Future[(Box[User], Option[CallContext])] = {
+  def anonymousAccess(cc: CallContext): OBPReturnType[Box[User]] = {
     getUserAndSessionContextFuture(cc)  map { result =>
       val url = result._2.map(_.url).getOrElse("None")
       val verb = result._2.map(_.verb).getOrElse("None")
@@ -3246,7 +3246,7 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
       val reqHeaders = result._2.map(_.requestHeaders).getOrElse(Nil)
       // Verify signed request
       JwsUtil.verifySignedRequest(body, verb, url, reqHeaders, result)
-    }  map { result =>
+    } flatMap { result =>
       val url = result._2.map(_.url).getOrElse("None")
       val verb = result._2.map(_.verb).getOrElse("None")
       val body = result._2.flatMap(_.httpBody)
@@ -3302,7 +3302,7 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
       val reqHeaders = result._2.map(_.requestHeaders).getOrElse(Nil)
       // Verify signed request if need be
       JwsUtil.verifySignedRequest(body, verb, url, reqHeaders, result)
-    }  map { result =>
+    } flatMap { result =>
       val url = result._2.map(_.url).getOrElse("None")
       val verb = result._2.map(_.verb).getOrElse("None")
       val body = result._2.flatMap(_.httpBody)
@@ -3925,9 +3925,26 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
   }
 
   private def passesPsd2ServiceProviderCommon(cc: Option[CallContext], serviceProvider: String) = {
-    val result: Box[Boolean] = getPropsAsBoolValue("requirePsd2Certificates", false) match {
-      case false => Full(true)
-      case true =>
+    val result = getPropsValue("requirePsd2Certificates", "NONE") match {
+      case value if value.toUpperCase == "ONLINE" =>
+        val requestHeaders = cc.map(_.requestHeaders).getOrElse(Nil)
+        val consumerName = cc.flatMap(_.consumer.map(_.name.get)).getOrElse("")
+        val certificate = getCertificateFromTppSignatureCertificate(requestHeaders)
+        for {
+          tpp <- BerlinGroupSigning.getTppByCertificate(certificate, cc)
+        } yield {
+          if (tpp.nonEmpty) {
+            val hasRole = tpp.exists(_.services.contains(serviceProvider))
+            if (hasRole) {
+              Full(true)
+            } else {
+              Failure(X509ActionIsNotAllowed)
+            }
+          } else {
+            Failure("No valid Tpp")
+          }
+        }
+      case value if value.toUpperCase == "CERTIFICATE" => Future {
         `getPSD2-CERT`(cc.map(_.requestHeaders).getOrElse(Nil)) match {
           case Some(pem) =>
             logger.debug("PSD2-CERT pem: " + pem)
@@ -3947,14 +3964,17 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
             }
           case None => Failure(X509CannotGetCertificate)
         }
+      }
+      case _ =>
+        Future(Full(true))
     }
     result
   }
 
   def passesPsd2ServiceProvider(cc: Option[CallContext], serviceProvider: String): OBPReturnType[Box[Boolean]] = {
     val result = passesPsd2ServiceProviderCommon(cc, serviceProvider)
-    Future(result) map {
-      x => (fullBoxOrException(x ~> APIFailureNewStyle(X509GeneralError, 400, cc.map(_.toLight))), cc)
+    result map {
+      x => (fullBoxOrException(x ~> APIFailureNewStyle(X509GeneralError, 401, cc.map(_.toLight))), cc)
     }
   }
   def passesPsd2Aisp(cc: Option[CallContext]): OBPReturnType[Box[Boolean]] = {
@@ -3968,23 +3988,6 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
   }
   def passesPsd2Assp(cc: Option[CallContext]): OBPReturnType[Box[Boolean]] = {
     passesPsd2ServiceProvider(cc, PemCertificateRole.PSP_AS.toString())
-  }
-
-
-  def passesPsd2ServiceProviderOldStyle(cc: Option[CallContext], serviceProvider: String): Box[Boolean] = {
-    passesPsd2ServiceProviderCommon(cc, serviceProvider) ?~! X509GeneralError
-  }
-  def passesPsd2AispOldStyle(cc: Option[CallContext]): Box[Boolean] = {
-    passesPsd2ServiceProviderOldStyle(cc, PemCertificateRole.PSP_AI.toString())
-  }
-  def passesPsd2PispOldStyle(cc: Option[CallContext]): Box[Boolean] = {
-    passesPsd2ServiceProviderOldStyle(cc, PemCertificateRole.PSP_PI.toString())
-  }
-  def passesPsd2IcspOldStyle(cc: Option[CallContext]): Box[Boolean] = {
-    passesPsd2ServiceProviderOldStyle(cc, PemCertificateRole.PSP_IC.toString())
-  }
-  def passesPsd2AsspOldStyle(cc: Option[CallContext]): Box[Boolean] = {
-    passesPsd2ServiceProviderOldStyle(cc, PemCertificateRole.PSP_AS.toString())
   }
 
 

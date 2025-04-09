@@ -43,12 +43,18 @@ trait ConsumersProvider {
     logoURL: Option[String]
   ): Box[Consumer]
   def deleteConsumer(consumer: Consumer): Boolean
-  def updateConsumer(id: Long, key: Option[String], secret: Option[String], isActive: Option[Boolean], name: Option[String], 
-    appType: Option[AppType], description: Option[String], developerEmail: Option[String], 
-    redirectURL: Option[String], 
-    createdByUserId: Option[String],
-    LogoURL: Option[String],
-    certificate: Option[String],
+  def updateConsumer(id: Long,
+                     key: Option[String] = None,
+                     secret: Option[String] = None,
+                     isActive: Option[Boolean] = None,
+                     name: Option[String] = None,
+                     appType: Option[AppType] = None,
+                     description: Option[String] = None,
+                     developerEmail: Option[String] = None,
+                     redirectURL: Option[String] = None,
+                     createdByUserId: Option[String] = None,
+                     LogoURL: Option[String] = None,
+                     certificate: Option[String] = None,
   ): Box[Consumer]
   def updateConsumerCallLimits(id: Long, perSecond: Option[String], perMinute: Option[String], perHour: Option[String], perDay: Option[String], perWeek: Option[String], perMonth: Option[String]): Future[Box[Consumer]]
   def getOrCreateConsumer(consumerId: Option[String], 
@@ -64,7 +70,8 @@ trait ConsumersProvider {
                           description: Option[String], 
                           developerEmail: Option[String], 
                           redirectURL: Option[String], 
-                          createdByUserId: Option[String]): Box[Consumer]
+                          createdByUserId: Option[String],
+                          certificate: Option[String] = None): Box[Consumer]
   def populateMissingUUIDs(): Boolean
   
 }

@@ -126,6 +126,22 @@ object X509 extends MdcLoggable {
           Failure(ErrorMessages.X509CertificateNotYetValid)
       }
     }
+  }  /**
+    * The certificate must be validated before it may be used.
+    * @param encodedCert PEM (BASE64) encoded certificates, suitable for copy and paste operations.
+    * @return Full(true) or an Failure
+    */
+  def validateCertificate(certificate: X509Certificate): Box[Boolean] = {
+    try {
+      certificate.checkValidity()
+      Full(true)
+    }
+    catch {
+      case _: CertificateExpiredException =>
+        Failure(ErrorMessages.X509CertificateExpired)
+      case _: CertificateNotYetValidException =>
+        Failure(ErrorMessages.X509CertificateNotYetValid)
+    }
   }
 
   /**

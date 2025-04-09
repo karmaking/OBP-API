@@ -161,6 +161,7 @@ jwt.use.ssl=false
 ## Public certificate for the CA (used by clients and servers to validate signatures)
 # truststore.path.tpp_signature = path/to/ca.p12
 # truststore.password.tpp_signature = truststore-password
+# truststore.alias.tpp_signature = alias-name
 
 # Bypass TPP signature validation
 # bypass_tpp_signature_validation = false
@@ -939,8 +940,9 @@ database_messages_scheduler_interval=3600
 # 
 
 # -- PSD2 Certificates --------------------------
-# In case isn't defined default value is "false"
-# requirePsd2Certificates=false
+# Possible cases: ONLINE, CERTIFICATE, NONE
+# In case isn't defined default value is "NONE"
+# requirePsd2Certificates=NONE
 # -----------------------------------------------
 
 # -- OBP-API mode -------------------------------
