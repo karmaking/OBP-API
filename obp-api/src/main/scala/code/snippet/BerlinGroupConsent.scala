@@ -146,7 +146,7 @@ class BerlinGroupConsent extends MdcLoggable with RestHelper with APIMethods510 
         val consentJwt: Box[ConsentJWT] = JwtUtil.getSignedPayloadAsJson(consent.jsonWebToken).map(parse(_)
           .extract[ConsentJWT])
         val tppRedirectUri: immutable.Seq[String] = consentJwt.map { h =>
-          h.request_headers.filter(h => h.name == RequestHeader.`TPP-Redirect-URL`)
+          h.request_headers.filter(h => h.name == RequestHeader.`TPP-Redirect-URI`)
         }.getOrElse(Nil).map((_.values.mkString("")))
         val consumerRedirectUri: Option[String] = consumer.map(_.redirectURL.get).toOption
         val uri: String = tppRedirectUri.headOption.orElse(consumerRedirectUri).getOrElse("https://not.defined.com")

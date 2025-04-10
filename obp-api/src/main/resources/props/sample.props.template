@@ -1131,7 +1131,7 @@ default_auth_context_update_request_key=CUSTOMER_NUMBER
 
 # Check presence of the mandatory headers
 #berlin_group_mandatory_headers = Content-Type,Date,Digest,PSU-Device-ID,PSU-Device-Name,PSU-IP-Address,Signature,TPP-Signature-Certificate,X-Request-ID
-#berlin_group_mandatory_header_consent = TPP-Redirect-URL
+#berlin_group_mandatory_header_consent = TPP-Redirect-URI
 
 ## Berlin Group Create Consent Frequency per Day Upper Limit
 #berlin_group_frequency_per_day_upper_limit = 4

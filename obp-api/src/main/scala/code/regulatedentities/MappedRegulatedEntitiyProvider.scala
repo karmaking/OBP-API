@@ -120,12 +120,20 @@ class MappedRegulatedEntity extends RegulatedEntityTrait with LongKeyedMapper[Ma
   override def entityCountry: String = EntityCountry.get
   override def entityWebSite: String = EntityWebSite.get
   override def services: String = Services.get
-//  override def attributes: Option[List[RegulatedEntityAttributeSimple]] = Some(List(RegulatedEntityAttributeSimple(
-//    attributeType="attributeTypeExample.value",
-//    name="attributeNameExample.value",
-//    value="attributeValueExample.value")
-//  ))
-  override def attributes: Option[List[RegulatedEntityAttributeSimple]] = None //not for mapped mode yet, will add it later.
+  override def attributes: Option[List[RegulatedEntityAttributeSimple]] = Some(
+    List(
+      RegulatedEntityAttributeSimple(
+        attributeType="STRING",
+        name="CERTIFICATE_SERIAL_NUMBER",
+        value="1082"
+      ),
+      RegulatedEntityAttributeSimple(
+        attributeType="STRING",
+        name="CERTIFICATE_CA_NAME",
+        value="BNM CA (test)"
+      ),
+  ))
+//  override def attributes: Option[List[RegulatedEntityAttributeSimple]] = None //not for mapped mode yet, will add it later.
 
 }
 
