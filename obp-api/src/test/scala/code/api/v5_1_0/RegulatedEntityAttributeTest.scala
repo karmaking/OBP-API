@@ -15,14 +15,6 @@ import org.scalatest.Tag
 
 class RegulatedEntityAttributeTest extends V510ServerSetup with DefaultUsers {
 
-  override def beforeAll() {
-    super.beforeAll()
-  }
-
-  override def afterAll() {
-    super.afterAll()
-  }
-  
   object VersionOfApi extends Tag(ApiVersion.v5_1_0.toString)
   object Create extends Tag(nameOf(Implementations5_1_0.createRegulatedEntityAttribute))
   object Update extends Tag(nameOf(Implementations5_1_0.updateRegulatedEntityAttribute))
@@ -30,61 +22,166 @@ class RegulatedEntityAttributeTest extends V510ServerSetup with DefaultUsers {
   object GetAll extends Tag(nameOf(Implementations5_1_0.getAllRegulatedEntityAttributes))
   object GetOne extends Tag(nameOf(Implementations5_1_0.getRegulatedEntityAttributeById))
 
-  lazy val entityId = "regulated-entity-id"
+  lazy val entityId = createMockRegulatedEntity()
+  lazy val attributeId = createMockAttribute(entityId)
+  
+  def createMockRegulatedEntity(): String = {
+    val json = regulatedEntityPostJsonV510
+    val entitlement = Entitlement.entitlement.vend.addEntitlement("", resourceUser1.userId, CanCreateRegulatedEntity.toString)
+    val request = (v5_1_0_Request / "regulated-entities").POST <@ user1
+    val response = makePostRequest(request, write(json))
+    Entitlement.entitlement.vend.deleteEntitlement(entitlement)
+    (response.body.extract[RegulatedEntityJsonV510].entity_id)
+  }
 
-  feature(s"$Create - createRegulatedEntityAttribute") {
-    scenario("Anonymous user fails", Create, VersionOfApi) {
+  def createMockAttribute(entityId: String): String = {
+    val entitlement = Entitlement.entitlement.vend.addEntitlement("", resourceUser1.userId, CanCreateRegulatedEntityAttribute.toString)
+    val request = (v5_1_0_Request / "regulated-entities" / entityId / "attributes").POST <@ user1
+    val response = makePostRequest(request, write(regulatedEntityAttributeRequestJsonV510))
+    Entitlement.entitlement.vend.deleteEntitlement(entitlement)
+    response.body.extract[RegulatedEntityAttributeResponseJsonV510].regulated_entity_attribute_id
+  }
+  
+  feature("Create Regulated Entity Attribute") {
+    
+    scenario("401 Unauthorized", Create, VersionOfApi) {
       val request = (v5_1_0_Request / "regulated-entities" / entityId / "attributes").POST
       val response = makePostRequest(request, write(regulatedEntityAttributeRequestJsonV510))
       response.code should equal(401)
       response.body.extract[ErrorMessage].message should equal(ErrorMessages.UserNotLoggedIn)
     }
 
-    scenario("User without role fails", Create, VersionOfApi) {
+    scenario("403 Forbidden (no role)", Create, VersionOfApi) {
       val request = (v5_1_0_Request / "regulated-entities" / entityId / "attributes").POST <@ user1
       val response = makePostRequest(request, write(regulatedEntityAttributeRequestJsonV510))
       response.code should equal(403)
       response.body.extract[ErrorMessage].message should startWith(ErrorMessages.UserHasMissingRoles + CanCreateRegulatedEntityAttribute)
     }
 
-    scenario("User with role succeeds", Create, VersionOfApi) {
+    scenario("201 Success + Field Echo", Create, VersionOfApi) {
       val entitlement = Entitlement.entitlement.vend.addEntitlement("", resourceUser1.userId, CanCreateRegulatedEntityAttribute.toString)
       val request = (v5_1_0_Request / "regulated-entities" / entityId / "attributes").POST <@ user1
       val response = makePostRequest(request, write(regulatedEntityAttributeRequestJsonV510))
       response.code should equal(201)
+      val created = response.body.extract[RegulatedEntityAttributeResponseJsonV510]
+      created.name should equal(regulatedEntityAttributeRequestJsonV510.name)
+      created.attribute_type should equal(regulatedEntityAttributeRequestJsonV510.attribute_type)
+      created.value should equal(regulatedEntityAttributeRequestJsonV510.value)
+      Entitlement.entitlement.vend.deleteEntitlement(entitlement)
+    }
+
+    scenario("400 Invalid Type", Create, VersionOfApi) {
+      val badJson = regulatedEntityAttributeRequestJsonV510.copy(attribute_type = "UNSUPPORTED")
+      val entitlement = Entitlement.entitlement.vend.addEntitlement("", resourceUser1.userId, CanCreateRegulatedEntityAttribute.toString)
+      val request = (v5_1_0_Request / "regulated-entities" / entityId / "attributes").POST <@ user1
+      val response = makePostRequest(request, write(badJson))
+      response.code should equal(400)
+      response.body.extract[ErrorMessage].message should include("field can only accept")
       Entitlement.entitlement.vend.deleteEntitlement(entitlement)
     }
   }
 
-  feature(s"$Update - updateRegulatedEntityAttribute") {
-    scenario("Unauthorized user cannot update", Update, VersionOfApi) {
-      val request = (v5_1_0_Request / "regulated-entities" / entityId / "attributes" / "ATTRIBUTE_ID").PUT
+  feature("Update Regulated Entity Attribute") {
+    
+    scenario("401 Unauthorized", Update, VersionOfApi) {
+      val request = (v5_1_0_Request / "regulated-entities" / entityId / "attributes" / attributeId).PUT
       val response = makePutRequest(request, write(regulatedEntityAttributeRequestJsonV510))
       response.code should equal(401)
     }
-  }
 
-  feature(s"$Delete - deleteRegulatedEntityAttribute") {
-    scenario("Unauthorized user cannot delete", Delete, VersionOfApi) {
-      val request = (v5_1_0_Request / "regulated-entities" / entityId / "attributes" / "ATTRIBUTE_ID").DELETE
-      val response = makeDeleteRequest(request)
-      response.code should equal(401)
+    scenario("403 Forbidden", Update, VersionOfApi) {
+      val request = (v5_1_0_Request / "regulated-entities" / entityId / "attributes" / attributeId).PUT <@ user1
+      val response = makePutRequest(request, write(regulatedEntityAttributeRequestJsonV510))
+      response.code should equal(403)
+    }
+
+    scenario("200 Success", Update, VersionOfApi) {
+      lazy val entityId = createMockRegulatedEntity()
+      lazy val attributeId = createMockAttribute(entityId)
+      
+      val entitlement = Entitlement.entitlement.vend.addEntitlement("", resourceUser1.userId, CanUpdateRegulatedEntityAttribute.toString)
+      val request = (v5_1_0_Request / "regulated-entities" / entityId / "attributes" / attributeId).PUT <@ user1
+      val response = makePutRequest(request, write(regulatedEntityAttributeRequestJsonV510))
+      response.code should equal(200) 
+      Entitlement.entitlement.vend.deleteEntitlement(entitlement)
     }
   }
 
-  feature(s"$GetAll - getAllRegulatedEntityAttributes") {
-    scenario("Unauthorized user cannot view attributes", GetAll, VersionOfApi) {
+  feature("Delete Regulated Entity Attribute") {
+    lazy val entityId = createMockRegulatedEntity()
+    lazy val attributeId = createMockAttribute(entityId)
+    scenario("401 Unauthorized", Delete, VersionOfApi) {
+      val request = (v5_1_0_Request / "regulated-entities" / entityId / "attributes" / attributeId).DELETE
+      val response = makeDeleteRequest(request)
+      response.code should equal(401)
+    }
+
+    scenario("403 Forbidden", Delete, VersionOfApi) {
+      val request = (v5_1_0_Request / "regulated-entities" / entityId / "attributes" / attributeId).DELETE <@ user1
+      val response = makeDeleteRequest(request)
+      response.code should equal(403)
+    }
+
+    scenario("204 Success", Delete, VersionOfApi) {
+      lazy val entityId = createMockRegulatedEntity()
+      lazy val attributeId = createMockAttribute(entityId)
+      
+      val entitlement = Entitlement.entitlement.vend.addEntitlement("", resourceUser1.userId, CanDeleteRegulatedEntityAttribute.toString)
+      val request = (v5_1_0_Request / "regulated-entities" / entityId / "attributes" / attributeId).DELETE <@ user1
+      val response = makeDeleteRequest(request)
+      response.code should equal(204)
+      Entitlement.entitlement.vend.deleteEntitlement(entitlement)
+    }
+  }
+
+  feature("Get All Regulated Entity Attributes") {
+    lazy val entityId = createMockRegulatedEntity()
+    lazy val attributeId = createMockAttribute(entityId)
+    scenario("401 Unauthorized", GetAll, VersionOfApi) {
       val request = (v5_1_0_Request / "regulated-entities" / entityId / "attributes").GET
       val response = makeGetRequest(request)
       response.code should equal(401)
     }
+
+    scenario("403 Forbidden", GetAll, VersionOfApi) {
+      val request = (v5_1_0_Request / "regulated-entities" / entityId / "attributes").GET <@ user1
+      val response = makeGetRequest(request)
+      response.code should equal(403)
+    }
+
+    scenario("200 Success", GetAll, VersionOfApi) {
+      lazy val entityId = createMockRegulatedEntity()
+      val entitlement = Entitlement.entitlement.vend.addEntitlement("", resourceUser1.userId, CanGetRegulatedEntityAttributes.toString)
+      val request = (v5_1_0_Request / "regulated-entities" / entityId / "attributes").GET <@ user1
+      val response = makeGetRequest(request)
+      response.code should equal(200)
+      Entitlement.entitlement.vend.deleteEntitlement(entitlement)
+    }
   }
 
-  feature(s"$GetOne - getRegulatedEntityAttributeById") {
-    scenario("Unauthorized user cannot view attribute by id", GetOne, VersionOfApi) {
-      val request = (v5_1_0_Request / "regulated-entities" / entityId / "attributes" / "ATTRIBUTE_ID").GET
+  feature("Get Regulated Entity Attribute by ID") {
+    lazy val entityId = createMockRegulatedEntity()
+    
+    scenario("401 Unauthorized", GetOne, VersionOfApi) {
+      val request = (v5_1_0_Request / "regulated-entities" / entityId / "attributes" / attributeId).GET
       val response = makeGetRequest(request)
       response.code should equal(401)
+    }
+
+    scenario("403 Forbidden", GetOne, VersionOfApi) {
+      val request = (v5_1_0_Request / "regulated-entities" / entityId / "attributes" / attributeId).GET <@ user1
+      val response = makeGetRequest(request)
+      response.code should equal(403)
+    }
+
+    scenario("200 Success", GetOne, VersionOfApi) {
+      lazy val entityId = createMockRegulatedEntity()
+      lazy val attributeId = createMockAttribute(entityId)
+      val entitlement = Entitlement.entitlement.vend.addEntitlement("", resourceUser1.userId, CanGetRegulatedEntityAttribute.toString)
+      val request = (v5_1_0_Request / "regulated-entities" / entityId / "attributes" / attributeId).GET <@ user1
+      val response = makeGetRequest(request)
+      response.code should equal(200)
+      Entitlement.entitlement.vend.deleteEntitlement(entitlement)
     }
   }
 }
