@@ -559,8 +559,7 @@ object ExampleValue {
   glossaryItems += makeGlossaryItem("DynamicResourceDoc.exampleRequestBody", exampleRequestBodyExample)
   
   lazy val successResponseBodyExample = ConnectorField(
-    """{"my_user_id": "some_id_value", "name": "Jhon", "age": 12, 
-      |"hobby": ["coding"],"_optional_fields_": ["hobby"]}""".stripMargin, "the json string of the success response body.")
+    """{"my_user_id": "some_id_value", "name": "Jhon", "age": 12, "hobby": ["coding"],"_optional_fields_": ["hobby"]}""".stripMargin, "the json string of the success response body.")
   glossaryItems += makeGlossaryItem("DynamicResourceDoc.successResponseBody", successResponseBodyExample)
   
   lazy val errorResponseBodiesExample = ConnectorField(s"$UnknownError,$UserNotLoggedIn,$UserHasMissingRoles,$InvalidJsonFormat", "The possible error messages of the endpoint. ")
@@ -897,16 +896,17 @@ object ExampleValue {
   lazy val certificateAuthorityCaOwnerIdExample = ConnectorField("CY_CBC", "The certificate authority owner ID.")
   glossaryItems += makeGlossaryItem("certificate_authority_ca_owner_id", certificateAuthorityCaOwnerIdExample)
   
-  lazy val entityCertificatePublicKeyExample = ConnectorField(
-    "-----BEGIN CERTIFICATE----- MIICsjCCAZqgAwIBAgIGAYwQ62R0MA0GCSqGSIb3DQEBCwUAMBoxGDAWBgNVBAMMD2FwcC5leGFtcGxlLmNvbT" +
+  lazy val entityCertificatePublicKeyExample = ConnectorField("""-----BEGINCERTIFICATE""" +
+      "MIICsjCCAZqgAwIBAgIGAYwQ62R0MA0GCSqGSIb3DQEBCwUAMBoxGDAWBgNVBAMMD2FwcC5leGFtcGxlLmNvbT" +
       "AeFw0yMzExMjcxMzE1MTFaFw0yNTExMjYxMzE1MTFaMBoxGDAWBgNVBAMMD2FwcC5leGFtcGxlLmNvbTCCASIwDQYJKoZIhvcNAQEBBQADggEPADC" +
       "CAQoCggEBAK9WIodZHWzKyCcf9YfWEhPURbfO6zKuMqzHN27GdqHsVVEGxP4F/J4mso+0ENcRr6ur4u81iREaVdCc40rHDHVJNEtniD8Icbz7tcsq" +
       "AewIVhc/q6WXGqImJpCq7hA0m247dDsaZT0lb/MVBiMoJxDEmAE/GYYnWTEn84R35WhJsMvuQ7QmLvNg6RkChY6POCT/YKe9NKwa1NqI1U+oA5RFz" +
-      "AaFtytvZCE3jtp+aR0brL7qaGfgxm6B7dEpGyhg0NcVCV7xMQNq2JxZTVdAr6lcsRGaAFul akmW3aNnmK+L35Wu8uW+OxNxwUuC6f3b4FVBa276F" +
+      "AaFtytvZCE3jtp+aR0brL7qaGfgxm6B7dEpGyhg0NcVCV7xMQNq2JxZTVdAr6lcsRGaAFulakmW3aNnmK+L35Wu8uW+OxNxwUuC6f3b4FVBa276F" +
       "MuUTRfu7gc+k6kCAwEAATANBgkqhkiG9w0BAQsFAAOCAQEAAU5CjEyAoyTn7PgFpQD48ZNPuUsEQ19gzYgJvHMzFIoZ7jKBodjO5mCzWBcR7A4mpe" +
       "AsdyiNBl2sTiZscSnNqxk61jVzP5Ba1D7XtOjjr7+3iqowrThj6BY40QqhYh/6BSY9fDzVZQiHnvlo6ZUM5kUK6OavZOovKlp5DIl5sGqoP0qAJnp" +
       "Q4nhB2WVVsKfPlOXc+2KSsbJ23g9l8zaTMr+X0umlvfEKqyEl1Fa2L1dO0y/KFQ+ILmxcZLpRdq1hRAjd0quq9qGC8ucXhRWDg4hslVpau0da68g" +
-      "0aItWNez3mc5lB82b3dcZpFMzO41bgw7gvw10AvvTfQDqEYIuQ==-----END CERTIFICATE-----",
+      "0aItWNez3mc5lB82b3dcZpFMzO41bgw7gvw10AvvTfQDqEYIuQ==" +
+      """-----ENDCERTIFICATE-----""",
     "The public key of the entity certificate."
   )
   glossaryItems += makeGlossaryItem("entity_certificate_public_key", entityCertificatePublicKeyExample)
