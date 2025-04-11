@@ -581,6 +581,21 @@ object ApiRole extends MdcLoggable{
   case class CanDeleteSystemView(requiresBankId: Boolean = false) extends ApiRole
   lazy val canDeleteSystemView = CanDeleteSystemView()
 
+  case class CanGetRegulatedEntityAttribute(requiresBankId: Boolean = false) extends ApiRole
+  lazy val canGetRegulatedEntityAttribute = CanGetRegulatedEntityAttribute()
+
+  case class CanGetRegulatedEntityAttributes(requiresBankId: Boolean = false) extends ApiRole
+  lazy val canGetRegulatedEntityAttributes = CanGetRegulatedEntityAttributes()
+
+  case class CanCreateRegulatedEntityAttribute(requiresBankId: Boolean = false) extends ApiRole
+  lazy val canCreateRegulatedEntityAttribute = CanCreateRegulatedEntityAttribute()
+
+  case class CanUpdateRegulatedEntityAttribute(requiresBankId: Boolean = false) extends ApiRole
+  lazy val canUpdateRegulatedEntityAttribute = CanUpdateRegulatedEntityAttribute()
+
+  case class CanDeleteRegulatedEntityAttribute(requiresBankId: Boolean = false) extends ApiRole
+  lazy val canDeleteRegulatedEntityAttribute = CanDeleteRegulatedEntityAttribute()
+
 
   case class CanGetMethodRoutings(requiresBankId: Boolean = false) extends ApiRole
   lazy val canGetMethodRoutings = CanGetMethodRoutings()

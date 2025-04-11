@@ -56,6 +56,26 @@ import java.util.Date
 import scala.util.Try
 
 
+case class RegulatedEntityAttributeRequestJsonV510(
+  name: String,
+  attribute_type: String,
+  value: String,
+  is_active: Option[Boolean]
+)
+
+case class RegulatedEntityAttributeResponseJsonV510(
+  regulated_entity_id: String,
+  regulated_entity_attribute_id: String,
+  name: String,
+  attribute_type: String,
+  value: String,
+  is_active: Option[Boolean]
+)
+
+case class RegulatedEntityAttributesJsonV510(
+  attributes: List[RegulatedEntityAttributeResponseJsonV510]
+)
+
 case class SuggestedSessionTimeoutV510(timeout_in_seconds: String)
 case class APIInfoJsonV510(
                            version : String,
@@ -1080,6 +1100,26 @@ object JSONFactory510 extends CustomJsonFormats {
           agent_number = agent.number
         )))
   }
+  
+  def createRegulatedEntityAttributeJson(attribute: RegulatedEntityAttributeTrait): RegulatedEntityAttributeResponseJsonV510 = {
+    RegulatedEntityAttributeResponseJsonV510(
+      regulated_entity_id = attribute.regulatedEntityId.value,
+      regulated_entity_attribute_id = attribute.regulatedEntityAttributeId,
+      name = attribute.name,
+      attribute_type = attribute.attributeType.toString,
+      value = attribute.value,
+      is_active = attribute.isActive
+    )
+  }
+
+
+  def createRegulatedEntityAttributesJson(attributes: List[RegulatedEntityAttributeTrait]): RegulatedEntityAttributesJsonV510 = {
+    // Implement the logic to convert the attributes to the desired JSON format
+    RegulatedEntityAttributesJsonV510(
+      attributes.map(createRegulatedEntityAttributeJson)
+    )
+  }
+  
 
 }
 

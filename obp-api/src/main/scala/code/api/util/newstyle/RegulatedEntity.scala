@@ -47,8 +47,8 @@ object RegulatedEntityNewStyle {
       ) map {
         (_, callContext)
       }
-    } map {
-      unboxFull(_)
+    } map{ i =>
+      unboxFullOrFail(i, callContext,s"$InvalidConnectorResponse ${nameOf(createRegulatedEntityNewStyle _)} ", 400 )
     }
   }
 

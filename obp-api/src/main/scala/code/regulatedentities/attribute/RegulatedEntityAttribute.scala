@@ -29,9 +29,7 @@ object RegulatedEntityAttributeX extends SimpleInjector {
 
 trait RegulatedEntityAttributeProviderTrait {
 
-  private val logger = Logger(classOf[RegulatedEntityAttributeProviderTrait])
-
-  def getRegulatedEntityAttributesFromProvider(regulatedEntityId: RegulatedEntityId): Future[Box[List[RegulatedEntityAttribute]]]
+  def getRegulatedEntityAttributes(regulatedEntityId: RegulatedEntityId): Future[Box[List[RegulatedEntityAttribute]]]
 
   def getRegulatedEntityAttributeById(regulatedEntityAttributeId: String): Future[Box[RegulatedEntityAttribute]]
 
@@ -46,5 +44,4 @@ trait RegulatedEntityAttributeProviderTrait {
   def deleteRegulatedEntityAttribute(regulatedEntityAttributeId: String): Future[Box[Boolean]]
   
   def deleteRegulatedEntityAttributesByRegulatedEntityId(regulatedEntityId: RegulatedEntityId): Future[Box[Boolean]]
-  // End of Trait
 }

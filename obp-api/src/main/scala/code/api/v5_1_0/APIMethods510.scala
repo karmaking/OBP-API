@@ -14,7 +14,7 @@ import code.api.util.NewStyle.HttpCode
 import code.api.util.NewStyle.function.extractQueryParams
 import code.api.util.X509.{getCommonName, getEmailAddress, getOrganization}
 import code.api.util._
-import code.api.util.newstyle.BalanceNewStyle
+import code.api.util.newstyle.{BalanceNewStyle, RegulatedEntityAttributeNewStyle}
 import code.api.util.newstyle.Consumer.createConsumerNewStyle
 import code.api.util.newstyle.RegulatedEntityNewStyle.{createRegulatedEntityNewStyle, deleteRegulatedEntityNewStyle, getRegulatedEntitiesNewStyle, getRegulatedEntityByEntityIdNewStyle}
 import code.api.v2_0_0.AccountsHelper.{accountTypeFilterText, getFilteredCoreAccounts}
@@ -47,7 +47,7 @@ import code.views.system.{AccountAccess, ViewDefinition}
 import com.github.dwickern.macros.NameOf.nameOf
 import com.openbankproject.commons.ExecutionContext.Implicits.global
 import com.openbankproject.commons.model._
-import com.openbankproject.commons.model.enums.{AtmAttributeType, ConsentType, StrongCustomerAuthentication, TransactionRequestStatus, UserAttributeType}
+import com.openbankproject.commons.model.enums.{AtmAttributeType, ConsentType, RegulatedEntityAttributeType, StrongCustomerAuthentication, TransactionRequestStatus, UserAttributeType}
 import com.openbankproject.commons.util.{ApiVersion, ScannedApiVersion}
 import net.liftweb.common.Full
 import net.liftweb.http.rest.RestHelper
@@ -84,7 +84,7 @@ trait APIMethods510 {
     staticResourceDocs += ResourceDoc(
       root,
       implementedInApiVersion,
-      "root",
+      nameOf(root),
       "GET",
       "/root",
       "Get API Info (root)",
@@ -770,7 +770,7 @@ trait APIMethods510 {
     staticResourceDocs += ResourceDoc(
       getEntitlementsAndPermissions,
       implementedInApiVersion,
-      "getEntitlementsAndPermissions",
+      nameOf(getEntitlementsAndPermissions),
       "GET",
       "/users/USER_ID/entitlements-and-permissions",
       "Get Entitlements and Permissions for a User",
@@ -2538,7 +2538,7 @@ trait APIMethods510 {
     staticResourceDocs += ResourceDoc(
       getMetrics,
       implementedInApiVersion,
-      "getMetrics",
+      nameOf(getMetrics),
       "GET",
       "/management/metrics",
       "Get Metrics",
@@ -3095,7 +3095,7 @@ trait APIMethods510 {
     staticResourceDocs += ResourceDoc(
       updateConsumerRedirectURL,
       implementedInApiVersion,
-      "updateConsumerRedirectUrl",
+      nameOf(updateConsumerRedirectURL),
       "PUT",
       "/management/consumers/CONSUMER_ID/consumer/redirect_url",
       "Update Consumer RedirectURL",
@@ -4636,6 +4636,207 @@ trait APIMethods510 {
           }
       }
     }
+
+    staticResourceDocs += ResourceDoc(
+      createRegulatedEntityAttribute,
+      implementedInApiVersion,
+      nameOf(createRegulatedEntityAttribute),
+      "POST",
+      "/regulated-entities/REGULATED_ENTITY_ID/attributes",
+      "Create Regulated Entity Attribute",
+      s"""
+         | Create a new Regulated Entity Attribute for a given REGULATED_ENTITY_ID.
+         |
+         | The type field must be one of "STRING", "INTEGER", "DOUBLE" or "DATE_WITH_DAY".
+         | ${userAuthenticationMessage(true)}
+         |
+     """.stripMargin,
+      regulatedEntityAttributeRequestJsonV510,
+      regulatedEntityAttributeResponseJsonV510,
+      List($UserNotLoggedIn, InvalidJsonFormat, UnknownError),
+      List(apiTagDirectory, apiTagApi),
+      Some(List(canCreateRegulatedEntityAttribute))
+    )
+
+    lazy val createRegulatedEntityAttribute: OBPEndpoint = {
+      case "regulated-entities" :: entityId :: "attributes" :: Nil JsonPost json -> _ => {
+        cc =>
+          implicit val ec = EndpointContext(Some(cc))
+          for {
+            postedData <- NewStyle.function.tryons(s"$InvalidJsonFormat The Json body should be the $RegulatedEntityAttributeRequestJsonV510 ", 400, cc.callContext) {
+              json.extract[RegulatedEntityAttributeRequestJsonV510]
+            }
+            failMsg = s"$InvalidJsonFormat The `Type` field can only accept the following field: " +
+              s"${RegulatedEntityAttributeType.DOUBLE}(12.1234), ${RegulatedEntityAttributeType.STRING}(TAX_NUMBER), ${RegulatedEntityAttributeType.INTEGER}(123) and ${RegulatedEntityAttributeType.DATE_WITH_DAY}(2012-04-23)"
+
+            regulatedEntityAttributeType <- NewStyle.function.tryons(failMsg, 400,  cc.callContext) {
+              RegulatedEntityAttributeType.withName(postedData.attribute_type)
+            }
+            
+            (attribute, callContext) <- RegulatedEntityAttributeNewStyle.createOrUpdateRegulatedEntityAttribute(
+              regulatedEntityId = RegulatedEntityId(entityId),
+              regulatedEntityAttributeId = None,
+              name = postedData.name,
+              attributeType = regulatedEntityAttributeType,
+              value = postedData.value,
+              isActive = postedData.is_active,
+              callContext = cc.callContext
+            )
+          } yield {
+            (JSONFactory510.createRegulatedEntityAttributeJson(attribute), HttpCode.`201`(callContext))
+          }
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
+      deleteRegulatedEntityAttribute,
+      implementedInApiVersion,
+      nameOf(deleteRegulatedEntityAttribute),
+      "DELETE",
+      "/regulated-entities/REGULATED_ENTITY_ID/attributes/REGULATED_ENTITY_ATTRIBUTE_ID",
+      "Delete Regulated Entity Attribute",
+      s"""
+         | Delete a Regulated Entity Attribute specified by REGULATED_ENTITY_ATTRIBUTE_ID.
+         |
+         | ${userAuthenticationMessage(true)}
+         |
+     """.stripMargin,
+      EmptyBody,
+      EmptyBody,
+      List($UserNotLoggedIn, UnknownError),
+      List(apiTagDirectory, apiTagApi),
+      Some(List(canDeleteRegulatedEntityAttribute))
+    )
+
+    lazy val deleteRegulatedEntityAttribute: OBPEndpoint = {
+      case "regulated-entities" :: entityId :: "attributes" :: attributeId :: Nil JsonDelete _ => {
+        cc =>
+          implicit val ec = EndpointContext(Some(cc))
+          for {
+            (entity, callContext)  <- getRegulatedEntityByEntityIdNewStyle(entityId, cc.callContext)
+            (deleted, callContext) <- RegulatedEntityAttributeNewStyle.deleteRegulatedEntityAttribute(attributeId, cc.callContext)
+          } yield {
+            (Full(deleted), HttpCode.`204`(callContext))
+          }
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
+      getRegulatedEntityAttributeById,
+      implementedInApiVersion,
+      nameOf(getRegulatedEntityAttributeById),
+      "GET",
+      "/regulated-entities/REGULATED_ENTITY_ID/attributes/REGULATED_ENTITY_ATTRIBUTE_ID",
+      "Get Regulated Entity Attribute By ID",
+      s"""
+         | Get a specific Regulated Entity Attribute by its REGULATED_ENTITY_ATTRIBUTE_ID.
+         |
+         | ${userAuthenticationMessage(true)}
+         |
+     """.stripMargin,
+      EmptyBody,
+      regulatedEntityAttributeResponseJsonV510,
+      List($UserNotLoggedIn,UnknownError),
+      List(apiTagDirectory, apiTagApi),
+      Some(List(canGetRegulatedEntityAttribute))
+    )
+
+    lazy val getRegulatedEntityAttributeById: OBPEndpoint = {
+      case "regulated-entities" :: entityId :: "attributes" :: attributeId :: Nil JsonGet _ => {
+        cc =>
+          implicit val ec = EndpointContext(Some(cc))
+          for {
+            (entity, callContext)  <- getRegulatedEntityByEntityIdNewStyle(entityId, cc.callContext)
+            (attribute, callContext) <- RegulatedEntityAttributeNewStyle.getRegulatedEntityAttributeById(attributeId, cc.callContext)
+          } yield {
+            (JSONFactory510.createRegulatedEntityAttributeJson(attribute), HttpCode.`200`(callContext))
+          }
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
+      getAllRegulatedEntityAttributes,
+      implementedInApiVersion,
+      nameOf(getAllRegulatedEntityAttributes),
+      "GET",
+      "/regulated-entities/REGULATED_ENTITY_ID/attributes",
+      "Get All Regulated Entity Attributes",
+      s"""
+         | Get all attributes for the specified Regulated Entity.
+         |
+         | ${userAuthenticationMessage(true)}
+         |
+     """.stripMargin,
+      EmptyBody,
+      regulatedEntityAttributesJsonV510,
+      List($UserNotLoggedIn, UnknownError),
+      List(apiTagDirectory, apiTagApi),
+      Some(List(canGetRegulatedEntityAttributes))
+    )
+
+    lazy val getAllRegulatedEntityAttributes: OBPEndpoint = {
+      case "regulated-entities" :: RegulatedEntityId(entityId) :: "attributes" :: Nil JsonGet _ => {
+        cc =>
+          implicit val ec = EndpointContext(Some(cc))
+          for {
+            (entity, callContext)  <- getRegulatedEntityByEntityIdNewStyle(entityId.value, cc.callContext)
+            (attributes, callContext) <- RegulatedEntityAttributeNewStyle.getRegulatedEntityAttributes(entityId, cc.callContext)
+          } yield {
+            (JSONFactory510.createRegulatedEntityAttributesJson(attributes), HttpCode.`200`(callContext))
+          }
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
+      updateRegulatedEntityAttribute,
+      implementedInApiVersion,
+      nameOf(updateRegulatedEntityAttribute),
+      "PUT",
+      "/regulated-entities/REGULATED_ENTITY_ID/attributes/REGULATED_ENTITY_ATTRIBUTE_ID",
+      "Update Regulated Entity Attribute",
+      s"""
+         | Update an existing Regulated Entity Attribute specified by ATTRIBUTE_ID.
+         |
+         | ${userAuthenticationMessage(true)}
+         |
+     """.stripMargin,
+      regulatedEntityAttributeRequestJsonV510,
+      regulatedEntityAttributeResponseJsonV510,
+      List($UserNotLoggedIn, InvalidJsonFormat, UnknownError),
+      List(apiTagDirectory, apiTagApi),
+      Some(List(canUpdateRegulatedEntityAttribute))
+    )
+
+    lazy val updateRegulatedEntityAttribute: OBPEndpoint = {
+      case "regulated-entities" :: entityId :: "attributes" :: attributeId :: Nil JsonPut json -> _ => {
+        cc =>
+          implicit val ec = EndpointContext(Some(cc))
+          for {
+            postedData <- NewStyle.function.tryons(s"$InvalidJsonFormat The Json body should be the $RegulatedEntityAttributeRequestJsonV510 ", 400, cc.callContext) {
+              json.extract[RegulatedEntityAttributeRequestJsonV510]
+            }
+            failMsg = s"$InvalidJsonFormat The `Type` field can only accept the following field: " +
+              s"${RegulatedEntityAttributeType.DOUBLE}(12.1234), ${RegulatedEntityAttributeType.STRING}(TAX_NUMBER), ${RegulatedEntityAttributeType.INTEGER}(123) and ${RegulatedEntityAttributeType.DATE_WITH_DAY}(2012-04-23)"
+
+            regulatedEntityAttributeType <- NewStyle.function.tryons(failMsg, 400,  cc.callContext) {
+              RegulatedEntityAttributeType.withName(postedData.attribute_type)
+            }
+            (entity, callContext)  <- getRegulatedEntityByEntityIdNewStyle(entityId, cc.callContext)
+            (updatedAttribute, callContext) <- RegulatedEntityAttributeNewStyle.createOrUpdateRegulatedEntityAttribute(
+              regulatedEntityId = RegulatedEntityId(entityId),
+              regulatedEntityAttributeId = Some(attributeId),
+              name = postedData.name,
+              attributeType = regulatedEntityAttributeType,
+              value = postedData.value,
+              isActive = postedData.is_active,
+              callContext = cc.callContext
+            )
+          } yield {
+            (JSONFactory510.createRegulatedEntityAttributeJson(updatedAttribute), HttpCode.`200`(callContext))
+          }
+      }
+    }
+
 
   }
 }
