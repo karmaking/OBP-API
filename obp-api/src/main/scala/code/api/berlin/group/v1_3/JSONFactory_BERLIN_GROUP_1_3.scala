@@ -136,14 +136,15 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats {
   )
   case class CreditorAccountJson(
     iban: String,
+    currency : Option[String] = None,
   )
   case class TransactionJsonV13(
     transactionId: String,
     creditorName: String,
     creditorAccount: CreditorAccountJson,
     transactionAmount: AmountOfMoneyV13,
-    bookingDate: Date,
-    valueDate: Date,
+    bookingDate: String,
+    valueDate: String,
     remittanceInformationUnstructured: String,
   )
   case class SingleTransactionJsonV13(
@@ -415,9 +416,9 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats {
       transactionId = transaction.id.value,
       creditorName = creditorName,
       creditorAccount = creditorAccount,
-      transactionAmount = AmountOfMoneyV13(APIUtil.stringOptionOrNull(transaction.currency), transaction.amount.get.toString()),
-      bookingDate = bookingDate,
-      valueDate = valueDate,
+      transactionAmount = AmountOfMoneyV13(APIUtil.stringOptionOrNull(transaction.currency), transaction.amount.get.toString().trim.stripPrefix("-")),
+      bookingDate = BgSpecValidation.formatToISODate(bookingDate) ,
+      valueDate = BgSpecValidation.formatToISODate(valueDate),
       remittanceInformationUnstructured = APIUtil.stringOptionOrNull(transaction.description)
     )
   }
@@ -450,9 +451,9 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats {
       transactionId = transactionRequest.id.value,
       creditorName = creditorName,
       creditorAccount = creditorAccount,
-      transactionAmount = AmountOfMoneyV13(transactionRequest.charge.value.currency, transactionRequest.charge.value.amount),
-      bookingDate = transactionRequest.start_date,
-      valueDate = transactionRequest.end_date,
+      transactionAmount = AmountOfMoneyV13(transactionRequest.charge.value.currency, transactionRequest.charge.value.amount.trim.stripPrefix("-")),
+      bookingDate = BgSpecValidation.formatToISODate(transactionRequest.start_date),
+      valueDate = BgSpecValidation.formatToISODate(transactionRequest.end_date),
       remittanceInformationUnstructured = remittanceInformationUnstructured
     )
   }
@@ -463,6 +464,7 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats {
    
     val creditorAccount = CreditorAccountJson(
       iban = iban,
+      currency = Some(bankAccount.currency)
     )
     TransactionsJsonV13(
       FromAccount(
