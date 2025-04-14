@@ -583,4 +583,23 @@ object Helper extends Loggable {
   }
 
 
+  import java.util.Date
+  import java.util.Calendar
+
+  def calculateValidTo(
+                        validFrom: Option[Date],
+                        timeToLive: Long // milliseconds
+                      ): Date = {
+    val baseTime = validFrom.getOrElse(new Date())
+
+    val calendar = Calendar.getInstance()
+    calendar.setTime(baseTime)
+    calendar.add(Calendar.SECOND, timeToLive.toInt / 1000)
+
+    calendar.getTime
+  }
+
+
+
+
 }
