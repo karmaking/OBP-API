@@ -1,30 +1,22 @@
 package code.api.berlin.group.v1_3
 
 import code.api.BerlinGroup.ScaStatus
-import code.api.Constant
-import code.api.Constant.{SYSTEM_INITIATE_PAYMENTS_BERLIN_GROUP_VIEW_ID, SYSTEM_READ_TRANSACTIONS_BERLIN_GROUP_VIEW_ID}
-import code.api.berlin.group.v1_3.JSONFactory_BERLIN_GROUP_1_3.{CancellationJsonV13, InitiatePaymentResponseJson, StartPaymentAuthorisationJson}
-import code.api.berlin.group.v1_3.model.{PsuData, ScaStatusResponse, UpdatePsuAuthenticationResponse}
+import code.api.Constant.SYSTEM_INITIATE_PAYMENTS_BERLIN_GROUP_VIEW_ID
 import code.api.berlin.group.v1_3.JSONFactory_BERLIN_GROUP_1_3.{CancellationJsonV13, ErrorMessagesBG, InitiatePaymentResponseJson, StartPaymentAuthorisationJson}
+import code.api.berlin.group.v1_3.model.{ScaStatusResponse, TransactionStatus, UpdatePsuAuthenticationResponse}
 import code.api.builder.PaymentInitiationServicePISApi.APIMethods_PaymentInitiationServicePISApi
 import code.api.util.APIUtil.OAuth._
 import code.api.util.APIUtil.extractErrorMessageCode
-import code.api.util.ErrorMessages.{AuthorisationNotFound, InvalidJsonFormat, NotPositiveAmount, _}
+import code.api.util.ErrorMessages._
 import code.model.dataAccess.{BankAccountRouting, MappedBankAccount}
 import code.setup.{APIResponse, DefaultUsers}
-import com.openbankproject.commons.model.enums.TransactionRequestTypes
-import com.openbankproject.commons.model.enums.TransactionRequestTypes._
-import com.openbankproject.commons.model.enums.PaymentServiceTypes
-import com.openbankproject.commons.model.enums.PaymentServiceTypes._
 import code.views.Views
 import com.github.dwickern.macros.NameOf.nameOf
-import com.openbankproject.commons.model.enums.AccountRoutingScheme
-import com.openbankproject.commons.model.{ErrorMessage, SepaCreditTransfers, SepaCreditTransfersBerlinGroupV13, ViewId}
+import com.openbankproject.commons.model.enums.{AccountRoutingScheme, PaymentServiceTypes, TransactionRequestTypes}
+import com.openbankproject.commons.model.{SepaCreditTransfers, SepaCreditTransfersBerlinGroupV13, ViewId}
 import net.liftweb.json.Serialization.write
 import net.liftweb.mapper.By
 import org.scalatest.Tag
-
-import scala.collection.immutable.List
 
 class PaymentInitiationServicePISApiTest extends BerlinGroupServerSetupV1_3 with DefaultUsers {
 
@@ -137,7 +129,7 @@ class PaymentInitiationServicePISApiTest extends BerlinGroupServerSetupV1_3 with
       Then("We should get a 201 ")
       response.code should equal(201)
       val payment = response.body.extract[InitiatePaymentResponseJson]
-      payment.transactionStatus should be ("ACCP")
+      payment.transactionStatus should be (TransactionStatus.ACCP.code)
       payment.paymentId should not be null
       payment._links.scaStatus should not be null
 
@@ -190,7 +182,7 @@ class PaymentInitiationServicePISApiTest extends BerlinGroupServerSetupV1_3 with
       Then("We should get a 201 ")
       response.code should equal(201)
       val payment = response.body.extract[InitiatePaymentResponseJson]
-      payment.transactionStatus should be ("RCVD")
+      payment.transactionStatus should be (TransactionStatus.RCVD.code)
       payment.paymentId should not be null
       payment._links.scaStatus should not be null
 
@@ -248,7 +240,7 @@ class PaymentInitiationServicePISApiTest extends BerlinGroupServerSetupV1_3 with
       Then("We should get a 201 ")
       response.code should equal(201)
       val payment = response.body.extract[InitiatePaymentResponseJson]
-      payment.transactionStatus should be ("ACCP")
+      payment.transactionStatus should be (TransactionStatus.ACCP.code)
       payment.paymentId should not be null
 
       Then(s"we test the ${getPaymentInformation.name}")
@@ -292,7 +284,7 @@ class PaymentInitiationServicePISApiTest extends BerlinGroupServerSetupV1_3 with
       Then("We should get a 201 ")
       response.code should equal(201)
       val payment = response.body.extract[InitiatePaymentResponseJson]
-      payment.transactionStatus should be ("RCVD")
+      payment.transactionStatus should be (TransactionStatus.RCVD.code)
       payment.paymentId should not be null
       payment._links.scaStatus should not be null
 
@@ -301,7 +293,7 @@ class PaymentInitiationServicePISApiTest extends BerlinGroupServerSetupV1_3 with
       val requestGet = (V1_3_BG / PaymentServiceTypes.payments.toString / TransactionRequestTypes.SEPA_CREDIT_TRANSFERS.toString / paymentId / "status").GET <@ (user1)
       val responseGet: APIResponse = makeGetRequest(requestGet)
       responseGet.code should be (200)
-      (responseGet.body \ "transactionStatus").extract[String] should be ("RCVD")
+      (responseGet.body \ "transactionStatus").extract[String] should be (TransactionStatus.RCVD.code)
       (responseGet.body \ "fundsAvailable").extract[Boolean] should be (true)
     }
   }
@@ -351,7 +343,7 @@ class PaymentInitiationServicePISApiTest extends BerlinGroupServerSetupV1_3 with
       Then("We should get a 201 ")
       responseInitiatePaymentJson.code should equal(201)
       val paymentResponseInitiatePaymentJson = responseInitiatePaymentJson.body.extract[InitiatePaymentResponseJson]
-      paymentResponseInitiatePaymentJson.transactionStatus should be ("RCVD")
+      paymentResponseInitiatePaymentJson.transactionStatus should be (TransactionStatus.RCVD.code)
       paymentResponseInitiatePaymentJson.paymentId should not be null
 
       val paymentId = paymentResponseInitiatePaymentJson.paymentId
@@ -502,7 +494,7 @@ class PaymentInitiationServicePISApiTest extends BerlinGroupServerSetupV1_3 with
       Then("We should get a 201 ")
       responseInitiatePaymentJson.code should equal(201)
       val paymentResponseInitiatePaymentJson = responseInitiatePaymentJson.body.extract[InitiatePaymentResponseJson]
-      paymentResponseInitiatePaymentJson.transactionStatus should be ("ACCP")
+      paymentResponseInitiatePaymentJson.transactionStatus should be (TransactionStatus.ACCP.code)
 
       val paymentId = paymentResponseInitiatePaymentJson.paymentId
 

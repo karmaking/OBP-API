@@ -1,27 +1,22 @@
 package code.api.builder.PaymentInitiationServicePISApi
 
-import code.api.Constant
 import code.api.berlin.group.v1_3.JSONFactory_BERLIN_GROUP_1_3.{CancelPaymentResponseJson, CancelPaymentResponseLinks, LinkHrefJson, UpdatePaymentPsuDataJson, checkAuthorisationConfirmation, checkSelectPsuAuthenticationMethod, checkTransactionAuthorisation, checkUpdatePsuAuthentication, createCancellationTransactionRequestJson}
-import code.api.berlin.group.v1_3.{JSONFactory_BERLIN_GROUP_1_3, JvalueCaseClass, OBP_BERLIN_GROUP_1_3}
+import code.api.berlin.group.v1_3.model.TransactionStatus.mapTransactionStatus
+import code.api.berlin.group.v1_3.model._
+import code.api.berlin.group.v1_3.{JSONFactory_BERLIN_GROUP_1_3, JvalueCaseClass}
 import code.api.util.APIUtil._
 import code.api.util.ApiTag._
 import code.api.util.ErrorMessages._
 import code.api.util.NewStyle.HttpCode
-import code.api.util.{ApiRole, ApiTag, CallContext, NewStyle}
-import code.api.berlin.group.v1_3.model._
-import code.bankconnectors.Connector
+import code.api.util.{ApiTag, CallContext, NewStyle}
 import code.fx.fx
-import code.api.Constant._
 import code.util.Helper
-import code.views.Views
 import com.github.dwickern.macros.NameOf.nameOf
 import com.openbankproject.commons.ExecutionContext.Implicits.global
 import com.openbankproject.commons.model._
-import com.openbankproject.commons.model.enums.ChallengeType.BERLIN_GROUP_PAYMENT_CHALLENGE
 import com.openbankproject.commons.model.enums.TransactionRequestStatus._
-import com.openbankproject.commons.model.enums.{ChallengeType, StrongCustomerAuthenticationStatus, SuppliedAnswerType, TransactionRequestStatus,TransactionRequestTypes,PaymentServiceTypes}
 import com.openbankproject.commons.model.enums.TransactionRequestTypes._
-import com.openbankproject.commons.model.enums.PaymentServiceTypes._
+import com.openbankproject.commons.model.enums.{TransactionRequestStatus, _}
 import com.openbankproject.commons.util.ApiVersion
 import net.liftweb
 import net.liftweb.common.Box.tryo
@@ -29,10 +24,8 @@ import net.liftweb.common.Full
 import net.liftweb.http.js.JE.JsRaw
 import net.liftweb.http.rest.RestHelper
 import net.liftweb.json
-import net.liftweb.json.Serialization.write
 import net.liftweb.json._
 
-import scala.collection.immutable.Nil
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
 
@@ -136,7 +129,7 @@ or * access method is generally applicable, but further authorisation processes 
              (canBeCancelled, _, startSca) <- transactionRequestTypes match {
                case TransactionRequestTypes.SEPA_CREDIT_TRANSFERS => {
                  transactionRequest.status.toUpperCase() match {
-                   case "COMPLETED" =>
+                   case TransactionStatus.ACCP.code =>
                      NewStyle.function.cancelPaymentV400(TransactionId(transactionRequest.transaction_ids), callContext) map {
                        x => x._1 match {
                          case CancelPayment(true, Some(startSca)) if startSca == true =>
@@ -399,8 +392,8 @@ This method returns the SCA status of a payment initiation's authorisation sub-r
        s"""${mockedDataText(false)}
 Check the transaction status of a payment initiation.""",
        EmptyBody,
-       json.parse("""{
-                      "transactionStatus": "ACCP"
+       json.parse(s"""{
+                      "transactionStatus": "${TransactionStatus.ACCP.code}"
                      }"""),
        List(UserNotLoggedIn, UnknownError),
        ApiTag("Payment Initiation Service (PIS)") :: apiTagBerlinGroupM :: Nil
@@ -420,12 +413,9 @@ Check the transaction status of a payment initiation.""",
              }
              (transactionRequest, callContext) <- NewStyle.function.getTransactionRequestImpl(TransactionRequestId(paymentId), callContext)
 
-             transactionRequestStatus = transactionRequest.status match {
-               case "COMPLETED" => "ACCP"
-               case "INITIATED" => "RCVD"
-             }
+             transactionRequestStatus = mapTransactionStatus(transactionRequest.status)
 
-             transactionRequestAmount <- NewStyle.function.tryons(s"${UnknownError} transction request amount can not convert to a Decimal",400, callContext) {
+             transactionRequestAmount <- NewStyle.function.tryons(s"${UnknownError} transaction request amount can not convert to a Decimal",400, callContext) {
                BigDecimal(transactionRequest.body.to_sepa_credit_transfers.get.instructedAmount.amount)
              }
              transactionRequestCurrency <- NewStyle.function.tryons(s"${UnknownError} can not get currency from this paymentId(${paymentId})",400, callContext) {
@@ -450,7 +440,7 @@ Check the transaction status of a payment initiation.""",
 
              fundsAvailable = (fromAccountBalance >= requestChangedCurrencyAmount)
 
-             transactionRequestStatusChekedFunds = if(fundsAvailable) transactionRequestStatus else "RCVD"
+             transactionRequestStatusChekedFunds = if(fundsAvailable) transactionRequestStatus else TransactionStatus.RCVD.code
 
            } yield {
              (json.parse(s"""{
@@ -534,7 +524,7 @@ Check the transaction status of a payment initiation.""",
       }
 
       //Berlin Group PaymentProduct is OBP transaction request type
-      transacitonRequestType <- NewStyle.function.tryons(checkPaymentProductError(paymentProduct), 400, callContext) {
+      transactionRequestType <- NewStyle.function.tryons(checkPaymentProductError(paymentProduct), 400, callContext) {
         TransactionRequestTypes.withName(paymentProduct.replaceAll("-", "_").toUpperCase)
       }
 
@@ -565,13 +555,13 @@ Check the transaction status of a payment initiation.""",
       _ <- NewStyle.function.isEnabledTransactionRequests(callContext)
 
 
-      (createdTransactionRequest, callContext) <- transacitonRequestType match {
+      (createdTransactionRequest, callContext) <- transactionRequestType match {
         case TransactionRequestTypes.SEPA_CREDIT_TRANSFERS => {
           for {
             (createdTransactionRequest, callContext) <- NewStyle.function.createTransactionRequestBGV1(
               initiator = u,
               paymentServiceType,
-              transacitonRequestType,
+              transactionRequestType,
               transactionRequestBody = sepaCreditTransfersBerlinGroupV13,
               callContext
             )
@@ -606,7 +596,7 @@ Check the transaction status of a payment initiation.""",
                       "creditorName": "70charname"
                   }"""),
       json.parse(s"""{
-                    "transactionStatus": "RCVD",
+                    "transactionStatus": "${TransactionStatus.RCVD.code}",
                     "paymentId": "1234-wertiq-983",
                     "_links":
                       {
@@ -655,7 +645,7 @@ Check the transaction status of a payment initiation.""",
                     "dayOfExecution": "01"
                   }"""),
       json.parse(s"""{
-                    "transactionStatus": "RCVD",
+                    "transactionStatus": "${TransactionStatus.RCVD.code}",
                     "paymentId": "1234-wertiq-983",
                     "_links":
                       {
@@ -717,7 +707,7 @@ Check the transaction status of a payment initiation.""",
                     ]
                   }"""),
       json.parse(s"""{
-                    "transactionStatus": "RCVD",
+                    "transactionStatus": "${TransactionStatus.RCVD.code}",
                     "paymentId": "1234-wertiq-983",
                     "_links":
                       {
@@ -1449,7 +1439,7 @@ There are the following request types on this access path:
              transactionRequestId = TransactionRequestId(paymentId)
              (existingTransactionRequest, callContext) <- NewStyle.function.getTransactionRequestImpl(transactionRequestId, callContext)
              _ <- Helper.booleanToFuture(failMsg= CannotUpdatePSUData, cc=callContext) {
-               existingTransactionRequest.status == TransactionRequestStatus.INITIATED.toString
+               existingTransactionRequest.status == TransactionStatus.RCVD.code
              }
              (_, callContext) <- NewStyle.function.getChallenge(authorisationId, callContext)
              (challenge, callContext) <- NewStyle.function.validateChallengeAnswerC4(

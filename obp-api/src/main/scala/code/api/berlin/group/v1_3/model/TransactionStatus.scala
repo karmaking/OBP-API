@@ -11,8 +11,98 @@
  */
 package code.api.berlin.group.v1_3.model
 
+sealed trait TransactionStatus {
+  def code: String
+  def description: String
+}
 
+object TransactionStatus extends ApiModel {
 
-case class TransactionStatus (
-) extends ApiModel
+  case object ACCC extends TransactionStatus {
+    val code = "ACCC"
+    val description = "AcceptedSettlementCompleted - Settlement on the creditor's account has been completed."
+  }
+
+  case object ACCP extends TransactionStatus {
+    val code = "ACCP"
+    val description = "AcceptedCustomerProfile - Technical validation and customer profile check successful."
+  }
+
+  case object ACSC extends TransactionStatus {
+    val code = "ACSC"
+    val description = "AcceptedSettlementCompleted - Settlement on the debtor’s account has been completed."
+  }
+
+  case object ACSP extends TransactionStatus {
+    val code = "ACSP"
+    val description = "AcceptedSettlementInProcess - Payment initiation accepted for execution."
+  }
+
+  case object ACTC extends TransactionStatus {
+    val code = "ACTC"
+    val description = "AcceptedTechnicalValidation - Authentication and validation successful."
+  }
+
+  case object ACWC extends TransactionStatus {
+    val code = "ACWC"
+    val description = "AcceptedWithChange - Instruction accepted but changes made (e.g. date or remittance)."
+  }
+
+  case object ACWP extends TransactionStatus {
+    val code = "ACWP"
+    val description = "AcceptedWithoutPosting - Accepted but not posted to creditor’s account."
+  }
+
+  case object RCVD extends TransactionStatus {
+    val code = "RCVD"
+    val description = "Received - Payment initiation received by receiving agent."
+  }
+
+  case object PDNG extends TransactionStatus {
+    val code = "PDNG"
+    val description = "Pending - Further checks pending before completion."
+  }
+
+  case object RJCT extends TransactionStatus {
+    val code = "RJCT"
+    val description = "Rejected - Payment initiation or transaction has been rejected."
+  }
+
+  case object CANC extends TransactionStatus {
+    val code = "CANC"
+    val description = "Cancelled - Payment initiation cancelled before execution."
+  }
+
+  case object ACFC extends TransactionStatus {
+    val code = "ACFC"
+    val description = "AcceptedFundsChecked - Technical, profile, and funds check successful."
+  }
+
+  case object PATC extends TransactionStatus {
+    val code = "PATC"
+    val description = "PartiallyAcceptedTechnical - Some required authentications performed."
+  }
+
+  case object PART extends TransactionStatus {
+    val code = "PART"
+    val description = "PartiallyAccepted - Some transactions accepted in a bulk payment."
+  }
+
+  val values: List[TransactionStatus] = List(
+    ACCC, ACCP, ACSC, ACSP, ACTC, ACWC, ACWP, RCVD,
+    PDNG, RJCT, CANC, ACFC, PATC, PART
+  )
+
+  def fromCode(code: String): Option[TransactionStatus] = values.find(_.code == code)
+
+  def mapTransactionStatus(status: String): String = {
+    status match {
+      case "COMPLETED" => TransactionStatus.ACCP.code
+      case "INITIATED" => TransactionStatus.RCVD.code
+      case other => other
+    }
+  }
+
+}
+
 

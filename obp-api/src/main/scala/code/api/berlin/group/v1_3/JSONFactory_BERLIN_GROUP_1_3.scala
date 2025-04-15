@@ -1,22 +1,20 @@
 package code.api.berlin.group.v1_3
 
-import java.text.SimpleDateFormat
-import java.util.Date
+import code.api.berlin.group.v1_3.model.TransactionStatus.mapTransactionStatus
 import code.api.berlin.group.v1_3.model._
 import code.api.util.APIUtil._
 import code.api.util.ErrorMessages.MissingPropsValueAtThisInstance
 import code.api.util.{APIUtil, ConsentJWT, CustomJsonFormats, JwtUtil}
-import code.bankconnectors.Connector
 import code.consent.ConsentTrait
 import code.model.ModeratedTransaction
 import com.openbankproject.commons.model.enums.AccountRoutingScheme
-import com.openbankproject.commons.model.{BankAccount, TransactionRequest, User, _}
+import com.openbankproject.commons.model._
 import net.liftweb.common.Box.tryo
 import net.liftweb.common.{Box, Full}
-import net.liftweb.json
 import net.liftweb.json.{JValue, parse}
 
-import scala.collection.immutable.List
+import java.text.SimpleDateFormat
+import java.util.Date
 
 case class JvalueCaseClass(jvalueToCaseclass: JValue)
 
@@ -649,10 +647,7 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats {
     val scaRedirectUrl = getPropsValue("psu_make_payment_sca_redirect_url")
       .openOr(MissingPropsValueAtThisInstance + "psu_make_payment_sca_redirect_url")
     InitiatePaymentResponseJson(
-      transactionStatus = transactionRequest.status match {
-        case "COMPLETED" => "ACCP"
-        case "INITIATED" => "RCVD"
-      },
+      transactionStatus = mapTransactionStatus(transactionRequest.status),
       paymentId = paymentId,
       _links = InitiatePaymentResponseLinks(
         scaRedirect = LinkHrefJson(s"$scaRedirectUrl/$paymentId"),
