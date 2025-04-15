@@ -27,7 +27,7 @@ object BerlinGroupCheck extends MdcLoggable {
 
   private def validateHeaders(verb: String, url: String, reqHeaders: List[HTTPParam], forwardResult: (Box[User], Option[CallContext])): (Box[User], Option[CallContext]) = {
     val headerMap = reqHeaders.map(h => h.name.toLowerCase -> h).toMap
-    val missingHeaders = if(url.contains(ApiVersion.berlinGroupV13.urlPrefix) && url.endsWith("/consent"))
+    val missingHeaders = if(url.contains(ApiVersion.berlinGroupV13.urlPrefix) && url.endsWith("/consents"))
       (berlinGroupMandatoryHeaders ++ berlinGroupMandatoryHeaderConsent).filterNot(headerMap.contains)
     else
       berlinGroupMandatoryHeaders.filterNot(headerMap.contains)
