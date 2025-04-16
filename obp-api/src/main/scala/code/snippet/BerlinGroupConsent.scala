@@ -291,7 +291,7 @@ class BerlinGroupConsent extends MdcLoggable with RestHelper with APIMethods510 
                 <p style="padding-left: 20px">
                   Read account details
                   <div style={if (!updateConsentPayloadValue.is) "padding-left: 40px; display: block;" else "display: none;"}>
-                    {scala.xml.Unparsed(canReadAccountsIbans.map(iban => s"- $iban").mkString("<br/>"))}
+                    {scala.xml.Unparsed(ibansFromGetConsentResponseJson.map(iban => s"- $iban").mkString("<br/>"))}
                   </div>
                 </p>
                 <p style={if (accessBalancesDefinedVar.is) "padding-left: 20px;" else "padding-left: 20px; display: none;"}>

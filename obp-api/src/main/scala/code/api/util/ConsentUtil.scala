@@ -731,7 +731,10 @@ object Consent extends MdcLoggable {
     }
     
     // 1. Add access
-    val accounts: List[Future[ConsentView]] = consent.access.accounts.getOrElse(Nil) map { account =>
+    val allAccesses = consent.access.accounts.getOrElse(Nil) :::
+      consent.access.balances.getOrElse(Nil) ::: // Balances access implies and Account access as well
+      consent.access.transactions.getOrElse(Nil) // Transactions access implies and Account access as well
+    val accounts: List[Future[ConsentView]] = allAccesses.distinct map { account =>
       Connector.connector.vend.getBankAccountByIban(account.iban.getOrElse(""), callContext) map { bankAccount =>
         logger.debug(s"createBerlinGroupConsentJWT.accounts.bankAccount: $bankAccount")
         val error = s"${InvalidConnectorResponse} IBAN: ${account.iban.getOrElse("")} ${handleBox(bankAccount._1)}"
