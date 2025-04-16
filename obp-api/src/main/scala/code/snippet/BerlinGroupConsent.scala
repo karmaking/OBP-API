@@ -64,6 +64,8 @@ class BerlinGroupConsent extends MdcLoggable with RestHelper with APIMethods510 
   // Session variables to store OTP, redirect URI, and other consent-related data
   private object otpValue extends SessionVar("123") // Stores the OTP value for SCA (Strong Customer Authentication)
   private object redirectUriValue extends SessionVar("") // Stores the redirect URI for post-consent actions
+  private object tppNokRedirectUriValue extends SessionVar("")
+  private object consumerNameValue extends SessionVar("") // Stores the redirect URI for post-consent actions
   private object updateConsentPayloadValue extends SessionVar(false) // Flag to indicate if consent payload needs updating
   private object userIsOwnerOfAccountsValue extends SessionVar(true) // Flag to check if the user owns the accounts
 
@@ -148,6 +150,10 @@ class BerlinGroupConsent extends MdcLoggable with RestHelper with APIMethods510 
         val tppRedirectUri: immutable.Seq[String] = consentJwt.map { h =>
           h.request_headers.filter(h => h.name == RequestHeader.`TPP-Redirect-URI`)
         }.getOrElse(Nil).map((_.values.mkString("")))
+        val tppNokRedirectUri: immutable.Seq[String] = consentJwt.map { h =>
+          h.request_headers.filter(h => h.name == RequestHeader.`TPP-Nok-Redirect-URI`)
+        }.getOrElse(Nil).map((_.values.mkString("")))
+        tppNokRedirectUriValue.set(tppNokRedirectUri.headOption.getOrElse("/"))
         val consumerRedirectUri: Option[String] = consumer.map(_.redirectURL.get).toOption
         val uri: String = tppRedirectUri.headOption.orElse(consumerRedirectUri).getOrElse("https://not.defined.com")
         redirectUriValue.set(uri)
@@ -272,6 +278,7 @@ class BerlinGroupConsent extends MdcLoggable with RestHelper with APIMethods510 
         val firstName = currentUser.map(_.firstName.get).getOrElse("")
         val lastName = currentUser.map(_.lastName.get).getOrElse("")
         val consumerName = consumer.map(_.name.get).getOrElse("")
+        consumerNameValue.set(consumerName)
         val formText =
           s"""I, $firstName $lastName, consent to the service provider <strong>$consumerName</strong> making the following actions on my behalf:
              |""".stripMargin
@@ -393,11 +400,16 @@ class BerlinGroupConsent extends MdcLoggable with RestHelper with APIMethods510 
       case Full(consent) if otpValue.is == consent.challenge =>
         Consents.consentProvider.vend.updateConsentStatus(consentId, ConsentStatus.valid)
         S.redirectTo(
-          s"$redirectUriValue?CONSENT_ID=${consentId}"
+          s"/confirm-bg-consent-request-redirect-uri?CONSENT_ID=${consentId}"
         )
       case _ =>
         S.error("Wrong OTP value")
     }
+  }
+
+  private def getTppRedirectUri() = {
+    val consentId = ObpS.param("CONSENT_ID") openOr ("")
+    s"$redirectUriValue?CONSENT_ID=${consentId}"
   }
 
   /**
@@ -408,6 +420,18 @@ class BerlinGroupConsent extends MdcLoggable with RestHelper with APIMethods510 
   def confirmBgConsentRequest: CssSel = {
     "#otp-value" #> SHtml.text(otpValue, otpValue(_)) &
       "type=submit" #> SHtml.onSubmitUnit(confirmConsentRequestProcessSca)
+  }
+
+  /**
+   * Renders the TPP Redirect URI  form for Berlin Group consent.
+   *
+   * @return CssSel for rendering the form.
+   */
+  def setTppRedirectUri: CssSel = {
+    "#confirm-bg-consent-redirect-uri-submit-button a [href]" #> getTppRedirectUri() &
+    "#confirm-bg-consent-redirect-uri-submit-button a [data-fallback]" #> tppNokRedirectUriValue.is &
+    "#confirm-bg-consent-redirect-uri-text *" #> s"""Consent has been created with success and now the user will be redirected back to his original app ${consumerNameValue.is}"""
+
   }
   
 }

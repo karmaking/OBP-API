@@ -151,6 +151,7 @@ object RequestHeader {
 
   final lazy val `X-Request-ID` = "X-Request-ID" // Berlin Group
   final lazy val `TPP-Redirect-URI` = "TPP-Redirect-URI" // Berlin Group
+  final lazy val `TPP-Nok-Redirect-URI` = "TPP-Nok-Redirect-URI" // Redirect URI in case of an error.
   final lazy val Date = "Date" // Berlin Group
   // Headers to support the signature function of Berlin Group
   final lazy val Digest = "Digest" // Berlin Group

@@ -770,7 +770,8 @@ object Consent extends MdcLoggable {
         )
       }
     }
-    val tppRedirectUrl: Option[HTTPParam] = callContext.map(_.requestHeaders).getOrElse(Nil).find(_.name == RequestHeader.`TPP-Redirect-URI`)
+    val tppRedirectUri: Option[HTTPParam] = callContext.map(_.requestHeaders).getOrElse(Nil).find(_.name == RequestHeader.`TPP-Redirect-URI`)
+    val tppNokRedirectUri: Option[HTTPParam] = callContext.map(_.requestHeaders).getOrElse(Nil).find(_.name == RequestHeader.`TPP-Nok-Redirect-URI`)
     Future.sequence(accounts ::: balances ::: transactions) map { views =>
       val json = ConsentJWT(
         createdByUserId = user.map(_.userId).getOrElse(""),
@@ -781,7 +782,7 @@ object Consent extends MdcLoggable {
         iat = currentTimeInSeconds,
         nbf = currentTimeInSeconds,
         exp = validUntilTimeInSeconds,
-        request_headers = tppRedirectUrl.toList,
+        request_headers = tppRedirectUri.toList ::: tppNokRedirectUri.toList,
         name = None,
         email = None,
         entitlements = Nil,
