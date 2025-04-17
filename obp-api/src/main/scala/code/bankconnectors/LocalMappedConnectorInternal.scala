@@ -2,6 +2,7 @@ package code.bankconnectors
 
 import code.fx.fx.TTL
 import code.api.Constant._
+import code.api.berlin.group.v1_3.model.TransactionStatus.mapTransactionStatus
 import code.api.cache.Caching
 import code.api.util.APIUtil._
 import code.api.util.ErrorMessages._
@@ -153,7 +154,7 @@ object LocalMappedConnectorInternal extends MdcLoggable {
             ""
           ),
           transDetailsSerialized,
-          status.toString,
+          mapTransactionStatus(status.toString),
           charge,
           "", // chargePolicy is not used in BG so far.
           Some(paymentServiceType.toString),

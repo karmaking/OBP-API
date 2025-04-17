@@ -27,7 +27,7 @@ object BerlinGroupCheck extends MdcLoggable {
 
   private def validateHeaders(verb: String, url: String, reqHeaders: List[HTTPParam], forwardResult: (Box[User], Option[CallContext])): (Box[User], Option[CallContext]) = {
     val headerMap = reqHeaders.map(h => h.name.toLowerCase -> h).toMap
-    val missingHeaders = if(url.contains(ApiVersion.berlinGroupV13.urlPrefix) && url.endsWith("/consent"))
+    val missingHeaders = if(url.contains(ApiVersion.berlinGroupV13.urlPrefix) && url.endsWith("/consents"))
       (berlinGroupMandatoryHeaders ++ berlinGroupMandatoryHeaderConsent).filterNot(headerMap.contains)
     else
       berlinGroupMandatoryHeaders.filterNot(headerMap.contains)
@@ -35,7 +35,11 @@ object BerlinGroupCheck extends MdcLoggable {
     if (missingHeaders.isEmpty) {
       forwardResult // All mandatory headers are present
     } else {
-      (fullBoxOrException(Empty ~> APIFailureNewStyle(s"${ErrorMessages.MissingMandatoryBerlinGroupHeaders}(${missingHeaders.mkString(", ")})", 400, forwardResult._2.map(_.toLight))), forwardResult._2)
+      if(missingHeaders.size == 1) {
+        (fullBoxOrException(Empty ~> APIFailureNewStyle(s"${ErrorMessages.MissingMandatoryBerlinGroupHeaders.replace("headers", "header")}(${missingHeaders.mkString(", ")})", 400, forwardResult._2.map(_.toLight))), forwardResult._2)
+      } else {
+        (fullBoxOrException(Empty ~> APIFailureNewStyle(s"${ErrorMessages.MissingMandatoryBerlinGroupHeaders}(${missingHeaders.mkString(", ")})", 400, forwardResult._2.map(_.toLight))), forwardResult._2)
+      }
     }
   }
 

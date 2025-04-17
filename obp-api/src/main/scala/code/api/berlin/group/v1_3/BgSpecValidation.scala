@@ -45,6 +45,14 @@ object BgSpecValidation {
     }
   }
 
+  def formatToISODate(date: Date): String = {
+    if (date == null) ""
+    else {
+      val localDate: LocalDate = date.toInstant.atZone(ZoneId.systemDefault()).toLocalDate
+      localDate.format(DateTimeFormatter.ISO_LOCAL_DATE)
+    }
+  }
+
   // Example usage
   def main(args: Array[String]): Unit = {
     val testDates = Seq(

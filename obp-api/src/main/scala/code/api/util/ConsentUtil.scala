@@ -731,7 +731,10 @@ object Consent extends MdcLoggable {
     }
     
     // 1. Add access
-    val accounts: List[Future[ConsentView]] = consent.access.accounts.getOrElse(Nil) map { account =>
+    val allAccesses = consent.access.accounts.getOrElse(Nil) :::
+      consent.access.balances.getOrElse(Nil) ::: // Balances access implies and Account access as well
+      consent.access.transactions.getOrElse(Nil) // Transactions access implies and Account access as well
+    val accounts: List[Future[ConsentView]] = allAccesses.distinct map { account =>
       Connector.connector.vend.getBankAccountByIban(account.iban.getOrElse(""), callContext) map { bankAccount =>
         logger.debug(s"createBerlinGroupConsentJWT.accounts.bankAccount: $bankAccount")
         val error = s"${InvalidConnectorResponse} IBAN: ${account.iban.getOrElse("")} ${handleBox(bankAccount._1)}"
@@ -767,7 +770,8 @@ object Consent extends MdcLoggable {
         )
       }
     }
-    val tppRedirectUrl: Option[HTTPParam] = callContext.map(_.requestHeaders).getOrElse(Nil).find(_.name == RequestHeader.`TPP-Redirect-URI`)
+    val tppRedirectUri: Option[HTTPParam] = callContext.map(_.requestHeaders).getOrElse(Nil).find(_.name == RequestHeader.`TPP-Redirect-URI`)
+    val tppNokRedirectUri: Option[HTTPParam] = callContext.map(_.requestHeaders).getOrElse(Nil).find(_.name == RequestHeader.`TPP-Nok-Redirect-URI`)
     Future.sequence(accounts ::: balances ::: transactions) map { views =>
       val json = ConsentJWT(
         createdByUserId = user.map(_.userId).getOrElse(""),
@@ -778,7 +782,7 @@ object Consent extends MdcLoggable {
         iat = currentTimeInSeconds,
         nbf = currentTimeInSeconds,
         exp = validUntilTimeInSeconds,
-        request_headers = tppRedirectUrl.toList,
+        request_headers = tppRedirectUri.toList ::: tppNokRedirectUri.toList,
         name = None,
         email = None,
         entitlements = Nil,

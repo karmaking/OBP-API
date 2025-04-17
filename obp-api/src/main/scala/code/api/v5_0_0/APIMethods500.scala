@@ -1234,6 +1234,10 @@ trait APIMethods500 {
             _ <- Future(Consents.consentProvider.vend.setJsonWebToken(createdConsent.consentId, consentJWT)) map {
               i => connectorEmptyResponse(i, callContext)
             }
+            validUntil = Helper.calculateValidTo(postConsentBodyCommonJson.valid_from, postConsentBodyCommonJson.time_to_live.getOrElse(3600))
+            _ <- Future(Consents.consentProvider.vend.setValidUntil(createdConsent.consentId, validUntil)) map {
+              i => connectorEmptyResponse(i, callContext)
+            }
             //we need to check `skip_consent_sca_for_consumer_id_pairs` props, to see if we really need the SCA flow. 
             //this is from callContext
             grantorConsumerId = callContext.map(_.consumer.toOption.map(_.consumerId.get)).flatten.getOrElse("Unknown")

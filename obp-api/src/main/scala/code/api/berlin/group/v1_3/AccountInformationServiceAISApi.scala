@@ -159,14 +159,19 @@ recurringIndicator:
              consentJson <- NewStyle.function.tryons(failMsg, 400, callContext) {
                json.extract[PostConsentJson]
              }
+             _ <- Helper.booleanToFuture(failMsg = BerlinGroupConsentAccessIsEmpty, cc=callContext) {
+               consentJson.access.accounts.isDefined ||
+               consentJson.access.balances.isDefined ||
+               consentJson.access.transactions.isDefined
+             }
              upperLimit = APIUtil.getPropsAsIntValue("berlin_group_frequency_per_day_upper_limit", 4)
              _ <- Helper.booleanToFuture(failMsg = FrequencyPerDayError, cc=callContext) {
                consentJson.frequencyPerDay > 0 && consentJson.frequencyPerDay <= upperLimit
              }
 
              _ <- Helper.booleanToFuture(failMsg = FrequencyPerDayMustBeOneError, cc=callContext) {
-               consentJson.recurringIndicator == true ||
-                 (consentJson.recurringIndicator == false && consentJson.frequencyPerDay == 1)
+               consentJson.recurringIndicator ||
+                 !consentJson.recurringIndicator && consentJson.frequencyPerDay == 1
              }
 
              failMsg = BgSpecValidation.getErrorMessage(consentJson.validUntil)

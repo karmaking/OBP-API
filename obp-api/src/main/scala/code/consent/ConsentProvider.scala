@@ -25,6 +25,7 @@ trait ConsentProvider {
   def getConsentsByUser(userId: String): List[MappedConsent]
   def createObpConsent(user: User, challengeAnswer: String, consentRequestId:Option[String], consumer: Option[Consumer] = None): Box[MappedConsent]
   def setJsonWebToken(consentId: String, jwt: String): Box[MappedConsent]
+  def setValidUntil(consentId: String, validUntil: Date): Box[MappedConsent]
   def revoke(consentId: String): Box[MappedConsent]
   def revokeBerlinGroupConsent(consentId: String): Box[MappedConsent]
   def checkAnswer(consentId: String, challenge: String): Box[MappedConsent]
@@ -190,7 +191,7 @@ trait ConsentTrait {
 
 object ConsentStatus extends Enumeration {
   type ConsentStatus = Value
-  val INITIATED, ACCEPTED, REJECTED, rejected, REVOKED,
+  val INITIATED, ACCEPTED, REJECTED, rejected, REVOKED, EXPIRED,
       // The following one only exist in case of BerlinGroup
       received, valid, revokedByPsu, expired, terminatedByTpp,
      //these added for UK Open Banking 

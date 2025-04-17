@@ -1,22 +1,20 @@
 package code.api.berlin.group.v1_3
 
-import java.text.SimpleDateFormat
-import java.util.Date
+import code.api.berlin.group.v1_3.model.TransactionStatus.mapTransactionStatus
 import code.api.berlin.group.v1_3.model._
 import code.api.util.APIUtil._
 import code.api.util.ErrorMessages.MissingPropsValueAtThisInstance
 import code.api.util.{APIUtil, ConsentJWT, CustomJsonFormats, JwtUtil}
-import code.bankconnectors.Connector
 import code.consent.ConsentTrait
 import code.model.ModeratedTransaction
 import com.openbankproject.commons.model.enums.AccountRoutingScheme
-import com.openbankproject.commons.model.{BankAccount, TransactionRequest, User, _}
+import com.openbankproject.commons.model._
 import net.liftweb.common.Box.tryo
 import net.liftweb.common.{Box, Full}
-import net.liftweb.json
 import net.liftweb.json.{JValue, parse}
 
-import scala.collection.immutable.List
+import java.text.SimpleDateFormat
+import java.util.Date
 
 case class JvalueCaseClass(jvalueToCaseclass: JValue)
 
@@ -136,14 +134,15 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats {
   )
   case class CreditorAccountJson(
     iban: String,
+    currency : Option[String] = None,
   )
   case class TransactionJsonV13(
     transactionId: String,
     creditorName: String,
     creditorAccount: CreditorAccountJson,
     transactionAmount: AmountOfMoneyV13,
-    bookingDate: Date,
-    valueDate: Date,
+    bookingDate: String,
+    valueDate: String,
     remittanceInformationUnstructured: String,
   )
   case class SingleTransactionJsonV13(
@@ -415,9 +414,9 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats {
       transactionId = transaction.id.value,
       creditorName = creditorName,
       creditorAccount = creditorAccount,
-      transactionAmount = AmountOfMoneyV13(APIUtil.stringOptionOrNull(transaction.currency), transaction.amount.get.toString()),
-      bookingDate = bookingDate,
-      valueDate = valueDate,
+      transactionAmount = AmountOfMoneyV13(APIUtil.stringOptionOrNull(transaction.currency), transaction.amount.get.toString().trim.stripPrefix("-")),
+      bookingDate = BgSpecValidation.formatToISODate(bookingDate) ,
+      valueDate = BgSpecValidation.formatToISODate(valueDate),
       remittanceInformationUnstructured = APIUtil.stringOptionOrNull(transaction.description)
     )
   }
@@ -450,9 +449,9 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats {
       transactionId = transactionRequest.id.value,
       creditorName = creditorName,
       creditorAccount = creditorAccount,
-      transactionAmount = AmountOfMoneyV13(transactionRequest.charge.value.currency, transactionRequest.charge.value.amount),
-      bookingDate = transactionRequest.start_date,
-      valueDate = transactionRequest.end_date,
+      transactionAmount = AmountOfMoneyV13(transactionRequest.charge.value.currency, transactionRequest.charge.value.amount.trim.stripPrefix("-")),
+      bookingDate = BgSpecValidation.formatToISODate(transactionRequest.start_date),
+      valueDate = BgSpecValidation.formatToISODate(transactionRequest.end_date),
       remittanceInformationUnstructured = remittanceInformationUnstructured
     )
   }
@@ -463,6 +462,7 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats {
    
     val creditorAccount = CreditorAccountJson(
       iban = iban,
+      currency = Some(bankAccount.currency)
     )
     TransactionsJsonV13(
       FromAccount(
@@ -647,10 +647,7 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats {
     val scaRedirectUrl = getPropsValue("psu_make_payment_sca_redirect_url")
       .openOr(MissingPropsValueAtThisInstance + "psu_make_payment_sca_redirect_url")
     InitiatePaymentResponseJson(
-      transactionStatus = transactionRequest.status match {
-        case "COMPLETED" => "ACCP"
-        case "INITIATED" => "RCVD"
-      },
+      transactionStatus = mapTransactionStatus(transactionRequest.status),
       paymentId = paymentId,
       _links = InitiatePaymentResponseLinks(
         scaRedirect = LinkHrefJson(s"$scaRedirectUrl/$paymentId"),

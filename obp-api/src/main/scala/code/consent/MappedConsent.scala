@@ -213,7 +213,21 @@ object MappedConsentProvider extends ConsentProvider {
       case _ =>
         Failure(ErrorMessages.UnknownError)
     } 
-  }  
+  }
+  override def setValidUntil(consentId: String, validUntil: Date): Box[MappedConsent] = {
+    MappedConsent.find(By(MappedConsent.mConsentId, consentId)) match {
+      case Full(consent) =>
+        tryo(consent
+          .mValidUntil(validUntil)
+          .saveMe())
+      case Empty =>
+        Empty ?~! ErrorMessages.ConsentNotFound
+      case Failure(msg, _, _) =>
+        Failure(msg)
+      case _ =>
+        Failure(ErrorMessages.UnknownError)
+    }
+  }
   override def revoke(consentId: String): Box[MappedConsent] = {
     MappedConsent.find(By(MappedConsent.mConsentId, consentId)) match {
       case Full(consent) if consent.status == ConsentStatus.REVOKED.toString =>
