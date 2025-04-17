@@ -166,7 +166,11 @@ jwt.use.ssl=false
 # Bypass TPP signature validation
 # bypass_tpp_signature_validation = false
 
-## Reject Berlin Group consents with status "received" after a defined time (in seconds)
+## Reject Berlin Group TRANSACTIONS with status "received" after a defined time (in seconds)
+# berlin_group_outdated_transactions_time_in_seconds = 300
+# berlin_group_outdated_transactions_interval_in_seconds =
+
+## Reject Berlin Group CONSENTS with status "received" after a defined time (in seconds)
 # berlin_group_outdated_consents_time_in_seconds = 300
 # berlin_group_outdated_consents_interval_in_seconds =
 

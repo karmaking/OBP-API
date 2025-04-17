@@ -107,7 +107,7 @@ import code.productfee.ProductFee
 import code.products.MappedProduct
 import code.ratelimiting.RateLimiting
 import code.regulatedentities.MappedRegulatedEntity
-import code.scheduler.{ConsentScheduler, DataBaseCleanerScheduler, DatabaseDriverScheduler, JobScheduler, MetricsArchiveScheduler}
+import code.scheduler.{ConsentScheduler, DataBaseCleanerScheduler, DatabaseDriverScheduler, JobScheduler, MetricsArchiveScheduler, TransactionScheduler}
 import code.scope.{MappedScope, MappedUserScope}
 import code.signingbaskets.{MappedSigningBasket, MappedSigningBasketConsent, MappedSigningBasketPayment}
 import code.snippet.{OAuthAuthorisation, OAuthWorkedThanks}
@@ -137,6 +137,7 @@ import code.regulatedentities.attribute.RegulatedEntityAttribute
 import com.openbankproject.commons.model.ErrorMessage
 import com.openbankproject.commons.util.Functions.Implicits._
 import com.openbankproject.commons.util.{ApiVersion, Functions}
+
 import javax.mail.internet.MimeMessage
 import net.liftweb.common._
 import net.liftweb.db.{DB, DBLogEntry}
@@ -730,6 +731,7 @@ class Boot extends MdcLoggable {
       case _ => // Do not start it
     }
     ConsentScheduler.startAll()
+    TransactionScheduler.startAll()
 
     
     APIUtil.getPropsAsBoolValue("enable_metrics_scheduler", true) match {
