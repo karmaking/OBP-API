@@ -644,8 +644,13 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats {
 //      Remark: This code may be
     //map OBP transactionRequestId to BerlinGroup PaymentId
     val paymentId = transactionRequest.id.value
-    val scaRedirectUrl = getPropsValue("psu_make_payment_sca_redirect_url")
+    val scaRedirectUrlPattern = getPropsValue("psu_make_payment_sca_redirect_url")
       .openOr(MissingPropsValueAtThisInstance + "psu_make_payment_sca_redirect_url")
+    val scaRedirectUrl =
+      if (scaRedirectUrlPattern.contains("PLACEHOLDER"))
+        scaRedirectUrlPattern.replace("PLACEHOLDER", paymentId)
+      else
+        s"$scaRedirectUrlPattern/${paymentId}"
     InitiatePaymentResponseJson(
       transactionStatus = mapTransactionStatus(transactionRequest.status),
       paymentId = paymentId,
