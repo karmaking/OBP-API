@@ -448,6 +448,8 @@ respectively the OAuth2 access token.
              //The card contains the account object, it mean the card account.
              (_, callContext) <- NewStyle.function.getPhysicalCardsForUser(u, callContext)
              (accounts, callContext) <- NewStyle.function.getBankAccounts(availablePrivateAccounts, callContext)
+             (canReadBalancesAccounts, callContext) <- NewStyle.function.getAccountCanReadBalancesOfBerlinGroup(u, callContext)
+             (canReadTransactionsAccounts, callContext) <- NewStyle.function.getAccountCanReadTransactionsOfBerlinGroup(u, callContext)
              //also see `getAccountList` endpoint
              bankAccountsFiltered = accounts.filter(bankAccount =>
                bankAccount.attributes.toList.flatten.find(attribute=>
@@ -456,7 +458,14 @@ respectively the OAuth2 access token.
                  attribute.value.equalsIgnoreCase("card")
                ).isDefined)
            } yield {
-             (JSONFactory_BERLIN_GROUP_1_3.createCardAccountListJson(bankAccountsFiltered, u), callContext)
+             (JSONFactory_BERLIN_GROUP_1_3.createCardAccountListJson(
+               bankAccountsFiltered,
+               canReadBalancesAccounts,
+               canReadTransactionsAccounts,
+               u
+             ),
+               callContext
+             )
            }
        }
      }
@@ -986,9 +995,19 @@ Give detailed information about the addressed account together with balance info
              (Full(u), callContext) <- authenticatedAccess(cc)
              _ <- passesPsd2Aisp(callContext)
              (account: BankAccount, callContext) <- NewStyle.function.getBankAccountByAccountId(AccountId(accountId), callContext)
+             (canReadBalancesAccounts, callContext) <- NewStyle.function.getAccountCanReadBalancesOfBerlinGroup(u, callContext)
+             (canReadTransactionsAccounts, callContext) <- NewStyle.function.getAccountCanReadTransactionsOfBerlinGroup(u, callContext)
              _ <- checkAccountAccess(ViewId(SYSTEM_READ_ACCOUNTS_BERLIN_GROUP_VIEW_ID), u, account, callContext)
            } yield {
-             (JSONFactory_BERLIN_GROUP_1_3.createAccountDetailsJson(account, u), callContext)
+             (
+               JSONFactory_BERLIN_GROUP_1_3.createAccountDetailsJson(
+                 account,
+                 canReadBalancesAccounts,
+                 canReadTransactionsAccounts,
+                 u
+               ),
+               callContext
+             )
            }
          }
        }
@@ -1040,9 +1059,11 @@ respectively the OAuth2 access token.
              (Full(u), callContext) <- authenticatedAccess(cc)
              _ <- passesPsd2Aisp(callContext)
              (account: BankAccount, callContext) <- NewStyle.function.getBankAccountByAccountId(AccountId(accountId), callContext)
+             (canReadBalancesAccounts, callContext) <- NewStyle.function.getAccountCanReadBalancesOfBerlinGroup(u, callContext)
+             (canReadTransactionsAccounts, callContext) <- NewStyle.function.getAccountCanReadTransactionsOfBerlinGroup(u, callContext)
              _ <- checkAccountAccess(ViewId(SYSTEM_READ_ACCOUNTS_BERLIN_GROUP_VIEW_ID), u, account, callContext)
            } yield {
-             (JSONFactory_BERLIN_GROUP_1_3.createCardAccountDetailsJson(account, u), callContext)
+             (JSONFactory_BERLIN_GROUP_1_3.createCardAccountDetailsJson(account, canReadBalancesAccounts, canReadTransactionsAccounts, u), callContext)
            }
        }
      }

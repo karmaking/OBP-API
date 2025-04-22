@@ -47,7 +47,7 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats {
   )
   
   case class CoreAccountLinksJsonV13(
-    balances: LinkHrefJson,
+    balances: Option[LinkHrefJson] = None,
     transactions: Option[LinkHrefJson] = None // These links are only supported, when the corresponding consent has been already granted.
   )
   
@@ -78,8 +78,8 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats {
   case class CoreCardAccountsJsonV13(cardAccounts: List[CoreAccountJsonV13])
 
   case class AccountDetailsLinksJsonV13(
-                                         balances: LinkHrefJson,
-                                         transactions: LinkHrefJson
+                                         balances: Option[LinkHrefJson],
+                                         transactions: Option[LinkHrefJson]
                                        )
 
   case class AccountJsonV13(
@@ -315,9 +315,9 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats {
         val (iBan: String, bBan: String) = getIbanAndBban(x)
         val commonPath = s"${OBP_BERLIN_GROUP_1_3.apiVersion.urlPrefix}/${OBP_BERLIN_GROUP_1_3.version}/accounts/${x.accountId.value}"
         val balanceRef = LinkHrefJson(s"/$commonPath/balances")
+        val canReadBalances = canReadBalancesAccounts.map(_.accountId.value).contains(x.accountId.value)
         val transactionRef = LinkHrefJson(s"/$commonPath/transactions")
         val canReadTransactions = canReadTransactionsAccounts.map(_.accountId.value).contains(x.accountId.value)
-
       
         CoreAccountJsonV13(
           resourceId = x.accountId.value,
@@ -328,7 +328,7 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats {
           cashAccountType = x.accountType,
           product = x.accountType,
           _links = CoreAccountLinksJsonV13(
-            balances = balanceRef,
+            balances = if(canReadBalances) Some(balanceRef) else None,
             transactions = if(canReadTransactions) Some(transactionRef) else None,
           )
         )
@@ -336,10 +336,18 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats {
     )
   }
 
-  def createCardAccountListJson(bankAccounts: List[BankAccount], user: User): CoreCardAccountsJsonV13 = {
+  def createCardAccountListJson(bankAccounts: List[BankAccount],
+                                canReadBalancesAccounts: List[BankIdAccountId],
+                                canReadTransactionsAccounts: List[BankIdAccountId],
+                                user: User): CoreCardAccountsJsonV13 = {
     CoreCardAccountsJsonV13(bankAccounts.map {
       x =>
         val (iBan: String, bBan: String) = getIbanAndBban(x)
+        val commonPath = s"${OBP_BERLIN_GROUP_1_3.apiVersion.urlPrefix}/${OBP_BERLIN_GROUP_1_3.version}/accounts/${x.accountId.value}"
+        val balanceRef = LinkHrefJson(s"/$commonPath/balances")
+        val canReadBalances = canReadBalancesAccounts.map(_.accountId.value).contains(x.accountId.value)
+        val transactionRef = LinkHrefJson(s"/$commonPath/transactions")
+        val canReadTransactions = canReadTransactionsAccounts.map(_.accountId.value).contains(x.accountId.value)
 
         CoreAccountJsonV13(
           resourceId = x.accountId.value,
@@ -349,19 +357,33 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats {
           name = x.name,
           cashAccountType = x.accountType,
           product = x.accountType,
-          _links = CoreAccountLinksJsonV13(LinkHrefJson(s"/${OBP_BERLIN_GROUP_1_3.apiVersion.urlPrefix}/${OBP_BERLIN_GROUP_1_3.version}/accounts/${x.accountId.value}/balances"))
+          _links = CoreAccountLinksJsonV13(
+            balances = if (canReadBalances) Some(balanceRef) else None,
+            transactions = if (canReadTransactions) Some(transactionRef) else None,
+          )
         )
     }
     )
   }
   
-  def createCardAccountDetailsJson(bankAccount: BankAccount, user: User): CardAccountDetailsJsonV13 = {
-    val accountDetailsJsonV13 = createAccountDetailsJson(bankAccount: BankAccount, user: User)
+  def createCardAccountDetailsJson(bankAccount: BankAccount,
+                                   canReadBalancesAccounts: List[BankIdAccountId],
+                                   canReadTransactionsAccounts: List[BankIdAccountId],
+                                   user: User): CardAccountDetailsJsonV13 = {
+    val accountDetailsJsonV13 = createAccountDetailsJson(bankAccount, canReadBalancesAccounts, canReadTransactionsAccounts, user)
     CardAccountDetailsJsonV13(accountDetailsJsonV13.account)
   }
   
-  def createAccountDetailsJson(bankAccount: BankAccount, user: User): AccountDetailsJsonV13 = {
+  def createAccountDetailsJson(bankAccount: BankAccount,
+                               canReadBalancesAccounts: List[BankIdAccountId],
+                               canReadTransactionsAccounts: List[BankIdAccountId],
+                               user: User): AccountDetailsJsonV13 = {
     val (iBan: String, bBan: String) = getIbanAndBban(bankAccount)
+    val commonPath = s"${OBP_BERLIN_GROUP_1_3.apiVersion.urlPrefix}/${OBP_BERLIN_GROUP_1_3.version}/accounts/${bankAccount.accountId.value}"
+    val balanceRef = LinkHrefJson(s"/$commonPath/balances")
+    val canReadBalances = canReadBalancesAccounts.map(_.accountId.value).contains(bankAccount.accountId.value)
+    val transactionRef = LinkHrefJson(s"/$commonPath/transactions")
+    val canReadTransactions = canReadTransactionsAccounts.map(_.accountId.value).contains(bankAccount.accountId.value)
     val account = AccountJsonV13(
       resourceId = bankAccount.accountId.value,
       iban = iBan,
@@ -370,8 +392,8 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats {
       cashAccountType = bankAccount.accountType,
       product = bankAccount.accountType,
       _links = AccountDetailsLinksJsonV13(
-        LinkHrefJson(s"/${OBP_BERLIN_GROUP_1_3.apiVersion.urlPrefix}/${OBP_BERLIN_GROUP_1_3.version}/accounts/${bankAccount.accountId.value}/balances"),
-        LinkHrefJson(s"/${OBP_BERLIN_GROUP_1_3.apiVersion.urlPrefix}/${OBP_BERLIN_GROUP_1_3.version}/accounts/${bankAccount.accountId.value}/transactions")
+        balances = if (canReadBalances) Some(balanceRef) else None,
+        transactions = if (canReadTransactions) Some(transactionRef) else None,
       ) 
     )
     AccountDetailsJsonV13(account)
