@@ -51,12 +51,12 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats {
     transactions: Option[LinkHrefJson] = None // These links are only supported, when the corresponding consent has been already granted.
   )
   
-  case class CoreAccountBalancesJson(
-    balanceAmount:AmountOfMoneyV13 = AmountOfMoneyV13("EUR","123"),
-    balanceType: String = "closingBooked",
-    lastChangeDateTime: String = "2019-01-28T06:26:52.185Z",
-    referenceDate: String = "2020-07-02",
-    lastCommittedTransaction: String = "string",
+  case class CoreAccountBalanceJson(
+    balanceAmount:AmountOfMoneyV13,// = AmountOfMoneyV13("EUR","123"),
+    balanceType: String //= "closingBooked",
+//    lastChangeDateTime: String = "2019-01-28T06:26:52.185Z",
+//    referenceDate: String = "2020-07-02",
+//    lastCommittedTransaction: String = "string",
   )
   case class CoreAccountJsonV13(
                                  resourceId: String,
@@ -70,7 +70,7 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats {
 //                                 linkedAccounts: String ="string",
 //                                 usage: String ="PRIV",
 //                                 details: String ="",
-//                                 balances: CoreAccountBalancesJson,// We put this under the _links, not need to show it here.
+                                 balances: Option[List[CoreAccountBalanceJson]] = None,
                                  _links: CoreAccountLinksJsonV13,
   )
 
@@ -318,6 +318,10 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats {
         val canReadBalances = canReadBalancesAccounts.map(_.accountId.value).contains(x.accountId.value)
         val transactionRef = LinkHrefJson(s"/$commonPath/transactions")
         val canReadTransactions = canReadTransactionsAccounts.map(_.accountId.value).contains(x.accountId.value)
+        val accountBalances = Some(List(CoreAccountBalanceJson(
+          balanceAmount = AmountOfMoneyV13(x.currency, x.balance.toString),
+          balanceType = "closingBooked"
+        )))
       
         CoreAccountJsonV13(
           resourceId = x.accountId.value,
@@ -327,6 +331,7 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats {
           name = x.name,
           cashAccountType = x.accountType,
           product = x.accountType,
+          balances = accountBalances,
           _links = CoreAccountLinksJsonV13(
             balances = if(canReadBalances) Some(balanceRef) else None,
             transactions = if(canReadTransactions) Some(transactionRef) else None,
@@ -349,6 +354,11 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats {
         val transactionRef = LinkHrefJson(s"/$commonPath/transactions")
         val canReadTransactions = canReadTransactionsAccounts.map(_.accountId.value).contains(x.accountId.value)
 
+        val accountBalances = Some(List(CoreAccountBalanceJson(
+          balanceAmount = AmountOfMoneyV13(x.currency, x.balance.toString),
+          balanceType = "closingBooked"
+        )))
+
         CoreAccountJsonV13(
           resourceId = x.accountId.value,
           iban = iBan,
@@ -357,6 +367,7 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats {
           name = x.name,
           cashAccountType = x.accountType,
           product = x.accountType,
+          balances = accountBalances,
           _links = CoreAccountLinksJsonV13(
             balances = if (canReadBalances) Some(balanceRef) else None,
             transactions = if (canReadTransactions) Some(transactionRef) else None,
