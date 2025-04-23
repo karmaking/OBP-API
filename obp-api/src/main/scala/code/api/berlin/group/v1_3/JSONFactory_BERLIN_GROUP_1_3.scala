@@ -7,6 +7,7 @@ import code.api.util.ErrorMessages.MissingPropsValueAtThisInstance
 import code.api.util.{APIUtil, ConsentJWT, CustomJsonFormats, JwtUtil}
 import code.consent.ConsentTrait
 import code.model.ModeratedTransaction
+import code.util.Helper.MdcLoggable
 import com.openbankproject.commons.model.enums.AccountRoutingScheme
 import com.openbankproject.commons.model._
 import net.liftweb.common.Box.tryo
@@ -18,7 +19,7 @@ import java.util.Date
 
 case class JvalueCaseClass(jvalueToCaseclass: JValue)
 
-object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats {
+object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
 
   case class ErrorMessageBG(category: String, code: String, path: Option[String], text: String)
   case class ErrorMessagesBG(tppMessages: List[ErrorMessageBG])
@@ -53,7 +54,7 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats {
   
   case class CoreAccountBalanceJson(
     balanceAmount:AmountOfMoneyV13,// = AmountOfMoneyV13("EUR","123"),
-    balanceType: String //= "closingBooked",
+    balanceType: String //= "openingBooked",
 //    lastChangeDateTime: String = "2019-01-28T06:26:52.185Z",
 //    referenceDate: String = "2020-07-02",
 //    lastCommittedTransaction: String = "string",
@@ -102,7 +103,7 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats {
   )
   case class AccountBalance(
                              balanceAmount : AmountOfMoneyV13 = AmountOfMoneyV13("EUR","123"),
-                             balanceType: String = "closingBooked",
+                             balanceType: String = "openingBooked",
                              lastChangeDateTime: Option[String] = None,
                              lastCommittedTransaction: Option[String] = None,
                              referenceDate: Option[String] = None,
@@ -309,7 +310,9 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats {
   def createAccountListJson(bankAccounts: List[BankAccount],
                             canReadBalancesAccounts:  List[BankIdAccountId],
                             canReadTransactionsAccounts:  List[BankIdAccountId],
-                            user: User): CoreAccountsJsonV13 = {
+                            user: User,
+                            withBalanceParam:Option[Boolean]
+  ): CoreAccountsJsonV13 = {
     CoreAccountsJsonV13(bankAccounts.map {
       x =>
         val (iBan: String, bBan: String) = getIbanAndBban(x)
@@ -318,10 +321,13 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats {
         val canReadBalances = canReadBalancesAccounts.map(_.accountId.value).contains(x.accountId.value)
         val transactionRef = LinkHrefJson(s"/$commonPath/transactions")
         val canReadTransactions = canReadTransactionsAccounts.map(_.accountId.value).contains(x.accountId.value)
-        val accountBalances = Some(List(CoreAccountBalanceJson(
-          balanceAmount = AmountOfMoneyV13(x.currency, x.balance.toString),
-          balanceType = "closingBooked"
-        )))
+        val accountBalances = if(withBalanceParam == Some(true)){
+          Some(List(CoreAccountBalanceJson(
+            balanceAmount = AmountOfMoneyV13(x.currency, x.balance.toString),
+            balanceType = "openingBooked")))
+        }else{
+          None
+        }
       
         CoreAccountJsonV13(
           resourceId = x.accountId.value,
@@ -354,11 +360,6 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats {
         val transactionRef = LinkHrefJson(s"/$commonPath/transactions")
         val canReadTransactions = canReadTransactionsAccounts.map(_.accountId.value).contains(x.accountId.value)
 
-        val accountBalances = Some(List(CoreAccountBalanceJson(
-          balanceAmount = AmountOfMoneyV13(x.currency, x.balance.toString),
-          balanceType = "closingBooked"
-        )))
-
         CoreAccountJsonV13(
           resourceId = x.accountId.value,
           iban = iBan,
@@ -367,7 +368,7 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats {
           name = x.name,
           cashAccountType = x.accountType,
           product = x.accountType,
-          balances = accountBalances,
+          balances = None,
           _links = CoreAccountLinksJsonV13(
             balances = if (canReadBalances) Some(balanceRef) else None,
             transactions = if (canReadTransactions) Some(transactionRef) else None,
