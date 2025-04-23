@@ -324,6 +324,12 @@ of the PSU at this ASPSP.
          cc =>
            for {
             (Full(u), callContext) <- authenticatedAccess(cc)
+            withBalanceParam <- NewStyle.function.tryons(s"$InvalidUrlParameters withBalance parameter can only take two values: TRUE or FALSE!", 500, callContext) {
+
+              val withBalance = APIUtil.getHttpRequestUrlParam(cc.url, "withBalance")
+              
+              if(withBalance.isEmpty)Some(true) else Some(withBalance.toBoolean)
+            }
             _ <- passesPsd2Aisp(callContext)
             (availablePrivateAccounts, callContext) <- NewStyle.function.getAccountListOfBerlinGroup(u, callContext)
             (canReadBalancesAccounts, callContext) <- NewStyle.function.getAccountCanReadBalancesOfBerlinGroup(u, callContext)
@@ -341,7 +347,8 @@ of the PSU at this ASPSP.
               bankAccountsFiltered,
               canReadBalancesAccounts,
               canReadTransactionsAccounts,
-              u
+              u,
+              withBalanceParam
             ), callContext)
           }
          }
