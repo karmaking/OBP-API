@@ -328,7 +328,7 @@ of the PSU at this ASPSP.
 
               val withBalance = APIUtil.getHttpRequestUrlParam(cc.url, "withBalance")
               
-              if(withBalance.isEmpty)Some(true) else Some(withBalance.toBoolean)
+              if(withBalance.isEmpty)Some(false) else Some(withBalance.toBoolean)
             }
             _ <- passesPsd2Aisp(callContext)
             (availablePrivateAccounts, callContext) <- NewStyle.function.getAccountListOfBerlinGroup(u, callContext)
