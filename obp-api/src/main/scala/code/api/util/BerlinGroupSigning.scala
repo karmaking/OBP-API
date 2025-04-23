@@ -148,9 +148,9 @@ object BerlinGroupSigning extends MdcLoggable {
    */
   def verifySignedRequest(body: Box[String], verb: String, url: String, reqHeaders: List[HTTPParam], forwardResult: (Box[User], Option[CallContext])): (Box[User], Option[CallContext]) = {
     def checkRequestIsSigned(requestHeaders: List[HTTPParam]): Boolean = {
-      requestHeaders.exists(_.name == RequestHeader.`TPP-Signature-Certificate`) &&
-      requestHeaders.exists(_.name == RequestHeader.Signature) &&
-        requestHeaders.exists(_.name == RequestHeader.Digest)
+      requestHeaders.exists(_.name.toLowerCase() == RequestHeader.`TPP-Signature-Certificate`.toLowerCase()) &&
+      requestHeaders.exists(_.name.toLowerCase() == RequestHeader.Signature.toLowerCase()) &&
+      requestHeaders.exists(_.name.toLowerCase() == RequestHeader.Digest.toLowerCase())
     }
     checkRequestIsSigned(forwardResult._2.map(_.requestHeaders).getOrElse(Nil)) match {
       case false =>
@@ -161,26 +161,29 @@ object BerlinGroupSigning extends MdcLoggable {
         X509.validateCertificate(certificate) match {
           case Full(true) => // PEM certificate is ok
             val digest = generateDigest(body.getOrElse(""))
-
-            val signatureHeaderValue = getHeaderValue(RequestHeader.Signature, requestHeaders)
-            val signature = parseSignatureHeader(signatureHeaderValue).getOrElse("signature", "NONE")
-            val headersToSign = parseSignatureHeader(signatureHeaderValue).getOrElse("headers", "").split(" ").toList
-            val headers = headersToSign.map(h =>
-              if (h.toLowerCase() == RequestHeader.Digest.toLowerCase()) {
-                s"$h: $digest"
-              } else {
-                s"$h: ${getHeaderValue(h, requestHeaders)}"
+            if(digest == getHeaderValue(RequestHeader.Digest, requestHeaders)) { // Verifying the Hash in the Digest Field
+              val signatureHeaderValue = getHeaderValue(RequestHeader.Signature, requestHeaders)
+              val signature = parseSignatureHeader(signatureHeaderValue).getOrElse("signature", "NONE")
+              val headersToSign = parseSignatureHeader(signatureHeaderValue).getOrElse("headers", "").split(" ").toList
+              val headers = headersToSign.map(h =>
+                if (h.toLowerCase() == RequestHeader.Digest.toLowerCase()) {
+                  s"$h: $digest"
+                } else {
+                  s"$h: ${getHeaderValue(h, requestHeaders)}"
+                }
+              )
+              val signingString = headers.mkString("\n")
+              val isVerified = verifySignature(signingString, signature, certificate.getPublicKey)
+              val isValidated = CertificateVerifier.validateCertificate(certificate)
+              val bypassValidation = APIUtil.getPropsAsBoolValue("bypass_tpp_signature_validation", defaultValue = false)
+              (isVerified, isValidated) match {
+                case (true, true) => forwardResult
+                case (true, false) if bypassValidation => forwardResult
+                case (true, false) => (Failure(ErrorMessages.X509PublicKeyCannotBeValidated), forwardResult._2)
+                case (false, _) => (Failure(ErrorMessages.X509PublicKeyCannotVerify), forwardResult._2)
               }
-            )
-            val signingString = headers.mkString("\n")
-            val isVerified = verifySignature(signingString, signature, certificate.getPublicKey)
-            val isValidated = CertificateVerifier.validateCertificate(certificate)
-            val bypassValidation = APIUtil.getPropsAsBoolValue("bypass_tpp_signature_validation", defaultValue = false)
-            (isVerified, isValidated) match {
-              case (true, true) => forwardResult
-              case (true, false) if bypassValidation => forwardResult
-              case (true, false) => (Failure(ErrorMessages.X509PublicKeyCannotBeValidated), forwardResult._2)
-              case (false, _) => (Failure(ErrorMessages.X509PublicKeyCannotVerify), forwardResult._2)
+            } else { // The two DIGEST hashes do NOT match, the integrity of the request body is NOT confirmed.
+              (Failure(ErrorMessages.X509PublicKeyCannotVerify), forwardResult._2)
             }
           case Failure(msg, t, c) => (Failure(msg, t, c), forwardResult._2) // PEM certificate is not valid
           case _ => (Failure(ErrorMessages.X509GeneralError), forwardResult._2) // PEM certificate cannot be validated
