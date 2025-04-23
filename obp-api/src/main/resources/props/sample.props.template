@@ -166,7 +166,11 @@ jwt.use.ssl=false
 # Bypass TPP signature validation
 # bypass_tpp_signature_validation = false
 
-## Reject Berlin Group consents with status "received" after a defined time (in seconds)
+## Reject Berlin Group TRANSACTIONS with status "received" after a defined time (in seconds)
+# berlin_group_outdated_transactions_time_in_seconds = 300
+# berlin_group_outdated_transactions_interval_in_seconds =
+
+## Reject Berlin Group CONSENTS with status "received" after a defined time (in seconds)
 # berlin_group_outdated_consents_time_in_seconds = 300
 # berlin_group_outdated_consents_interval_in_seconds =
 
@@ -795,8 +799,14 @@ display_internal_errors=false
 # - redirection_with_dedicated_start_of_authorization
 # - embedded
 # - decoupled
+#
 # In case that "psu_authentication_method = redirection" you must define
+# Please note that in case that redirect_url_value contains special word PLACEHOLDER it will be replaced with actual ID
+# http://127.0.0.1:8080/confirm-bg-consent-request?CONSENT_ID=PLACEHOLDER
 # psu_authentication_method_sca_redirect_url = redirect_url_value
+#
+# Please note that in case that redirect_url_value contains special word PLACEHOLDER it will be replaced with actual ID
+# http://127.0.0.1:8080/confirm-bg-consent-request?PAYMENT_ID=PLACEHOLDER
 # psu_make_payment_sca_redirect_url = redirect_url_value
 # -------------------------------------------------------------- Authentication methods --
 

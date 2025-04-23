@@ -1489,7 +1489,7 @@ trait APIMethods510 {
               i => connectorEmptyResponse(i, cc.callContext)
             }
             _ <- Helper.booleanToFuture(ConsentUserAlreadyAdded, cc = cc.callContext) {
-              consent.userId != null
+              Option(consent.userId).forall(_.isBlank) // checks whether userId is not populated
             }
             consent <- Future(Consents.consentProvider.vend.updateConsentUser(consentId, user)) map {
               i => connectorEmptyResponse(i, cc.callContext)
