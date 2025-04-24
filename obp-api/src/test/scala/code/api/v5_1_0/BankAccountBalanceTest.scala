@@ -28,66 +28,48 @@ class BankAccountBalanceTest extends V510ServerSetup with DefaultUsers {
   
   def createMockBalance(bankId: String, accountId: String): String = {
     val json = bankAccountBalanceRequestJsonV510
-    val entitlement = Entitlement.entitlement.vend.addEntitlement("", resourceUser1.userId, CanCreateBankAccountBalance.toString)
-    val request = (v5_1_0_Request / "banks" / bankId / "accounts" / accountId / "balances").POST <@ user1
+    val request = (v5_1_0_Request / "accounts" / accountId / "balances").POST <@ user1
     val response = makePostRequest(request, write(json))
-    Entitlement.entitlement.vend.deleteEntitlement(entitlement)
     (response.body.extract[BankAccountBalanceResponseJsonV510].balance_id)
   }
   
   feature("Create Bank Account Balance") {
     
     scenario("401 Unauthorized", Create, VersionOfApi) {
-      val request = (v5_1_0_Request / "banks" / bankId / "accounts" / accountId / "balances").POST
+      val request = (v5_1_0_Request / "accounts" / accountId / "balances").POST
       val response = makePostRequest(request, write(bankAccountBalanceRequestJsonV510))
       response.code should equal(401)
       response.body.extract[ErrorMessage].message should equal(ErrorMessages.UserNotLoggedIn)
     }
 
-    scenario("403 Forbidden (no role)", Create, VersionOfApi) {
-      val request = (v5_1_0_Request / "banks" / bankId / "accounts" / accountId / "balances").POST <@ user1
-      val response = makePostRequest(request, write(bankAccountBalanceRequestJsonV510))
-      response.code should equal(403)
-      response.body.extract[ErrorMessage].message should startWith(ErrorMessages.UserHasMissingRoles + CanCreateBankAccountBalance)
-    }
-
     scenario("201 Success + Field Echo", Create, VersionOfApi) {
-      val entitlement = Entitlement.entitlement.vend.addEntitlement("", resourceUser1.userId, CanCreateBankAccountBalance.toString)
-      val request = (v5_1_0_Request / "banks" / bankId / "accounts" / accountId / "balances").POST <@ user1
+      val request = (v5_1_0_Request / "accounts" / accountId / "balances").POST <@ user1
       val response = makePostRequest(request, write(bankAccountBalanceRequestJsonV510))
       response.code should equal(201)
       val created = response.body.extract[BankAccountBalanceResponseJsonV510]
       created.balance_type should equal(bankAccountBalanceRequestJsonV510.balance_type)
       created.balance_amount should equal(bankAccountBalanceRequestJsonV510.balance_amount)
       created.account_id should equal(accountId)
-      Entitlement.entitlement.vend.deleteEntitlement(entitlement)
     }
   }
 
   feature("Update Bank Account Balance") {
     
     scenario("401 Unauthorized", Update, VersionOfApi) {
-      val request = (v5_1_0_Request / "banks" / bankId / "accounts" / accountId / "balances" / balanceId).PUT
+      val request = (v5_1_0_Request / "accounts" / accountId / "balances" / balanceId).PUT
       val response = makePutRequest(request, write(bankAccountBalanceRequestJsonV510))
       response.code should equal(401)
     }
 
-    scenario("403 Forbidden", Update, VersionOfApi) {
-      val request = (v5_1_0_Request / "banks" / bankId / "accounts" / accountId / "balances" / balanceId).PUT <@ user1
-      val response = makePutRequest(request, write(bankAccountBalanceRequestJsonV510))
-      response.code should equal(403)
-    }
 
     scenario("200 Success", Update, VersionOfApi) {
       lazy val bankId = testBankId1.value
       lazy val accountId = testAccountId1.value
       lazy val balanceId = createMockBalance(bankId, accountId)
       
-      val entitlement = Entitlement.entitlement.vend.addEntitlement("", resourceUser1.userId, CanUpdateBankAccountBalance.toString)
-      val request = (v5_1_0_Request / "banks" / bankId / "accounts" / accountId / "balances" / balanceId).PUT <@ user1
+      val request = (v5_1_0_Request / "accounts" / accountId / "balances" / balanceId).PUT <@ user1
       val response = makePutRequest(request, write(bankAccountBalanceRequestJsonV510))
       response.code should equal(200) 
-      Entitlement.entitlement.vend.deleteEntitlement(entitlement)
     }
   }
 
@@ -97,15 +79,9 @@ class BankAccountBalanceTest extends V510ServerSetup with DefaultUsers {
     lazy val balanceId = createMockBalance(bankId, accountId)
     
     scenario("401 Unauthorized", Delete, VersionOfApi) {
-      val request = (v5_1_0_Request / "banks" / bankId / "accounts" / accountId / "balances" / balanceId).DELETE
+      val request = (v5_1_0_Request / "accounts" / accountId / "balances" / balanceId).DELETE
       val response = makeDeleteRequest(request)
       response.code should equal(401)
-    }
-
-    scenario("403 Forbidden", Delete, VersionOfApi) {
-      val request = (v5_1_0_Request / "banks" / bankId / "accounts" / accountId / "balances" / balanceId).DELETE <@ user1
-      val response = makeDeleteRequest(request)
-      response.code should equal(403)
     }
 
     scenario("204 Success", Delete, VersionOfApi) {
@@ -113,11 +89,9 @@ class BankAccountBalanceTest extends V510ServerSetup with DefaultUsers {
       lazy val accountId = testAccountId1.value
       lazy val balanceId = createMockBalance(bankId, accountId)
       
-      val entitlement = Entitlement.entitlement.vend.addEntitlement("", resourceUser1.userId, CanDeleteBankAccountBalance.toString)
-      val request = (v5_1_0_Request / "banks" / bankId / "accounts" / accountId / "balances" / balanceId).DELETE <@ user1
+      val request = (v5_1_0_Request / "accounts" / accountId / "balances" / balanceId).DELETE <@ user1
       val response = makeDeleteRequest(request)
       response.code should equal(204)
-      Entitlement.entitlement.vend.deleteEntitlement(entitlement)
     }
   }
 
@@ -127,25 +101,17 @@ class BankAccountBalanceTest extends V510ServerSetup with DefaultUsers {
     lazy val balanceId = createMockBalance(bankId, accountId)
     
     scenario("401 Unauthorized", GetAll, VersionOfApi) {
-      val request = (v5_1_0_Request / "banks" / bankId / "accounts" / accountId / "balances").GET
+      val request = (v5_1_0_Request / "accounts" / accountId / "balances").GET
       val response = makeGetRequest(request)
       response.code should equal(401)
-    }
-
-    scenario("403 Forbidden", GetAll, VersionOfApi) {
-      val request = (v5_1_0_Request / "banks" / bankId / "accounts" / accountId / "balances").GET <@ user1
-      val response = makeGetRequest(request)
-      response.code should equal(403)
     }
 
     scenario("200 Success", GetAll, VersionOfApi) {
       lazy val bankId = testBankId1.value
       lazy val accountId = testAccountId1.value
-      val entitlement = Entitlement.entitlement.vend.addEntitlement("", resourceUser1.userId, CanGetBankAccountBalances.toString)
-      val request = (v5_1_0_Request / "banks" / bankId / "accounts" / accountId / "balances").GET <@ user1
+      val request = (v5_1_0_Request / "accounts" / accountId / "balances").GET <@ user1
       val response = makeGetRequest(request)
       response.code should equal(200)
-      Entitlement.entitlement.vend.deleteEntitlement(entitlement)
     }
   }
 
@@ -154,26 +120,18 @@ class BankAccountBalanceTest extends V510ServerSetup with DefaultUsers {
     lazy val accountId = testAccountId1.value
     
     scenario("401 Unauthorized", GetOne, VersionOfApi) {
-      val request = (v5_1_0_Request / "banks" / bankId / "accounts" / accountId / "balances" / balanceId).GET
+      val request = (v5_1_0_Request / "accounts" / accountId / "balances" / balanceId).GET
       val response = makeGetRequest(request)
       response.code should equal(401)
-    }
-
-    scenario("403 Forbidden", GetOne, VersionOfApi) {
-      val request = (v5_1_0_Request / "banks" / bankId / "accounts" / accountId / "balances" / balanceId).GET <@ user1
-      val response = makeGetRequest(request)
-      response.code should equal(403)
     }
 
     scenario("200 Success", GetOne, VersionOfApi) {
       lazy val bankId = testBankId1.value
       lazy val accountId = testAccountId1.value
       lazy val balanceId = createMockBalance(bankId, accountId)
-      val entitlement = Entitlement.entitlement.vend.addEntitlement("", resourceUser1.userId, CanGetBankAccountBalance.toString)
-      val request = (v5_1_0_Request / "banks" / bankId / "accounts" / accountId / "balances" / balanceId).GET <@ user1
+      val request = (v5_1_0_Request / "accounts" / accountId / "balances" / balanceId).GET <@ user1
       val response = makeGetRequest(request)
       response.code should equal(200)
-      Entitlement.entitlement.vend.deleteEntitlement(entitlement)
     }
   }
 }

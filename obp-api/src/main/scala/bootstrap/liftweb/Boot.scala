@@ -137,7 +137,7 @@ import code.regulatedentities.attribute.RegulatedEntityAttribute
 import com.openbankproject.commons.model.ErrorMessage
 import com.openbankproject.commons.util.Functions.Implicits._
 import com.openbankproject.commons.util.{ApiVersion, Functions}
-
+import code.bankaccountbalance.BankAccountBalance
 import javax.mail.internet.MimeMessage
 import net.liftweb.common._
 import net.liftweb.db.{DB, DBLogEntry}
@@ -1129,7 +1129,7 @@ object ToSchemify {
     CustomerAccountLink,
     TransactionIdMapping,
     RegulatedEntityAttribute,
-    code.bankaccountbalance.BankAccountBalance
+    BankAccountBalance
   )
 
   // start grpc server

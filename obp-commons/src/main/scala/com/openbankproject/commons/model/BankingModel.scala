@@ -398,12 +398,12 @@ case class AccountBalances(
   label: String,
   bankId: String,
   accountRoutings: List[AccountRouting],
-  balances: List[OneAccountBalance],
+  balances: List[BankAccountBalance],
   overallBalance: AmountOfMoney,
   overallBalanceDate: Date
 )
 
-case class OneAccountBalance(
+case class BankAccountBalance(
   balance: AmountOfMoney,
   balanceType: String,
 )

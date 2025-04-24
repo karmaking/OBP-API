@@ -19,10 +19,10 @@ class BankAccountBalance extends BankAccountBalanceTrait with LongKeyedMapper[Ba
   //this is the smallest unit of currency! eg. cents, yen, pence, øre, etc.
   object BalanceAmount extends MappedLong(this)
 
-  val foreignMappedBankAccount: Box[MappedBankAccount] = code.model.dataAccess.MappedBankAccount.find(
-    By(MappedBankAccount.theAccountId, AccountId_.get)
-  )
-  val foreignMappedBankAccountCurrency = foreignMappedBankAccount.map(_.currency).getOrElse("EUR")
+//  val foreignMappedBankAccount: Box[MappedBankAccount] = code.model.dataAccess.MappedBankAccount.find(
+//    By(MappedBankAccount.theAccountId, AccountId_.get)
+//  )
+  val foreignMappedBankAccountCurrency = "EUR" //foreignMappedBankAccount.map(_.currency).getOrElse("EUR")
   
   override def balanceId: BalanceId = BalanceId(BalanceId_.get)
   override def accountId: AccountId = AccountId(AccountId_.get)

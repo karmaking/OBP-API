@@ -1071,7 +1071,7 @@ trait RabbitMQConnector_vOct2024 extends Connector with MdcLoggable {
       bankId=bankIdExample.value,
       accountRoutings=List( AccountRouting(scheme=accountRoutingSchemeExample.value,
       address=accountRoutingAddressExample.value)),
-      balances=List( OneAccountBalance(balance= AmountOfMoney(currency=balanceCurrencyExample.value,
+      balances=List( BankAccountBalance(balance= AmountOfMoney(currency=balanceCurrencyExample.value,
       amount=balanceAmountExample.value),
       balanceType="string")),
       overallBalance= AmountOfMoney(currency=currencyExample.value,

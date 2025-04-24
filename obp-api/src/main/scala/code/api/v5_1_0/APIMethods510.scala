@@ -208,8 +208,7 @@ trait APIMethods510 {
         InvalidJsonFormat,
         UnknownError
       ),
-      List(apiTagAccount, apiTagBalance),
-      Some(List(canCreateBankAccountBalance))
+      List(apiTagAccount, apiTagBalance)
     )
 
     lazy val createBankAccountBalance: OBPEndpoint = {
@@ -256,8 +255,7 @@ trait APIMethods510 {
         UserHasMissingRoles,
         UnknownError
       ),
-      List(apiTagAccount, apiTagBalance),
-      Some(List(canGetBankAccountBalance))
+      List(apiTagAccount, apiTagBalance)
     )
 
     lazy val getBankAccountBalanceById: OBPEndpoint = {
@@ -295,8 +293,7 @@ trait APIMethods510 {
         UserHasMissingRoles,
         UnknownError
       ),
-      List(apiTagAccount, apiTagBalance),
-      Some(List(canGetBankAccountBalances))
+      List(apiTagAccount, apiTagBalance)
     )
 
     lazy val getAllBankAccountBalances: OBPEndpoint = {
@@ -335,8 +332,7 @@ trait APIMethods510 {
         InvalidJsonFormat,
         UnknownError
       ),
-      List(apiTagAccount, apiTagBalance),
-      Some(List(canUpdateBankAccountBalance))
+      List(apiTagAccount, apiTagBalance)
     )
 
     lazy val updateBankAccountBalance: OBPEndpoint = {
@@ -383,8 +379,7 @@ trait APIMethods510 {
         UserHasMissingRoles,
         UnknownError
       ),
-      List(apiTagAccount, apiTagBalance),
-      Some(List(canDeleteBankAccountBalance))
+      List(apiTagAccount, apiTagBalance)
     )
 
     lazy val deleteBankAccountBalance: OBPEndpoint = {
