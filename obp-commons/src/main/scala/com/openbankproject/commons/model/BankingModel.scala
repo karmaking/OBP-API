@@ -228,6 +228,12 @@ trait BankAccount{
   def attributes  : Option[List[Attribute]] = None
 }
 
+trait BankAccountBalanceTrait {
+  def accountId : AccountId
+  def balanceType: String
+  def balanceAmount: BigDecimal
+}
+
 //This class is used for propagate the BankAccount as the parameters over different methods.
 case class BankAccountInMemory(
   //BankAccount Trait
@@ -383,12 +389,12 @@ case class AccountBalances(
   label: String,
   bankId: String,
   accountRoutings: List[AccountRouting],
-  balances: List[BankAccountBalance],
+  balances: List[OneAccountBalance],
   overallBalance: AmountOfMoney,
   overallBalanceDate: Date
 )
 
-case class BankAccountBalance(
+case class OneAccountBalance(
   balance: AmountOfMoney,
   balanceType: String,
 )

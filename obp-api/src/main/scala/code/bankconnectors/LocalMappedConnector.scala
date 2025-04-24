@@ -990,7 +990,7 @@ object LocalMappedConnector extends Connector with MdcLoggable {
           label = bankAccount.label,
           bankId = bankAccount.bankId.value,
           accountRoutings = bankAccount.accountRoutings.map(accountRounting => AccountRouting(accountRounting.scheme, accountRounting.address)),
-          balances = List(BankAccountBalance(AmountOfMoney(bankAccount.currency, bankAccount.balance.toString),"OpeningBooked")),
+          balances = List(OneAccountBalance(AmountOfMoney(bankAccount.currency, bankAccount.balance.toString),"OpeningBooked")),
           overallBalance = AmountOfMoney(bankAccount.currency, bankAccount.balance.toString),
           overallBalanceDate = now
         )
