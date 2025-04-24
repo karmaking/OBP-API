@@ -611,6 +611,23 @@ case class SyncExternalUserJson(user_id: String)
 
 case class UserValidatedJson(is_validated: Boolean)
 
+
+case class BankAccountBalanceRequestJsonV510(
+  balance_type: String,
+  balance_amount: String
+)
+
+case class BankAccountBalanceResponseJsonV510(
+  account_id: String,
+  balance_id: String,
+  balance_type: String,
+  balance_amount: String
+)
+
+case class BankAccountBalancesJsonV510(
+  balances: List[BankAccountBalanceResponseJsonV510]
+)
+
 object JSONFactory510 extends CustomJsonFormats {
 
   def createTransactionRequestJson(tr : TransactionRequest, transactionRequestAttributes: List[TransactionRequestAttributeTrait] ) : TransactionRequestJsonV510 = {
@@ -651,7 +668,7 @@ object JSONFactory510 extends CustomJsonFormats {
           createTransactionRequestJson(transactionRequest, transactionRequestAttributes)
       ))
   }
-  
+
   def createViewJson(view: View): CustomViewJsonV510 = {
     val alias =
       if (view.usePublicAliasIfOneExists)
@@ -1073,7 +1090,7 @@ object JSONFactory510 extends CustomJsonFormats {
       logo_url =  if (c.logoUrl.get == null || c.logoUrl.get.isEmpty ) null else Some(c.logoUrl.get)
     )
   }
-  
+
   def createConsumersJson(consumers:List[Consumer]) = {
     ConsumersJsonV510(consumers.map(createConsumerJSON(_,None)))
   }
@@ -1100,7 +1117,7 @@ object JSONFactory510 extends CustomJsonFormats {
           agent_number = agent.number
         )))
   }
-  
+
   def createRegulatedEntityAttributeJson(attribute: RegulatedEntityAttributeTrait): RegulatedEntityAttributeResponseJsonV510 = {
     RegulatedEntityAttributeResponseJsonV510(
       regulated_entity_id = attribute.regulatedEntityId.value,
@@ -1119,7 +1136,20 @@ object JSONFactory510 extends CustomJsonFormats {
       attributes.map(createRegulatedEntityAttributeJson)
     )
   }
-  
+
+  def createBankAccountBalanceJson(balance: BankAccountBalanceTrait): BankAccountBalanceResponseJsonV510 = {
+    BankAccountBalanceResponseJsonV510(
+      balance_id = balance.balanceId.value,
+      account_id = balance.accountId.value,
+      balance_type = balance.balanceType,
+      balance_amount = balance.balanceAmount.toString
+    )
+  }
+
+  def createBankAccountBalancesJson(balances: List[BankAccountBalanceTrait]): BankAccountBalancesJsonV510 = {
+    BankAccountBalancesJsonV510(
+      balances.map(createBankAccountBalanceJson)
+    )
+  }
 
 }
-

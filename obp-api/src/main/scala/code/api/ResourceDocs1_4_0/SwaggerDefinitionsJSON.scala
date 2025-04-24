@@ -5669,7 +5669,22 @@ object SwaggerDefinitionsJSON {
   lazy val regulatedEntityAttributesJsonV510 = RegulatedEntityAttributesJsonV510(
     List(regulatedEntityAttributeResponseJsonV510)
   )
+  
+  lazy val bankAccountBalanceRequestJsonV510 = BankAccountBalanceRequestJsonV510(
+    balance_type = balanceTypeExample.value,
+    balance_amount = balanceAmountExample.value
+  )
 
+  lazy val bankAccountBalanceResponseJsonV510 = BankAccountBalanceResponseJsonV510(
+    balance_id = balanceIdExample.value,
+    account_id = accountIdExample.value,
+    balance_type = balanceTypeExample.value,
+    balance_amount = balanceAmountExample.value
+  )
+
+  lazy val bankAccountBalancesJsonV510 = BankAccountBalancesJsonV510(
+    balances = List(bankAccountBalanceResponseJsonV510)
+  )
   //The common error or success format.
   //Just some helper format to use in Json 
   case class NotSupportedYet()

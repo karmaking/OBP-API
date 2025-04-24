@@ -298,6 +298,12 @@ object ExampleValue {
   lazy val accountTypeExample = ConnectorField("AC","A short code that represents the type of the account as provided by the bank.")
 
   lazy val balanceAmountExample = ConnectorField("50.89", "The balance on the account.")
+  
+  lazy val balanceTypeExample = ConnectorField("openingBooked", "The balance type.")
+  glossaryItems += makeGlossaryItem("balance_type", balanceTypeExample)
+  
+  lazy val balanceIdExample = ConnectorField("7uy8a7e4-6d02-40e3-a129-0b2bf89de8uh", "A string that MUST uniquely identify the Account Balance on this OBP instance, can be used in all cache.")
+  glossaryItems += makeGlossaryItem("balance_id", balanceIdExample)
 
   lazy val amountExample = ConnectorField("10.12", "The balance on the account.")
 

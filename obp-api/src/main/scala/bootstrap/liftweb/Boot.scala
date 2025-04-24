@@ -1129,7 +1129,7 @@ object ToSchemify {
     CustomerAccountLink,
     TransactionIdMapping,
     RegulatedEntityAttribute,
-    BankAccountBalance
+    code.bankaccountbalance.BankAccountBalance
   )
 
   // start grpc server

@@ -136,6 +136,14 @@ object RegulatedEntityId {
   def unapply(id : String) = Some(RegulatedEntityId(id))
 }
 
+case class BalanceId(val value : String) {
+  override def toString = value
+}
+
+object BalanceId {
+  def unapply(id : String) = Some(BalanceId(id))
+}
+
 case class AccountId(val value : String) {
   override def toString = value
 }
@@ -229,7 +237,8 @@ trait BankAccount{
 }
 
 trait BankAccountBalanceTrait {
-  def accountId : AccountId
+  def balanceId: BalanceId
+  def accountId: AccountId
   def balanceType: String
   def balanceAmount: BigDecimal
 }
