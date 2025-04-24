@@ -6,6 +6,7 @@ import code.util.{Helper, MappedUUID}
 import com.openbankproject.commons.model.{AccountId, BalanceId, BankAccountBalanceTrait}
 import net.liftweb.common.{Box, Empty, Full, Logger}
 import net.liftweb.mapper._
+import net.liftweb.util.Helpers.tryo
 
 
 class BankAccountBalance extends BankAccountBalanceTrait with LongKeyedMapper[BankAccountBalance] with CreatedUpdated with IdPK {
@@ -19,10 +20,12 @@ class BankAccountBalance extends BankAccountBalanceTrait with LongKeyedMapper[Ba
   //this is the smallest unit of currency! eg. cents, yen, pence, øre, etc.
   object BalanceAmount extends MappedLong(this)
 
-//  val foreignMappedBankAccount: Box[MappedBankAccount] = code.model.dataAccess.MappedBankAccount.find(
-//    By(MappedBankAccount.theAccountId, AccountId_.get)
-//  )
-  val foreignMappedBankAccountCurrency = "EUR" //foreignMappedBankAccount.map(_.currency).getOrElse("EUR")
+  val foreignMappedBankAccountCurrency = tryo{code.model.dataAccess.MappedBankAccount
+    .find(
+      By(MappedBankAccount.theAccountId, AccountId_.get))
+    .map(_.currency)
+    .getOrElse("EUR")
+  }.getOrElse("EUR")
   
   override def balanceId: BalanceId = BalanceId(BalanceId_.get)
   override def accountId: AccountId = AccountId(AccountId_.get)
