@@ -305,6 +305,12 @@ object Glossary extends MdcLoggable  {
 					|"""
 	)
 
+	glossaryItems += GlossaryItem(
+		title = "Roles of Open Bank Project",
+		description =
+			s"""<ol>${ApiRole.availableRoles.sorted.map(i => "<li>" + i + "</li>").mkString}</ol>""".stripMargin
+	)
+
 
 
 
