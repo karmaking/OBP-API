@@ -582,22 +582,22 @@ class Consumer extends LongKeyedMapper[Consumer] with CreatedUpdated{
   object createdByUserId extends MappedString(this, 36)
 
   object perSecondCallLimit extends MappedLong(this) {
-    override def defaultValue = -1
+    override def defaultValue: Long = APIUtil.getPropsAsLongValue("rate_limiting_per_second", -1)
   }
   object perMinuteCallLimit extends MappedLong(this) {
-    override def defaultValue = -1
+    override def defaultValue: Long = APIUtil.getPropsAsLongValue("rate_limiting_per_minute", -1)
   }
   object perHourCallLimit extends MappedLong(this) {
-    override def defaultValue = -1
+    override def defaultValue: Long = APIUtil.getPropsAsLongValue("rate_limiting_per_hour", -1)
   }
   object perDayCallLimit extends MappedLong(this) {
-    override def defaultValue = -1
+    override def defaultValue: Long = APIUtil.getPropsAsLongValue("rate_limiting_per_day", -1)
   }
   object perWeekCallLimit extends MappedLong(this) {
-    override def defaultValue = -1
+    override def defaultValue : Long = APIUtil.getPropsAsLongValue("rate_limiting_per_week", -1)
   }
   object perMonthCallLimit extends MappedLong(this) {
-    override def defaultValue = -1
+    override def defaultValue : Long = APIUtil.getPropsAsLongValue("rate_limiting_per_month", -1)
   }
   object clientCertificate extends MappedString(this, 4000)
   object company extends MappedString(this, 100) {
