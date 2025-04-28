@@ -30,6 +30,7 @@ object MappedConsentProvider extends ConsentProvider {
   override def updateConsentStatus(consentId: String, status: ConsentStatus): Box[MappedConsent] = {
     MappedConsent.find(By(MappedConsent.mConsentId, consentId)) match {
       case Full(consent) =>
+        Consent.expireAllPreviousValidBerlinGroupConsents(consent)
         tryo(consent
           .mStatus(status.toString)
           .mLastActionDate(now) //maybe not right, but for the create we use the `now`, we need to update it later.

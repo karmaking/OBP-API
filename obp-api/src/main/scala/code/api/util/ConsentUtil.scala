@@ -1036,6 +1036,25 @@ object Consent extends MdcLoggable {
     consentsOfBank
   }
 
+  def expireAllPreviousValidBerlinGroupConsents(consent: MappedConsent): Boolean = {
+    if(consent.status == ConsentStatus.valid.toString &&
+      consent.apiStandard == ApiVersion.berlinGroupV13.apiStandard) {
+      MappedConsent.findAll( // Find all
+          By(MappedConsent.mApiStandard, ApiVersion.berlinGroupV13.apiStandard), // Berlin Group
+          By(MappedConsent.mRecurringIndicator, true), // recurring
+          By(MappedConsent.mStatus, ConsentStatus.valid.toString), // and valid consents
+          By(MappedConsent.mUserId, consent.userId), // for the same PSU
+          By(MappedConsent.mConsumerId, consent.consumerId), // from the same TPP
+        ).filterNot(_.consentId == consent.consentId) // Exclude current consent
+        .map(c => // Set to expired
+          c.mStatus(ConsentStatus.expired.toString)
+            .mLastActionDate(new Date()).save
+        ).forall(_ == true)
+    } else {
+      true
+    }
+  }
+
   /*
     // Example Usage
     val box1: Box[String] = Full("Hello, World!")
