@@ -4109,7 +4109,7 @@ trait APIMethods510 {
       nameOf(getBankAccountsBalancesThroughView),
       "GET",
       "/banks/BANK_ID/views/VIEW_ID/balances",
-      "Get Account Balances by BANK_ID",
+      "Get Account Balances by BANK_ID through the VIEW_ID",
       """Get the Balances for the Account specified by BANK_ID.""",
       EmptyBody,
       accountBalancesV400Json,
