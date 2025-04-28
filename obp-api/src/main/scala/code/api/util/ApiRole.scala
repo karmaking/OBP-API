@@ -1011,20 +1011,20 @@ object ApiRole extends MdcLoggable{
   lazy val canGetBankLevelEndpointTag = CanGetBankLevelEndpointTag()
 
 //  // BankAccountBalance roles
-//  case class CanCreateBankAccountBalance(requiresBankId: Boolean = false) extends ApiRole
-//  lazy val canCreateBankAccountBalance = CanCreateBankAccountBalance()
+  case class CanCreateBankAccountBalance(requiresBankId: Boolean = true) extends ApiRole
+  lazy val canCreateBankAccountBalance = CanCreateBankAccountBalance()
 //
 //  case class CanGetBankAccountBalance(requiresBankId: Boolean = false) extends ApiRole
 //  lazy val canGetBankAccountBalance = CanGetBankAccountBalance()
 //
 //  case class CanGetBankAccountBalances(requiresBankId: Boolean = false) extends ApiRole
 //  lazy val canGetBankAccountBalances = CanGetBankAccountBalances()
-//
-//  case class CanUpdateBankAccountBalance(requiresBankId: Boolean = false) extends ApiRole
-//  lazy val canUpdateBankAccountBalance = CanUpdateBankAccountBalance()
-//
-//  case class CanDeleteBankAccountBalance(requiresBankId: Boolean = false) extends ApiRole
-//  lazy val canDeleteBankAccountBalance = CanDeleteBankAccountBalance()
+
+  case class CanUpdateBankAccountBalance(requiresBankId: Boolean = true) extends ApiRole
+  lazy val canUpdateBankAccountBalance = CanUpdateBankAccountBalance()
+
+  case class CanDeleteBankAccountBalance(requiresBankId: Boolean = true) extends ApiRole
+  lazy val canDeleteBankAccountBalance = CanDeleteBankAccountBalance()
 
   case class CanCreateHistoricalTransactionAtBank(requiresBankId: Boolean = true) extends ApiRole
   lazy val canCreateHistoricalTransactionAtBank = CanCreateHistoricalTransactionAtBank()

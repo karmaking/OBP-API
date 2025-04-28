@@ -5676,8 +5676,9 @@ object SwaggerDefinitionsJSON {
   )
 
   lazy val bankAccountBalanceResponseJsonV510 = BankAccountBalanceResponseJsonV510(
-    balance_id = balanceIdExample.value,
+    bank_id = bankIdExample.value,
     account_id = accountIdExample.value,
+    balance_id = balanceIdExample.value,
     balance_type = balanceTypeExample.value,
     balance_amount = balanceAmountExample.value
   )

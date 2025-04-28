@@ -237,9 +237,9 @@ trait BankAccount{
 }
 
 trait BankAccountBalanceTrait {
-  def balanceId: BalanceId
   def bankId: BankId
   def accountId: AccountId
+  def balanceId: BalanceId
   def balanceType: String
   def balanceAmount: BigDecimal
 }

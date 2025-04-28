@@ -618,6 +618,7 @@ case class BankAccountBalanceRequestJsonV510(
 )
 
 case class BankAccountBalanceResponseJsonV510(
+  bank_id: String,
   account_id: String,
   balance_id: String,
   balance_type: String,
@@ -1139,8 +1140,9 @@ object JSONFactory510 extends CustomJsonFormats {
 
   def createBankAccountBalanceJson(balance: BankAccountBalanceTrait): BankAccountBalanceResponseJsonV510 = {
     BankAccountBalanceResponseJsonV510(
-      balance_id = balance.balanceId.value,
+      bank_id = balance.bankId.value,
       account_id = balance.accountId.value,
+      balance_id = balance.balanceId.value,
       balance_type = balance.balanceType,
       balance_amount = balance.balanceAmount.toString
     )

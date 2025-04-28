@@ -1,9 +1,9 @@
 package code.bankaccountbalance
 
 import code.model.dataAccess.MappedBankAccount
-import code.util.{Helper, MappedUUID}
+import code.util.Helper
 import com.openbankproject.commons.ExecutionContext.Implicits.global
-import com.openbankproject.commons.model.{AccountId, BankAccountBalanceTrait}
+import com.openbankproject.commons.model.{BankId, AccountId}
 import net.liftweb.common.{Box, Empty, Full}
 import net.liftweb.mapper._
 import net.liftweb.util.Helpers.tryo
@@ -35,8 +35,9 @@ trait BankAccountBalanceProviderTrait {
   def getBankAccountBalanceById(balanceId: BalanceId): Future[Box[BankAccountBalance]]
 
   def createOrUpdateBankAccountBalance(
-    balanceId: Option[BalanceId],
+    bankId: BankId,
     accountId: AccountId,
+    balanceId: Option[BalanceId],
     balanceType: String,
     balanceAmount: BigDecimal): Future[Box[BankAccountBalance]]
 
@@ -61,8 +62,9 @@ object MappedBankAccountBalanceProvider extends BankAccountBalanceProviderTrait 
   }
 
   override def createOrUpdateBankAccountBalance(
-    balanceId: Option[BalanceId],
+    bankId: BankId,
     accountId: AccountId,
+    balanceId: Option[BalanceId],
     balanceType: String,
     balanceAmount: BigDecimal
   ): Future[Box[BankAccountBalance]] = Future {
@@ -82,6 +84,7 @@ object MappedBankAccountBalanceProvider extends BankAccountBalanceProviderTrait 
               case Full(balance) =>
                 tryo {
                   balance
+                    .BankId_(bankId.value)
                     .AccountId_(accountId.value)
                     .BalanceType(balanceType)
                     .BalanceAmount(Helper.convertToSmallestCurrencyUnits(balanceAmount, account.currency))
@@ -92,6 +95,7 @@ object MappedBankAccountBalanceProvider extends BankAccountBalanceProviderTrait 
           case _ =>
             tryo {
               BankAccountBalance.create
+                .BankId_(bankId.value)
                 .AccountId_(accountId.value)
                 .BalanceType(balanceType)
                 .BalanceAmount(Helper.convertToSmallestCurrencyUnits(balanceAmount, account.currency))

@@ -1,11 +1,11 @@
 package code.api.util.newstyle
 
 import code.api.util.APIUtil.{OBPReturnType, unboxFullOrFail}
-import code.api.util.ErrorMessages.{InvalidConnectorResponse}
+import code.api.util.ErrorMessages.{BankAccountBalanceNotFoundById, InvalidConnectorResponse}
 import code.api.util.CallContext
-import code.bankaccountbalance.{BankAccountBalanceX}
+import code.bankaccountbalance.BankAccountBalanceX
 import com.openbankproject.commons.ExecutionContext.Implicits.global
-import com.openbankproject.commons.model.{AccountId, BankAccountBalanceTrait}
+import com.openbankproject.commons.model.{AccountId, BankAccountBalanceTrait, BankId}
 import com.github.dwickern.macros.NameOf.nameOf
 import com.openbankproject.commons.model.BalanceId
 
@@ -39,7 +39,7 @@ object BankAccountBalanceNewStyle {
           unboxFullOrFail(
             result,
             callContext,
-            s"$InvalidConnectorResponse ${nameOf(getBankAccountBalanceById _)}",
+            s"$BankAccountBalanceNotFoundById Current BALANCE_ID(${balanceId.value})",
             404),
           callContext
         )
@@ -47,15 +47,17 @@ object BankAccountBalanceNewStyle {
   }
 
   def createOrUpdateBankAccountBalance(
-    balanceId: Option[BalanceId],
+    bankId: BankId,
     accountId: AccountId,
+    balanceId: Option[BalanceId],
     balanceType: String,
     balanceAmount: BigDecimal,
     callContext: Option[CallContext]
   ): OBPReturnType[BankAccountBalanceTrait] = {
     BankAccountBalanceX.bankAccountBalanceProvider.vend.createOrUpdateBankAccountBalance(
-      balanceId,
+      bankId,
       accountId,
+      balanceId,
       balanceType,
       balanceAmount
     ).map {

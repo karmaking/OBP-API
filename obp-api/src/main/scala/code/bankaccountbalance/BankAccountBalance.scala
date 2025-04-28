@@ -13,8 +13,8 @@ class BankAccountBalance extends BankAccountBalanceTrait with LongKeyedMapper[Ba
   override def getSingleton = BankAccountBalance
 
   object BankId_ extends MappedUUID(this)
-  object BalanceId_ extends MappedUUID(this)
   object AccountId_ extends MappedUUID(this)
+  object BalanceId_ extends MappedUUID(this)
   object BalanceType extends MappedString(this, 255)
   //this is the smallest unit of currency! eg. cents, yen, pence, øre, etc.
   object BalanceAmount extends MappedLong(this)
@@ -26,9 +26,9 @@ class BankAccountBalance extends BankAccountBalanceTrait with LongKeyedMapper[Ba
     .getOrElse("EUR")
   }.getOrElse("EUR")
   
-  override def balanceId: BalanceId = BalanceId(BalanceId_.get)
   override def bankId: BankId = BankId(BankId_.get)
   override def accountId: AccountId = AccountId(AccountId_.get)
+  override def balanceId: BalanceId = BalanceId(BalanceId_.get)
   override def balanceType: String = BalanceType.get
   override def balanceAmount: BigDecimal = Helper.smallestCurrencyUnitToBigDecimal(BalanceAmount.get, foreignMappedBankAccountCurrency)
 }
