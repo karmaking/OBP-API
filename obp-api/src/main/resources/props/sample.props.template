@@ -847,6 +847,13 @@ featured_apis=elasticSearchWarehouseV300
 # redis_port=6379
 # In case isn't defined default value is root
 # rate_limiting.exclude_endpoints=root
+## Default rate limiting for a new consumer
+# rate_limiting_per_second = -1
+# rate_limiting_per_minute = -1
+# rate_limiting_per_hour = -1
+# rate_limiting_per_day = -1
+# rate_limiting_per_week = -1
+# rate_limiting_per_month = -1
 # -----------------------------------------------------
 
 # -- Migration Scripts ----------------------------

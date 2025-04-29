@@ -1,13 +1,14 @@
 package code.ratelimiting
 
-import java.util.Date
+import code.api.util.APIUtil
 
+import java.util.Date
 import code.util.{MappedUUID, UUIDString}
 import net.liftweb.common.{Box, Full}
 import net.liftweb.mapper._
 import net.liftweb.util.Helpers.tryo
-
 import com.openbankproject.commons.ExecutionContext.Implicits.global
+
 import scala.concurrent.Future
 
 object MappedRateLimitingProvider extends RateLimitingProviderTrait {
@@ -180,22 +181,22 @@ class RateLimiting extends RateLimitingTrait with LongKeyedMapper[RateLimiting] 
   object ConsumerId extends MappedString(this, 250)
   object BankId extends UUIDString(this)
   object PerSecondCallLimit extends MappedLong(this) {
-    override def defaultValue = -1
+    override def defaultValue: Long = APIUtil.getPropsAsLongValue("rate_limiting_per_second", -1)
   }
   object PerMinuteCallLimit extends MappedLong(this) {
-    override def defaultValue = -1
+    override def defaultValue: Long = APIUtil.getPropsAsLongValue("rate_limiting_per_minute", -1)
   }
   object PerHourCallLimit extends MappedLong(this) {
-    override def defaultValue = -1
+    override def defaultValue: Long = APIUtil.getPropsAsLongValue("rate_limiting_per_hour", -1)
   }
   object PerDayCallLimit extends MappedLong(this) {
-    override def defaultValue = -1
+    override def defaultValue: Long = APIUtil.getPropsAsLongValue("rate_limiting_per_day", -1)
   }
   object PerWeekCallLimit extends MappedLong(this) {
-    override def defaultValue = -1
+    override def defaultValue: Long = APIUtil.getPropsAsLongValue("rate_limiting_per_week", -1)
   }
   object PerMonthCallLimit extends MappedLong(this) {
-    override def defaultValue = -1
+    override def defaultValue: Long = APIUtil.getPropsAsLongValue("rate_limiting_per_month", -1)
   }
   object FromDate extends MappedDateTime(this)
   object ToDate extends MappedDateTime(this)

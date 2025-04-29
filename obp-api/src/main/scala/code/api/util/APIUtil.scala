@@ -3309,6 +3309,13 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
       val reqHeaders = result._2.map(_.requestHeaders).getOrElse(Nil)
       // Berlin Group checks
       BerlinGroupCheck.validate(body, verb, url, reqHeaders, result)
+    } map {
+      result =>
+        val excludeFunctions = getPropsValue("rate_limiting.exclude_endpoints", "root").split(",").toList
+        cc.resourceDocument.map(_.partialFunctionName) match {
+          case Some(functionName) if excludeFunctions.exists(_ == functionName) => result
+          case _ => RateLimitingUtil.underCallLimits(result)
+        }
     } map { result =>
       result._1 match {
         case Empty if result._2.flatMap(_.consumer).isDefined => // There is no error and Consumer is defined
