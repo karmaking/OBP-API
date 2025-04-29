@@ -1893,4 +1893,29 @@ trait Connector extends MdcLoggable {
     regulatedEntityId: String,
     callContext: Option[CallContext]
   ): OBPReturnType[Box[RegulatedEntityTrait]] = Future{(Failure(setUnimplementedError(nameOf(getRegulatedEntityByEntityId _))), callContext)}
+
+  def getBankAccountBalancesByAccountId(
+    accountId: AccountId,
+    callContext: Option[CallContext]
+  ): OBPReturnType[Box[List[BankAccountBalanceTrait]]] = Future{(Failure(setUnimplementedError(nameOf(getBankAccountBalancesByAccountId(_, _)))), callContext)}
+
+  def getBankAccountBalanceById(
+    balanceId: BalanceId,
+    callContext: Option[CallContext]
+  ): OBPReturnType[Box[BankAccountBalanceTrait]] = Future{(Failure(setUnimplementedError(nameOf(getBankAccountBalanceById _))), callContext)}
+
+
+  def createOrUpdateBankAccountBalance(
+    bankId: BankId,
+    accountId: AccountId,
+    balanceId: Option[BalanceId],
+    balanceType: String,
+    balanceAmount: BigDecimal,
+    callContext: Option[CallContext]
+  ): OBPReturnType[Box[BankAccountBalanceTrait]] = Future{(Failure(setUnimplementedError(nameOf(createOrUpdateBankAccountBalance _))), callContext)}
+
+  def deleteBankAccountBalance(
+    balanceId: BalanceId,
+    callContext: Option[CallContext]
+  ): OBPReturnType[Box[Boolean]] = Future{(Failure(setUnimplementedError(nameOf(deleteBankAccountBalance _))), callContext)}
 }

@@ -250,6 +250,8 @@ object ErrorMessages {
   val InvalidUserProvider = "OBP-20103: Invalid DAuth User Provider."
   val UserNotFoundByProviderAndProvideId= "OBP-20104: User not found by PROVIDER and PROVIDER_ID."
 
+  val BankAccountBalanceNotFoundById = "OBP-20105: BankAccountBalance not found. Please specify a valid value for BALANCE_ID."
+
   // OAuth 2
   val ApplicationNotIdentified = "OBP-20200: The application cannot be identified. "
   val Oauth2IsNotAllowed = "OBP-20201: OAuth2 is not allowed at this instance."

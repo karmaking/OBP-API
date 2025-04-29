@@ -188,7 +188,6 @@ trait APIMethods510 {
           }
     }
 
-
     staticResourceDocs += ResourceDoc(
       createRegulatedEntity,
       implementedInApiVersion,
@@ -3899,7 +3898,7 @@ trait APIMethods510 {
       nameOf(getBankAccountsBalancesThroughView),
       "GET",
       "/banks/BANK_ID/views/VIEW_ID/balances",
-      "Get Account Balances by BANK_ID",
+      "Get Account Balances by BANK_ID through the VIEW_ID",
       """Get the Balances for the Account specified by BANK_ID.""",
       EmptyBody,
       accountBalancesV400Json,
@@ -4840,6 +4839,228 @@ trait APIMethods510 {
       }
     }
 
+    staticResourceDocs += ResourceDoc(
+      createBankAccountBalance,
+      implementedInApiVersion,
+      nameOf(createBankAccountBalance),
+      "POST",
+      "/banks/BANK_ID/accounts/ACCOUNT_ID/balances",
+      "Create Bank Account Balance",
+      s"""Create a new Balance for a Bank Account.
+         |
+         |${userAuthenticationMessage(true)}
+         |
+         |""",
+      bankAccountBalanceRequestJsonV510,
+      bankAccountBalanceResponseJsonV510,
+      List(
+        $UserNotLoggedIn,
+        UserHasMissingRoles,
+        InvalidJsonFormat,
+        UnknownError
+      ),
+      List(apiTagAccount, apiTagBalance),
+      Some(List(canCreateBankAccountBalance))
+    )
+
+    lazy val createBankAccountBalance: OBPEndpoint = {
+      case "banks" :: BankId(bankId):: "accounts" :: AccountId(accountId) :: "balances" :: Nil JsonPost json -> _ => {
+        cc =>
+          implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(u), callContext) <- SS.user
+            postedData <- NewStyle.function.tryons(s"$InvalidJsonFormat The Json body should be the $BankAccountBalanceRequestJsonV510 ", 400, callContext) {
+              json.extract[BankAccountBalanceRequestJsonV510]
+            }
+            balanceAmount <- NewStyle.function.tryons(s"$InvalidNumber Current balance_amount is  ${postedData.balance_amount}" , 400, cc.callContext) {
+              BigDecimal(postedData.balance_amount)
+            }
+            (balance, callContext) <- code.api.util.newstyle.BankAccountBalanceNewStyle.createOrUpdateBankAccountBalance(
+              bankId = bankId,
+              accountId = accountId,
+              balanceId = None,
+              balanceType = postedData.balance_type,
+              balanceAmount = balanceAmount,
+              callContext = cc.callContext
+            )
+          } yield {
+            (JSONFactory510.createBankAccountBalanceJson(balance), HttpCode.`201`(callContext))
+          }
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
+      getBankAccountBalanceById,
+      implementedInApiVersion,
+      nameOf(getBankAccountBalanceById),
+      "GET",
+      "/banks/BANK_ID/accounts/ACCOUNT_ID/balances/BALANCE_ID",
+      "Get Bank Account Balance By ID",
+      s"""Get a specific Bank Account Balance by its BALANCE_ID.
+         |
+         |${userAuthenticationMessage(true)}
+         |
+         |""",
+      EmptyBody,
+      bankAccountBalanceResponseJsonV510,
+      List(
+        $UserNotLoggedIn,
+        UserHasMissingRoles,
+        UnknownError
+      ),
+      List(apiTagAccount, apiTagBalance)
+    )
+
+    lazy val getBankAccountBalanceById: OBPEndpoint = {
+      case "banks" :: BankId(bankId):: "accounts" :: AccountId(accountId) :: "balances" :: BalanceId(balanceId) :: Nil JsonGet _ => {
+        cc =>
+          implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(u), callContext) <- SS.user
+            (balance, callContext) <- code.api.util.newstyle.BankAccountBalanceNewStyle.getBankAccountBalanceById(
+              balanceId,
+              callContext
+            )
+          } yield {
+            (JSONFactory510.createBankAccountBalanceJson(balance), HttpCode.`200`(callContext))
+          }
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
+      getAllBankAccountBalances,
+      implementedInApiVersion,
+      nameOf(getAllBankAccountBalances),
+      "GET",
+      "/banks/BANK_ID/accounts/ACCOUNT_ID/balances",
+      "Get All Bank Account Balances",
+      s"""Get all Balances for a Bank Account.
+         |
+         |${userAuthenticationMessage(true)}
+         |
+         |""",
+      EmptyBody,
+      bankAccountBalancesJsonV510,
+      List(
+        $UserNotLoggedIn,
+        UserHasMissingRoles,
+        UnknownError
+      ),
+      List(apiTagAccount, apiTagBalance)
+    )
+
+    lazy val getAllBankAccountBalances: OBPEndpoint = {
+      case "banks" :: BankId(bankId):: "accounts" :: AccountId(accountId) :: "balances" :: Nil JsonGet _ => {
+        cc =>
+          implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(u), callContext) <- SS.user
+            (balances, callContext) <- code.api.util.newstyle.BankAccountBalanceNewStyle.getBankAccountBalances(
+              accountId,
+              callContext
+            )
+          } yield {
+            (JSONFactory510.createBankAccountBalancesJson(balances), HttpCode.`200`(callContext))
+          }
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
+      updateBankAccountBalance,
+      implementedInApiVersion,
+      nameOf(updateBankAccountBalance),
+      "PUT",
+      "/banks/BANK_ID/accounts/ACCOUNT_ID/balances/BALANCE_ID",
+      "Update Bank Account Balance",
+      s"""Update an existing Bank Account Balance specified by BALANCE_ID.
+         |
+         |${userAuthenticationMessage(true)}
+         |
+         |""",
+      bankAccountBalanceRequestJsonV510,
+      bankAccountBalanceResponseJsonV510,
+      List(
+        $UserNotLoggedIn,
+        UserHasMissingRoles,
+        InvalidJsonFormat,
+        UnknownError
+      ),
+      List(apiTagAccount, apiTagBalance),
+      Some(List(canUpdateBankAccountBalance))
+    )
+
+    lazy val updateBankAccountBalance: OBPEndpoint = {
+      case "banks" :: BankId(bankId):: "accounts" :: AccountId(accountId) :: "balances" :: BalanceId(balanceId) :: Nil JsonPut json -> _ => {
+        cc =>
+          implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(u), callContext) <- SS.user
+            postedData <- NewStyle.function.tryons(s"$InvalidJsonFormat The Json body should be the BankAccountBalanceRequestJsonV510 ", 400, callContext) {
+              json.extract[BankAccountBalanceRequestJsonV510]
+            }
+            balanceAmount <- NewStyle.function.tryons(s"$InvalidNumber Current balance_amount is  ${postedData.balance_amount}" , 400, cc.callContext) {
+              BigDecimal(postedData.balance_amount)
+            }
+            (balance, callContext) <- code.api.util.newstyle.BankAccountBalanceNewStyle.getBankAccountBalanceById(
+              balanceId,
+              callContext
+            )
+            (balance, callContext) <- code.api.util.newstyle.BankAccountBalanceNewStyle.createOrUpdateBankAccountBalance(
+              bankId = bankId,
+              accountId = accountId,
+              balanceId = Some(balanceId),
+              balanceType = postedData.balance_type,
+              balanceAmount = balanceAmount,
+              callContext = callContext
+            )
+          } yield {
+            (JSONFactory510.createBankAccountBalanceJson(balance), HttpCode.`200`(callContext))
+          }
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
+      deleteBankAccountBalance,
+      implementedInApiVersion,
+      nameOf(deleteBankAccountBalance),
+      "DELETE",
+      "/banks/BANK_ID/accounts/ACCOUNT_ID/balances/BALANCE_ID",
+      "Delete Bank Account Balance",
+      s"""Delete a Bank Account Balance specified by BALANCE_ID.
+         |
+         |${userAuthenticationMessage(true)}
+         |
+         |""",
+      EmptyBody,
+      EmptyBody,
+      List(
+        $UserNotLoggedIn,
+        UserHasMissingRoles,
+        UnknownError
+      ),
+      List(apiTagAccount, apiTagBalance),
+      Some(List(canDeleteBankAccountBalance))
+    )
+
+    lazy val deleteBankAccountBalance: OBPEndpoint = {
+      case "banks" :: BankId(bankId):: "accounts" :: AccountId(accountId) :: "balances" :: BalanceId(balanceId) :: Nil JsonDelete _ => {
+        cc =>
+          implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(u), callContext) <- SS.user
+            (balance, callContext) <- code.api.util.newstyle.BankAccountBalanceNewStyle.getBankAccountBalanceById(
+              balanceId,
+              callContext
+            )
+            (deleted, callContext) <- code.api.util.newstyle.BankAccountBalanceNewStyle.deleteBankAccountBalance(
+              balanceId,
+              callContext
+            )
+          } yield {
+            (Full(deleted), HttpCode.`204`(callContext))
+          }
+      }
+    }
 
   }
 }

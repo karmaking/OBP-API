@@ -136,6 +136,14 @@ object RegulatedEntityId {
   def unapply(id : String) = Some(RegulatedEntityId(id))
 }
 
+case class BalanceId(val value : String) {
+  override def toString = value
+}
+
+object BalanceId {
+  def unapply(id : String) = Some(BalanceId(id))
+}
+
 case class AccountId(val value : String) {
   override def toString = value
 }
@@ -226,6 +234,14 @@ trait BankAccount{
   //So here, we introduce the field for the OBP presentation layer to filter the accounts. 
   //also @`Reads a list of card accounts` in Berlin group V1.3 ..
   def attributes  : Option[List[Attribute]] = None
+}
+
+trait BankAccountBalanceTrait {
+  def bankId: BankId
+  def accountId: AccountId
+  def balanceId: BalanceId
+  def balanceType: String
+  def balanceAmount: BigDecimal
 }
 
 //This class is used for propagate the BankAccount as the parameters over different methods.
