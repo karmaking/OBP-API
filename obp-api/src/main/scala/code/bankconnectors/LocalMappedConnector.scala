@@ -32,6 +32,7 @@ import code.customeraddress.CustomerAddressX
 import code.customerattribute.CustomerAttributeX
 import code.directdebit.DirectDebits
 import code.endpointTag.EndpointTag
+import code.bankaccountbalance.BankAccountBalanceX
 import com.openbankproject.commons.model.EndpointTagT
 import code.fx.{MappedFXRate, fx}
 import code.kycchecks.KycChecks
@@ -5362,6 +5363,52 @@ object LocalMappedConnector extends Connector with MdcLoggable {
     MappedRegulatedEntityProvider.getRegulatedEntityByEntityId(regulatedEntityId)
   } map {
     (_, callContext)
-  } 
+  }
+
+  override def getBankAccountBalancesByAccountId(
+    accountId: AccountId,
+    callContext: Option[CallContext]
+  ): OBPReturnType[Box[List[BankAccountBalanceTrait]]] = {
+    BankAccountBalanceX.bankAccountBalanceProvider.vend.getBankAccountBalances(accountId).map {
+      (_, callContext)
+    }
+  }
+
+  override def getBankAccountBalanceById(
+    balanceId: BalanceId,
+    callContext: Option[CallContext]
+  ): OBPReturnType[Box[BankAccountBalanceTrait]] = {
+    BankAccountBalanceX.bankAccountBalanceProvider.vend.getBankAccountBalanceById(balanceId).map {
+      (_, callContext)
+    }
+  }
+
+  override def createOrUpdateBankAccountBalance(
+    bankId: BankId,
+    accountId: AccountId,
+    balanceId: Option[BalanceId],
+    balanceType: String,
+    balanceAmount: BigDecimal,
+    callContext: Option[CallContext]
+  ): OBPReturnType[Box[BankAccountBalanceTrait]] = {
+    BankAccountBalanceX.bankAccountBalanceProvider.vend.createOrUpdateBankAccountBalance(
+      bankId,
+      accountId,
+      balanceId,
+      balanceType,
+      balanceAmount
+    ).map {
+      (_, callContext)
+    }
+  }
+
+  override def deleteBankAccountBalance(
+    balanceId: BalanceId,
+    callContext: Option[CallContext]
+  ): OBPReturnType[Box[Boolean]] = {
+    BankAccountBalanceX.bankAccountBalanceProvider.vend.deleteBankAccountBalance(balanceId).map {
+      (_, callContext)
+    }
+  }
   
 }
