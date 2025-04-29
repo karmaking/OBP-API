@@ -158,6 +158,15 @@ class WebUI extends MdcLoggable{
   def aboutText: CssSel = {
     "#main-about-text *" #> scala.xml.Unparsed(getWebUiPropsValue("webui_index_page_about_section_text", ""))
   }
+  
+  def aLiveHtml: CssSel = {
+    "#get-disabled-versions *" #> scala.xml.Unparsed(APIUtil.getDisabledVersions.toString())&
+    "#get-enabled-versions *" #> scala.xml.Unparsed(APIUtil.getEnabledVersions.toString())&
+    "#get-disabled-endpoint-operation-ids *" #> scala.xml.Unparsed(APIUtil.getDisabledEndpointOperationIds.toString())&
+    "#get-enabled-endpoint-operation-ids *" #> scala.xml.Unparsed(APIUtil.getEnabledEndpointOperationIds.toString())&
+    "#alive-disabled-api-mode *" #> scala.xml.Unparsed(getWebUiPropsValue("server_mode", "apis,portal"))
+  }
+
 
   def topText: CssSel = {
     "#top-text *" #> scala.xml.Unparsed(getWebUiPropsValue("webui_top_text", ""))
