@@ -11,11 +11,13 @@ import code.api.v5_0_0.HelperInfoJson
 import code.api.{APIFailure, Constant, RequestHeader}
 import code.bankconnectors.Connector
 import code.consent
+import code.consent.ConsentStatus.ConsentStatus
 import code.consent.{ConsentStatus, Consents, MappedConsent}
 import code.consumer.Consumers
 import code.context.{ConsentAuthContextProvider, UserAuthContextProvider}
 import code.entitlement.Entitlement
 import code.model.Consumer
+import code.scheduler.ConsentScheduler.logger
 import code.users.Users
 import code.util.Helper.MdcLoggable
 import code.util.HydraUtil
@@ -855,19 +857,18 @@ object Consent extends MdcLoggable {
       }
     }
   }
+
   def updateUserIdOfBerlinGroupConsentJWT(createdByUserId: String,
                                           consent: MappedConsent,
-                                          callContext: Option[CallContext]): Future[Box[String]] = {
+                                          callContext: Option[CallContext]): Box[String] = {
     implicit val dateFormats = CustomJsonFormats.formats
     val payloadToUpdate: Box[ConsentJWT] = JwtUtil.getSignedPayloadAsJson(consent.jsonWebToken) // Payload as JSON string
       .map(net.liftweb.json.parse(_).extract[ConsentJWT]) // Extract case class
 
-    Future {
-      val updatedPayload = payloadToUpdate.map(i => i.copy(createdByUserId = createdByUserId)) // Update only the field "createdByUserId"
-      val jwtPayloadAsJson = compactRender(Extraction.decompose(updatedPayload))
-      val jwtClaims: JWTClaimsSet = JWTClaimsSet.parse(jwtPayloadAsJson)
-      Full(CertificateUtil.jwtWithHmacProtection(jwtClaims, consent.secret))
-    }
+    val updatedPayload = payloadToUpdate.map(i => i.copy(createdByUserId = createdByUserId)) // Update only the field "createdByUserId"
+    val jwtPayloadAsJson = compactRender(Extraction.decompose(updatedPayload))
+    val jwtClaims: JWTClaimsSet = JWTClaimsSet.parse(jwtPayloadAsJson)
+    Full(CertificateUtil.jwtWithHmacProtection(jwtClaims, consent.secret))
   }
   
   def createUKConsentJWT(
@@ -1036,8 +1037,8 @@ object Consent extends MdcLoggable {
     consentsOfBank
   }
 
-  def expireAllPreviousValidBerlinGroupConsents(consent: MappedConsent): Boolean = {
-    if(consent.status == ConsentStatus.valid.toString &&
+  def expireAllPreviousValidBerlinGroupConsents(consent: MappedConsent, updateTostatus: ConsentStatus): Boolean = {
+    if(updateTostatus == ConsentStatus.valid &&
       consent.apiStandard == ApiVersion.berlinGroupV13.apiStandard) {
       MappedConsent.findAll( // Find all
           By(MappedConsent.mApiStandard, ApiVersion.berlinGroupV13.apiStandard), // Berlin Group
@@ -1046,10 +1047,11 @@ object Consent extends MdcLoggable {
           By(MappedConsent.mUserId, consent.userId), // for the same PSU
           By(MappedConsent.mConsumerId, consent.consumerId), // from the same TPP
         ).filterNot(_.consentId == consent.consentId) // Exclude current consent
-        .map(c => // Set to expired
-          c.mStatus(ConsentStatus.expired.toString)
-            .mLastActionDate(new Date()).save
-        ).forall(_ == true)
+        .map{ c => // Set to expired
+          val changedStatus = c.mStatus(ConsentStatus.expired.toString).mLastActionDate(new Date()).save
+          if(changedStatus) logger.warn(s"|---> Changed status to ${ConsentStatus.expired.toString} for consent ID: ${c.id}")
+          changedStatus
+        }.forall(_ == true)
     } else {
       true
     }
