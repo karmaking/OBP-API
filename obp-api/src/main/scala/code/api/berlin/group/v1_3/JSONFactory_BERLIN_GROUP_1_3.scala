@@ -259,7 +259,7 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
     recurringIndicator: Boolean,
     validUntil: String,
     frequencyPerDay: Int,
-    combinedServiceIndicator: Boolean,
+    combinedServiceIndicator: Option[Boolean],
     lastActionDate: String,
     consentStatus: String
   )
@@ -626,7 +626,7 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
       recurringIndicator = createdConsent.recurringIndicator,
       validUntil = if(createdConsent.validUntil == null) null else new SimpleDateFormat(DateWithDay).format(createdConsent.validUntil), 
       frequencyPerDay = createdConsent.frequencyPerDay,
-      combinedServiceIndicator= createdConsent.combinedServiceIndicator,
+      combinedServiceIndicator = None,
       lastActionDate = if(createdConsent.lastActionDate == null) null else new SimpleDateFormat(DateWithDay).format(createdConsent.lastActionDate),
       consentStatus = createdConsent.status.toLowerCase()
     )
