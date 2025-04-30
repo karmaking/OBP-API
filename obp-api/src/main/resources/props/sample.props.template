@@ -589,9 +589,9 @@ apiOptions.getProductsIsPublic = true
 apiOptions.getTransactionTypesIsPublic = true
 apiOptions.getCurrentFxRateIsPublic = true
 
-## Default Bank. Incase the server wants to support a default bank so developers don't have to specify BANK_ID
+## Default Bank. Incase the server wants to support a default bank so developers don't have to specify BANK_ID, the default value is OBP.
 ## e.g. developers could use /my/accounts as well as /my/banks/BANK_ID/accounts
-defaultBank.bank_id=THE_DEFAULT_BANK_ID
+defaultBank.bank_id=OBP
 
 
 

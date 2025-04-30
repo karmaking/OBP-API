@@ -67,6 +67,7 @@ object ApiTag {
   val apiTagMXOpenFinance = ResourceDocTag("MXOpenFinance")
   val apiTagAggregateMetrics = ResourceDocTag("Aggregate-Metrics")
   val apiTagSystemIntegrity = ResourceDocTag("System-Integrity")
+  val apiTagBalance = ResourceDocTag("Balance")
   val apiTagWebhook = ResourceDocTag("Webhook")
   val apiTagMockedData = ResourceDocTag("Mocked-Data")
   val apiTagConsent = ResourceDocTag("Consent")
