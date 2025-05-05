@@ -8,10 +8,13 @@ import net.liftweb.mapper._
 import net.liftweb.util.Helpers.tryo
 
 
-class BankAccountBalance extends BankAccountBalanceTrait with LongKeyedMapper[BankAccountBalance] with CreatedUpdated with IdPK {
+class BankAccountBalance extends BankAccountBalanceTrait with KeyedMapper[String, BankAccountBalance]{
 
   override def getSingleton = BankAccountBalance
 
+  // Define BalanceId_ as the primary key
+  override def primaryKeyField = BalanceId_.asInstanceOf[KeyedMetaMapper[String, BankAccountBalance]].primaryKeyField
+  
   object BankId_ extends MappedUUID(this)
   object AccountId_ extends MappedUUID(this)
   object BalanceId_ extends MappedUUID(this)
@@ -33,4 +36,4 @@ class BankAccountBalance extends BankAccountBalanceTrait with LongKeyedMapper[Ba
   override def balanceAmount: BigDecimal = Helper.smallestCurrencyUnitToBigDecimal(BalanceAmount.get, foreignMappedBankAccountCurrency)
 }
 
-object BankAccountBalance extends BankAccountBalance with LongKeyedMetaMapper[BankAccountBalance] {}
+object BankAccountBalance extends BankAccountBalance  with KeyedMetaMapper[String, BankAccountBalance] with CreatedUpdated {}
