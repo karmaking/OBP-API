@@ -62,7 +62,7 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
   case class CoreAccountJsonV13(
                                  resourceId: String,
                                  iban: String,
-                                 bban: String,
+                                 bban: Option[String],
                                  currency: String,
                                  name: String,
                                  product: String,
@@ -332,12 +332,12 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
         CoreAccountJsonV13(
           resourceId = x.accountId.value,
           iban = iBan,
-          bban = bBan,
+          bban = None,
           currency = x.currency,
           name = x.name,
           cashAccountType = x.accountType,
           product = x.accountType,
-          balances = accountBalances,
+          balances = if(canReadBalances) accountBalances else None,
           _links = CoreAccountLinksJsonV13(
             balances = if(canReadBalances) Some(balanceRef) else None,
             transactions = if(canReadTransactions) Some(transactionRef) else None,
@@ -363,7 +363,7 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
         CoreAccountJsonV13(
           resourceId = x.accountId.value,
           iban = iBan,
-          bban = bBan,
+          bban = None,
           currency = x.currency,
           name = x.name,
           cashAccountType = x.accountType,
