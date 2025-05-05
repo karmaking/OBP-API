@@ -3534,7 +3534,7 @@ object Glossary extends MdcLoggable  {
         .filter(_.getName.endsWith(".md"))
         .toList
     } else {
-			logger.error(s"Do not have any files under glossary path ($glossaryPath), please double check the folder path: $glossaryPath")
+			logger.error(s"There are no glossary files under the path ($glossaryPath), please double check the folder path: $glossaryPath")
       List.empty[File]
     }
   }
