@@ -1,5 +1,4 @@
 FROM jetty:9.4-jdk11-alpine
-
-# Copy OBP source code
+COPY .github/logback.xml /var/lib/jetty/resources/logback.xml
 # Copy build artifact (.war file) into jetty from 'maven' stage.
 COPY /obp-api/target/obp-api-1.*.war /var/lib/jetty/webapps/ROOT.war
