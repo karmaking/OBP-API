@@ -137,6 +137,10 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
     iban: String,
     currency : Option[String] = None,
   )
+  case class FromAccountJson(
+    iban: String,
+    currency : Option[String] = None,
+  )
   case class TransactionJsonV13(
     transactionId: String,
     creditorName: String,
@@ -190,7 +194,7 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
   )
   
   case class TransactionsJsonV13(
-    account:FromAccount,
+    account: FromAccountJson,
     transactions:TransactionsV13Transactions,
   )
 
@@ -440,14 +444,17 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
     ))
   }
   
-  def createTransactionJSON(bankAccount: BankAccount, transaction : ModeratedTransaction, creditorAccount: CreditorAccountJson) : TransactionJsonV13 = {
-    val bookingDate = transaction.startDate.getOrElse(null)
-    val valueDate = transaction.finishDate.getOrElse(null)
+  def createTransactionJSON(bankAccount: BankAccount, transaction : ModeratedTransaction) : TransactionJsonV13 = {
+    val bookingDate = transaction.startDate.orNull
+    val valueDate = transaction.finishDate.orNull
     val creditorName = bankAccount.label
     TransactionJsonV13(
       transactionId = transaction.id.value,
       creditorName = creditorName,
-      creditorAccount = creditorAccount,
+      creditorAccount = CreditorAccountJson(
+        transaction.otherBankAccount.map(_.iban.orNull).orNull,
+        transaction.currency
+      ),
       transactionAmount = AmountOfMoneyV13(APIUtil.stringOptionOrNull(transaction.currency), transaction.amount.get.toString().trim.stripPrefix("-")),
       bookingDate = BgSpecValidation.formatToISODate(bookingDate) ,
       valueDate = BgSpecValidation.formatToISODate(valueDate),
@@ -476,16 +483,19 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
   }
 
   
-  def createTransactionFromRequestJSON(bankAccount: BankAccount, transactionRequest : TransactionRequest, creditorAccount: CreditorAccountJson) : TransactionJsonV13 = {
+  def createTransactionFromRequestJSON(bankAccount: BankAccount, tr : TransactionRequest) : TransactionJsonV13 = {
     val creditorName = bankAccount.accountHolder
-    val remittanceInformationUnstructured = stringOrNull(transactionRequest.body.description)
+    val remittanceInformationUnstructured = stringOrNull(tr.body.description)
     TransactionJsonV13(
-      transactionId = transactionRequest.id.value,
+      transactionId = tr.id.value,
       creditorName = creditorName,
-      creditorAccount = creditorAccount,
-      transactionAmount = AmountOfMoneyV13(transactionRequest.charge.value.currency, transactionRequest.charge.value.amount.trim.stripPrefix("-")),
-      bookingDate = BgSpecValidation.formatToISODate(transactionRequest.start_date),
-      valueDate = BgSpecValidation.formatToISODate(transactionRequest.end_date),
+      creditorAccount = CreditorAccountJson(
+        if (tr.other_account_routing_scheme == "IBAN") tr.other_account_routing_address else "",
+        Some(tr.body.value.currency)
+      ),
+      transactionAmount = AmountOfMoneyV13(tr.charge.value.currency, tr.charge.value.amount.trim.stripPrefix("-")),
+      bookingDate = BgSpecValidation.formatToISODate(tr.start_date),
+      valueDate = BgSpecValidation.formatToISODate(tr.end_date),
       remittanceInformationUnstructured = remittanceInformationUnstructured
     )
   }
@@ -494,17 +504,15 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
     val accountId = bankAccount.accountId.value
     val (iban: String, bban: String) = getIbanAndBban(bankAccount)
    
-    val creditorAccount = CreditorAccountJson(
+    val account = FromAccountJson(
       iban = iban,
       currency = Some(bankAccount.currency)
     )
     TransactionsJsonV13(
-      FromAccount(
-        iban = iban,
-      ),
+      account,
       TransactionsV13Transactions(
-        booked= transactions.map(transaction => createTransactionJSON(bankAccount, transaction, creditorAccount)),
-        pending = transactionRequests.filter(_.status!="COMPLETED").map(transactionRequest => createTransactionFromRequestJSON(bankAccount, transactionRequest, creditorAccount)),
+        booked= transactions.map(transaction => createTransactionJSON(bankAccount, transaction)),
+        pending = transactionRequests.filter(_.status!="COMPLETED").map(transactionRequest => createTransactionFromRequestJSON(bankAccount, transactionRequest)),
         _links = TransactionsV13TransactionsLinks(LinkHrefJson(s"/v1.3/accounts/$accountId"))
       )
     )
