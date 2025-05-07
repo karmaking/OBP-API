@@ -248,7 +248,7 @@ recurringIndicator:
              (Full(user), callContext) <- authenticatedAccess(cc)
              _ <- passesPsd2Aisp(callContext)
              _ <- Future(Consents.consentProvider.vend.getConsentByConsentId(consentId)) map {
-               unboxFullOrFail(_, callContext, ConsentNotFound)
+               unboxFullOrFail(_, callContext, ConsentNotFound, 403)
              }
              _ <- Future(Consents.consentProvider.vend.revokeBerlinGroupConsent(consentId)) map {
                i => connectorEmptyResponse(i, callContext)
@@ -752,7 +752,7 @@ This method returns the SCA status of a consent initiation's authorisation sub-r
              (_, callContext) <- authenticatedAccess(cc)
              _ <- passesPsd2Aisp(callContext)
              _ <- Future(Consents.consentProvider.vend.getConsentByConsentId(consentId)) map {
-               unboxFullOrFail(_, callContext, s"$ConsentNotFound ($consentId)")
+               unboxFullOrFail(_, callContext, s"$ConsentNotFound ($consentId)", 403)
              }
              (challenges, callContext) <-  NewStyle.function.getChallengesByConsentId(consentId, callContext)
            } yield {
@@ -787,7 +787,7 @@ This method returns the SCA status of a consent initiation's authorisation sub-r
              (Full(u), callContext) <- authenticatedAccess(cc)
              _ <- passesPsd2Aisp(callContext)
              consent <- Future(Consents.consentProvider.vend.getConsentByConsentId(consentId)) map {
-               unboxFullOrFail(_, callContext, ConsentNotFound)
+               unboxFullOrFail(_, callContext, ConsentNotFound, 403)
              }
            } yield {
              val status = consent.status
@@ -1134,7 +1134,7 @@ using the extended forms as indicated above.
              (Full(u), callContext) <- authenticatedAccess(cc)
              _ <- passesPsd2Aisp(callContext)
              consent <- Future(Consents.consentProvider.vend.getConsentByConsentId(consentId)) map {
-               unboxFullOrFail(_, callContext, ConsentNotFound)
+               unboxFullOrFail(_, callContext, ConsentNotFound, 403)
               }
              (challenges, callContext) <- NewStyle.function.createChallengesC2(
                List(u.userId),
@@ -1297,7 +1297,7 @@ Maybe in a later version the access path will change.
              (Full(u), callContext) <- authenticatedAccess(cc)
              _ <- passesPsd2Aisp(callContext)
              _ <- Future(Consents.consentProvider.vend.getConsentByConsentId(consentId)) map {
-               unboxFullOrFail(_, callContext, ConsentNotFound)
+               unboxFullOrFail(_, callContext, ConsentNotFound, 403)
              }
              failMsg = s"$InvalidJsonFormat The Json body should be the $TransactionAuthorisation "
              updateJson <- NewStyle.function.tryons(failMsg, 400, callContext) {

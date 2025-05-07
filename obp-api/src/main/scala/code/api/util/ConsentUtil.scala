@@ -3,19 +3,22 @@ package code.api.util
 import java.text.SimpleDateFormat
 import java.util.{Date, UUID}
 import code.api.berlin.group.v1_3.JSONFactory_BERLIN_GROUP_1_3.{ConsentAccessJson, PostConsentJson}
+import code.api.util.APIUtil.fullBoxOrException
 import code.api.util.ApiRole.{canCreateEntitlementAtAnyBank, canCreateEntitlementAtOneBank}
 import code.api.util.BerlinGroupSigning.getHeaderValue
 import code.api.util.ErrorMessages.{CouldNotAssignAccountAccess, InvalidConnectorResponse, NoViewReadAccountsBerlinGroup}
 import code.api.v3_1_0.{PostConsentBodyCommonJson, PostConsentEntitlementJsonV310, PostConsentViewJsonV310}
 import code.api.v5_0_0.HelperInfoJson
-import code.api.{APIFailure, Constant, RequestHeader}
+import code.api.{APIFailure, APIFailureNewStyle, Constant, RequestHeader}
 import code.bankconnectors.Connector
 import code.consent
+import code.consent.ConsentStatus.ConsentStatus
 import code.consent.{ConsentStatus, Consents, MappedConsent}
 import code.consumer.Consumers
 import code.context.{ConsentAuthContextProvider, UserAuthContextProvider}
 import code.entitlement.Entitlement
 import code.model.Consumer
+import code.scheduler.ConsentScheduler.logger
 import code.users.Users
 import code.util.Helper.MdcLoggable
 import code.util.HydraUtil
@@ -600,7 +603,8 @@ object Consent extends MdcLoggable {
       case failure@Failure(_, _, _) =>
         Future(failure, Some(callContext))
       case _ =>
-        Future(Failure(ErrorMessages.ConsentNotFound + s" ($consentId)"), Some(callContext))
+        val errorMessage = ErrorMessages.ConsentNotFound + s" ($consentId)"
+        Future(fullBoxOrException(Empty ~> APIFailureNewStyle(errorMessage, 400, Some(callContext.toLight))), Some(callContext))
     }
   }
   def applyBerlinGroupRules(consentId: Option[String], callContext: CallContext): Future[(Box[User], Option[CallContext])] = {
@@ -772,6 +776,9 @@ object Consent extends MdcLoggable {
     }
     val tppRedirectUri: Option[HTTPParam] = callContext.map(_.requestHeaders).getOrElse(Nil).find(_.name == RequestHeader.`TPP-Redirect-URI`)
     val tppNokRedirectUri: Option[HTTPParam] = callContext.map(_.requestHeaders).getOrElse(Nil).find(_.name == RequestHeader.`TPP-Nok-Redirect-URI`)
+    val xRequestId: Option[HTTPParam] = callContext.map(_.requestHeaders).getOrElse(Nil).find(_.name == RequestHeader.`X-Request-ID`)
+    val psuDeviceId: Option[HTTPParam] = callContext.map(_.requestHeaders).getOrElse(Nil).find(_.name == RequestHeader.`PSU-Device-ID`)
+    val psuIpAddress: Option[HTTPParam] = callContext.map(_.requestHeaders).getOrElse(Nil).find(_.name == RequestHeader.`PSU-IP-Address`)
     Future.sequence(accounts ::: balances ::: transactions) map { views =>
       val json = ConsentJWT(
         createdByUserId = user.map(_.userId).getOrElse(""),
@@ -782,7 +789,11 @@ object Consent extends MdcLoggable {
         iat = currentTimeInSeconds,
         nbf = currentTimeInSeconds,
         exp = validUntilTimeInSeconds,
-        request_headers = tppRedirectUri.toList ::: tppNokRedirectUri.toList,
+        request_headers = tppRedirectUri.toList :::
+          tppNokRedirectUri.toList :::
+          xRequestId.toList :::
+          psuDeviceId.toList :::
+          psuIpAddress.toList,
         name = None,
         email = None,
         entitlements = Nil,
@@ -855,19 +866,18 @@ object Consent extends MdcLoggable {
       }
     }
   }
+
   def updateUserIdOfBerlinGroupConsentJWT(createdByUserId: String,
                                           consent: MappedConsent,
-                                          callContext: Option[CallContext]): Future[Box[String]] = {
+                                          callContext: Option[CallContext]): Box[String] = {
     implicit val dateFormats = CustomJsonFormats.formats
     val payloadToUpdate: Box[ConsentJWT] = JwtUtil.getSignedPayloadAsJson(consent.jsonWebToken) // Payload as JSON string
       .map(net.liftweb.json.parse(_).extract[ConsentJWT]) // Extract case class
 
-    Future {
-      val updatedPayload = payloadToUpdate.map(i => i.copy(createdByUserId = createdByUserId)) // Update only the field "createdByUserId"
-      val jwtPayloadAsJson = compactRender(Extraction.decompose(updatedPayload))
-      val jwtClaims: JWTClaimsSet = JWTClaimsSet.parse(jwtPayloadAsJson)
-      Full(CertificateUtil.jwtWithHmacProtection(jwtClaims, consent.secret))
-    }
+    val updatedPayload = payloadToUpdate.map(i => i.copy(createdByUserId = createdByUserId)) // Update only the field "createdByUserId"
+    val jwtPayloadAsJson = compactRender(Extraction.decompose(updatedPayload))
+    val jwtClaims: JWTClaimsSet = JWTClaimsSet.parse(jwtPayloadAsJson)
+    Full(CertificateUtil.jwtWithHmacProtection(jwtClaims, consent.secret))
   }
   
   def createUKConsentJWT(
@@ -1034,6 +1044,26 @@ object Consent extends MdcLoggable {
         }
       }
     consentsOfBank
+  }
+
+  def expireAllPreviousValidBerlinGroupConsents(consent: MappedConsent, updateTostatus: ConsentStatus): Boolean = {
+    if(updateTostatus == ConsentStatus.valid &&
+      consent.apiStandard == ApiVersion.berlinGroupV13.apiStandard) {
+      MappedConsent.findAll( // Find all
+          By(MappedConsent.mApiStandard, ApiVersion.berlinGroupV13.apiStandard), // Berlin Group
+          By(MappedConsent.mRecurringIndicator, true), // recurring
+          By(MappedConsent.mStatus, ConsentStatus.valid.toString), // and valid consents
+          By(MappedConsent.mUserId, consent.userId), // for the same PSU
+          By(MappedConsent.mConsumerId, consent.consumerId), // from the same TPP
+        ).filterNot(_.consentId == consent.consentId) // Exclude current consent
+        .map{ c => // Set to expired
+          val changedStatus = c.mStatus(ConsentStatus.expired.toString).mLastActionDate(new Date()).save
+          if(changedStatus) logger.warn(s"|---> Changed status to ${ConsentStatus.expired.toString} for consent ID: ${c.id}")
+          changedStatus
+        }.forall(_ == true)
+    } else {
+      true
+    }
   }
 
   /*

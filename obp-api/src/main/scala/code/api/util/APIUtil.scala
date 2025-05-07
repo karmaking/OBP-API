@@ -3001,12 +3001,12 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
     val res =
       if (authHeadersWithEmptyValues.nonEmpty) { // Check Authorization Headers Empty Values
         val message = ErrorMessages.EmptyRequestHeaders + s"Header names: ${authHeadersWithEmptyValues.mkString(", ")}"
-        Future { (fullBoxOrException(Empty ~> APIFailureNewStyle(message, 400, Some(cc.toLight))), None) }
+        Future { (fullBoxOrException(Empty ~> APIFailureNewStyle(message, 400, Some(cc.toLight))), Some(cc)) }
       } else if (authHeadersWithEmptyNames.nonEmpty) { // Check Authorization Headers Empty Names
         val message = ErrorMessages.EmptyRequestHeaders + s"Header values: ${authHeadersWithEmptyNames.mkString(", ")}"
-        Future { (fullBoxOrException(Empty ~> APIFailureNewStyle(message, 400, Some(cc.toLight))), None) }
+        Future { (fullBoxOrException(Empty ~> APIFailureNewStyle(message, 400, Some(cc.toLight))), Some(cc)) }
       } else if (authHeaders.size > 1) { // Check Authorization Headers ambiguity
-        Future { (Failure(ErrorMessages.AuthorizationHeaderAmbiguity + s"${authHeaders}"), None) }
+        Future { (Failure(ErrorMessages.AuthorizationHeaderAmbiguity + s"${authHeaders}"), Some(cc)) }
       } else if (APIUtil.`hasConsent-ID`(reqHeaders)) { // Berlin Group's Consent
         Consent.applyBerlinGroupRules(APIUtil.`getConsent-ID`(reqHeaders), cc.copy(consumer = consumerByCertificate))
       } else if (APIUtil.hasConsentJWT(reqHeaders)) { // Open Bank Project's Consent

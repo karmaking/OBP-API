@@ -1493,11 +1493,11 @@ trait APIMethods510 {
             consent <- Future(Consents.consentProvider.vend.updateConsentUser(consentId, user)) map {
               i => connectorEmptyResponse(i, cc.callContext)
             }
-            consentJWT <- Consent.updateUserIdOfBerlinGroupConsentJWT(
+            consentJWT <- Future(Consent.updateUserIdOfBerlinGroupConsentJWT(
               consentJson.user_id,
               consent,
               cc.callContext
-            ) map {
+            )) map {
               i => connectorEmptyResponse(i, cc.callContext)
             }
             updatedConsent <- Future(Consents.consentProvider.vend.setJsonWebToken(consent.consentId, consentJWT)) map {
