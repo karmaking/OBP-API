@@ -598,7 +598,8 @@ object Consent extends MdcLoggable {
               Future(Failure("Cannot extract data from: " + consentId), Some(updatedCallContext))
           }
         } else {
-          Future(Failure(ErrorMessages.TooManyRequests + s" ${RequestHeader.`Consent-ID`}: $consentId"), Some(updatedCallContext))
+          val errorMessage = ErrorMessages.TooManyRequests + s" ${RequestHeader.`Consent-ID`}: $consentId"
+          Future(fullBoxOrException(Empty ~> APIFailureNewStyle(errorMessage, 429, Some(callContext.toLight))), Some(callContext))
         }
       case failure@Failure(_, _, _) =>
         Future(failure, Some(callContext))
