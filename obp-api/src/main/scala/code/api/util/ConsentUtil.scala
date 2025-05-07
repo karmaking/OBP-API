@@ -3,12 +3,13 @@ package code.api.util
 import java.text.SimpleDateFormat
 import java.util.{Date, UUID}
 import code.api.berlin.group.v1_3.JSONFactory_BERLIN_GROUP_1_3.{ConsentAccessJson, PostConsentJson}
+import code.api.util.APIUtil.fullBoxOrException
 import code.api.util.ApiRole.{canCreateEntitlementAtAnyBank, canCreateEntitlementAtOneBank}
 import code.api.util.BerlinGroupSigning.getHeaderValue
 import code.api.util.ErrorMessages.{CouldNotAssignAccountAccess, InvalidConnectorResponse, NoViewReadAccountsBerlinGroup}
 import code.api.v3_1_0.{PostConsentBodyCommonJson, PostConsentEntitlementJsonV310, PostConsentViewJsonV310}
 import code.api.v5_0_0.HelperInfoJson
-import code.api.{APIFailure, Constant, RequestHeader}
+import code.api.{APIFailure, APIFailureNewStyle, Constant, RequestHeader}
 import code.bankconnectors.Connector
 import code.consent
 import code.consent.ConsentStatus.ConsentStatus
@@ -602,7 +603,8 @@ object Consent extends MdcLoggable {
       case failure@Failure(_, _, _) =>
         Future(failure, Some(callContext))
       case _ =>
-        Future(Failure(ErrorMessages.ConsentNotFound + s" ($consentId)"), Some(callContext))
+        val errorMessage = ErrorMessages.ConsentNotFound + s" ($consentId)"
+        Future(fullBoxOrException(Empty ~> APIFailureNewStyle(errorMessage, 400, Some(callContext.toLight))), Some(callContext))
     }
   }
   def applyBerlinGroupRules(consentId: Option[String], callContext: CallContext): Future[(Box[User], Option[CallContext])] = {

@@ -110,7 +110,7 @@ class BerlinGroupConsent extends MdcLoggable with RestHelper with APIMethods510 
     for {
       // Fetch the consent by ID
       consent: MappedConsent <- Future(Consents.consentProvider.vend.getConsentByConsentId(consentId)) map {
-        APIUtil.unboxFullOrFail(_, None, s"$ConsentNotFound ($consentId)", 404)
+        APIUtil.unboxFullOrFail(_, None, s"$ConsentNotFound ($consentId)", 400)
       }
       // Update the consent JWT with new access details
       consentJWT <- Consent.updateAccountAccessOfBerlinGroupConsentJWT(
