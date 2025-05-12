@@ -260,7 +260,7 @@ This method returns the SCA status of a signing basket's authorisation sub-resou
              (Full(u), callContext) <- authenticatedAccess(cc)
              _ <- passesPsd2Pisp(callContext)
              _ <- Future(SigningBasketX.signingBasketProvider.vend.getSigningBasketByBasketId(basketId)) map {
-               unboxFullOrFail(_, callContext, s"$ConsentNotFound ($basketId)")
+               unboxFullOrFail(_, callContext, s"$ConsentNotFound ($basketId)", 403)
              }
              (challenges, callContext) <- NewStyle.function.getChallengesByBasketId(basketId, callContext)
            } yield {

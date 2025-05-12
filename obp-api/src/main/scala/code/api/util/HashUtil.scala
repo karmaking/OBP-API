@@ -2,6 +2,7 @@ package code.api.util
 
 import java.math.BigInteger
 import net.liftweb.common.Box
+import org.iban4j.IbanUtil
 
 object HashUtil {
   def Sha256Hash(in: String): String = {
@@ -25,5 +26,8 @@ object HashUtil {
     val hashedText = Sha256Hash(plainText)
     println("Password: " + plainText)
     println("Hashed password: " + hashedText)
+    println("BBAN: " + IbanUtil.getBban("AT483200000012345864"))
+    println("Bank code: " + IbanUtil.getBankCode("AT483200000012345864"))
+    println("Country code: " + IbanUtil.getCountryCode("AT483200000012345864"))
   }
 }

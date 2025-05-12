@@ -149,6 +149,8 @@ object RequestHeader {
   final lazy val `PSD2-CERT` = "PSD2-CERT"
   final lazy val `If-None-Match` = "If-None-Match"
 
+  final lazy val `PSU-Device-ID` = "PSU-Device-ID" // Berlin Group
+  final lazy val `PSU-IP-Address` = "PSU-IP-Address" // Berlin Group
   final lazy val `X-Request-ID` = "X-Request-ID" // Berlin Group
   final lazy val `TPP-Redirect-URI` = "TPP-Redirect-URI" // Berlin Group
   final lazy val `TPP-Nok-Redirect-URI` = "TPP-Nok-Redirect-URI" // Redirect URI in case of an error.
