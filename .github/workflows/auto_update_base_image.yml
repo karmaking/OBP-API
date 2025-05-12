@@ -1,8 +1,12 @@
 name: Regular base image update check
 on:
   schedule:
-    - cron: "0 */3 * * *"
+    - cron: "0 5 * * *"
   workflow_dispatch:
+
+env:
+  ## Sets environment variable
+  DOCKER_HUB_ORGANIZATION: ${{ vars.DOCKER_HUB_ORGANIZATION }}
 
 jobs:
   build:
@@ -16,7 +20,7 @@ jobs:
         uses: lucacome/docker-image-update-checker@v2.0.0
         with:
           base-image: jetty:9.4-jdk11-alpine
-          image: tawoe/obp-api
+          image: ${{ env.DOCKER_HUB_ORGANIZATION }}/obp-api:latest
 
       - name: Trigger build_container_develop_branch workflow
         uses: actions/github-script@v6
