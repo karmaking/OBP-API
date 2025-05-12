@@ -2,6 +2,7 @@ package code.api.berlin.group.v1_3
 
 import code.api.Constant
 import code.api.Constant.SYSTEM_READ_ACCOUNTS_BERLIN_GROUP_VIEW_ID
+import code.api.berlin.group.ConstantsBG
 import code.api.util.APIUtil.OAuth._
 import code.api.util.APIUtil.OAuth.{Consumer, Token}
 import code.api.v3_0_0.ViewJsonV300
@@ -15,7 +16,7 @@ import org.scalatest.Tag
 
 trait BerlinGroupServerSetupV1_3 extends ServerSetupWithTestData {
   object BerlinGroupV1_3 extends Tag("BerlinGroup_v1_3")
-  val V1_3_BG = baseRequest / ApiVersion.berlinGroupV13.urlPrefix / "v1.3"
+  val V1_3_BG = baseRequest / ConstantsBG.berlinGroupVersion1.urlPrefix / ConstantsBG.berlinGroupVersion1.apiShortVersion
   def v4_0_0_Request: Req = baseRequest / "obp" / "v4.0.0"
 
   override def beforeEach() = {

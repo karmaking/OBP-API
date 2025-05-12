@@ -1,5 +1,7 @@
 package code.api.util
 
+import code.api.berlin.group.ConstantsBG
+
 import java.text.SimpleDateFormat
 import java.util.{Date, UUID}
 import code.api.berlin.group.v1_3.JSONFactory_BERLIN_GROUP_1_3.{ConsentAccessJson, PostConsentJson}
@@ -256,7 +258,7 @@ object Consent extends MdcLoggable {
           case false =>
             Failure(ErrorMessages.ConsentVerificationIssue)
         }
-      case Full(c) if c.apiStandard == ApiVersion.berlinGroupV13.apiStandard && // Berlin Group Consent
+      case Full(c) if c.apiStandard == ConstantsBG.berlinGroupVersion1.apiStandard && // Berlin Group Consent
         c.status.toLowerCase() != ConsentStatus.valid.toString =>
         Failure(s"${ErrorMessages.ConsentStatusIssue}${ConsentStatus.valid.toString}.")
       case Full(c) if c.mStatus.toString().toUpperCase() != ConsentStatus.ACCEPTED.toString =>
@@ -1053,9 +1055,9 @@ object Consent extends MdcLoggable {
 
   def expireAllPreviousValidBerlinGroupConsents(consent: MappedConsent, updateTostatus: ConsentStatus): Boolean = {
     if(updateTostatus == ConsentStatus.valid &&
-      consent.apiStandard == ApiVersion.berlinGroupV13.apiStandard) {
+      consent.apiStandard == ConstantsBG.berlinGroupVersion1.apiStandard) {
       MappedConsent.findAll( // Find all
-          By(MappedConsent.mApiStandard, ApiVersion.berlinGroupV13.apiStandard), // Berlin Group
+          By(MappedConsent.mApiStandard, ConstantsBG.berlinGroupVersion1.apiStandard), // Berlin Group
           By(MappedConsent.mRecurringIndicator, true), // recurring
           By(MappedConsent.mStatus, ConsentStatus.valid.toString), // and valid consents
           By(MappedConsent.mUserId, consent.userId), // for the same PSU
