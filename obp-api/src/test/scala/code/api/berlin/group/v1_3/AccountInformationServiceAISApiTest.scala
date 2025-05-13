@@ -1,7 +1,8 @@
 package code.api.berlin.group.v1_3
 
 import code.api.Constant
-import code.api.Constant.{SYSTEM_READ_ACCOUNTS_BERLIN_GROUP_VIEW_ID, SYSTEM_READ_TRANSACTIONS_BERLIN_GROUP_VIEW_ID}
+import code.api.Constant.{SYSTEM_READ_ACCOUNTS_BERLIN_GROUP_VIEW_ID, SYSTEM_READ_BALANCES_BERLIN_GROUP_VIEW_ID, SYSTEM_READ_TRANSACTIONS_BERLIN_GROUP_VIEW_ID}
+import code.api.berlin.group.ConstantsBG
 import code.api.berlin.group.v1_3.JSONFactory_BERLIN_GROUP_1_3._
 import code.api.builder.AccountInformationServiceAISApi.APIMethods_AccountInformationServiceAISApi
 import code.api.util.APIUtil
@@ -103,13 +104,28 @@ class AccountInformationServiceAISApiTest extends BerlinGroupServerSetupV1_3 wit
         user1,
         PostViewJsonV400(view_id = SYSTEM_READ_ACCOUNTS_BERLIN_GROUP_VIEW_ID, is_system = true)
       )
+      grantUserAccessToViewViaEndpoint(
+        bankId,
+        accountId,
+        resourceUser1.userId,
+        user1,
+        PostViewJsonV400(view_id = SYSTEM_READ_BALANCES_BERLIN_GROUP_VIEW_ID, is_system = true)
+      )
       
       val requestGet = (V1_3_BG / "accounts" / accountId).GET <@ (user1)
       val response = makeGetRequest(requestGet)
 
       Then("We should get a 200 ")
       response.code should equal(200)
-      response.body.extract[AccountDetailsJsonV13].account.resourceId should be (accountId)
+      val jsonResponse = response.body.extract[AccountDetailsJsonV13]
+      jsonResponse.account.resourceId should be (accountId)
+
+      jsonResponse.account._links.balances match {
+        case Some(link) =>
+          link.href.contains(ConstantsBG.berlinGroupVersion1.apiShortVersion) shouldBe true
+        case None => // Nothing to check
+      }
+
     }
   }
 
@@ -262,8 +278,9 @@ class AccountInformationServiceAISApiTest extends BerlinGroupServerSetupV1_3 wit
 
       Then("We should get a 201 ")
       response.code should equal(201)
-      response.body.extract[PostConsentResponseJson].consentId should not be (empty)
-      response.body.extract[PostConsentResponseJson].consentStatus should be (ConsentStatus.received.toString)
+      val jsonResponse = response.body.extract[PostConsentResponseJson]
+      jsonResponse.consentId should not be (empty)
+      jsonResponse.consentStatus should be (ConsentStatus.received.toString)
     }
   }
 
