@@ -1148,7 +1148,7 @@ default_auth_context_update_request_key=CUSTOMER_NUMBER
 #berlin_group_v1_3_alias_path=
 
 # Berlin Group URL version
-#berlin_group_version_1_version=v1.3
+#berlin_group_version_1_canonical_path=v1.3
 
 # Show the path inside of Berlin Group error message
 #berlin_group_error_message_show_path = true

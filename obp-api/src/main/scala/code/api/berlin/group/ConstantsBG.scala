@@ -6,7 +6,7 @@ import com.openbankproject.commons.util.ScannedApiVersion
 import net.liftweb.common.Full
 
 object ConstantsBG {
-  val berlinGroupVersion1: ScannedApiVersion = APIUtil.getPropsValue("berlin_group_version_1_version") match {
+  val berlinGroupVersion1: ScannedApiVersion = APIUtil.getPropsValue("berlin_group_version_1_canonical_path") match {
     case Full(props) => berlinGroupV13.copy(apiShortVersion = props)
     case _ => berlinGroupV13
   }
