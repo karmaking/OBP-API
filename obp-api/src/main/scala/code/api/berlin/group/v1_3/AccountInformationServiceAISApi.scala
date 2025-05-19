@@ -1,6 +1,5 @@
 package code.api.builder.AccountInformationServiceAISApi
 
-import java.text.SimpleDateFormat
 import code.api.APIFailureNewStyle
 import code.api.Constant.{SYSTEM_READ_ACCOUNTS_BERLIN_GROUP_VIEW_ID, SYSTEM_READ_BALANCES_BERLIN_GROUP_VIEW_ID, SYSTEM_READ_TRANSACTIONS_BERLIN_GROUP_VIEW_ID}
 import code.api.berlin.group.ConstantsBG
@@ -13,7 +12,7 @@ import code.api.util.ApiTag._
 import code.api.util.ErrorMessages._
 import code.api.util.NewStyle.HttpCode
 import code.api.util.newstyle.BalanceNewStyle
-import code.api.util.{APIUtil, ApiTag, CallContext, Consent, ExampleValue, NewStyle}
+import code.api.util._
 import code.bankconnectors.Connector
 import code.consent.{ConsentStatus, Consents}
 import code.context.{ConsentAuthContextProvider, UserAuthContextProvider}
@@ -24,16 +23,14 @@ import code.views.Views
 import com.github.dwickern.macros.NameOf.nameOf
 import com.openbankproject.commons.ExecutionContext.Implicits.global
 import com.openbankproject.commons.model._
-import com.openbankproject.commons.model.enums.{ChallengeType, StrongCustomerAuthentication, StrongCustomerAuthenticationStatus, SuppliedAnswerType}
-import com.openbankproject.commons.util.ApiVersion
+import com.openbankproject.commons.model.enums.{ChallengeType, StrongCustomerAuthenticationStatus, SuppliedAnswerType}
+import net.liftweb
 import net.liftweb.common.{Empty, Full}
 import net.liftweb.http.js.JE.JsRaw
 import net.liftweb.http.rest.RestHelper
-import net.liftweb
 import net.liftweb.json
 import net.liftweb.json._
 
-import scala.collection.immutable.Nil
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
 
@@ -160,11 +157,28 @@ recurringIndicator:
              consentJson <- NewStyle.function.tryons(failMsg, 400, callContext) {
                json.extract[PostConsentJson]
              }
-             _ <- Helper.booleanToFuture(failMsg = BerlinGroupConsentAccessIsEmpty, cc=callContext) {
-               consentJson.access.accounts.isDefined ||
-               consentJson.access.balances.isDefined ||
-               consentJson.access.transactions.isDefined
+
+             _ <- if (consentJson.access.availableAccounts.isDefined) {
+               for {
+                 _ <- Helper.booleanToFuture(failMsg = BerlinGroupConsentAccessAvailableAccounts, cc = callContext) {
+                   consentJson.access.availableAccounts.contains("allAccounts")
+                 }
+                 _ <- Helper.booleanToFuture(failMsg = BerlinGroupConsentAccessRecurringIndicator, cc = callContext) {
+                   !consentJson.recurringIndicator
+                 }
+                 _ <- Helper.booleanToFuture(failMsg = BerlinGroupConsentAccessFrequencyPerDay, cc = callContext) {
+                   consentJson.frequencyPerDay == 1
+                 }
+               } yield Full(())
+             } else {
+               Helper.booleanToFuture(
+                 failMsg = BerlinGroupConsentAccessIsEmpty, cc = callContext) {
+                 consentJson.access.accounts.isDefined ||
+                   consentJson.access.balances.isDefined ||
+                   consentJson.access.transactions.isDefined
+               }
              }
+
              upperLimit = APIUtil.getPropsAsIntValue("berlin_group_frequency_per_day_upper_limit", 4)
              _ <- Helper.booleanToFuture(failMsg = FrequencyPerDayError, cc=callContext) {
                consentJson.frequencyPerDay > 0 && consentJson.frequencyPerDay <= upperLimit

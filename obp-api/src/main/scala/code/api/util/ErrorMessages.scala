@@ -244,7 +244,10 @@ object ErrorMessages {
     s"OBP-20087: The current source view.can_revoke_access_to_custom_views is false."
 
   val BerlinGroupConsentAccessIsEmpty = s"OBP-20088: An access must be requested."
-  
+  val BerlinGroupConsentAccessRecurringIndicator = s"OBP-20089: Recurring indicator must be false when availableAccounts is used."
+  val BerlinGroupConsentAccessFrequencyPerDay = s"OBP-20090: Frequency per day must be 1 when availableAccounts is used."
+  val BerlinGroupConsentAccessAvailableAccounts = s"OBP-20091: availableAccounts must be exactly 'allAccounts'."
+
   val UserNotSuperAdminOrMissRole = "OBP-20101: Current User is not super admin or is missing entitlements:"
   val CannotGetOrCreateUser = "OBP-20102: Cannot get or create user."
   val InvalidUserProvider = "OBP-20103: Invalid DAuth User Provider."
