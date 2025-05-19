@@ -260,10 +260,15 @@ recurringIndicator:
        case "consents" :: consentId :: Nil JsonDelete _ => {
          cc =>
            for {
-             (Full(user), callContext) <- authenticatedAccess(cc)
+             (_, callContext) <- applicationAccess(cc)
              _ <- passesPsd2Aisp(callContext)
-             _ <- Future(Consents.consentProvider.vend.getConsentByConsentId(consentId)) map {
+             consent <- Future(Consents.consentProvider.vend.getConsentByConsentId(consentId)) map {
                unboxFullOrFail(_, callContext, ConsentNotFound, 403)
+             }
+             consumerIdFromConsent = consent.mConsumerId.get
+             consumerIdFromCurrentCall = callContext.map(_.consumer.map(_.consumerId.get).getOrElse("None")).getOrElse("None")
+             _ <- Helper.booleanToFuture(failMsg = s"$ConsentNotFound $consumerIdFromConsent != $consumerIdFromCurrentCall", failCode = 403, cc = cc.callContext) {
+               consumerIdFromConsent == consumerIdFromCurrentCall
              }
              _ <- Future(Consents.consentProvider.vend.revokeBerlinGroupConsent(consentId)) map {
                i => connectorEmptyResponse(i, callContext)
