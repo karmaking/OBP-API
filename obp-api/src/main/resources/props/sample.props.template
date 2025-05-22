@@ -300,7 +300,7 @@ sandbox_data_import_secret=change_me
 payments_enabled=true
 
 ## Transaction requests are replacing simple payments starting from 1.4.0
-transactionRequests_enabled=true
+transactionRequests_enabled=false
 transactionRequests_connector=mapped
 
 ## Transaction Request Types that are supported on this server. Possible values might include SANDBOX_TAN, COUNTERPARTY, SEPA, FREE_FORM
