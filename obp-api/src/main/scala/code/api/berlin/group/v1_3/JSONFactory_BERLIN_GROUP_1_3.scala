@@ -16,7 +16,8 @@ import net.liftweb.json.{JValue, parse}
 
 import java.text.SimpleDateFormat
 import java.util.Date
-
+import scala.concurrent.Future
+import com.openbankproject.commons.ExecutionContext.Implicits.global
 case class JvalueCaseClass(jvalueToCaseclass: JValue)
 
 object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
@@ -305,13 +306,24 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
   case class UpdatePaymentPsuDataJson(
     scaAuthenticationData: String
   )
-  
+
+
+  def flattenOBPReturnType(
+    list: List[OBPReturnType[List[BankAccountBalanceTrait]]]
+  ): OBPReturnType[List[BankAccountBalanceTrait]] = {
+    Future.sequence(list).map { results =>
+      val combinedBalances = results.flatMap(_._1) // Combine all balances
+      val callContext = results.headOption.flatMap(_._2) // Use the first CallContext
+      (combinedBalances, callContext)
+    }
+  }
   
   def createAccountListJson(bankAccounts: List[BankAccount],
                             canReadBalancesAccounts:  List[BankIdAccountId],
                             canReadTransactionsAccounts:  List[BankIdAccountId],
                             user: User,
-                            withBalanceParam:Option[Boolean]
+                            withBalanceParam:Option[Boolean],
+                            balances: List[BankAccountBalanceTrait]
   ): CoreAccountsJsonV13 = {
     CoreAccountsJsonV13(bankAccounts.map {
       x =>
@@ -322,9 +334,9 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
         val transactionRef = LinkHrefJson(s"/$commonPath/transactions")
         val canReadTransactions = canReadTransactionsAccounts.map(_.accountId.value).contains(x.accountId.value)
         val accountBalances = if(withBalanceParam == Some(true)){
-          Some(List(CoreAccountBalanceJson(
-            balanceAmount = AmountOfMoneyV13(x.currency, x.balance.toString),
-            balanceType = "openingBooked")))
+          Some(balances.filter(_.accountId.equals(x.accountId)).map(balance =>(List(CoreAccountBalanceJson(
+            balanceAmount = AmountOfMoneyV13(x.currency, balance.balanceAmount.toString()),
+            balanceType = balance.balanceType)))).flatten)
         }else{
           None
         }
