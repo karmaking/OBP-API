@@ -362,13 +362,19 @@ of the PSU at this ASPSP.
                 attribute.value.equalsIgnoreCase("card")
               ).isEmpty)
 
+            (balances, callContext) <- JSONFactory_BERLIN_GROUP_1_3.flattenOBPReturnType(bankAccountsFiltered.map(bankAccont => code.api.util.newstyle.BankAccountBalanceNewStyle.getBankAccountBalances(
+              bankAccont.accountId,
+              callContext
+            )))
+             
           } yield {
             (JSONFactory_BERLIN_GROUP_1_3.createAccountListJson(
               bankAccountsFiltered,
               canReadBalancesAccounts,
               canReadTransactionsAccounts,
               u,
-              withBalanceParam
+              withBalanceParam,
+              balances
             ), callContext)
           }
          }
