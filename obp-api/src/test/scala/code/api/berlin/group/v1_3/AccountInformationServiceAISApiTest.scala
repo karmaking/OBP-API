@@ -258,6 +258,68 @@ class AccountInformationServiceAISApiTest extends BerlinGroupServerSetupV1_3 wit
     }
   }
 
+  feature(s"BG v1.3 - $createConsent - postJsonBodyAvailableAccounts") {
+    lazy val postJsonBody = PostConsentJson(
+      access = ConsentAccessJson(
+        accounts = None,
+        balances = None,
+        transactions = None,
+        availableAccounts = Some("allAccounts"),
+        allPsd2 = None
+      ),
+      recurringIndicator = false,
+      validUntil = getNextMonthDate(),
+      frequencyPerDay = 1,
+      combinedServiceIndicator = Some(false)
+    )
+    val postJsonBodyWrong1 = postJsonBody.copy(
+      access = postJsonBody.access.copy(
+        availableAccounts = Some("wrong")
+      )
+    )
+    val postJsonBodyWrong2 = postJsonBody.copy(
+      frequencyPerDay = 2
+    )
+    val postJsonBodyWrong3 = postJsonBody.copy(
+      recurringIndicator = true
+    )
+
+    scenario("Authentication User, test failed due to availableAccounts wrong value", BerlinGroupV1_3, createConsent) {
+      val requestPost = (V1_3_BG / "consents" ).POST <@ (user1)
+      val response: APIResponse = makePostRequest(requestPost, write(postJsonBodyWrong1))
+
+      Then("We should get a 400")
+      response.code should equal(400)
+      response.body.extract[ErrorMessagesBG].tppMessages.head.text should startWith(BerlinGroupConsentAccessAvailableAccounts)
+    }
+    scenario("Authentication User, test failed due to frequency per day", BerlinGroupV1_3, createConsent) {
+      val requestPost = (V1_3_BG / "consents" ).POST <@ (user1)
+      val response: APIResponse = makePostRequest(requestPost, write(postJsonBodyWrong2))
+
+      Then("We should get a 400")
+      response.code should equal(400)
+      response.body.extract[ErrorMessagesBG].tppMessages.head.text should startWith(BerlinGroupConsentAccessFrequencyPerDay)
+    }
+    scenario("Authentication User, test failed due to recurringIndicator = true", BerlinGroupV1_3, createConsent) {
+      val requestPost = (V1_3_BG / "consents" ).POST <@ (user1)
+      val response: APIResponse = makePostRequest(requestPost, write(postJsonBodyWrong3))
+
+      Then("We should get a 400")
+      response.code should equal(400)
+      response.body.extract[ErrorMessagesBG].tppMessages.head.text should startWith(BerlinGroupConsentAccessRecurringIndicator)
+    }
+    scenario("Authentication User, test succeed", BerlinGroupV1_3, createConsent) {
+      val requestPost = (V1_3_BG / "consents" ).POST <@ (user1)
+      val response: APIResponse = makePostRequest(requestPost, write(postJsonBody))
+
+      Then("We should get a 201 ")
+      response.code should equal(201)
+      val jsonResponse = response.body.extract[PostConsentResponseJson]
+      jsonResponse.consentId should not be (empty)
+      jsonResponse.consentStatus should be (ConsentStatus.received.toString)
+    }
+  }
+
   feature(s"BG v1.3 - $createConsent") {
     scenario("Authentication User, test succeed", BerlinGroupV1_3, createConsent) {
       val testBankId = testAccountId1

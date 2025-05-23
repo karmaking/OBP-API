@@ -1,5 +1,6 @@
 package code.api.util
 
+import code.accountholders.AccountHolders
 import code.api.berlin.group.ConstantsBG
 
 import java.text.SimpleDateFormat
@@ -20,6 +21,7 @@ import code.consumer.Consumers
 import code.context.{ConsentAuthContextProvider, UserAuthContextProvider}
 import code.entitlement.Entitlement
 import code.model.Consumer
+import code.model.dataAccess.BankAccountRouting
 import code.scheduler.ConsentScheduler.logger
 import code.users.Users
 import code.util.Helper.MdcLoggable
@@ -870,6 +872,66 @@ object Consent extends MdcLoggable {
         val jwtPayloadAsJson = compactRender(Extraction.decompose(updatedPayload))
         val jwtClaims: JWTClaimsSet = JWTClaimsSet.parse(jwtPayloadAsJson)
         Full(CertificateUtil.jwtWithHmacProtection(jwtClaims, consent.secret))
+      }
+    }
+  }
+  def updateViewsOfBerlinGroupConsentJWT(user: User,
+                                         consent: MappedConsent,
+                                         callContext: Option[CallContext]): Future[Box[MappedConsent]] = {
+    implicit val dateFormats = CustomJsonFormats.formats
+    val payloadToUpdate: Box[ConsentJWT] = JwtUtil.getSignedPayloadAsJson(consent.jsonWebToken) // Payload as JSON string
+      .map(net.liftweb.json.parse(_).extract[ConsentJWT]) // Extract case class
+
+    val availableAccountsUserIbans: List[String] = payloadToUpdate match {
+      case Full(consentJwt) =>
+        val availableAccountsUserIbans: List[String] =
+          if (consentJwt.access.map(_.availableAccounts.contains("allAccounts")).isDefined) {
+            // Get all accounts held by the current user
+            val userAccounts: List[BankIdAccountId] =
+              AccountHolders.accountHolders.vend.getAccountsHeldByUser(user, Some(null)).toList
+            userAccounts.flatMap { acc =>
+              BankAccountRouting.find(
+                By(BankAccountRouting.BankId, acc.bankId.value),
+                By(BankAccountRouting.AccountId, acc.accountId.value),
+                By(BankAccountRouting.AccountRoutingScheme, "IBAN")
+              ).map(_.AccountRoutingAddress.get)
+            }
+          } else {
+            val emptyList: List[String] = Nil
+            emptyList
+          }
+        availableAccountsUserIbans
+      case _ =>
+        val emptyList: List[String] = Nil
+        emptyList
+    }
+
+
+    // 1. Add access
+    val availableAccounts: List[Future[ConsentView]] = availableAccountsUserIbans.distinct map { iban =>
+      Connector.connector.vend.getBankAccountByIban(iban, callContext) map { bankAccount =>
+        logger.debug(s"createBerlinGroupConsentJWT.accounts.bankAccount: $bankAccount")
+        val error = s"${InvalidConnectorResponse} IBAN: ${iban} ${handleBox(bankAccount._1)}"
+        ConsentView(
+          bank_id = bankAccount._1.map(_.bankId.value).getOrElse(""),
+          account_id = bankAccount._1.map(_.accountId.value).openOrThrowException(error),
+          view_id = Constant.SYSTEM_READ_ACCOUNTS_BERLIN_GROUP_VIEW_ID,
+          None
+        )
+      }
+    }
+
+    Future.sequence(availableAccounts) map { views =>
+      if(views.isEmpty) {
+        Empty
+      } else {
+        val updatedPayload = payloadToUpdate.map(i =>
+          i.copy(views = views) // Update the field "views"
+        )
+        val jwtPayloadAsJson = compactRender(Extraction.decompose(updatedPayload))
+        val jwtClaims: JWTClaimsSet = JWTClaimsSet.parse(jwtPayloadAsJson)
+        val jwt = CertificateUtil.jwtWithHmacProtection(jwtClaims, consent.secret)
+        Consents.consentProvider.vend.setJsonWebToken(consent.consentId, jwt)
       }
     }
   }
