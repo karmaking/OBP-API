@@ -26,14 +26,13 @@
 
 package com.openbankproject.commons.dto
 
-import java.util.Date
-import com.openbankproject.commons.model.enums.{AttributeCategory, AttributeType, BankAttributeType, CardAttributeType, ChallengeType, CustomerAttributeType, DynamicEntityOperation, PaymentServiceTypes, StrongCustomerAuthentication, SuppliedAnswerType, TransactionAttributeType, TransactionRequestAttributeType, TransactionRequestStatus, TransactionRequestTypes, UserAttributeType}
 import com.openbankproject.commons.model.enums.StrongCustomerAuthentication.SCA
 import com.openbankproject.commons.model.enums.StrongCustomerAuthenticationStatus.SCAStatus
-import com.openbankproject.commons.model.{enums, _}
+import com.openbankproject.commons.model.enums.{TransactionRequestStatus, _}
+import com.openbankproject.commons.model._
 import net.liftweb.json.{JObject, JValue}
 
-import scala.collection.immutable.List
+import java.util.Date
 
 trait InBoundTrait[T] {
   val inboundAdapterCallContext: InboundAdapterCallContext
@@ -42,6 +41,30 @@ trait InBoundTrait[T] {
 }
 
 //--------generated
+
+
+case class OutBoundGetBankAccountBalancesByAccountId (outboundAdapterCallContext: OutboundAdapterCallContext,
+  accountId: AccountId) extends TopicTrait
+case class InBoundGetBankAccountBalancesByAccountId (inboundAdapterCallContext: InboundAdapterCallContext, status: Status, data: List[BankAccountBalanceTraitCommons]) extends InBoundTrait[List[BankAccountBalanceTraitCommons]]
+
+
+case class OutBoundGetBankAccountBalanceById (outboundAdapterCallContext: OutboundAdapterCallContext,
+  balanceId: BalanceId) extends TopicTrait
+case class InBoundGetBankAccountBalanceById (inboundAdapterCallContext: InboundAdapterCallContext, status: Status, data: BankAccountBalanceTraitCommons) extends InBoundTrait[BankAccountBalanceTraitCommons]
+
+
+case class OutBoundCreateOrUpdateBankAccountBalance (outboundAdapterCallContext: OutboundAdapterCallContext,
+  bankId: BankId,
+  accountId: AccountId,
+  balanceId: Option[BalanceId],
+  balanceType: String,
+  balanceAmount: BigDecimal) extends TopicTrait
+case class InBoundCreateOrUpdateBankAccountBalance (inboundAdapterCallContext: InboundAdapterCallContext, status: Status, data: BankAccountBalanceTraitCommons) extends InBoundTrait[BankAccountBalanceTraitCommons]
+
+
+case class OutBoundDeleteBankAccountBalance (outboundAdapterCallContext: OutboundAdapterCallContext,
+  balanceId: BalanceId) extends TopicTrait
+case class InBoundDeleteBankAccountBalance (inboundAdapterCallContext: InboundAdapterCallContext, status: Status, data: Boolean) extends InBoundTrait[Boolean]
 
 case class OutBoundGetRegulatedEntities (outboundAdapterCallContext: OutboundAdapterCallContext) extends TopicTrait
 case class InBoundGetRegulatedEntities (inboundAdapterCallContext: InboundAdapterCallContext, status: Status, data: List[RegulatedEntityTraitCommons]) extends InBoundTrait[List[RegulatedEntityTraitCommons]]

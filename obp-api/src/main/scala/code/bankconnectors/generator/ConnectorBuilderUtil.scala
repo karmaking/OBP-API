@@ -2,7 +2,7 @@ package code.bankconnectors.generator
 
 import code.api.util.CodeGenerateUtils.createDocExample
 import code.api.util.{APIUtil, CallContext}
-import code.bankconnectors.{Connector, LocalMappedConnector}
+import code.bankconnectors.Connector
 import com.openbankproject.commons.util.ReflectUtils
 import org.apache.commons.io.FileUtils
 import org.apache.commons.lang3.StringUtils.uncapitalize
@@ -437,6 +437,10 @@ object ConnectorBuilderUtil {
       "getAccountsHeldByUser",
       "getRegulatedEntities",
       "getRegulatedEntityByEntityId",
+      "getBankAccountBalancesByAccountId",
+      "getBankAccountBalanceById",
+      "createOrUpdateBankAccountBalance",
+      "deleteBankAccountBalance",
     ).distinct
 
   /**
