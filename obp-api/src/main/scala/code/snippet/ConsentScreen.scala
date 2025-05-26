@@ -26,6 +26,7 @@ TESOBE (http://www.tesobe.com/)
   */
 package code.snippet
 
+import code.api.RequestHeader
 import code.api.util.APIUtil.callEndpoint
 import code.api.util.{CustomJsonFormats, ErrorMessages}
 import code.api.v5_1_0.ConsentsInfoJsonV510
@@ -35,7 +36,7 @@ import code.model.dataAccess.AuthUser
 import code.util.Helper.{MdcLoggable, ObpS}
 import code.util.HydraUtil.integrateWithHydra
 import net.liftweb.common.{Failure, Full}
-import net.liftweb.http.{GetRequest, RequestVar, S, SHtml}
+import net.liftweb.http.{DeleteRequest, GetRequest, RequestVar, S, SHtml}
 import net.liftweb.json
 import net.liftweb.json.{Extraction, Formats, JNothing}
 import net.liftweb.util.CssSel
@@ -107,7 +108,12 @@ class ConsentScreen extends MdcLoggable {
     )
 
     val getMyConsentsResult = callEndpoint(Implementations5_1_0.getMyConsents, pathOfEndpoint, GetRequest)
-
+    
+    def selfRevokeConsent(consentId: String) = {
+      val addlParams = Map(RequestHeader.`Consent-Id`-> consentId)
+      callEndpoint(Implementations5_1_0.selfRevokeConsent, List("my", "consent", "current"), DeleteRequest, addlParams=addlParams)
+    }
+    
     getMyConsentsResult match {
       case Left(error) => {
         S.error(error._1)
@@ -123,8 +129,17 @@ class ConsentScreen extends MdcLoggable {
                 ".jwt-payload *" #> json.prettyRender(consent.jwt_payload.map(Extraction.decompose).openOr(JNothing)) &
                 ".status *" #> consent.status &
                 ".api-standard *" #> consent.api_standard &
-                ".revoke-form [action]" #> s"/my/consents/consent_id/${consent.consent_id}" &
-                ".consent-id-input [value]" #> consent.consent_id
+                ".revoke-form [action]" #> s"/my/consent/current" &
+                ".consent-id-input [value]" #> consent.consent_id &
+                ".revoke-button-placeholder *" #> SHtml.ajaxButton("Revoke", () => {
+                  selfRevokeConsent(consent.consent_id) match {
+                    case Left(errorMsg) =>
+                      S.error(errorMsg._1)
+                    case Right(_) =>
+                      S.notice("Consent successfully revoked.")
+                  }
+                  S.redirectTo("/consents")
+                })
             }
           case Failure(msg, t, c) =>
             S.error(s"${ErrorMessages.UnknownError} $msg")
