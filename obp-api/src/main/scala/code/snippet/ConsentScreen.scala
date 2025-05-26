@@ -26,25 +26,33 @@ TESOBE (http://www.tesobe.com/)
   */
 package code.snippet
 
-import code.api.util.APIUtil
+import code.api.util.APIUtil.callEndpoint
+import code.api.util.{CustomJsonFormats, ErrorMessages}
+import code.api.v5_1_0.ConsentsInfoJsonV510
+import code.api.v5_1_0.OBPAPI5_1_0.Implementations5_1_0
 import code.consumer.Consumers
 import code.model.dataAccess.AuthUser
 import code.util.Helper.{MdcLoggable, ObpS}
 import code.util.HydraUtil.integrateWithHydra
-import code.webuiprops.MappedWebUiPropsProvider.getWebUiPropsValue
-import net.liftweb.http.{RequestVar, S, SHtml}
+import net.liftweb.common.{Failure, Full}
+import net.liftweb.http.{GetRequest, RequestVar, S, SHtml}
+import net.liftweb.json
+import net.liftweb.json.{Extraction, Formats, JNothing}
+import net.liftweb.util.CssSel
 import net.liftweb.util.Helpers._
 import sh.ory.hydra.api.AdminApi
 import sh.ory.hydra.model.{AcceptConsentRequest, RejectRequest}
 
 import scala.jdk.CollectionConverters.seqAsJavaListConverter
+import scala.xml.NodeSeq
 
 class ConsentScreen extends MdcLoggable {
 
   private object skipConsentScreenVar extends RequestVar(false)
   private object consentChallengeVar extends RequestVar(ObpS.param("consent_challenge").getOrElse(""))
   private object csrfVar extends RequestVar(ObpS.param("_csrf").getOrElse(""))
-
+  implicit val formats: Formats = CustomJsonFormats.formats
+  
   def submitAllowAction: Unit = {
     integrateWithHydra match {
       case true if !consentChallengeVar.isEmpty =>
@@ -87,5 +95,45 @@ class ConsentScreen extends MdcLoggable {
         "#deny_access_to_consent" #> SHtml.submit(s"Deny access", () => submitDenyAction)
     }
   }
-  
+
+  /**
+   * Renders  the consents page.
+   */
+  def getConsents: CssSel = {
+
+    val pathOfEndpoint = List(
+      "my",
+      "consents"
+    )
+
+    val getMyConsentsResult = callEndpoint(Implementations5_1_0.getMyConsents, pathOfEndpoint, GetRequest)
+
+    getMyConsentsResult match {
+      case Left(error) => {
+        S.error(error._1)
+        ".consent-entry" #> NodeSeq.Empty
+      }
+      case Right(response) => {
+        tryo {json.parse(response).extract[ConsentsInfoJsonV510]} match {
+          case Full(consentsInfoJsonV510) =>
+            val consents = consentsInfoJsonV510.consents
+            ".consent-entry" #> consents.map { consent =>
+              ".consent-id *" #> consent.consent_id &
+                ".consumer-id *" #> consent.consumer_id &
+                ".jwt-payload *" #> json.prettyRender(consent.jwt_payload.map(Extraction.decompose).openOr(JNothing)) &
+                ".status *" #> consent.status &
+                ".api-standard *" #> consent.api_standard &
+                ".revoke-form [action]" #> s"/my/consents/consent_id/${consent.consent_id}" &
+                ".consent-id-input [value]" #> consent.consent_id
+            }
+          case Failure(msg, t, c) =>
+            S.error(s"${ErrorMessages.UnknownError} $msg")
+            ".consent-entry" #> NodeSeq.Empty
+          case _ =>
+            S.error(s"${ErrorMessages.UnknownError} Failed to parse response")
+            ".consent-entry" #> NodeSeq.Empty
+        }
+      }
+    }
+  }
 }
