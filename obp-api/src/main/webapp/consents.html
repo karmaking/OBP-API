@@ -26,6 +26,9 @@ Berlin 13359, Germany
 <div data-lift="surround?with=default;at=content">
     <div style="width: 90%; margin: 0 auto;" data-lift="ConsentScreen.getConsents">
         <h2>Consents</h2>
+
+        <div id="flash-message"></div> <!-- 用于显示 AJAX 消息 -->
+
         <table class="table">
             <thead>
             <tr>
@@ -37,23 +40,12 @@ Berlin 13359, Germany
                 <th scope="col">Revoke</th>
             </tr>
             </thead>
-            <tbody>
-            <tr class="consent-entry">
-                <td class="consent-id"></td>
-                <td class="consumer-id"></td>
-                <td class="jwt-payload"></td>
-                <td class="status"></td>
-                <td class="api-standard"></td>
-                <td>
-                    <form class="revoke-form" method="post">
-                        <input type="hidden" class="consent-id-input" name="consent_id" value=""/>
-                        <span class="revoke-button-placeholder "> Revoke </span>
-                    </form>
-                </td>
-            </tr>
+            <tbody id="consent-table-body">
+            <!-- Consent rows will be inserted here -->
             </tbody>
         </table>
     </div>
 </div>
+
 
 

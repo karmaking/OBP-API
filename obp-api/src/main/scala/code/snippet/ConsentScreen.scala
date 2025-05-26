@@ -28,14 +28,16 @@ package code.snippet
 
 import code.api.RequestHeader
 import code.api.util.APIUtil.callEndpoint
-import code.api.util.{CustomJsonFormats, ErrorMessages}
-import code.api.v5_1_0.ConsentsInfoJsonV510
+import code.api.util.CustomJsonFormats
 import code.api.v5_1_0.OBPAPI5_1_0.Implementations5_1_0
+import code.api.v5_1_0.{ConsentInfoJsonV510, ConsentsInfoJsonV510}
 import code.consumer.Consumers
 import code.model.dataAccess.AuthUser
 import code.util.Helper.{MdcLoggable, ObpS}
 import code.util.HydraUtil.integrateWithHydra
-import net.liftweb.common.{Failure, Full}
+import net.liftweb.common.Full
+import net.liftweb.http.js.JsCmd
+import net.liftweb.http.js.JsCmds._
 import net.liftweb.http.{DeleteRequest, GetRequest, RequestVar, S, SHtml}
 import net.liftweb.json
 import net.liftweb.json.{Extraction, Formats, JNothing}
@@ -46,6 +48,8 @@ import sh.ory.hydra.model.{AcceptConsentRequest, RejectRequest}
 
 import scala.jdk.CollectionConverters.seqAsJavaListConverter
 import scala.xml.NodeSeq
+
+
 
 class ConsentScreen extends MdcLoggable {
 
@@ -97,58 +101,68 @@ class ConsentScreen extends MdcLoggable {
     }
   }
 
-  /**
-   * Renders  the consents page.
-   */
   def getConsents: CssSel = {
-
-    val pathOfEndpoint = List(
-      "my",
-      "consents"
-    )
-
-    val getMyConsentsResult = callEndpoint(Implementations5_1_0.getMyConsents, pathOfEndpoint, GetRequest)
-    
-    def selfRevokeConsent(consentId: String) = {
-      val addlParams = Map(RequestHeader.`Consent-Id`-> consentId)
-      callEndpoint(Implementations5_1_0.selfRevokeConsent, List("my", "consent", "current"), DeleteRequest, addlParams=addlParams)
-    }
-    
-    getMyConsentsResult match {
-      case Left(error) => {
-        S.error(error._1)
-        ".consent-entry" #> NodeSeq.Empty
-      }
-      case Right(response) => {
-        tryo {json.parse(response).extract[ConsentsInfoJsonV510]} match {
+    callEndpoint(Implementations5_1_0.getMyConsents, List("my", "consents"), GetRequest) match {
+      case Right(response) =>
+        tryo(json.parse(response).extract[ConsentsInfoJsonV510]) match {
           case Full(consentsInfoJsonV510) =>
-            val consents = consentsInfoJsonV510.consents
-            ".consent-entry" #> consents.map { consent =>
-              ".consent-id *" #> consent.consent_id &
-                ".consumer-id *" #> consent.consumer_id &
-                ".jwt-payload *" #> json.prettyRender(consent.jwt_payload.map(Extraction.decompose).openOr(JNothing)) &
-                ".status *" #> consent.status &
-                ".api-standard *" #> consent.api_standard &
-                ".revoke-form [action]" #> s"/my/consent/current" &
-                ".consent-id-input [value]" #> consent.consent_id &
-                ".revoke-button-placeholder *" #> SHtml.ajaxButton("Revoke", () => {
-                  selfRevokeConsent(consent.consent_id) match {
-                    case Left(errorMsg) =>
-                      S.error(errorMsg._1)
-                    case Right(_) =>
-                      S.notice("Consent successfully revoked.")
-                  }
-                  S.redirectTo("/consents")
-                })
-            }
-          case Failure(msg, t, c) =>
-            S.error(s"${ErrorMessages.UnknownError} $msg")
-            ".consent-entry" #> NodeSeq.Empty
+            "#consent-table-body *" #> renderConsentRows(consentsInfoJsonV510.consents)
           case _ =>
-            S.error(s"${ErrorMessages.UnknownError} Failed to parse response")
-            ".consent-entry" #> NodeSeq.Empty
+//            ShowMessage("Consent successfully revoked.", isError = false)
+            "#consent-table-body *" #> <tr><td colspan="6">Parse error</td></tr>
         }
-      }
+      case Left((msg, _)) =>
+//        ShowMessage("Consent successfully revoked.", isError = false)
+        "#consent-table-body *" #> <tr><td colspan="6">{msg}</td></tr>
+    }
+  }
+
+  private def selfRevokeConsent(consentId: String): Either[(String, Int), String] = {
+    val addlParams = Map(RequestHeader.`Consent-Id` -> consentId)
+    callEndpoint(Implementations5_1_0.selfRevokeConsent, List("my", "consent", "current"), DeleteRequest, addlParams = addlParams)
+  }
+
+  private def refreshTable(): JsCmd = {
+    callEndpoint(Implementations5_1_0.getMyConsents, List("my", "consents"), GetRequest) match {
+      case Right(response) =>
+        tryo(json.parse(response).extract[ConsentsInfoJsonV510]) match {
+          case Full(consentsInfoJsonV510) =>
+            SetHtml("consent-table-body", renderConsentRows(consentsInfoJsonV510.consents))
+          case _ =>
+            SetHtml("consent-table-body", <tr><td colspan="6">Error parsing consent data</td></tr>)
+        }
+      case Left((msg, _)) =>
+        SetHtml("consent-table-body", <tr><td colspan="6">{msg}</td></tr>)
+    }
+  }
+
+  private def ShowMessage(msg: String, isError: Boolean): JsCmd = {
+    val alertClass = if (isError) "alert-danger" else "alert-success"
+    val html = <div class={"alert " + alertClass} role="alert">{msg}</div>
+    SetHtml("flash-message", html)
+  }
+
+  private def renderConsentRows(consents: List[ConsentInfoJsonV510]): NodeSeq = {
+    consents.map { consent =>
+      <tr class="consent-entry">
+        <td class="consent-id">{consent.consent_id}</td>
+        <td class="consumer-id">{consent.consumer_id}</td>
+        <td class="jwt-payload">{json.prettyRender(consent.jwt_payload.map(Extraction.decompose).openOr(JNothing))}</td>
+        <td class="status">{consent.status}</td>
+        <td class="api-standard">{consent.api_standard}</td>
+        <td>
+          {
+          SHtml.ajaxButton("Revoke", () => {
+            val result = selfRevokeConsent(consent.consent_id)
+            val message = result match {
+              case Left((msg, _)) => ShowMessage(msg, isError = true)
+              case Right(_)       => ShowMessage("Consent successfully revoked.", isError = false)
+            }
+            message & refreshTable()
+          })
+          }
+        </td>
+      </tr>
     }
   }
 }
