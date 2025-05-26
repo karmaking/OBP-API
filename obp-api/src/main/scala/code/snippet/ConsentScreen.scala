@@ -106,17 +106,23 @@ class ConsentScreen extends MdcLoggable {
       case Right(response) =>
         tryo(json.parse(response).extract[ConsentsInfoJsonV510]) match {
           case Full(consentsInfoJsonV510) =>
-            "#consent-table-body *" #> renderConsentRows(consentsInfoJsonV510.consents)
+            "#consent-table-body *" #> renderConsentRows(consentsInfoJsonV510.consents) &
+              "#flash-message *" #> NodeSeq.Empty 
           case _ =>
-//            ShowMessage("Consent successfully revoked.", isError = false)
-            "#consent-table-body *" #> <tr><td colspan="6">Parse error</td></tr>
+            "#consent-table-body *" #> NodeSeq.Empty &
+              "#flash-message *" #> renderAlert("Failed to parse consent data.", isError = true)
         }
       case Left((msg, _)) =>
-//        ShowMessage("Consent successfully revoked.", isError = false)
-        "#consent-table-body *" #> <tr><td colspan="6">{msg}</td></tr>
+        "#consent-table-body *" #> NodeSeq.Empty &
+          "#flash-message *" #> renderAlert(msg, isError = true)
     }
   }
 
+  private def renderAlert(msg: String, isError: Boolean): NodeSeq = {
+    val alertClass = if (isError) "alert-danger" else "alert-success"
+    <div class={"alert " + alertClass} role="alert">{msg}</div>
+  }
+  
   private def selfRevokeConsent(consentId: String): Either[(String, Int), String] = {
     val addlParams = Map(RequestHeader.`Consent-Id` -> consentId)
     callEndpoint(Implementations5_1_0.selfRevokeConsent, List("my", "consent", "current"), DeleteRequest, addlParams = addlParams)
@@ -156,7 +162,7 @@ class ConsentScreen extends MdcLoggable {
             val result = selfRevokeConsent(consent.consent_id)
             val message = result match {
               case Left((msg, _)) => ShowMessage(msg, isError = true)
-              case Right(_)       => ShowMessage("Consent successfully revoked.", isError = false)
+              case Right(_)       => ShowMessage(s"Consent (${consent.consent_id}) successfully revoked.", isError = false)
             }
             message & refreshTable()
           })
