@@ -179,6 +179,8 @@ jwt.use.ssl=false
 
 
 ## Expire OBP consents with status "ACCEPTED"
+## If this props is not set corresponding job is not started
+## Unit is a second
 # obp_expired_consents_interval_in_seconds =
 
 
