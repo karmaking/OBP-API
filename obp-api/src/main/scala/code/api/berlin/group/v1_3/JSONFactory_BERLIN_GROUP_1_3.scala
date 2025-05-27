@@ -9,8 +9,9 @@ import code.api.util.{APIUtil, ConsentJWT, CustomJsonFormats, JwtUtil}
 import code.consent.ConsentTrait
 import code.model.ModeratedTransaction
 import code.util.Helper.MdcLoggable
-import com.openbankproject.commons.model.enums.AccountRoutingScheme
+import com.openbankproject.commons.ExecutionContext.Implicits.global
 import com.openbankproject.commons.model._
+import com.openbankproject.commons.model.enums.AccountRoutingScheme
 import net.liftweb.common.Box.tryo
 import net.liftweb.common.{Box, Full}
 import net.liftweb.json.{JValue, parse}
@@ -18,7 +19,6 @@ import net.liftweb.json.{JValue, parse}
 import java.text.SimpleDateFormat
 import java.util.Date
 import scala.concurrent.Future
-import com.openbankproject.commons.ExecutionContext.Implicits.global
 case class JvalueCaseClass(jvalueToCaseclass: JValue)
 
 object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
@@ -346,13 +346,15 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
           None
         }
       
+        val cashAccountType = x.attributes.getOrElse(Nil).filter(_.name== "cashAccountType").map(_.value).headOption.getOrElse("")
+        
         CoreAccountJsonV13(
           resourceId = x.accountId.value,
           iban = iBan,
           bban = None,
           currency = x.currency,
           name = x.name,
-          cashAccountType = x.accountType,
+          cashAccountType = cashAccountType,
           product = x.accountType,
           balances = if(canReadBalances) accountBalances else None,
           _links = CoreAccountLinksJsonV13(

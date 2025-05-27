@@ -4748,7 +4748,13 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
 
     val user = AuthUser.getCurrentUser
     val result = tryo {
-      endpoint(newRequest)(CallContext(user = user))
+      val headers: List[HTTPParam] = addlParams.get(RequestHeader.`Consent-Id`)
+        .map(consentId => List(HTTPParam(RequestHeader.`Consent-Id`, List(consentId))))
+        .getOrElse(Nil)
+      
+      endpoint(newRequest)(CallContext(
+        user = user,
+        requestHeaders = headers))
     }
 
     val func: ((=> LiftResponse) => Unit) => Unit = result match {
