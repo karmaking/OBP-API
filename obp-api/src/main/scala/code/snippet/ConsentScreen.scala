@@ -151,7 +151,7 @@ class ConsentScreen extends MdcLoggable {
   private def renderConsentRows(consents: List[ConsentInfoJsonV510]): NodeSeq = {
     consents.map { consent =>
       <tr class="consent-entry">
-        <td class="consent-id">{consent.consent_id}</td>
+        <td class="consent_reference_id">{consent.consent_reference_id}</td>
         <td class="consumer-id">{consent.consumer_id}</td>
         <td class="jwt-payload">{json.prettyRender(consent.jwt_payload.map(Extraction.decompose).openOr(JNothing))}</td>
         <td class="status">{consent.status}</td>
@@ -162,7 +162,7 @@ class ConsentScreen extends MdcLoggable {
             val result = selfRevokeConsent(consent.consent_id)
             val message = result match {
               case Left((msg, _)) => ShowMessage(msg, isError = true)
-              case Right(_)       => ShowMessage(s"Consent (${consent.consent_id}) successfully revoked.", isError = false)
+              case Right(_)       => ShowMessage(s"Consent (reference_id ${consent.consent_reference_id}) successfully revoked.", isError = false)
             }
             message & refreshTable()
           })

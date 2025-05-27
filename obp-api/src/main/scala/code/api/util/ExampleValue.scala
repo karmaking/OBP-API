@@ -2,18 +2,18 @@ package code.api.util
 
 
 import code.api.Constant
-import code.api.util.APIUtil.{DateWithMs, DateWithMsExampleString, formatDate, oneYearAgo, oneYearAgoDate, parseDate}
+import code.api.util.APIUtil.{DateWithMs, DateWithMsExampleString, formatDate, oneYearAgoDate, parseDate}
 import code.api.util.ErrorMessages.{InvalidJsonFormat, UnknownError, UserHasMissingRoles, UserNotLoggedIn}
-import net.liftweb.json.JsonDSL._
 import code.api.util.Glossary.{glossaryItems, makeGlossaryItem}
 import code.apicollection.ApiCollection
-import code.dynamicEntity.{DynamicEntityDefinition, DynamicEntityFooBar, DynamicEntityFullBarFields, DynamicEntityIntTypeExample, DynamicEntityStringTypeExample}
+import code.dynamicEntity._
 import com.openbankproject.commons.model.CardAction
 import com.openbankproject.commons.model.enums.{CustomerAttributeType, DynamicEntityFieldType, UserInvitationPurpose}
 import com.openbankproject.commons.util.ReflectUtils
 import net.liftweb.json
 import net.liftweb.json.JObject
 import net.liftweb.json.JsonAST.JField
+import net.liftweb.json.JsonDSL._
 
 case class ConnectorField(value: String, description: String) {
 
@@ -1586,7 +1586,10 @@ object ExampleValue {
   lazy val directDebitIdExample = ConnectorField(NoExampleProvided,NoDescriptionProvided)
   glossaryItems += makeGlossaryItem("direct_debit_id", directDebitIdExample)
 
-  lazy val consentIdExample = ConnectorField(NoExampleProvided,NoDescriptionProvided)
+  lazy val consentReferenceIdExample = ConnectorField("9d429899-24f5-42c8-8565-943ffa6a7946" ,NoDescriptionProvided)
+  glossaryItems += makeGlossaryItem("consent_id", consentReferenceIdExample)
+  
+  lazy val consentIdExample = ConnectorField("9d429899-24f5-42c8-8565-943ffa6a7947",NoDescriptionProvided)
   glossaryItems += makeGlossaryItem("consent_id", consentIdExample)
 
   lazy val basketIdExample = ConnectorField(NoExampleProvided,NoDescriptionProvided)
