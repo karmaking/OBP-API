@@ -26,10 +26,10 @@
 
 package com.openbankproject.commons.dto
 
+import com.openbankproject.commons.model._
 import com.openbankproject.commons.model.enums.StrongCustomerAuthentication.SCA
 import com.openbankproject.commons.model.enums.StrongCustomerAuthenticationStatus.SCAStatus
 import com.openbankproject.commons.model.enums.{TransactionRequestStatus, _}
-import com.openbankproject.commons.model._
 import net.liftweb.json.{JObject, JValue}
 
 import java.util.Date
@@ -391,6 +391,10 @@ case class OutBoundCreateTaxResidence(outboundAdapterCallContext: OutboundAdapte
   taxNumber: String) extends TopicTrait
 
 case class InBoundCreateTaxResidence(inboundAdapterCallContext: InboundAdapterCallContext, status: Status, data: TaxResidenceCommons) extends InBoundTrait[TaxResidenceCommons]
+
+case class OutBoundGetBankAccountsBalancesByAccountIds (outboundAdapterCallContext: OutboundAdapterCallContext,
+  accountIds: List[AccountId]) extends TopicTrait
+case class InBoundGetBankAccountsBalancesByAccountIds (inboundAdapterCallContext: InboundAdapterCallContext, status: Status, data: List[BankAccountBalanceTraitCommons]) extends InBoundTrait[List[BankAccountBalanceTraitCommons]]
 
 
 case class OutBoundGetTaxResidence(outboundAdapterCallContext: OutboundAdapterCallContext,

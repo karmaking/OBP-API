@@ -438,6 +438,7 @@ object ConnectorBuilderUtil {
       "getRegulatedEntities",
       "getRegulatedEntityByEntityId",
       "getBankAccountBalancesByAccountId",
+      "getBankAccountsBalancesByAccountIds",
       "getBankAccountBalanceById",
       "createOrUpdateBankAccountBalance",
       "deleteBankAccountBalance",

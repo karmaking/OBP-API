@@ -147,7 +147,8 @@ case class ConsentJsonV510(consent_id: String,
                            consumer_id:String)
 
 
-case class ConsentInfoJsonV510(consent_id: String,
+case class ConsentInfoJsonV510(consent_reference_id: String,
+                               consent_id: String,
                                consumer_id: String,
                                created_by_user_id: String,
                                status: String,
@@ -916,6 +917,7 @@ object JSONFactory510 extends CustomJsonFormats {
       consents.map { c =>
         val jwtPayload: Box[ConsentJWT] = JwtUtil.getSignedPayloadAsJson(c.jsonWebToken).map(parse(_).extract[ConsentJWT])
         ConsentInfoJsonV510(
+          consent_reference_id = c.consentReferenceId,
           consent_id = c.consentId,
           consumer_id = c.consumerId,
           created_by_user_id = c.userId,
