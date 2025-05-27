@@ -560,6 +560,8 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
 
   def getRequestHeadersBerlinGroup(callContext: Option[CallContextLight]): CustomResponseHeaders = {
     val aspspScaApproach = getPropsValue("berlin_group_aspsp_sca_approach", defaultValue = "redirect")
+    logger.debug(s"ConstantsBG.berlinGroupVersion1.urlPrefix: ${ConstantsBG.berlinGroupVersion1.urlPrefix}")
+    logger.debug(s"callContext.map(_.url): ${callContext.map(_.url)}")
     callContext match {
       case Some(cc) if cc.url.contains(ConstantsBG.berlinGroupVersion1.urlPrefix) && cc.url.endsWith("/consents") =>
         CustomResponseHeaders(List(
