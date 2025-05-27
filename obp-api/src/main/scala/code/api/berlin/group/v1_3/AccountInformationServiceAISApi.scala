@@ -1,18 +1,16 @@
 package code.api.builder.AccountInformationServiceAISApi
 
-import java.text.SimpleDateFormat
 import code.api.APIFailureNewStyle
 import code.api.Constant.{SYSTEM_READ_ACCOUNTS_BERLIN_GROUP_VIEW_ID, SYSTEM_READ_BALANCES_BERLIN_GROUP_VIEW_ID, SYSTEM_READ_TRANSACTIONS_BERLIN_GROUP_VIEW_ID}
 import code.api.berlin.group.v1_3.JSONFactory_BERLIN_GROUP_1_3.{PostConsentResponseJson, _}
-import code.api.berlin.group.v1_3.model.{HrefType, LinksAll, ScaStatusResponse}
-import code.api.berlin.group.v1_3.{BgSpecValidation, JSONFactory_BERLIN_GROUP_1_3, JvalueCaseClass, OBP_BERLIN_GROUP_1_3}
 import code.api.berlin.group.v1_3.model._
+import code.api.berlin.group.v1_3.{BgSpecValidation, JSONFactory_BERLIN_GROUP_1_3, JvalueCaseClass}
 import code.api.util.APIUtil.{passesPsd2Aisp, _}
 import code.api.util.ApiTag._
 import code.api.util.ErrorMessages._
 import code.api.util.NewStyle.HttpCode
 import code.api.util.newstyle.BalanceNewStyle
-import code.api.util.{APIUtil, ApiTag, CallContext, Consent, ExampleValue, NewStyle}
+import code.api.util._
 import code.bankconnectors.Connector
 import code.consent.{ConsentStatus, Consents}
 import code.context.{ConsentAuthContextProvider, UserAuthContextProvider}
@@ -23,16 +21,15 @@ import code.views.Views
 import com.github.dwickern.macros.NameOf.nameOf
 import com.openbankproject.commons.ExecutionContext.Implicits.global
 import com.openbankproject.commons.model._
-import com.openbankproject.commons.model.enums.{ChallengeType, StrongCustomerAuthentication, StrongCustomerAuthenticationStatus, SuppliedAnswerType}
+import com.openbankproject.commons.model.enums.{ChallengeType, StrongCustomerAuthenticationStatus, SuppliedAnswerType}
 import com.openbankproject.commons.util.ApiVersion
+import net.liftweb
 import net.liftweb.common.{Empty, Full}
 import net.liftweb.http.js.JE.JsRaw
 import net.liftweb.http.rest.RestHelper
-import net.liftweb
 import net.liftweb.json
 import net.liftweb.json._
 
-import scala.collection.immutable.Nil
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
 
@@ -342,10 +339,10 @@ of the PSU at this ASPSP.
                 attribute.value.equalsIgnoreCase("card")
               ).isEmpty)
 
-            (balances, callContext) <- JSONFactory_BERLIN_GROUP_1_3.flattenOBPReturnType(bankAccountsFiltered.map(bankAccont => code.api.util.newstyle.BankAccountBalanceNewStyle.getBankAccountBalances(
-              bankAccont.accountId,
+            (balances, callContext) <-  code.api.util.newstyle.BankAccountBalanceNewStyle.getBankAccountsBalances(
+              bankAccountsFiltered.map(_.accountId),
               callContext
-            )))
+            )
              
           } yield {
             (JSONFactory_BERLIN_GROUP_1_3.createAccountListJson(
