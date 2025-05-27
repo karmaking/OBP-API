@@ -69,8 +69,6 @@ object BerlinGroupError {
       case "401" if message.contains("OBP-35018") => "CONSENT_INVALID"
       case "401" if message.contains("OBP-35005") => "CONSENT_INVALID"
 
-      case "403" if message.contains("OBP-35001") => "CONSENT_UNKNOWN"
-
       case "401" if message.contains("OBP-20300") => "CERTIFICATE_BLOCKED"
       case "401" if message.contains("OBP-20312") => "CERTIFICATE_INVALID"
       case "401" if message.contains("OBP-20300") => "CERTIFICATE_INVALID"
@@ -80,6 +78,7 @@ object BerlinGroupError {
 
       case "400" if message.contains("OBP-35018") => "CONSENT_UNKNOWN"
       case "400" if message.contains("OBP-35001") => "CONSENT_UNKNOWN"
+      case "403" if message.contains("OBP-35001") => "CONSENT_UNKNOWN"
 
       case "404" if message.contains("OBP-30076") => "RESOURCE_UNKNOWN"
 
@@ -91,6 +90,9 @@ object BerlinGroupError {
       case "400" if message.contains("OBP-20252") => "FORMAT_ERROR"
       case "400" if message.contains("OBP-20251") => "FORMAT_ERROR"
       case "400" if message.contains("OBP-20088") => "FORMAT_ERROR"
+      case "400" if message.contains("OBP-20089") => "FORMAT_ERROR"
+      case "400" if message.contains("OBP-20090") => "FORMAT_ERROR"
+      case "400" if message.contains("OBP-20091") => "FORMAT_ERROR"
 
       case "429" if message.contains("OBP-10018") => "ACCESS_EXCEEDED"
       case _ => code

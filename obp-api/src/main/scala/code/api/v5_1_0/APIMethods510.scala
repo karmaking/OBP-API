@@ -1439,7 +1439,7 @@ trait APIMethods510 {
       nameOf(updateConsentUserIdByConsentId),
       "PUT",
       "/management/banks/BANK_ID/consents/CONSENT_ID/created-by-user",
-      "Update Consent Created by User by CONSENT_ID",
+      "Update Created by User of Consent by CONSENT_ID",
       s"""
          |
          |This endpoint is used to Update the User bound to a consent.
@@ -1493,11 +1493,11 @@ trait APIMethods510 {
             consent <- Future(Consents.consentProvider.vend.updateConsentUser(consentId, user)) map {
               i => connectorEmptyResponse(i, cc.callContext)
             }
-            consentJWT <- Consent.updateUserIdOfBerlinGroupConsentJWT(
+            consentJWT <- Future(Consent.updateUserIdOfBerlinGroupConsentJWT(
               consentJson.user_id,
               consent,
               cc.callContext
-            ) map {
+            )) map {
               i => connectorEmptyResponse(i, cc.callContext)
             }
             updatedConsent <- Future(Consents.consentProvider.vend.setJsonWebToken(consent.consentId, consentJWT)) map {

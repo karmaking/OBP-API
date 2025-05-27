@@ -1,5 +1,6 @@
 package code.api.berlin.group.v1_3
 
+import code.api.berlin.group.ConstantsBG
 import code.api.berlin.group.v1_3.model.TransactionStatus.mapTransactionStatus
 import code.api.berlin.group.v1_3.model._
 import code.api.util.APIUtil._
@@ -63,7 +64,7 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
   case class CoreAccountJsonV13(
                                  resourceId: String,
                                  iban: String,
-                                 bban: String,
+                                 bban: Option[String],
                                  currency: String,
                                  name: String,
                                  product: String,
@@ -138,6 +139,10 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
     iban: String,
     currency : Option[String] = None,
   )
+  case class FromAccountJson(
+    iban: String,
+    currency : Option[String] = None,
+  )
   case class TransactionJsonV13(
     transactionId: String,
     creditorName: String,
@@ -191,7 +196,7 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
   )
   
   case class TransactionsJsonV13(
-    account:FromAccount,
+    account: FromAccountJson,
     transactions:TransactionsV13Transactions,
   )
 
@@ -260,7 +265,7 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
     recurringIndicator: Boolean,
     validUntil: String,
     frequencyPerDay: Int,
-    combinedServiceIndicator: Boolean,
+    combinedServiceIndicator: Option[Boolean],
     lastActionDate: String,
     consentStatus: String
   )
@@ -346,12 +351,12 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
         CoreAccountJsonV13(
           resourceId = x.accountId.value,
           iban = iBan,
-          bban = bBan,
+          bban = None,
           currency = x.currency,
           name = x.name,
           cashAccountType = cashAccountType,
           product = x.accountType,
-          balances = accountBalances,
+          balances = if(canReadBalances) accountBalances else None,
           _links = CoreAccountLinksJsonV13(
             balances = if(canReadBalances) Some(balanceRef) else None,
             transactions = if(canReadTransactions) Some(transactionRef) else None,
@@ -377,7 +382,7 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
         CoreAccountJsonV13(
           resourceId = x.accountId.value,
           iban = iBan,
-          bban = bBan,
+          bban = None,
           currency = x.currency,
           name = x.name,
           cashAccountType = x.accountType,
@@ -454,14 +459,17 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
     ))
   }
   
-  def createTransactionJSON(bankAccount: BankAccount, transaction : ModeratedTransaction, creditorAccount: CreditorAccountJson) : TransactionJsonV13 = {
-    val bookingDate = transaction.startDate.getOrElse(null)
-    val valueDate = transaction.finishDate.getOrElse(null)
+  def createTransactionJSON(bankAccount: BankAccount, transaction : ModeratedTransaction) : TransactionJsonV13 = {
+    val bookingDate = transaction.startDate.orNull
+    val valueDate = transaction.finishDate.orNull
     val creditorName = bankAccount.label
     TransactionJsonV13(
       transactionId = transaction.id.value,
       creditorName = creditorName,
-      creditorAccount = creditorAccount,
+      creditorAccount = CreditorAccountJson(
+        transaction.otherBankAccount.map(_.iban.orNull).orNull,
+        transaction.currency
+      ),
       transactionAmount = AmountOfMoneyV13(APIUtil.stringOptionOrNull(transaction.currency), transaction.amount.get.toString().trim.stripPrefix("-")),
       bookingDate = BgSpecValidation.formatToISODate(bookingDate) ,
       valueDate = BgSpecValidation.formatToISODate(valueDate),
@@ -490,16 +498,19 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
   }
 
   
-  def createTransactionFromRequestJSON(bankAccount: BankAccount, transactionRequest : TransactionRequest, creditorAccount: CreditorAccountJson) : TransactionJsonV13 = {
+  def createTransactionFromRequestJSON(bankAccount: BankAccount, tr : TransactionRequest) : TransactionJsonV13 = {
     val creditorName = bankAccount.accountHolder
-    val remittanceInformationUnstructured = stringOrNull(transactionRequest.body.description)
+    val remittanceInformationUnstructured = stringOrNull(tr.body.description)
     TransactionJsonV13(
-      transactionId = transactionRequest.id.value,
+      transactionId = tr.id.value,
       creditorName = creditorName,
-      creditorAccount = creditorAccount,
-      transactionAmount = AmountOfMoneyV13(transactionRequest.charge.value.currency, transactionRequest.charge.value.amount.trim.stripPrefix("-")),
-      bookingDate = BgSpecValidation.formatToISODate(transactionRequest.start_date),
-      valueDate = BgSpecValidation.formatToISODate(transactionRequest.end_date),
+      creditorAccount = CreditorAccountJson(
+        if (tr.other_account_routing_scheme == "IBAN") tr.other_account_routing_address else "",
+        Some(tr.body.value.currency)
+      ),
+      transactionAmount = AmountOfMoneyV13(tr.charge.value.currency, tr.charge.value.amount.trim.stripPrefix("-")),
+      bookingDate = BgSpecValidation.formatToISODate(tr.start_date),
+      valueDate = BgSpecValidation.formatToISODate(tr.end_date),
       remittanceInformationUnstructured = remittanceInformationUnstructured
     )
   }
@@ -508,18 +519,16 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
     val accountId = bankAccount.accountId.value
     val (iban: String, bban: String) = getIbanAndBban(bankAccount)
    
-    val creditorAccount = CreditorAccountJson(
+    val account = FromAccountJson(
       iban = iban,
       currency = Some(bankAccount.currency)
     )
     TransactionsJsonV13(
-      FromAccount(
-        iban = iban,
-      ),
+      account,
       TransactionsV13Transactions(
-        booked= transactions.map(transaction => createTransactionJSON(bankAccount, transaction, creditorAccount)),
-        pending = transactionRequests.filter(_.status!="COMPLETED").map(transactionRequest => createTransactionFromRequestJSON(bankAccount, transactionRequest, creditorAccount)),
-        _links = TransactionsV13TransactionsLinks(LinkHrefJson(s"/v1.3/accounts/$accountId"))
+        booked= transactions.map(transaction => createTransactionJSON(bankAccount, transaction)),
+        pending = transactionRequests.filter(_.status!="COMPLETED").map(transactionRequest => createTransactionFromRequestJSON(bankAccount, transactionRequest)),
+        _links = TransactionsV13TransactionsLinks(LinkHrefJson(s"/${ConstantsBG.berlinGroupVersion1.apiShortVersion}/accounts/$accountId"))
       )
     )
   }
@@ -565,7 +574,7 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
       CardTransactionsV13Transactions(
         booked= transactions.map(t => createCardTransactionJson(t)),
         pending = Nil,
-        _links = CardTransactionsLinksV13(LinkHrefJson(s"/v1.3/card-accounts/$accountId"))
+        _links = CardTransactionsLinksV13(LinkHrefJson(s"/${ConstantsBG.berlinGroupVersion1.apiShortVersion}/card-accounts/$accountId"))
       )
     )
   }
@@ -576,7 +585,7 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
         consentId = consent.consentId,
         consentStatus = consent.status.toLowerCase(),
         _links = ConsentLinksV13(
-          startAuthorisation = Some(Href(s"/v1.3/consents/${consent.consentId}/authorisations"))
+          startAuthorisation = Some(Href(s"/${ConstantsBG.berlinGroupVersion1.apiShortVersion}/consents/${consent.consentId}/authorisations"))
         )
       )
     }
@@ -595,9 +604,9 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
           consentStatus = consent.status.toLowerCase(),
           _links = ConsentLinksV13(
             scaRedirect = Some(Href(s"$scaRedirectUrl")),
-            status = Some(Href(s"/v1.3/consents/${consent.consentId}/status")),
+            status = Some(Href(s"/${ConstantsBG.berlinGroupVersion1.apiShortVersion}/consents/${consent.consentId}/status")),
             // TODO Introduce a working link
-            // scaStatus = Some(Href(s"/v1.3/consents/${consent.consentId}/authorisations/AUTHORISATIONID")),
+            // scaStatus = Some(Href(s"/${ConstantsBG.berlinGroupVersion1.apiShortVersion}/consents/${consent.consentId}/authorisations/AUTHORISATIONID")),
           )
         )
       case Full("redirection_with_dedicated_start_of_authorization") =>
@@ -607,7 +616,7 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
           consentId = consent.consentId,
           consentStatus = consent.status.toLowerCase(),
           _links = ConsentLinksV13(
-            startAuthorisationWithPsuAuthentication = Some(Href(s"/v1.3/consents/${consent.consentId}/authorisations"))
+            startAuthorisationWithPsuAuthentication = Some(Href(s"/${ConstantsBG.berlinGroupVersion1.apiShortVersion}/consents/${consent.consentId}/authorisations"))
           )
         )
       case Full("decoupled") =>
@@ -615,7 +624,7 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
           consentId = consent.consentId,
           consentStatus = consent.status.toLowerCase(),
           _links = ConsentLinksV13(
-            startAuthorisationWithPsuIdentification = Some(Href(s"/v1.3/consents/${consent.consentId}/authorisations"))
+            startAuthorisationWithPsuIdentification = Some(Href(s"/${ConstantsBG.berlinGroupVersion1.apiShortVersion}/consents/${consent.consentId}/authorisations"))
           )
         )
       case _ =>
@@ -626,7 +635,7 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
   def createPutConsentResponseJson(consent: ConsentTrait) : ScaStatusResponse = {
     ScaStatusResponse(
       scaStatus = consent.status.toLowerCase(),
-      _links = Some(LinksAll(scaStatus = Some(HrefType(Some(s"/v1.3/consents/${consent.consentId}/authorisations")))))
+      _links = Some(LinksAll(scaStatus = Some(HrefType(Some(s"/${ConstantsBG.berlinGroupVersion1.apiShortVersion}/consents/${consent.consentId}/authorisations")))))
     )
   }
 
@@ -640,7 +649,7 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
       recurringIndicator = createdConsent.recurringIndicator,
       validUntil = if(createdConsent.validUntil == null) null else new SimpleDateFormat(DateWithDay).format(createdConsent.validUntil), 
       frequencyPerDay = createdConsent.frequencyPerDay,
-      combinedServiceIndicator= createdConsent.combinedServiceIndicator,
+      combinedServiceIndicator = None,
       lastActionDate = if(createdConsent.lastActionDate == null) null else new SimpleDateFormat(DateWithDay).format(createdConsent.lastActionDate),
       consentStatus = createdConsent.status.toLowerCase()
     )
@@ -651,7 +660,7 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
       scaStatus = challenge.scaStatus.map(_.toString).getOrElse("None"),
       authorisationId = challenge.authenticationMethodId.getOrElse("None"),
       pushMessage = "started", //TODO Not implement how to fill this.
-      _links =  ScaStatusJsonV13(s"/v1.3/consents/${consent.consentId}/authorisations/${challenge.challengeId}")//TODO, Not sure, what is this for??
+      _links =  ScaStatusJsonV13(s"/${ConstantsBG.berlinGroupVersion1.apiShortVersion}/consents/${consent.consentId}/authorisations/${challenge.challengeId}")//TODO, Not sure, what is this for??
     )
   }
 
@@ -704,9 +713,9 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
       paymentId = paymentId,
       _links = InitiatePaymentResponseLinks(
         scaRedirect = LinkHrefJson(s"$scaRedirectUrl/$paymentId"),
-        self = LinkHrefJson(s"/v1.3/payments/sepa-credit-transfers/$paymentId"),
-        status = LinkHrefJson(s"/v1.3/payments/$paymentId/status"),
-        scaStatus = LinkHrefJson(s"/v1.3/payments/$paymentId/authorisations/${paymentId}")
+        self = LinkHrefJson(s"/${ConstantsBG.berlinGroupVersion1.apiShortVersion}/payments/sepa-credit-transfers/$paymentId"),
+        status = LinkHrefJson(s"/${ConstantsBG.berlinGroupVersion1.apiShortVersion}/payments/$paymentId/status"),
+        scaStatus = LinkHrefJson(s"/${ConstantsBG.berlinGroupVersion1.apiShortVersion}/payments/$paymentId/authorisations/${paymentId}")
       )
     )
   }
@@ -715,9 +724,9 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
     CancelPaymentResponseJson(
       "ACTC",
       _links = CancelPaymentResponseLinks(
-        self = LinkHrefJson(s"/v1.3/payments/sepa-credit-transfers/$paymentId"),
-        status = LinkHrefJson(s"/v1.3/payments/sepa-credit-transfers/$paymentId/status"),
-        startAuthorisation = LinkHrefJson(s"/v1.3/payments/sepa-credit-transfers/cancellation-authorisations/${paymentId}")
+        self = LinkHrefJson(s"/${ConstantsBG.berlinGroupVersion1.apiShortVersion}/payments/sepa-credit-transfers/$paymentId"),
+        status = LinkHrefJson(s"/${ConstantsBG.berlinGroupVersion1.apiShortVersion}/payments/sepa-credit-transfers/$paymentId/status"),
+        startAuthorisation = LinkHrefJson(s"/${ConstantsBG.berlinGroupVersion1.apiShortVersion}/payments/sepa-credit-transfers/cancellation-authorisations/${paymentId}")
       )
     )
   }
@@ -731,7 +740,7 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
         scaStatus = challenge.scaStatus.map(_.toString).getOrElse(""),
         authorisationId = challenge.challengeId,
         psuMessage = "Please check your SMS at a mobile device.",
-        _links = ScaStatusJsonV13(s"/v1.3/payments/sepa-credit-transfers/${challenge.challengeId}")
+        _links = ScaStatusJsonV13(s"/${ConstantsBG.berlinGroupVersion1.apiShortVersion}/payments/sepa-credit-transfers/${challenge.challengeId}")
       )
   }
 
@@ -739,7 +748,7 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
     ScaStatusResponse(
       scaStatus = challenge.scaStatus.map(_.toString).getOrElse(""),
       psuMessage = Some("Please check your SMS at a mobile device."),
-      _links = Some(LinksAll(scaStatus = Some(HrefType(Some(s"/v1.3/payments/sepa-credit-transfers/${challenge.challengeId}"))))
+      _links = Some(LinksAll(scaStatus = Some(HrefType(Some(s"/${ConstantsBG.berlinGroupVersion1.apiShortVersion}/payments/sepa-credit-transfers/${challenge.challengeId}"))))
       )
     )
   }
@@ -751,7 +760,7 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
     ScaStatusResponse(
         scaStatus = challenge.scaStatus.map(_.toString).getOrElse(""),
         psuMessage = Some("Please check your SMS at a mobile device."),
-        _links = Some(LinksAll(scaStatus = Some(HrefType(Some(s"/v1.3/${paymentService}/${paymentProduct}/${paymentId}/cancellation-authorisations/${challenge.challengeId}"))))
+        _links = Some(LinksAll(scaStatus = Some(HrefType(Some(s"/${ConstantsBG.berlinGroupVersion1.apiShortVersion}/${paymentService}/${paymentProduct}/${paymentId}/cancellation-authorisations/${challenge.challengeId}"))))
       )
     )
   }
@@ -767,7 +776,7 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
         authorisationId = Some(challenge.challengeId),
         psuMessage = Some("Please check your SMS at a mobile device."),
         _links = Some(LinksUpdatePsuAuthentication(
-          scaStatus = Some(HrefType(Some(s"/v1.3/${paymentService}/${paymentProduct}/${paymentId}/cancellation-authorisations/${challenge.challengeId}"))))
+          scaStatus = Some(HrefType(Some(s"/${ConstantsBG.berlinGroupVersion1.apiShortVersion}/${paymentService}/${paymentProduct}/${paymentId}/cancellation-authorisations/${challenge.challengeId}"))))
         )
       )
   }
@@ -778,7 +787,7 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
       scaStatus = challenge.scaStatus.map(_.toString).getOrElse(""),
       authorisationId = challenge.challengeId,
       psuMessage = "Please check your SMS at a mobile device.",
-      _links = ScaStatusJsonV13(s"/v1.3/signing-baskets/${basketId}/authorisations/${challenge.challengeId}")
+      _links = ScaStatusJsonV13(s"/${ConstantsBG.berlinGroupVersion1.apiShortVersion}/signing-baskets/${basketId}/authorisations/${challenge.challengeId}")
     )
   }
 
@@ -787,9 +796,9 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
       basketId = basket.basketId,
       transactionStatus = basket.status.toLowerCase(),
       _links = SigningBasketLinksV13(
-        self = LinkHrefJson(s"/v1.3/signing-baskets/${basket.basketId}"),
-        status = LinkHrefJson(s"/v1.3/signing-baskets/${basket.basketId}/status"),
-        startAuthorisation = LinkHrefJson(s"/v1.3/signing-baskets/${basket.basketId}/authorisations")
+        self = LinkHrefJson(s"/${ConstantsBG.berlinGroupVersion1.apiShortVersion}/signing-baskets/${basket.basketId}"),
+        status = LinkHrefJson(s"/${ConstantsBG.berlinGroupVersion1.apiShortVersion}/signing-baskets/${basket.basketId}/status"),
+        startAuthorisation = LinkHrefJson(s"/${ConstantsBG.berlinGroupVersion1.apiShortVersion}/signing-baskets/${basket.basketId}/authorisations")
       )
     )
   }

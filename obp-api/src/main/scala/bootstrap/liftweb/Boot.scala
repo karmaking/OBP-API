@@ -567,6 +567,8 @@ class Boot extends MdcLoggable {
       Menu.i("Consents") / "consents",
       Menu.i("Debug") / "debug",
       Menu.i("debug-basic") / "debug" / "debug-basic",
+      Menu.i("debug-default-header") / "debug" / "debug-default-header",
+      Menu.i("debug-default-footer") / "debug" / "debug-default-footer",
       Menu.i("debug-localization") / "debug" / "debug-localization",
       Menu.i("debug-plain") / "debug" / "debug-plain",
       Menu.i("debug-webui") / "debug" / "debug-webui",

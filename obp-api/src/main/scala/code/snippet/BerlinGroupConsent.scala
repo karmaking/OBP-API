@@ -110,7 +110,7 @@ class BerlinGroupConsent extends MdcLoggable with RestHelper with APIMethods510 
     for {
       // Fetch the consent by ID
       consent: MappedConsent <- Future(Consents.consentProvider.vend.getConsentByConsentId(consentId)) map {
-        APIUtil.unboxFullOrFail(_, None, s"$ConsentNotFound ($consentId)", 404)
+        APIUtil.unboxFullOrFail(_, None, s"$ConsentNotFound ($consentId)", 400)
       }
       // Update the consent JWT with new access details
       consentJWT <- Consent.updateAccountAccessOfBerlinGroupConsentJWT(
@@ -171,6 +171,19 @@ class BerlinGroupConsent extends MdcLoggable with RestHelper with APIMethods510 
         // Select all IBANs
         selectedAccountsIbansValue.set(userIbans)
 
+        var canReadAccountsIbansAvailableAccounts: List[String] = List()
+        if(json.access.availableAccounts.contains("allAccounts")) { //
+          /*
+            Access is requested via:
+            "access":
+              {
+                "availableAccounts": "allAccounts"
+              }
+           */
+          accessAccountsDefinedVar.set(true)
+          canReadAccountsIbansAvailableAccounts = userIbans.toList
+        }
+
         // Determine which IBANs the user can access for accounts, balances, and transactions
         val canReadAccountsIbans: List[String] = json.access.accounts match {
           case Some(accounts) if accounts.isEmpty => // Access is requested via "accounts": []
@@ -226,7 +239,7 @@ class BerlinGroupConsent extends MdcLoggable with RestHelper with APIMethods510 
         }
 
         // all Selected IBANs
-        val ibansFromGetConsentResponseJson = (canReadAccountsIbans ::: canReadBalancesIbans ::: canReadTransactionsIbans).distinct
+        val ibansFromGetConsentResponseJson = (canReadAccountsIbansAvailableAccounts ::: canReadAccountsIbans ::: canReadBalancesIbans ::: canReadTransactionsIbans).distinct
 
         /**
          * Generates toggle switches for IBAN lists.
@@ -385,10 +398,19 @@ class BerlinGroupConsent extends MdcLoggable with RestHelper with APIMethods510 
    */
   private def denyConsentRequestProcess() = {
     val consentId = ObpS.param("CONSENT_ID") openOr ("")
-    Consents.consentProvider.vend.updateConsentStatus(consentId, ConsentStatus.rejected)
-    S.redirectTo(
-      s"$redirectUriValue?CONSENT_ID=${consentId}"
-    )
+    Consents.consentProvider.vend.getConsentByConsentId(consentId) match {
+      case Full(consent) if otpValue.is == consent.challenge =>
+        updateConsentUser(consent)
+        updateConsentJwt(consent) map { i =>
+          Consents.consentProvider.vend.updateConsentStatus(consentId, ConsentStatus.rejected)
+        }
+        S.redirectTo(
+          s"$redirectUriValue?CONSENT_ID=${consentId}"
+        )
+      case _ =>
+        S.error(ErrorMessages.ConsentNotFound)
+    }
+
   }
 
   /**
@@ -398,13 +420,27 @@ class BerlinGroupConsent extends MdcLoggable with RestHelper with APIMethods510 
     val consentId = ObpS.param("CONSENT_ID") openOr ("")
     Consents.consentProvider.vend.getConsentByConsentId(consentId) match {
       case Full(consent) if otpValue.is == consent.challenge =>
-        Consents.consentProvider.vend.updateConsentStatus(consentId, ConsentStatus.valid)
+        updateConsentUser(consent)
+        updateConsentJwt(consent) map { i =>
+          Consents.consentProvider.vend.updateConsentStatus(consentId, ConsentStatus.valid)
+        }
         S.redirectTo(
           s"/confirm-bg-consent-request-redirect-uri?CONSENT_ID=${consentId}"
         )
       case _ =>
-        S.error("Wrong OTP value")
+        S.error(ErrorMessages.OneTimePasswordInvalid)
     }
+  }
+
+  private def updateConsentUser(consent: MappedConsent): Box[MappedConsent] = {
+    val loggedInUser = AuthUser.currentUser.flatMap(_.user.foreign).openOrThrowException(ErrorMessages.UserNotLoggedIn)
+    Consents.consentProvider.vend.updateConsentUser(consent.consentId, loggedInUser)
+    val jwt = Consent.updateUserIdOfBerlinGroupConsentJWT(loggedInUser.userId, consent, None).openOrThrowException(ErrorMessages.InvalidConnectorResponse)
+    Consents.consentProvider.vend.setJsonWebToken(consent.consentId, jwt)
+  }
+  private def updateConsentJwt(consent: MappedConsent) = {
+    val loggedInUser = AuthUser.currentUser.flatMap(_.user.foreign).openOrThrowException(ErrorMessages.UserNotLoggedIn)
+    Consent.updateViewsOfBerlinGroupConsentJWT(loggedInUser, consent, None)
   }
 
   private def getTppRedirectUri() = {

@@ -2,6 +2,7 @@ package code.api.builder.AccountInformationServiceAISApi
 
 import code.api.APIFailureNewStyle
 import code.api.Constant.{SYSTEM_READ_ACCOUNTS_BERLIN_GROUP_VIEW_ID, SYSTEM_READ_BALANCES_BERLIN_GROUP_VIEW_ID, SYSTEM_READ_TRANSACTIONS_BERLIN_GROUP_VIEW_ID}
+import code.api.berlin.group.ConstantsBG
 import code.api.berlin.group.v1_3.JSONFactory_BERLIN_GROUP_1_3.{PostConsentResponseJson, _}
 import code.api.berlin.group.v1_3.model._
 import code.api.berlin.group.v1_3.{BgSpecValidation, JSONFactory_BERLIN_GROUP_1_3, JvalueCaseClass}
@@ -9,8 +10,8 @@ import code.api.util.APIUtil.{passesPsd2Aisp, _}
 import code.api.util.ApiTag._
 import code.api.util.ErrorMessages._
 import code.api.util.NewStyle.HttpCode
-import code.api.util.newstyle.BalanceNewStyle
 import code.api.util._
+import code.api.util.newstyle.BalanceNewStyle
 import code.bankconnectors.Connector
 import code.consent.{ConsentStatus, Consents}
 import code.context.{ConsentAuthContextProvider, UserAuthContextProvider}
@@ -22,7 +23,6 @@ import com.github.dwickern.macros.NameOf.nameOf
 import com.openbankproject.commons.ExecutionContext.Implicits.global
 import com.openbankproject.commons.model._
 import com.openbankproject.commons.model.enums.{ChallengeType, StrongCustomerAuthenticationStatus, SuppliedAnswerType}
-import com.openbankproject.commons.util.ApiVersion
 import net.liftweb
 import net.liftweb.common.{Empty, Full}
 import net.liftweb.http.js.JE.JsRaw
@@ -34,7 +34,7 @@ import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
 
 object APIMethods_AccountInformationServiceAISApi extends RestHelper {
-    val apiVersion = ApiVersion.berlinGroupV13
+    val apiVersion = ConstantsBG.berlinGroupVersion1
     val resourceDocs = ArrayBuffer[ResourceDoc]()
     val apiRelations = ArrayBuffer[ApiRelation]()
     protected implicit def JvalueToSuper(what: JValue): JvalueCaseClass = JvalueCaseClass(what)
@@ -156,11 +156,28 @@ recurringIndicator:
              consentJson <- NewStyle.function.tryons(failMsg, 400, callContext) {
                json.extract[PostConsentJson]
              }
-             _ <- Helper.booleanToFuture(failMsg = BerlinGroupConsentAccessIsEmpty, cc=callContext) {
-               consentJson.access.accounts.isDefined ||
-               consentJson.access.balances.isDefined ||
-               consentJson.access.transactions.isDefined
+
+             _ <- if (consentJson.access.availableAccounts.isDefined) {
+               for {
+                 _ <- Helper.booleanToFuture(failMsg = BerlinGroupConsentAccessAvailableAccounts, cc = callContext) {
+                   consentJson.access.availableAccounts.contains("allAccounts")
+                 }
+                 _ <- Helper.booleanToFuture(failMsg = BerlinGroupConsentAccessRecurringIndicator, cc = callContext) {
+                   !consentJson.recurringIndicator
+                 }
+                 _ <- Helper.booleanToFuture(failMsg = BerlinGroupConsentAccessFrequencyPerDay, cc = callContext) {
+                   consentJson.frequencyPerDay == 1
+                 }
+               } yield Full(())
+             } else {
+               Helper.booleanToFuture(
+                 failMsg = BerlinGroupConsentAccessIsEmpty, cc = callContext) {
+                 consentJson.access.accounts.isDefined ||
+                   consentJson.access.balances.isDefined ||
+                   consentJson.access.transactions.isDefined
+               }
              }
+
              upperLimit = APIUtil.getPropsAsIntValue("berlin_group_frequency_per_day_upper_limit", 4)
              _ <- Helper.booleanToFuture(failMsg = FrequencyPerDayError, cc=callContext) {
                consentJson.frequencyPerDay > 0 && consentJson.frequencyPerDay <= upperLimit
@@ -242,10 +259,15 @@ recurringIndicator:
        case "consents" :: consentId :: Nil JsonDelete _ => {
          cc =>
            for {
-             (Full(user), callContext) <- authenticatedAccess(cc)
+             (_, callContext) <- applicationAccess(cc)
              _ <- passesPsd2Aisp(callContext)
-             _ <- Future(Consents.consentProvider.vend.getConsentByConsentId(consentId)) map {
-               unboxFullOrFail(_, callContext, ConsentNotFound)
+             consent <- Future(Consents.consentProvider.vend.getConsentByConsentId(consentId)) map {
+               unboxFullOrFail(_, callContext, ConsentNotFound, 403)
+             }
+             consumerIdFromConsent = consent.mConsumerId.get
+             consumerIdFromCurrentCall = callContext.map(_.consumer.map(_.consumerId.get).getOrElse("None")).getOrElse("None")
+             _ <- Helper.booleanToFuture(failMsg = s"$ConsentNotFound $consumerIdFromConsent != $consumerIdFromCurrentCall", failCode = 403, cc = cc.callContext) {
+               consumerIdFromConsent == consumerIdFromCurrentCall
              }
              _ <- Future(Consents.consentProvider.vend.revokeBerlinGroupConsent(consentId)) map {
                i => connectorEmptyResponse(i, callContext)
@@ -755,7 +777,7 @@ This method returns the SCA status of a consent initiation's authorisation sub-r
              (_, callContext) <- authenticatedAccess(cc)
              _ <- passesPsd2Aisp(callContext)
              _ <- Future(Consents.consentProvider.vend.getConsentByConsentId(consentId)) map {
-               unboxFullOrFail(_, callContext, s"$ConsentNotFound ($consentId)")
+               unboxFullOrFail(_, callContext, s"$ConsentNotFound ($consentId)", 403)
              }
              (challenges, callContext) <-  NewStyle.function.getChallengesByConsentId(consentId, callContext)
            } yield {
@@ -787,10 +809,10 @@ This method returns the SCA status of a consent initiation's authorisation sub-r
        case "consents" :: consentId:: "status" :: Nil JsonGet _ => {
          cc =>
            for {
-             (Full(u), callContext) <- authenticatedAccess(cc)
+             (_, callContext) <- applicationAccess(cc)
              _ <- passesPsd2Aisp(callContext)
              consent <- Future(Consents.consentProvider.vend.getConsentByConsentId(consentId)) map {
-               unboxFullOrFail(_, callContext, ConsentNotFound)
+               unboxFullOrFail(_, callContext, ConsentNotFound, 403)
              }
            } yield {
              val status = consent.status
@@ -1137,7 +1159,7 @@ using the extended forms as indicated above.
              (Full(u), callContext) <- authenticatedAccess(cc)
              _ <- passesPsd2Aisp(callContext)
              consent <- Future(Consents.consentProvider.vend.getConsentByConsentId(consentId)) map {
-               unboxFullOrFail(_, callContext, ConsentNotFound)
+               unboxFullOrFail(_, callContext, ConsentNotFound, 403)
               }
              (challenges, callContext) <- NewStyle.function.createChallengesC2(
                List(u.userId),
@@ -1300,7 +1322,7 @@ Maybe in a later version the access path will change.
              (Full(u), callContext) <- authenticatedAccess(cc)
              _ <- passesPsd2Aisp(callContext)
              _ <- Future(Consents.consentProvider.vend.getConsentByConsentId(consentId)) map {
-               unboxFullOrFail(_, callContext, ConsentNotFound)
+               unboxFullOrFail(_, callContext, ConsentNotFound, 403)
              }
              failMsg = s"$InvalidJsonFormat The Json body should be the $TransactionAuthorisation "
              updateJson <- NewStyle.function.tryons(failMsg, 400, callContext) {

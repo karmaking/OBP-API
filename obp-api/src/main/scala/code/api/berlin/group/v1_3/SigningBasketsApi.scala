@@ -28,7 +28,7 @@ import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
 
 object APIMethods_SigningBasketsApi extends RestHelper {
-    val apiVersion = ApiVersion.berlinGroupV13
+    val apiVersion = ConstantsBG.berlinGroupVersion1
     val resourceDocs = ArrayBuffer[ResourceDoc]()
     val apiRelations = ArrayBuffer[ApiRelation]()
     protected implicit def JvalueToSuper(what: JValue): JvalueCaseClass = JvalueCaseClass(what)
@@ -260,7 +260,7 @@ This method returns the SCA status of a signing basket's authorisation sub-resou
              (Full(u), callContext) <- authenticatedAccess(cc)
              _ <- passesPsd2Pisp(callContext)
              _ <- Future(SigningBasketX.signingBasketProvider.vend.getSigningBasketByBasketId(basketId)) map {
-               unboxFullOrFail(_, callContext, s"$ConsentNotFound ($basketId)")
+               unboxFullOrFail(_, callContext, s"$ConsentNotFound ($basketId)", 403)
              }
              (challenges, callContext) <- NewStyle.function.getChallengesByBasketId(basketId, callContext)
            } yield {

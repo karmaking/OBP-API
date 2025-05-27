@@ -3,6 +3,7 @@ name: Build and publish container develop
 # read-write repo token
 # access to secrets
 on:
+  workflow_dispatch:
   push:
     branches:
       - develop

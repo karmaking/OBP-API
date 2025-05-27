@@ -244,7 +244,10 @@ object ErrorMessages {
     s"OBP-20087: The current source view.can_revoke_access_to_custom_views is false."
 
   val BerlinGroupConsentAccessIsEmpty = s"OBP-20088: An access must be requested."
-  
+  val BerlinGroupConsentAccessRecurringIndicator = s"OBP-20089: Recurring indicator must be false when availableAccounts is used."
+  val BerlinGroupConsentAccessFrequencyPerDay = s"OBP-20090: Frequency per day must be 1 when availableAccounts is used."
+  val BerlinGroupConsentAccessAvailableAccounts = s"OBP-20091: availableAccounts must be exactly 'allAccounts'."
+
   val UserNotSuperAdminOrMissRole = "OBP-20101: Current User is not super admin or is missing entitlements:"
   val CannotGetOrCreateUser = "OBP-20102: Cannot get or create user."
   val InvalidUserProvider = "OBP-20103: Invalid DAuth User Provider."
@@ -268,6 +271,7 @@ object ErrorMessages {
   val OneTimePasswordExpired = "OBP-20211: The One Time Password (OTP) has expired. "
   val Oauth2IsNotRecognized = "OBP-20214: OAuth2 Access Token is not recognised at this instance."
   val Oauth2ValidateAccessTokenError = "OBP-20215: There was a problem validating the OAuth2 access token. "
+  val OneTimePasswordInvalid = "OBP-20216: The One Time Password (OTP) is invalid. "
 
   val AuthorizationHeaderAmbiguity = "OBP-20250: Request headers used for authorization are ambiguous. "
   val MissingMandatoryBerlinGroupHeaders= "OBP-20251: Missing mandatory request headers. "

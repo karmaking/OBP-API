@@ -160,14 +160,15 @@ object BerlinGroupSigning extends MdcLoggable {
         val certificate = getCertificateFromTppSignatureCertificate(requestHeaders)
         X509.validateCertificate(certificate) match {
           case Full(true) => // PEM certificate is ok
-            val digest = generateDigest(body.getOrElse(""))
-            if(digest == getHeaderValue(RequestHeader.Digest, requestHeaders)) { // Verifying the Hash in the Digest Field
+            val generatedDigest = generateDigest(body.getOrElse(""))
+            val requestHeaderDigest = getHeaderValue(RequestHeader.Digest, requestHeaders)
+            if(generatedDigest == requestHeaderDigest) { // Verifying the Hash in the Digest Field
               val signatureHeaderValue = getHeaderValue(RequestHeader.Signature, requestHeaders)
               val signature = parseSignatureHeader(signatureHeaderValue).getOrElse("signature", "NONE")
               val headersToSign = parseSignatureHeader(signatureHeaderValue).getOrElse("headers", "").split(" ").toList
               val headers = headersToSign.map(h =>
                 if (h.toLowerCase() == RequestHeader.Digest.toLowerCase()) {
-                  s"$h: $digest"
+                  s"$h: $generatedDigest"
                 } else {
                   s"$h: ${getHeaderValue(h, requestHeaders)}"
                 }
@@ -183,6 +184,8 @@ object BerlinGroupSigning extends MdcLoggable {
                 case (false, _) => (Failure(ErrorMessages.X509PublicKeyCannotVerify), forwardResult._2)
               }
             } else { // The two DIGEST hashes do NOT match, the integrity of the request body is NOT confirmed.
+              logger.debug(s"Generated digest: $generatedDigest")
+              logger.debug(s"Request header digest: $requestHeaderDigest")
               (Failure(ErrorMessages.X509PublicKeyCannotVerify), forwardResult._2)
             }
           case Failure(msg, t, c) => (Failure(msg, t, c), forwardResult._2) // PEM certificate is not valid
@@ -298,7 +301,8 @@ object BerlinGroupSigning extends MdcLoggable {
           developerEmail = extractedEmail,
           redirectURL = None,
           createdByUserId = None,
-          certificate = None
+          certificate = None,
+          logoUrl = APIUtil.getPropsValue("consumer_default_logo_url")
         )
 
         // Set or update certificate
