@@ -67,7 +67,7 @@ trait RabbitMQConnector_vOct2024 extends Connector with MdcLoggable {
   val errorCodeExample = "INTERNAL-OBP-ADAPTER-6001: ..."
 
 //---------------- dynamic start -------------------please don't modify this line
-// ---------- created on 2025-05-22T11:32:05Z
+// ---------- created on 2025-05-27T10:14:24Z
 
   messageDocs += getAdapterInfoDoc
   def getAdapterInfoDoc = MessageDoc(
@@ -7176,6 +7176,36 @@ trait RabbitMQConnector_vOct2024 extends Connector with MdcLoggable {
         response.map(convertToTuple[List[BankAccountBalanceTraitCommons]](callContext))        
   }
           
+  messageDocs += getBankAccountsBalancesByAccountIdsDoc
+  def getBankAccountsBalancesByAccountIdsDoc = MessageDoc(
+    process = "obp.getBankAccountsBalancesByAccountIds",
+    messageFormat = messageFormat,
+    description = "Get Bank Accounts Balances By Account Ids",
+    outboundTopic = None,
+    inboundTopic = None,
+    exampleOutboundMessage = (
+     OutBoundGetBankAccountsBalancesByAccountIds(outboundAdapterCallContext=MessageDocsSwaggerDefinitions.outboundAdapterCallContext,
+      accountIds=List(AccountId(accountIdExample.value)))
+    ),
+    exampleInboundMessage = (
+     InBoundGetBankAccountsBalancesByAccountIds(inboundAdapterCallContext=MessageDocsSwaggerDefinitions.inboundAdapterCallContext,
+      status=MessageDocsSwaggerDefinitions.inboundStatus,
+      data=List( BankAccountBalanceTraitCommons(bankId=BankId(bankIdExample.value),
+      accountId=AccountId(accountIdExample.value),
+      balanceId=BalanceId(balanceIdExample.value),
+      balanceType=balanceTypeExample.value,
+      balanceAmount=BigDecimal(balanceAmountExample.value))))
+    ),
+    adapterImplementation = Some(AdapterImplementation("- Core", 1))
+  )
+
+  override def getBankAccountsBalancesByAccountIds(accountIds: List[AccountId], callContext: Option[CallContext]): OBPReturnType[Box[List[BankAccountBalanceTrait]]] = {
+        import com.openbankproject.commons.dto.{InBoundGetBankAccountsBalancesByAccountIds => InBound, OutBoundGetBankAccountsBalancesByAccountIds => OutBound}  
+        val req = OutBound(callContext.map(_.toOutboundAdapterCallContext).orNull, accountIds)
+        val response: Future[Box[InBound]] = sendRequest[InBound]("obp_get_bank_accounts_balances_by_account_ids", req, callContext)
+        response.map(convertToTuple[List[BankAccountBalanceTraitCommons]](callContext))        
+  }
+          
   messageDocs += getBankAccountBalanceByIdDoc
   def getBankAccountBalanceByIdDoc = MessageDoc(
     process = "obp.getBankAccountBalanceById",
@@ -7266,8 +7296,8 @@ trait RabbitMQConnector_vOct2024 extends Connector with MdcLoggable {
         response.map(convertToTuple[Boolean](callContext))        
   }
           
-// ---------- created on 2025-05-22T11:32:05Z
-//---------------- dynamic end ---------------------please don't modify this line                                                            
+// ---------- created on 2025-05-27T10:14:24Z
+//---------------- dynamic end ---------------------please don't modify this line                                                              
 
   private val availableOperation = DynamicEntityOperation.values.map(it => s""""$it"""").mkString("[", ", ", "]")
 
