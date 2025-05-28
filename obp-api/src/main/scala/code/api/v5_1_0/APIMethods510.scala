@@ -1919,7 +1919,7 @@ trait APIMethods510 {
           for {
             (Full(u), callContext) <- SS.user
             consent <- Future(Consents.consentProvider.vend.getConsentByConsentId(consentId)) map {
-              unboxFullOrFail(_, callContext, ConsentNotFound)
+              unboxFullOrFail(_, callContext, ConsentNotFound, 404)
             }
             _ <- Helper.booleanToFuture(failMsg = ConsentNotFound, cc=callContext) {
               consent.mUserId == u.userId
