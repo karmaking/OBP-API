@@ -560,6 +560,8 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
 
   def getRequestHeadersBerlinGroup(callContext: Option[CallContextLight]): CustomResponseHeaders = {
     val aspspScaApproach = getPropsValue("berlin_group_aspsp_sca_approach", defaultValue = "redirect")
+    logger.debug(s"ConstantsBG.berlinGroupVersion1.urlPrefix: ${ConstantsBG.berlinGroupVersion1.urlPrefix}")
+    logger.debug(s"callContext.map(_.url): ${callContext.map(_.url)}")
     callContext match {
       case Some(cc) if cc.url.contains(ConstantsBG.berlinGroupVersion1.urlPrefix) && cc.url.endsWith("/consents") =>
         CustomResponseHeaders(List(
@@ -3043,10 +3045,10 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
             }
         }
       } else if (hasAnOAuthHeader(cc.authReqHeaderField)) { // OAuth 1
-        getUserFromOAuthHeaderFuture(cc)
+        getUserFromOAuthHeaderFuture(cc.copy(consumer = consumerByCertificate))
       } else if (hasAnOAuth2Header(cc.authReqHeaderField)) { // OAuth 2
         for {
-          (user, callContext) <- OAuth2Login.getUserFuture(cc)
+          (user, callContext) <- OAuth2Login.getUserFuture(cc.copy(consumer = consumerByCertificate))
         } yield {
           (user, callContext)
         }

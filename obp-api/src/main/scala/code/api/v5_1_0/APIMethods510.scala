@@ -1772,8 +1772,7 @@ trait APIMethods510 {
             consent <- Future { Consents.consentProvider.vend.getConsentByConsentId(consentId)} map {
               unboxFullOrFail(_, cc.callContext, ConsentNotFound, 404)
             }
-            errorMessage = s" ${consent.mConsumerId.get} != ${cc.consumer.map(_.consumerId.get).getOrElse("None")}"
-            _ <- Helper.booleanToFuture(failMsg = ConsentNotFound + errorMessage, failCode = 404, cc = cc.callContext) {
+            _ <- Helper.booleanToFuture(failMsg = ConsentNotFound, failCode = 404, cc = cc.callContext) {
               consent.mConsumerId.get == cc.consumer.map(_.consumerId.get).getOrElse("None")
             }
           } yield {
