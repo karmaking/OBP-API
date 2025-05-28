@@ -1908,7 +1908,6 @@ trait APIMethods510 {
       revokedConsentJsonV310,
       List(
         $UserNotLoggedIn,
-        BankNotFound,
         UnknownError
       ),
       List(apiTagConsent, apiTagPSD2AIS, apiTagPsd2))
@@ -1917,12 +1916,12 @@ trait APIMethods510 {
       case  "my" :: "consents" :: consentId :: Nil JsonDelete _ => {
         cc => implicit val ec = EndpointContext(Some(cc))
           for {
-            (Full(u), callContext) <- SS.user
+            (Full(user), callContext) <- authenticatedAccess(cc)
             consent <- Future(Consents.consentProvider.vend.getConsentByConsentId(consentId)) map {
               unboxFullOrFail(_, callContext, ConsentNotFound, 404)
             }
             _ <- Helper.booleanToFuture(failMsg = ConsentNotFound, cc=callContext) {
-              consent.mUserId == u.userId
+              consent.mUserId == user.userId
             }
             consent <- Future(Consents.consentProvider.vend.revoke(consentId)) map {
               i => connectorEmptyResponse(i, callContext)

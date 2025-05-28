@@ -125,7 +125,7 @@ class ConsentScreen extends MdcLoggable {
   
   private def selfRevokeConsent(consentId: String): Either[(String, Int), String] = {
     val addlParams = Map(RequestHeader.`Consent-Id` -> consentId)
-    callEndpoint(Implementations5_1_0.selfRevokeConsent, List("my", "consent", "current"), DeleteRequest, addlParams = addlParams)
+    callEndpoint(Implementations5_1_0.revokeMyConsent, List("my", "consents", consentId), DeleteRequest, addlParams = addlParams)
   }
 
   private def refreshTable(): JsCmd = {
