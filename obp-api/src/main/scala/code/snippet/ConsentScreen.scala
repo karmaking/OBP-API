@@ -26,7 +26,6 @@ TESOBE (http://www.tesobe.com/)
   */
 package code.snippet
 
-import code.api.RequestHeader
 import code.api.util.APIUtil.callEndpoint
 import code.api.util.CustomJsonFormats
 import code.api.v5_1_0.OBPAPI5_1_0.Implementations5_1_0
@@ -123,9 +122,8 @@ class ConsentScreen extends MdcLoggable {
     <div class={"alert " + alertClass} role="alert">{msg}</div>
   }
   
-  private def selfRevokeConsent(consentId: String): Either[(String, Int), String] = {
-    val addlParams = Map(RequestHeader.`Consent-Id` -> consentId)
-    callEndpoint(Implementations5_1_0.revokeMyConsent, List("my", "consents", consentId), DeleteRequest, addlParams = addlParams)
+  private def callRevokeMyConsent(consentId: String): Either[(String, Int), String] = {
+    callEndpoint(Implementations5_1_0.revokeMyConsent, List("my", "consents", consentId), DeleteRequest)
   }
 
   private def refreshTable(): JsCmd = {
@@ -159,7 +157,7 @@ class ConsentScreen extends MdcLoggable {
         <td>
           {
           SHtml.ajaxButton("Revoke", () => {
-            val result = selfRevokeConsent(consent.consent_id)
+            val result = callRevokeMyConsent(consent.consent_id)
             val message = result match {
               case Left((msg, _)) => ShowMessage(msg, isError = true)
               case Right(_)       => ShowMessage(s"Consent (reference_id ${consent.consent_reference_id}) successfully revoked.", isError = false)
