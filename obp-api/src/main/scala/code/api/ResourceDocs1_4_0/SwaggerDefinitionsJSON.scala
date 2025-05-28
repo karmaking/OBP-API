@@ -2714,7 +2714,6 @@ object SwaggerDefinitionsJSON {
   lazy val consumerJsonV510: ConsumerJsonV510 = ConsumerJsonV510(
     consumer_id = consumerIdExample.value,
     consumer_key = consumerKeyExample.value,
-    consumer_secret = consumerSecretExample.value,
     app_name = appNameExample.value,
     app_type = appTypeExample.value,
     description = descriptionExample.value,
