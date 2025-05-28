@@ -3045,10 +3045,10 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
             }
         }
       } else if (hasAnOAuthHeader(cc.authReqHeaderField)) { // OAuth 1
-        getUserFromOAuthHeaderFuture(cc)
+        getUserFromOAuthHeaderFuture(cc.copy(consumer = consumerByCertificate))
       } else if (hasAnOAuth2Header(cc.authReqHeaderField)) { // OAuth 2
         for {
-          (user, callContext) <- OAuth2Login.getUserFuture(cc)
+          (user, callContext) <- OAuth2Login.getUserFuture(cc.copy(consumer = consumerByCertificate))
         } yield {
           (user, callContext)
         }
