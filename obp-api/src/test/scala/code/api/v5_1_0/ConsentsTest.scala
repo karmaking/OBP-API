@@ -220,7 +220,7 @@ class ConsentsTest extends V510ServerSetup with PropsReset{
     scenario("We will call the endpoint with user credentials", revokeMyConsent, VersionOfApi) {
       When(s"We make a request $revokeMyConsent")
       val response510 = makeDeleteRequest(revokeMyConsentUrl("xxxx"))
-      Then("We should get a 404")
+      Then("We should get a 401")
       response510.code should equal(401)
       response510.body.extract[ErrorMessage].message should equal(UserNotLoggedIn)
     }
@@ -305,7 +305,7 @@ class ConsentsTest extends V510ServerSetup with PropsReset{
       Then("We grant the role and test it again")
       Entitlement.entitlement.vend.addEntitlement("", resourceUser1.userId, CanGetAnyUser.toString)
       val createConsentByRequestResponse = makePostRequest(createConsentByConsentRequestIdEmail(consentRequestId), write(""))
-      Then("We should get a 200")
+      Then("We should get a 201")
       createConsentByRequestResponse.code should equal(201)
       val consentId = createConsentByRequestResponse.body.extract[ConsentJsonV500].consent_id
       val consentJwt = createConsentByRequestResponse.body.extract[ConsentJsonV500].jwt
@@ -389,7 +389,7 @@ class ConsentsTest extends V510ServerSetup with PropsReset{
         Then("We grant the role and test it again")
         Entitlement.entitlement.vend.addEntitlement("", resourceUser1.userId, CanGetAnyUser.toString)
         val createConsentByRequestResponse = makePostRequest(createConsentByConsentRequestIdEmail(consentRequestId), write(""))
-        Then("We should get a 200")
+        Then("We should get a 201")
         createConsentByRequestResponse.code should equal(201)
         val consentId = createConsentByRequestResponse.body.extract[ConsentJsonV500].consent_id
 
