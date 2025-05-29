@@ -266,7 +266,7 @@ recurringIndicator:
              }
              consumerIdFromConsent = consent.mConsumerId.get
              consumerIdFromCurrentCall = callContext.map(_.consumer.map(_.consumerId.get).getOrElse("None")).getOrElse("None")
-             _ <- Helper.booleanToFuture(failMsg = s"$ConsentNotFound $consumerIdFromConsent != $consumerIdFromCurrentCall", failCode = 403, cc = cc.callContext) {
+             _ <- Helper.booleanToFuture(failMsg = ConsentNotFound, failCode = 403, cc = cc.callContext) {
                consumerIdFromConsent == consumerIdFromCurrentCall
              }
              _ <- Future(Consents.consentProvider.vend.revokeBerlinGroupConsent(consentId)) map {
@@ -742,7 +742,7 @@ where the consent was directly managed between ASPSP and PSU e.g. in a re-direct
              }
              consumerIdFromConsent = consent.mConsumerId.get
              consumerIdFromCurrentCall = callContext.map(_.consumer.map(_.consumerId.get).getOrElse("None")).getOrElse("None")
-             _ <- Helper.booleanToFuture(failMsg = s"$ConsentNotFound $consumerIdFromConsent != $consumerIdFromCurrentCall", failCode = 403, cc = cc.callContext) {
+             _ <- Helper.booleanToFuture(failMsg = ConsentNotFound, failCode = 403, cc = cc.callContext) {
                consumerIdFromConsent == consumerIdFromCurrentCall
              }
            } yield {
