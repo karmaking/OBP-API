@@ -1125,9 +1125,9 @@ object Consent extends MdcLoggable {
           By(MappedConsent.mUserId, consent.userId), // for the same PSU
           By(MappedConsent.mConsumerId, consent.consumerId), // from the same TPP
         ).filterNot(_.consentId == consent.consentId) // Exclude current consent
-        .map{ c => // Set to expired
-          val changedStatus = c.mStatus(ConsentStatus.expired.toString).mLastActionDate(new Date()).save
-          if(changedStatus) logger.warn(s"|---> Changed status to ${ConsentStatus.expired.toString} for consent ID: ${c.id}")
+        .map{ c => // Set to terminatedByTpp
+          val changedStatus = c.mStatus(ConsentStatus.terminatedByTpp.toString).mLastActionDate(new Date()).save
+          if(changedStatus) logger.warn(s"|---> Changed status to ${ConsentStatus.terminatedByTpp.toString} for consent ID: ${c.id}")
           changedStatus
         }.forall(_ == true)
     } else {
