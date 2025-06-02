@@ -1,6 +1,9 @@
+package code.cardano
+
+
 import java.io.{File, PrintWriter}
-import scala.sys.process._
 import java.security.MessageDigest
+import scala.sys.process._
 
 object CardanoMetadataWriter {
 
