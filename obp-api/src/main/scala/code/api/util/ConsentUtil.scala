@@ -305,7 +305,7 @@ object Consent extends MdcLoggable {
               Entitlement.entitlement.vend.addEntitlement(bankId, user.userId, entitlement.role_name) match {
                 case Full(_) => (entitlement, "AddedOrExisted")
                 case _ =>
-                  (entitlement, addConsentEntitlements + entitlement)
+                  (entitlement, CannotAddEntitlement + entitlement)
               }
             case true =>
               (entitlement, "AddedOrExisted")
@@ -327,8 +327,10 @@ object Consent extends MdcLoggable {
         val failedToAdd: List[(Role, String)] = triedToAdd.filter(_._2 != "AddedOrExisted")
         failedToAdd match {
           case Nil => Full(user)
-          case _ =>
-            Failure(CannotAddEntitlement + failedToAdd.map(i => (i._1, i._2)).mkString(", "))
+          case _   =>
+            //Here, we do not throw an exception, just log the error.
+            logger.error(CannotAddEntitlement + failedToAdd.map(i => (i._1, i._2)).mkString(", "))
+            Full(user)
         }
       case _ =>
         Failure(CannotGetEntitlements + user.userId)
