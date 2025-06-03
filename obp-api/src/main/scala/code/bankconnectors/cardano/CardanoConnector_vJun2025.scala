@@ -56,23 +56,21 @@ trait CardanoConnector_vJun2025 extends Connector with MdcLoggable {
     transactionRequestType: TransactionRequestType,
     chargePolicy: String,
     callContext: Option[CallContext]): OBPReturnType[Box[TransactionId]] = {
-
-    val transactionData = "123|100.50|EUR|2025-03-16 12:30:00"
-    val transactionHash = code.cardano.CardanoMetadataWriter.generateHash(transactionData)
-
-    val txIn = "8c293647e5cb51c4d29e57e162a0bb4a0500096560ce6899a4b801f2b69f2813:0" // This is a  tx_id:0 ///"YOUR_UTXO_HERE"   // Replace with actual UTXO
-    val txOut = "addr_test1qruvtthh7mndxu2ncykn47tksar9yqr3u97dlkq2h2dhzwnf3d755n99t92kp4rydpzgv7wmx4nx2j0zzz0g802qvadqtczjhn:1234" // "YOUR_RECEIVER_ADDRESS+LOVELACE" // Replace with receiver address and amount
-    val signingKey = "payment.skey" // Path to your signing key file
-    val network = "--testnet-magic" // "--testnet-magic 1097911063" // Use --mainnet for mainnet transactions
-
-    code.cardano.CardanoMetadataWriter.submitHashToCardano(transactionHash, txIn, txOut, signingKey, network)
-    
-    // Simulate a successful transaction ID return
-    val transactionId = TransactionId(randomUUID().toString)
-    
-    Future{(Full(transactionId), callContext)}    
+    for {
+      transactionData <- Future.successful("123|100.50|EUR|2025-03-16 12:30:00")
+      transactionHash <- Future {
+        code.cardano.CardanoMetadataWriter.generateHash(transactionData)
+      }
+      txIn <- Future.successful("8c293647e5cb51c4d29e57e162a0bb4a0500096560ce6899a4b801f2b69f2813:0")
+      txOut <- Future.successful("addr_test1qruvtthh7mndxu2ncykn47tksar9yqr3u97dlkq2h2dhzwnf3d755n99t92kp4rydpzgv7wmx4nx2j0zzz0g802qvadqtczjhn:1234")
+      signingKey <- Future.successful("payment.skey")
+      network <- Future.successful("--testnet-magic")
+      _ <- Future {
+        code.cardano.CardanoMetadataWriter.submitHashToCardano(transactionHash, txIn, txOut, signingKey, network)
+      }
+      transactionId <- Future.successful(TransactionId(randomUUID().toString))
+    } yield (Full(transactionId), callContext)
   }
-
 }
 
 object CardanoConnector_vJun2025 extends CardanoConnector_vJun2025
