@@ -146,7 +146,7 @@ object CardanoMetadataWriter {
 
     // Submit transaction
     val txHash: String = transactionService.submitTransaction(signedTransaction).getValue
-    logger.debug(s"✅ Transaction submitted! TxHash: $txHash")
+    logger.debug(s"Transaction submitted! TxHash: $txHash")
   }
 
   // Main method
