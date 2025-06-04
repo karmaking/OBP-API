@@ -462,7 +462,7 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
   def createTransactionJSON(bankAccount: BankAccount, transaction : ModeratedTransaction) : TransactionJsonV13 = {
     val bookingDate = transaction.startDate.orNull
     val valueDate = transaction.finishDate.orNull
-    val creditorName = bankAccount.label
+    val creditorName = transaction.otherBankAccount.map(_.label.display).getOrElse(null)
     TransactionJsonV13(
       transactionId = transaction.id.value,
       creditorName = creditorName,

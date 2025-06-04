@@ -1460,7 +1460,7 @@ object ExampleValue {
   lazy val distributionChannelExample = ConnectorField(NoExampleProvided,NoDescriptionProvided)
   glossaryItems += makeGlossaryItem("distribution_channel", distributionChannelExample)
 
-  lazy val otherAccountRoutingSchemeExample = ConnectorField(NoExampleProvided,NoDescriptionProvided)
+  lazy val otherAccountRoutingSchemeExample = ConnectorField("IBAN","otherAccountRoutingScheme string, eg: IBAN")
   glossaryItems += makeGlossaryItem("other_account_routing_scheme", otherAccountRoutingSchemeExample)
 
   lazy val generateAccountantsViewExample = ConnectorField(NoExampleProvided,NoDescriptionProvided)
@@ -1714,7 +1714,7 @@ object ExampleValue {
   lazy val canAddTransactionRequestToOwnAccountExample = ConnectorField(booleanFalse,NoDescriptionProvided)
   glossaryItems += makeGlossaryItem("can_add_transaction_request_to_own_account", canAddTransactionRequestToOwnAccountExample)
 
-  lazy val otherAccountRoutingAddressExample = ConnectorField(NoExampleProvided,NoDescriptionProvided)
+  lazy val otherAccountRoutingAddressExample = ConnectorField("DE89370400440532013000","OtherBankRoutingAddress string, eg IBAN value")
   glossaryItems += makeGlossaryItem("other_account_routing_address", otherAccountRoutingAddressExample)
 
   lazy val isFirehoseExample = ConnectorField(NoExampleProvided,NoDescriptionProvided)
@@ -2472,8 +2472,8 @@ object ExampleValue {
   // if these are duplicate with those examples, just delete the follow examples
   lazy val counterpartyOtherBankRoutingSchemeExample = ConnectorField("OBP" ,"Counterparty otherBankRoutingScheme string")
   lazy val counterpartyOtherBankRoutingAddressExample = ConnectorField("gh.29.uk", "Counterparty otherBankRoutingAddress string")
-  lazy val counterpartyOtherAccountRoutingSchemeExample = ConnectorField("OBP", "Counterparty otherAccountRoutingScheme string")
-  lazy val counterpartyOtherAccountRoutingAddressExample = ConnectorField("36f8a9e6-c2b1-407a-8bd0-421b7119307e", "Counterparty otherAccountRoutingAddress string")  
+  lazy val counterpartyOtherAccountRoutingSchemeExample = ConnectorField("IBAN", "Counterparty otherAccountRoutingScheme string")
+  lazy val counterpartyOtherAccountRoutingAddressExample = ConnectorField("DE89370400440532013000", "Counterparty otherAccountRoutingAddress string")  
   lazy val counterpartyOtherAccountSecondaryRoutingSchemeExample = ConnectorField("IBAN", "Counterparty otherAccountSecondaryRoutingScheme string")
   lazy val counterpartyOtherAccountSecondaryRoutingAddressExample = ConnectorField("DE89370400440532013000", "Counterparty otherAccountSecondaryRoutingAddress string")
   lazy val counterpartyOtherAccountProviderExample = ConnectorField("Counterparty otherAccountProvider string", "fix me")

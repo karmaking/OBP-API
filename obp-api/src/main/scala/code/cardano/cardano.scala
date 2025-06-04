@@ -1,8 +1,14 @@
-import java.io.{File, PrintWriter}
-import scala.sys.process._
-import java.security.MessageDigest
+package code.cardano
 
-object CardanoMetadataWriter {
+
+import code.util.Helper.MdcLoggable
+
+import java.io.{File, PrintWriter}
+import java.security.MessageDigest
+import scala.sys.process._
+
+
+object CardanoMetadataWriter extends MdcLoggable{
 
   // Function to generate SHA-256 hash of a string
   def generateHash(transactionData: String): String = {
@@ -26,7 +32,7 @@ object CardanoMetadataWriter {
     val writer = new PrintWriter(file)
     writer.write(jsonContent)
     writer.close()
-    println(s"Metadata file written to: $filePath")
+    logger.debug(s"Metadata file written to: $filePath")
   }
 
   // Function to submit transaction to Cardano
@@ -48,7 +54,7 @@ object CardanoMetadataWriter {
     val submitCommand = s"cardano-cli transaction submit --tx-file tx.signed --$network"
     submitCommand.!
 
-    println("Transaction submitted to Cardano blockchain.")
+    logger.debug("Transaction submitted to Cardano blockchain.")
   }
 
   // Example Usage
@@ -107,7 +113,7 @@ object CardanoMetadataWriter {
     // Generate hash of transaction data
     val transactionHash = generateHash(transactionData)
 
-    println(s"Generated Hash: $transactionHash")
+    logger.debug(s"Generated Hash: $transactionHash")
 
     // Create metadata object
     val metadata = new CBORMetadata()
@@ -122,7 +128,7 @@ object CardanoMetadataWriter {
     val utxos: java.util.List[Utxo] = utxoService.getUtxos(account.baseAddress, 1, 10).getValue
 
     if (utxos.isEmpty) {
-      println("No UTXOs found. Please fund your wallet.")
+      logger.debug("No UTXOs found. Please fund your wallet.")
       return
     }
 
@@ -140,7 +146,7 @@ object CardanoMetadataWriter {
 
     // Submit transaction
     val txHash: String = transactionService.submitTransaction(signedTransaction).getValue
-    println(s"✅ Transaction submitted! TxHash: $txHash")
+    logger.debug(s"Transaction submitted! TxHash: $txHash")
   }
 
   // Main method
