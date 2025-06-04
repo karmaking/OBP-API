@@ -185,13 +185,13 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
   
   case class TransactionsV13Transactions(
     booked: List[TransactionJsonV13], 
-    pending: List[TransactionJsonV13],
+    pending: Option[List[TransactionJsonV13]] = None,
     _links: TransactionsV13TransactionsLinks 
   )
 
   case class CardTransactionsV13Transactions(
     booked: List[CardTransactionJsonV13],
-    pending: List[CardTransactionJsonV13],
+    pending: Option[List[CardTransactionJsonV13]] = None,
     _links: CardTransactionsLinksV13
   )
   
@@ -515,7 +515,7 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
     )
   }
 
-  def createTransactionsJson(bankAccount: BankAccount, transactions: List[ModeratedTransaction], transactionRequests: List[TransactionRequest]) : TransactionsJsonV13 = {
+  def createTransactionsJson(bankAccount: BankAccount, transactions: List[ModeratedTransaction], transactionRequests: List[TransactionRequest] = Nil) : TransactionsJsonV13 = {
     val accountId = bankAccount.accountId.value
     val (iban: String, bban: String) = getIbanAndBban(bankAccount)
    
@@ -527,7 +527,7 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
       account,
       TransactionsV13Transactions(
         booked= transactions.map(transaction => createTransactionJSON(bankAccount, transaction)),
-        pending = transactionRequests.filter(_.status!="COMPLETED").map(transactionRequest => createTransactionFromRequestJSON(bankAccount, transactionRequest)),
+        pending = None, //transactionRequests.filter(_.status!="COMPLETED").map(transactionRequest => createTransactionFromRequestJSON(bankAccount, transactionRequest)),
         _links = TransactionsV13TransactionsLinks(LinkHrefJson(s"/${ConstantsBG.berlinGroupVersion1.apiShortVersion}/accounts/$accountId"))
       )
     )
@@ -559,7 +559,7 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
     )
   }
 
-  def createCardTransactionsJson(bankAccount: BankAccount, transactions: List[ModeratedTransaction], transactionRequests: List[TransactionRequest]) : CardTransactionsJsonV13 = {
+  def createCardTransactionsJson(bankAccount: BankAccount, transactions: List[ModeratedTransaction], transactionRequests: List[TransactionRequest] = Nil) : CardTransactionsJsonV13 = {
     val accountId = bankAccount.accountId.value
     val (iban: String, bban: String) = getIbanAndBban(bankAccount)
     // get the latest end_date of `COMPLETED` transactionRequests
@@ -573,7 +573,7 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
       ),
       CardTransactionsV13Transactions(
         booked= transactions.map(t => createCardTransactionJson(t)),
-        pending = Nil,
+        pending = None,
         _links = CardTransactionsLinksV13(LinkHrefJson(s"/${ConstantsBG.berlinGroupVersion1.apiShortVersion}/card-accounts/$accountId"))
       )
     )
