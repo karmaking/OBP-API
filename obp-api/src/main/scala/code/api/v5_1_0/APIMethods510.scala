@@ -3097,7 +3097,7 @@ trait APIMethods510 {
           |-----END CERTIFICATE-----""".stripMargin,
         Some("logoUrl")
       ),
-      consumerJsonV510,
+      consumerJsonOnlyForPostResponseV510,
       List(
         UserNotLoggedIn,
         UserHasMissingRoles,
@@ -3134,7 +3134,7 @@ trait APIMethods510 {
               callContext
             )
           } yield {
-            (JSONFactory510.createConsumerJSON(consumer, None), HttpCode.`201`(callContext))
+            (JSONFactory510.createConsumerJsonOnlyForPostResponseV510(consumer, None), HttpCode.`201`(callContext))
           }
       }
     }

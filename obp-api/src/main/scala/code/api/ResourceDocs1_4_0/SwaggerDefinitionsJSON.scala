@@ -2714,6 +2714,22 @@ object SwaggerDefinitionsJSON {
   lazy val consumerJsonV510: ConsumerJsonV510 = ConsumerJsonV510(
     consumer_id = consumerIdExample.value,
     consumer_key = consumerKeyExample.value,
+    app_name = appNameExample.value,
+    app_type = appTypeExample.value,
+    description = descriptionExample.value,
+    developer_email = emailExample.value,
+    company = companyExample.value,
+    redirect_url = redirectUrlExample.value,
+    certificate_pem = pem,
+    certificate_info = Some(certificateInfoJsonV510),
+    created_by_user = resourceUserJSON,
+    enabled = true,
+    created = DateWithDayExampleObject,
+    logo_url = Some(logoURLExample.value)
+  )
+  lazy val consumerJsonOnlyForPostResponseV510: ConsumerJsonOnlyForPostResponseV510 = ConsumerJsonOnlyForPostResponseV510(
+    consumer_id = consumerIdExample.value,
+    consumer_key = consumerKeyExample.value,
     consumer_secret = consumerSecretExample.value,
     app_name = appNameExample.value,
     app_type = appTypeExample.value,
