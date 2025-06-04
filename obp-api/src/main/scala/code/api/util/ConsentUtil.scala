@@ -2,14 +2,11 @@ package code.api.util
 
 import code.accountholders.AccountHolders
 import code.api.berlin.group.ConstantsBG
-
-import java.text.SimpleDateFormat
-import java.util.{Date, UUID}
 import code.api.berlin.group.v1_3.JSONFactory_BERLIN_GROUP_1_3.{ConsentAccessJson, PostConsentJson}
 import code.api.util.APIUtil.fullBoxOrException
 import code.api.util.ApiRole.{canCreateEntitlementAtAnyBank, canCreateEntitlementAtOneBank}
 import code.api.util.BerlinGroupSigning.getHeaderValue
-import code.api.util.ErrorMessages.{CouldNotAssignAccountAccess, InvalidConnectorResponse, NoViewReadAccountsBerlinGroup}
+import code.api.util.ErrorMessages._
 import code.api.v3_1_0.{PostConsentBodyCommonJson, PostConsentEntitlementJsonV310, PostConsentViewJsonV310}
 import code.api.v5_0_0.HelperInfoJson
 import code.api.{APIFailure, APIFailureNewStyle, Constant, RequestHeader}
@@ -22,7 +19,6 @@ import code.context.{ConsentAuthContextProvider, UserAuthContextProvider}
 import code.entitlement.Entitlement
 import code.model.Consumer
 import code.model.dataAccess.BankAccountRouting
-import code.scheduler.ConsentScheduler.logger
 import code.users.Users
 import code.util.Helper.MdcLoggable
 import code.util.HydraUtil
@@ -30,16 +26,16 @@ import code.views.Views
 import com.nimbusds.jwt.JWTClaimsSet
 import com.openbankproject.commons.ExecutionContext.Implicits.global
 import com.openbankproject.commons.model._
-import com.openbankproject.commons.util.ApiVersion
-import net.liftweb.common.{Box, Empty, Failure, Full, ParamFailure}
+import net.liftweb.common._
 import net.liftweb.http.provider.HTTPParam
 import net.liftweb.json.JsonParser.ParseException
 import net.liftweb.json.{Extraction, MappingException, compactRender, parse}
 import net.liftweb.mapper.By
-import net.liftweb.util.{ControlHelpers, Props}
-import org.apache.commons.lang3.StringUtils
+import net.liftweb.util.Props
 import sh.ory.hydra.model.OAuth2TokenIntrospection
 
+import java.text.SimpleDateFormat
+import java.util.Date
 import scala.collection.immutable.{List, Nil}
 import scala.concurrent.Future
 
@@ -309,13 +305,13 @@ object Consent extends MdcLoggable {
               Entitlement.entitlement.vend.addEntitlement(bankId, user.userId, entitlement.role_name) match {
                 case Full(_) => (entitlement, "AddedOrExisted")
                 case _ =>
-                  (entitlement, "Cannot add the entitlement: " + entitlement)
+                  (entitlement, CannotAddEntitlement + entitlement)
               }
             case true =>
               (entitlement, "AddedOrExisted")
           }
         case false =>
-          (entitlement, "There is no entitlement's name: " + entitlement)
+          (entitlement, InvalidEntitlement + entitlement)
       }
     }
 
@@ -331,11 +327,13 @@ object Consent extends MdcLoggable {
         val failedToAdd: List[(Role, String)] = triedToAdd.filter(_._2 != "AddedOrExisted")
         failedToAdd match {
           case Nil => Full(user)
-          case _ =>
-            Failure("The entitlements cannot be added. " + failedToAdd.map(i => (i._1, i._2)).mkString(", "))
+          case _   =>
+            //Here, we do not throw an exception, just log the error.
+            logger.error(CannotAddEntitlement + failedToAdd.map(i => (i._1, i._2)).mkString(", "))
+            Full(user)
         }
       case _ =>
-        Failure("Cannot get entitlements for user id: " + user.userId)
+        Failure(CannotGetEntitlements + user.userId)
     }
 
   }
@@ -438,10 +436,10 @@ object Consent extends MdcLoggable {
             case failure@Failure(msg, exp, chain) => // Handled errors
               (Failure(msg), Some(cc))
             case _ =>
-              (Failure("Cannot add entitlements based on: " + consentAsJwt), Some(cc))
+              (Failure(CannotAddEntitlement + consentAsJwt), Some(cc))
           }
         case _ =>
-          (Failure("Cannot create or get the user based on: " + consentAsJwt), Some(cc))
+          (Failure(CannotGetOrCreateUser + consentAsJwt), Some(cc))
       }
     }
 
@@ -524,10 +522,10 @@ object Consent extends MdcLoggable {
             case failure@Failure(msg, exp, chain) => // Handled errors
               (Failure(msg), Some(cc))
             case _ =>
-              (Failure("Cannot add entitlements based on: " + consentId), Some(cc))
+              (Failure(CannotAddEntitlement + consentId), Some(cc))
           }
         case _ =>
-          (Failure("Cannot create or get the user based on: " + consentId), Some(cc))
+          (Failure(CannotGetOrCreateUser + consentId), Some(cc))
       }
     }
 
