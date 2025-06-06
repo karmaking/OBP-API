@@ -7164,7 +7164,10 @@ trait RabbitMQConnector_vOct2024 extends Connector with MdcLoggable {
       accountId=AccountId(accountIdExample.value),
       balanceId=BalanceId(balanceIdExample.value),
       balanceType=balanceTypeExample.value,
-      balanceAmount=BigDecimal(balanceAmountExample.value))))
+      balanceAmount=BigDecimal(balanceAmountExample.value), 
+      lastChangeDateTime= Some(toDate(issueDateExample)),
+      referenceDate= None,
+      )))
     ),
     adapterImplementation = Some(AdapterImplementation("- Core", 1))
   )
@@ -7194,7 +7197,9 @@ trait RabbitMQConnector_vOct2024 extends Connector with MdcLoggable {
       accountId=AccountId(accountIdExample.value),
       balanceId=BalanceId(balanceIdExample.value),
       balanceType=balanceTypeExample.value,
-      balanceAmount=BigDecimal(balanceAmountExample.value))))
+      balanceAmount=BigDecimal(balanceAmountExample.value),
+      lastChangeDateTime= Some(toDate(issueDateExample)),
+        referenceDate= None)))
     ),
     adapterImplementation = Some(AdapterImplementation("- Core", 1))
   )
@@ -7224,7 +7229,9 @@ trait RabbitMQConnector_vOct2024 extends Connector with MdcLoggable {
       accountId=AccountId(accountIdExample.value),
       balanceId=BalanceId(balanceIdExample.value),
       balanceType=balanceTypeExample.value,
-      balanceAmount=BigDecimal(balanceAmountExample.value)))
+      balanceAmount=BigDecimal(balanceAmountExample.value),
+        lastChangeDateTime= Some(toDate(issueDateExample)),
+        referenceDate= None))
     ),
     adapterImplementation = Some(AdapterImplementation("- Core", 1))
   )
@@ -7258,7 +7265,9 @@ trait RabbitMQConnector_vOct2024 extends Connector with MdcLoggable {
       accountId=AccountId(accountIdExample.value),
       balanceId=BalanceId(balanceIdExample.value),
       balanceType=balanceTypeExample.value,
-      balanceAmount=BigDecimal(balanceAmountExample.value)))
+      balanceAmount=BigDecimal(balanceAmountExample.value),
+        lastChangeDateTime= Some(toDate(issueDateExample)),
+        referenceDate= None))
     ),
     adapterImplementation = Some(AdapterImplementation("- Core", 1))
   )
