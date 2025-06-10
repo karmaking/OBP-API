@@ -133,7 +133,11 @@ case class BankAccountBalanceTraitCommons(
   accountId :AccountId,
   balanceId :BalanceId,
   balanceType :String,
-  balanceAmount :BigDecimal) extends BankAccountBalanceTrait
+  balanceAmount :BigDecimal,
+  lastChangeDateTime: Option[Date],
+  referenceDate: Option[String],
+) extends BankAccountBalanceTrait
+
 object BankAccountBalanceTraitCommons extends Converter[BankAccountBalanceTrait, BankAccountBalanceTraitCommons]
 
 case class ProductCollectionItemCommons(
