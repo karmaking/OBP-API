@@ -325,6 +325,7 @@ object ExampleValue {
   lazy val dateSignedExample = signedDateExample
   lazy val startDateExample = ConnectorField("2020-01-27", "The Start Date in the format: yyyy-MM-dd")
   lazy val dateStartsExample = startDateExample
+  lazy val referenceDateExample = dateExample
   lazy val finishDateExample = ConnectorField("2020-01-27", "The Finish Date in the format: yyyy-MM-dd")
   lazy val completedDateExample = finishDateExample
   lazy val insertDateExample = ConnectorField("2020-01-27", "The Insert Date in the format: yyyy-MM-dd")
