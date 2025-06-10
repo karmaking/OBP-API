@@ -854,7 +854,7 @@ class APIUtilTest extends FeatureSpec with Matchers with GivenWhenThen with Prop
       basicPasswordValidation("Hello World!") shouldBe (SILENCE_IS_GOLDEN) //  SILENCE_IS_GOLDEN
       basicPasswordValidation(" ") shouldBe (SILENCE_IS_GOLDEN) //  SILENCE_IS_GOLDEN allow space so far
 
-      basicPasswordValidation("short") shouldBe (InvalidValueCharacters) //  ErrorMessages.InvalidValueCharacters
+      basicPasswordValidation("shortá") shouldBe (InvalidValueCharacters) //  ErrorMessages.InvalidValueCharacters
       basicPasswordValidation("a" * 513) shouldBe (InvalidValueLength) //  ErrorMessages.InvalidValueLength 
 
     }
