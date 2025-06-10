@@ -28,23 +28,21 @@ Berlin 13359, Germany
 
 package code.snippet
 
-import java.io.InputStream
-
 import code.api.Constant
 import code.api.util.APIUtil.{activeBrand, getRemoteIpAddress, getServerUrl}
 import code.api.util.ApiRole.CanReadGlossary
-import code.api.util.{APIUtil, ApiRole, CustomJsonFormats, ErrorMessages, I18NUtil, PegdownOptions}
+import code.api.util._
 import code.model.dataAccess.AuthUser
-import code.util.Helper.{MdcLoggable,ObpS}
-import net.liftweb.http.{LiftRules, S, SessionVar}
-import net.liftweb.util.Helpers._
-import net.liftweb.util.{CssSel, Props}
-import net.liftweb.util.PassThru
-
-import scala.xml.{NodeSeq, XML}
-import scala.io.Source
+import code.util.Helper.MdcLoggable
 import code.webuiprops.MappedWebUiPropsProvider.getWebUiPropsValue
-import net.liftweb.common.{Box, Full}
+import net.liftweb.http.{S, SessionVar}
+import net.liftweb.util.Helpers._
+import net.liftweb.util.{CssSel, PassThru, Props}
+
+import java.text.SimpleDateFormat
+import java.util.Date
+import scala.io.Source
+import scala.xml.{NodeSeq, XML}
 
 
 class WebUI extends MdcLoggable{
@@ -410,6 +408,13 @@ class WebUI extends MdcLoggable{
   // Points to the documentation. Probably a sandbox specific link is good.
   def apiDocumentationLink: CssSel = {
     ".api-documentation-link a [href]" #> scala.xml.Unparsed(getWebUiPropsValue("webui_api_documentation_bottom_url", "https://github.com/OpenBankProject/OBP-API/wiki"))
+  }
+  
+  def apiDocumentationLinkTest: CssSel = {
+    ".api-documentation-link a [href]" #> scala.xml.Unparsed(getWebUiPropsValue("webui_api_documentation_bottom_url", "https://github.com/OpenBankProject/OBP-API/wiki"))
+  }
+  def apiDocumentationTimestampLinkTest: CssSel = {
+    ".api-documentation-link-timestamp *" #> scala.xml.Unparsed("Test Timestamp -- "+new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date))
   }
   // For example customers and credentials
   // This relies on the page for sandbox documentation having an anchor called example-customer-logins
