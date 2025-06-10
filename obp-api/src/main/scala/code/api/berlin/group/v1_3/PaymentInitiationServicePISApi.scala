@@ -110,10 +110,10 @@ or * access method is generally applicable, but further authorisation processes 
            for {
              (Full(u), callContext) <- authenticatedAccess(cc)
              _ <- passesPsd2Pisp(callContext)
-             _ <- NewStyle.function.tryons(checkPaymentServerTypeError(paymentService),400, callContext) {
+             _ <- NewStyle.function.tryons(checkPaymentServerTypeError(paymentService),404, callContext) {
                PaymentServiceTypes.withName(paymentService.replaceAll("-","_"))
              }
-             transactionRequestTypes <- NewStyle.function.tryons(checkPaymentProductError(paymentProduct),400, callContext) {
+             transactionRequestTypes <- NewStyle.function.tryons(checkPaymentProductError(paymentProduct),404, callContext) {
                TransactionRequestTypes.withName(paymentProduct.replaceAll("-","_").toUpperCase)
              }
              (transactionRequest, callContext) <- NewStyle.function.getTransactionRequestImpl(TransactionRequestId(paymentId), callContext)
@@ -186,10 +186,10 @@ This method returns the SCA status of a payment initiation's authorisation sub-r
            for {
              (_, callContext) <- authenticatedAccess(cc)
              _ <- passesPsd2Pisp(callContext)
-             _ <- NewStyle.function.tryons(checkPaymentServerTypeError(paymentService),400, callContext) {
+             _ <- NewStyle.function.tryons(checkPaymentServerTypeError(paymentService),404, callContext) {
                PaymentServiceTypes.withName(paymentService.replaceAll("-","_"))
              }
-             _ <- NewStyle.function.tryons(checkPaymentProductError(paymentProduct),400, callContext) {
+             _ <- NewStyle.function.tryons(checkPaymentProductError(paymentProduct),404, callContext) {
                TransactionRequestTypes.withName(paymentProduct.replaceAll("-","_").toUpperCase)
              }
              (_, callContext) <- NewStyle.function.getTransactionRequestImpl(TransactionRequestId(paymentId), callContext)
@@ -233,10 +233,10 @@ Returns the content of a payment object""",
            for {
              (Full(u), callContext) <- authenticatedAccess(cc)
              _ <- passesPsd2Pisp(callContext)
-             _ <- NewStyle.function.tryons(checkPaymentServerTypeError(paymentService),400, callContext) {
+             _ <- NewStyle.function.tryons(checkPaymentServerTypeError(paymentService),404, callContext) {
                PaymentServiceTypes.withName(paymentService.replaceAll("-","_"))
              }
-             transactionRequestTypes <- NewStyle.function.tryons(checkPaymentProductError(paymentProduct),400, callContext) {
+             transactionRequestTypes <- NewStyle.function.tryons(checkPaymentProductError(paymentProduct),404, callContext) {
                TransactionRequestTypes.withName(paymentProduct.replaceAll("-","_").toUpperCase)
              }
              (transactionRequest, callContext) <- NewStyle.function.getTransactionRequestImpl(TransactionRequestId(paymentId), callContext)
@@ -292,10 +292,10 @@ This function returns an array of hyperlinks to all generated authorisation sub-
            for {
              (_, callContext) <- authenticatedAccess(cc)
              _ <- passesPsd2Pisp(callContext)
-             _ <- NewStyle.function.tryons(checkPaymentServerTypeError(paymentService),400, callContext) {
+             _ <- NewStyle.function.tryons(checkPaymentServerTypeError(paymentService),404, callContext) {
                PaymentServiceTypes.withName(paymentService.replaceAll("-","_"))
              }
-             _ <- NewStyle.function.tryons(checkPaymentProductError(paymentProduct),400, callContext) {
+             _ <- NewStyle.function.tryons(checkPaymentProductError(paymentProduct),404, callContext) {
                TransactionRequestTypes.withName(paymentProduct.replaceAll("-","_").toUpperCase)
              }
              (_, callContext) <- NewStyle.function.getTransactionRequestImpl(TransactionRequestId(paymentId), callContext)
@@ -330,10 +330,10 @@ Retrieve a list of all created cancellation authorisation sub-resources.
            for {
              (_, callContext) <- authenticatedAccess(cc)
              _ <- passesPsd2Pisp(callContext)
-             _ <- NewStyle.function.tryons(checkPaymentServerTypeError(paymentService),400, callContext) {
+             _ <- NewStyle.function.tryons(checkPaymentServerTypeError(paymentService),404, callContext) {
                PaymentServiceTypes.withName(paymentService.replaceAll("-","_"))
              }
-             _ <- NewStyle.function.tryons(checkPaymentProductError(paymentProduct),400, callContext) {
+             _ <- NewStyle.function.tryons(checkPaymentProductError(paymentProduct),404, callContext) {
                TransactionRequestTypes.withName(paymentProduct.replaceAll("-","_").toUpperCase)
              }
              (challenges, callContext) <-  NewStyle.function.getChallengesByTransactionRequestId(paymentId, callContext)
@@ -367,10 +367,10 @@ This method returns the SCA status of a payment initiation's authorisation sub-r
            for {
              (Full(u), callContext) <- authenticatedAccess(cc)
              _ <- passesPsd2Pisp(callContext)
-             _ <- NewStyle.function.tryons(checkPaymentServerTypeError(paymentService),400, callContext) {
+             _ <- NewStyle.function.tryons(checkPaymentServerTypeError(paymentService),404, callContext) {
                PaymentServiceTypes.withName(paymentService.replaceAll("-","_"))
              }
-             _ <- NewStyle.function.tryons(checkPaymentProductError(paymentProduct),400, callContext) {
+             _ <- NewStyle.function.tryons(checkPaymentProductError(paymentProduct),404, callContext) {
                TransactionRequestTypes.withName(paymentProduct.replaceAll("-","_").toUpperCase)
              }
              (_, callContext) <- NewStyle.function.getTransactionRequestImpl(TransactionRequestId(paymentId), callContext)
@@ -406,10 +406,10 @@ Check the transaction status of a payment initiation.""",
            for {
              (Full(u), callContext) <- authenticatedAccess(cc)
              _ <- passesPsd2Pisp(callContext)
-             _ <- NewStyle.function.tryons(checkPaymentServerTypeError(paymentService),400, callContext) {
+             _ <- NewStyle.function.tryons(checkPaymentServerTypeError(paymentService),404, callContext) {
                PaymentServiceTypes.withName(paymentService.replaceAll("-","_"))
              }
-             transactionRequestTypes <- NewStyle.function.tryons(checkPaymentProductError(paymentProduct),400, callContext) {
+             transactionRequestTypes <- NewStyle.function.tryons(checkPaymentProductError(paymentProduct),404, callContext) {
                TransactionRequestTypes.withName(paymentProduct.replaceAll("-","_").toUpperCase)
              }
              (transactionRequest, callContext) <- NewStyle.function.getTransactionRequestImpl(TransactionRequestId(paymentId), callContext)
@@ -520,12 +520,12 @@ Check the transaction status of a payment initiation.""",
       (Full(u), callContext) <- authenticatedAccess(cc)
       _ <- passesPsd2Pisp(callContext)
 
-      paymentServiceType <- NewStyle.function.tryons(checkPaymentServerTypeError(paymentService), 400, callContext) {
+      paymentServiceType <- NewStyle.function.tryons(checkPaymentServerTypeError(paymentService), 404, callContext) {
         PaymentServiceTypes.withName(paymentService.replaceAll("-", "_"))
       }
 
       //Berlin Group PaymentProduct is OBP transaction request type
-      transactionRequestType <- NewStyle.function.tryons(checkPaymentProductError(paymentProduct), 400, callContext) {
+      transactionRequestType <- NewStyle.function.tryons(checkPaymentProductError(paymentProduct), 404, callContext) {
         TransactionRequestTypes.withName(paymentProduct.replaceAll("-", "_").toUpperCase)
       }
 
@@ -888,10 +888,10 @@ This applies in the following scenarios:
           for {
             (Full(u), callContext) <- authenticatedAccess(cc)
             _ <- passesPsd2Pisp(callContext)
-            _ <- NewStyle.function.tryons(checkPaymentServerTypeError(paymentService), 400, callContext) {
+            _ <- NewStyle.function.tryons(checkPaymentServerTypeError(paymentService), 404, callContext) {
               PaymentServiceTypes.withName(paymentService.replaceAll("-", "_"))
             }
-            _ <- NewStyle.function.tryons(checkPaymentProductError(paymentProduct), 400, callContext) {
+            _ <- NewStyle.function.tryons(checkPaymentProductError(paymentProduct), 404, callContext) {
               TransactionRequestTypes.withName(paymentProduct.replaceAll("-", "_").toUpperCase)
             }
             (_, callContext) <- NewStyle.function.getTransactionRequestImpl(TransactionRequestId(paymentId), callContext)
@@ -981,10 +981,10 @@ This applies in the following scenarios:
            for {
              (Full(u), callContext) <- authenticatedAccess(cc)
              _ <- passesPsd2Pisp(callContext)
-             _ <- NewStyle.function.tryons(checkPaymentServerTypeError(paymentService),400, callContext) {
+             _ <- NewStyle.function.tryons(checkPaymentServerTypeError(paymentService),404, callContext) {
                PaymentServiceTypes.withName(paymentService.replaceAll("-","_"))
              }
-             _ <- NewStyle.function.tryons(checkPaymentProductError(paymentProduct),400, callContext) {
+             _ <- NewStyle.function.tryons(checkPaymentProductError(paymentProduct),404, callContext) {
                TransactionRequestTypes.withName(paymentProduct.replaceAll("-","_").toUpperCase)
              }
              (transactionRequest, callContext) <- NewStyle.function.getTransactionRequestImpl(TransactionRequestId(paymentId), callContext)
@@ -1183,10 +1183,10 @@ There are the following request types on this access path:
                json.extract[TransactionAuthorisation]
              }
 
-             _ <- NewStyle.function.tryons(checkPaymentServerTypeError(paymentService),400, callContext) {
+             _ <- NewStyle.function.tryons(checkPaymentServerTypeError(paymentService),404, callContext) {
                PaymentServiceTypes.withName(paymentService.replaceAll("-","_"))
              }
-             _ <- NewStyle.function.tryons(checkPaymentProductError(paymentProduct),400, callContext) {
+             _ <- NewStyle.function.tryons(checkPaymentProductError(paymentProduct),404, callContext) {
                TransactionRequestTypes.withName(paymentProduct.replaceAll("-","_").toUpperCase)
              }
              //Map obp transaction request id with BerlinGroup PaymentId
@@ -1430,10 +1430,10 @@ There are the following request types on this access path:
                json.extract[TransactionAuthorisation]
              }
 
-             _ <- NewStyle.function.tryons(checkPaymentServerTypeError(paymentService),400, callContext) {
+             _ <- NewStyle.function.tryons(checkPaymentServerTypeError(paymentService),404, callContext) {
                PaymentServiceTypes.withName(paymentService.replaceAll("-","_"))
              }
-             _ <- NewStyle.function.tryons(checkPaymentProductError(paymentProduct),400, callContext) {
+             _ <- NewStyle.function.tryons(checkPaymentProductError(paymentProduct),404, callContext) {
                TransactionRequestTypes.withName(paymentProduct.replaceAll("-","_").toUpperCase)
              }
              //Map obp transaction request id with BerlinGroup PaymentId
