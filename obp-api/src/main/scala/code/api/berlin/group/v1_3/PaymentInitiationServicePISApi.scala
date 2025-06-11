@@ -409,17 +409,17 @@ Check the transaction status of a payment initiation.""",
              _ <- NewStyle.function.tryons(checkPaymentServerTypeError(paymentService),404, callContext) {
                PaymentServiceTypes.withName(paymentService.replaceAll("-","_"))
              }
-             transactionRequestTypes <- NewStyle.function.tryons(checkPaymentProductError(paymentProduct),404, callContext) {
+             _ <- NewStyle.function.tryons(checkPaymentProductError(paymentProduct),404, callContext) {
                TransactionRequestTypes.withName(paymentProduct.replaceAll("-","_").toUpperCase)
              }
              (transactionRequest, callContext) <- NewStyle.function.getTransactionRequestImpl(TransactionRequestId(paymentId), callContext)
 
              transactionRequestStatus = mapTransactionStatus(transactionRequest.status)
 
-             transactionRequestAmount <- NewStyle.function.tryons(s"${UnknownError} transaction request amount can not convert to a Decimal",400, callContext) {
+             transactionRequestAmount <- NewStyle.function.tryons(s"${InvalidNumber} transaction request amount cannot convert to a Decimal",400, callContext) {
                BigDecimal(transactionRequest.body.to_sepa_credit_transfers.get.instructedAmount.amount)
              }
-             transactionRequestCurrency <- NewStyle.function.tryons(s"${UnknownError} can not get currency from this paymentId(${paymentId})",400, callContext) {
+             transactionRequestCurrency <- NewStyle.function.tryons(s"${InvalidCurrency} can not get currency from this paymentId(${paymentId})",400, callContext) {
                transactionRequest.body.to_sepa_credit_transfers.get.instructedAmount.currency
              }
              

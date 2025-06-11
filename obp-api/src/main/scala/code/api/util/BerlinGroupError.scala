@@ -88,6 +88,7 @@ object BerlinGroupError {
       case "400" if message.contains("OBP-10001") => "FORMAT_ERROR"
       case "400" if message.contains("OBP-10002") => "FORMAT_ERROR"
       case "400" if message.contains("OBP-10003") => "FORMAT_ERROR"
+      case "400" if message.contains("OBP-10006") => "FORMAT_ERROR"
       case "400" if message.contains("OBP-20062") => "FORMAT_ERROR"
       case "400" if message.contains("OBP-20063") => "FORMAT_ERROR"
       case "400" if message.contains("OBP-20252") => "FORMAT_ERROR"
