@@ -968,7 +968,7 @@ object JSONFactory510 extends CustomJsonFormats {
     val organisationWebsiteEnergySource = APIUtil.getPropsValue("energy_source.organisation_website", "")
     val energySource = EnergySource400(organisationEnergySource, organisationWebsiteEnergySource)
 
-    val connector = APIUtil.getPropsValue("connector").openOrThrowException("no connector set")
+    val connector = code.api.Constant.Connector.openOrThrowException("no connector set")
     val resourceDocsRequiresRole = APIUtil.getPropsAsBoolValue("resource_docs_requires_role", false)
 
     APIInfoJsonV510(

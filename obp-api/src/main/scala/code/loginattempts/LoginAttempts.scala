@@ -1,8 +1,7 @@
 package code.loginattempts
 
 import code.api.util.APIUtil
-import code.userlocks.{UserLocks, UserLocksProvider}
-import code.users.Users
+import code.userlocks.UserLocksProvider
 import code.util.Helper.MdcLoggable
 import net.liftweb.common.{Box, Empty, Full}
 import net.liftweb.mapper.By
@@ -10,7 +9,7 @@ import net.liftweb.util.Helpers._
 
 object LoginAttempt extends MdcLoggable {
 
-  def maxBadLoginAttempts = APIUtil.getPropsValue("max.bad.login.attempts") openOr "5"
+  final val maxBadLoginAttempts = APIUtil.getPropsValue("max.bad.login.attempts") openOr "5"
   
   def incrementBadLoginAttempts(provider: String, username: String): Unit = {
     username.isEmpty() match {
