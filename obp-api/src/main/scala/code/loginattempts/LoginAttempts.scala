@@ -9,7 +9,7 @@ import net.liftweb.util.Helpers._
 
 object LoginAttempt extends MdcLoggable {
 
-  final val maxBadLoginAttempts = APIUtil.getPropsValue("max.bad.login.attempts") openOr "5"
+  def maxBadLoginAttempts = APIUtil.getPropsValue("max.bad.login.attempts") openOr "5"
   
   def incrementBadLoginAttempts(provider: String, username: String): Unit = {
     username.isEmpty() match {
