@@ -405,7 +405,7 @@ class Boot extends MdcLoggable {
     }
     
     // ensure our relational database's tables are created/fit the schema
-    val connector = APIUtil.getPropsValue("connector").openOrThrowException("no connector set")
+    val connector = code.api.Constant.Connector.openOrThrowException("no connector set")
     
     val runningMode = Props.mode match {
       case Props.RunModes.Production => "Production mode"
@@ -470,7 +470,7 @@ class Boot extends MdcLoggable {
 
     def enableOpenIdConnectApis = {
       //  OpenIdConnect endpoint and validator
-      if (APIUtil.getPropsAsBoolValue("openid_connect.enabled", false)) {
+      if (code.api.Constant.openidConnectEnabled) {
         LiftRules.dispatch.append(OpenIdConnect)
       }
     }
@@ -489,7 +489,7 @@ class Boot extends MdcLoggable {
       LiftRules.statelessDispatch.append(ImporterAPI)
     }
 
-    APIUtil.getPropsValue("server_mode", "apis,portal") match {
+    code.api.Constant.serverMode match {
       // Instance runs as the portal only
       case mode if mode == "portal" => // Callback url in case of OpenID Connect MUST be enabled at portal side
         enableOpenIdConnectApis
@@ -602,7 +602,7 @@ class Boot extends MdcLoggable {
     ) ++ accountCreation ++ Admin.menus++ alivePage
     
     // Build SiteMap
-    val sitemap = APIUtil.getPropsValue("server_mode", "apis,portal") match {
+    val sitemap = code.api.Constant.serverMode match {
       case mode if mode == "portal" => commonMap
       case mode if mode == "apis" => alivePage
       case mode if mode.contains("apis") && mode.contains("portal") => commonMap
@@ -786,7 +786,7 @@ class Boot extends MdcLoggable {
     // export one Connector's methods as endpoints, it is just for develop
     APIUtil.getPropsValue("connector.name.export.as.endpoints").foreach { connectorName =>
       // validate whether "connector.name.export.as.endpoints" have set a correct value
-      APIUtil.getPropsValue("connector") match {
+      code.api.Constant.Connector match {
         case Full("star") =>
           val starConnectorTypes = APIUtil.getPropsValue("starConnector_supported_types","mapped")
             .trim
