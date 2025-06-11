@@ -67,7 +67,7 @@ trait RabbitMQConnector_vOct2024 extends Connector with MdcLoggable {
   val errorCodeExample = "INTERNAL-OBP-ADAPTER-6001: ..."
 
 //---------------- dynamic start -------------------please don't modify this line
-// ---------- created on 2025-05-27T10:14:24Z
+// ---------- created on 2025-06-10T12:05:04Z
 
   messageDocs += getAdapterInfoDoc
   def getAdapterInfoDoc = MessageDoc(
@@ -7164,7 +7164,9 @@ trait RabbitMQConnector_vOct2024 extends Connector with MdcLoggable {
       accountId=AccountId(accountIdExample.value),
       balanceId=BalanceId(balanceIdExample.value),
       balanceType=balanceTypeExample.value,
-      balanceAmount=BigDecimal(balanceAmountExample.value))))
+      balanceAmount=BigDecimal(balanceAmountExample.value),
+      lastChangeDateTime=Some(toDate(dateExample)),
+      referenceDate=Some(referenceDateExample.value))))
     ),
     adapterImplementation = Some(AdapterImplementation("- Core", 1))
   )
@@ -7194,7 +7196,9 @@ trait RabbitMQConnector_vOct2024 extends Connector with MdcLoggable {
       accountId=AccountId(accountIdExample.value),
       balanceId=BalanceId(balanceIdExample.value),
       balanceType=balanceTypeExample.value,
-      balanceAmount=BigDecimal(balanceAmountExample.value))))
+      balanceAmount=BigDecimal(balanceAmountExample.value),
+      lastChangeDateTime=Some(toDate(dateExample)),
+      referenceDate=Some(referenceDateExample.value))))
     ),
     adapterImplementation = Some(AdapterImplementation("- Core", 1))
   )
@@ -7224,7 +7228,9 @@ trait RabbitMQConnector_vOct2024 extends Connector with MdcLoggable {
       accountId=AccountId(accountIdExample.value),
       balanceId=BalanceId(balanceIdExample.value),
       balanceType=balanceTypeExample.value,
-      balanceAmount=BigDecimal(balanceAmountExample.value)))
+      balanceAmount=BigDecimal(balanceAmountExample.value),
+      lastChangeDateTime=Some(toDate(dateExample)),
+      referenceDate=Some(referenceDateExample.value)))
     ),
     adapterImplementation = Some(AdapterImplementation("- Core", 1))
   )
@@ -7258,7 +7264,9 @@ trait RabbitMQConnector_vOct2024 extends Connector with MdcLoggable {
       accountId=AccountId(accountIdExample.value),
       balanceId=BalanceId(balanceIdExample.value),
       balanceType=balanceTypeExample.value,
-      balanceAmount=BigDecimal(balanceAmountExample.value)))
+      balanceAmount=BigDecimal(balanceAmountExample.value),
+      lastChangeDateTime=Some(toDate(dateExample)),
+      referenceDate=Some(referenceDateExample.value)))
     ),
     adapterImplementation = Some(AdapterImplementation("- Core", 1))
   )
@@ -7296,7 +7304,7 @@ trait RabbitMQConnector_vOct2024 extends Connector with MdcLoggable {
         response.map(convertToTuple[Boolean](callContext))        
   }
           
-// ---------- created on 2025-05-27T10:14:24Z
+// ---------- created on 2025-06-10T12:05:04Z
 //---------------- dynamic end ---------------------please don't modify this line                                                              
 
   private val availableOperation = DynamicEntityOperation.values.map(it => s""""$it"""").mkString("[", ", ", "]")

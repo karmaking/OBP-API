@@ -439,12 +439,12 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
     (iBan, bBan)
   }
 
-  def createCardAccountBalanceJSON(bankAccount: BankAccount, accountBalances: AccountBalances): CardAccountBalancesV13 = {
+  def createCardAccountBalanceJSON(bankAccount: BankAccount, accountBalances: List[BankAccountBalanceTrait]): CardAccountBalancesV13 = {
     val accountBalancesV13 = createAccountBalanceJSON(bankAccount: BankAccount, accountBalances)
     CardAccountBalancesV13(accountBalancesV13.account,accountBalancesV13.`balances`)
   }
   
-  def createAccountBalanceJSON(bankAccount: BankAccount, accountBalances: AccountBalances): AccountBalancesV13 = {
+  def createAccountBalanceJSON(bankAccount: BankAccount, accountBalances: List[BankAccountBalanceTrait]): AccountBalancesV13 = {
 
     val (iban: String, bban: String) = getIbanAndBban(bankAccount)
 
@@ -452,11 +452,11 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
       account = FromAccount(
         iban = iban,
       ),
-      `balances` = accountBalances.balances.map(accountBalance => AccountBalance(
-        balanceAmount = AmountOfMoneyV13(accountBalance.balance.currency, accountBalance.balance.amount),
+      `balances` = accountBalances.map(accountBalance => AccountBalance(
+        balanceAmount = AmountOfMoneyV13(bankAccount.currency, accountBalance.balanceAmount.toString()),
         balanceType = accountBalance.balanceType,
-        lastChangeDateTime = APIUtil.dateOrNone(bankAccount.lastUpdate),
-        referenceDate = None, //There is no referenceDate in OBP, so set it to None
+        lastChangeDateTime = APIUtil.dateOrNone(accountBalance.lastChangeDateTime.getOrElse(null)),
+        referenceDate = accountBalance.referenceDate,
       ) 
     ))
   }
