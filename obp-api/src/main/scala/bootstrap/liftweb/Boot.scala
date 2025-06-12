@@ -561,6 +561,7 @@ class Boot extends MdcLoggable {
     val alivePage = List( Menu.i("Alive") / "alive")
     
     val commonMap = List(Menu.i("Home") / "index") ::: List(
+      Menu.i("index-en") / "index-en",
       Menu.i("Plain") / "plain",
       Menu.i("Static") / "static",
       Menu.i("SDKs") / "sdks",
