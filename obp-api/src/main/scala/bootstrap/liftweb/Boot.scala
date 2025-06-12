@@ -558,7 +558,7 @@ class Boot extends MdcLoggable {
     logger.info (s"props_identifier is : ${APIUtil.getPropsValue("props_identifier", "NONE-SET")}")
 
     // This will work for both portal and API modes. This page is used for testing if the API is running properly.
-    val alivePage = List( Menu.i("Alive") / "alive")
+    val alivePage = List( Menu.i("alive") /"debug" / "alive")
     
     val commonMap = List(Menu.i("Home") / "index") ::: List(
       Menu.i("index-en") / "index-en",

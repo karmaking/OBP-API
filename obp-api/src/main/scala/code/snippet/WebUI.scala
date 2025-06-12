@@ -162,7 +162,8 @@ class WebUI extends MdcLoggable{
     "#get-enabled-versions *" #> scala.xml.Unparsed(APIUtil.getEnabledVersions.toString())&
     "#get-disabled-endpoint-operation-ids *" #> scala.xml.Unparsed(APIUtil.getDisabledEndpointOperationIds.toString())&
     "#get-enabled-endpoint-operation-ids *" #> scala.xml.Unparsed(APIUtil.getEnabledEndpointOperationIds.toString())&
-    "#alive-disabled-api-mode *" #> scala.xml.Unparsed(getWebUiPropsValue("server_mode", "apis,portal"))
+    "#alive-disabled-api-mode *" #> scala.xml.Unparsed(getWebUiPropsValue("server_mode", "apis,portal"))&
+    "#portal-git-commit *" #> scala.xml.Unparsed(APIUtil.gitCommit)
   }
 
 
