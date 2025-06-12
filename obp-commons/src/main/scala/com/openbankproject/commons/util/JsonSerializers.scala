@@ -146,7 +146,8 @@ object BigDecimalSerializer extends Serializer[BigDecimal] {
   override def deserialize(implicit format: Formats): PartialFunction[(TypeInfo, JValue), BigDecimal] = {
     case (TypeInfo(IntervalClass, _), json) => json match {
       case JString(s) => BigDecimal(s)
-      case JDouble(s) => BigDecimal(s)
+//      case JDouble(s) => BigDecimal(s)// not safe,from JInt to BigDecimal, it may lose precision
+//      case JInt(s) => BigDecimal(s) // not safe,from JInt to BigDecimal, it may lose precision
       case x => throw new MappingException("Can't convert " + x + " to BigDecimal")
     }
   }
