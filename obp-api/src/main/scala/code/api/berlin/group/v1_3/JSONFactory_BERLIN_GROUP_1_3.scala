@@ -342,7 +342,7 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
           Some(balances.filter(_.accountId.equals(x.accountId)).map(balance =>(List(CoreAccountBalanceJson(
             balanceAmount = AmountOfMoneyV13(x.currency, balance.balanceAmount.toString()),
             balanceType = balance.balanceType,
-            lastChangeDateTime = APIUtil.dateOrNone(x.lastUpdate)
+            lastChangeDateTime = APIUtil.dateOrNone(balance.lastChangeDateTime.getOrElse(null))
           )))).flatten)
         }else{
           None
