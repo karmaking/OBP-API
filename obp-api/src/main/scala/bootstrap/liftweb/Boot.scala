@@ -558,7 +558,7 @@ class Boot extends MdcLoggable {
     logger.info (s"props_identifier is : ${APIUtil.getPropsValue("props_identifier", "NONE-SET")}")
 
     // This will work for both portal and API modes. This page is used for testing if the API is running properly.
-    val alivePage = List( Menu.i("alive") /"debug" / "alive")
+    val awakePage = List( Menu.i("awake") /"debug" / "awake")
     
     val commonMap = List(Menu.i("Home") / "index") ::: List(
       Menu.i("index-en") / "index-en",
@@ -600,12 +600,12 @@ class Boot extends MdcLoggable {
       Menu.i("confirm-bg-consent-request-redirect-uri") / "confirm-bg-consent-request-redirect-uri" >> AuthUser.loginFirst,//OAuth consent page,
       Menu.i("confirm-vrp-consent-request") / "confirm-vrp-consent-request" >> AuthUser.loginFirst,//OAuth consent page,
       Menu.i("confirm-vrp-consent") / "confirm-vrp-consent" >> AuthUser.loginFirst //OAuth consent page
-    ) ++ accountCreation ++ Admin.menus++ alivePage
+    ) ++ accountCreation ++ Admin.menus++ awakePage
     
     // Build SiteMap
     val sitemap = code.api.Constant.serverMode match {
       case mode if mode == "portal" => commonMap
-      case mode if mode == "apis" => alivePage
+      case mode if mode == "apis" => awakePage
       case mode if mode.contains("apis") && mode.contains("portal") => commonMap
       case _ => commonMap
     }
