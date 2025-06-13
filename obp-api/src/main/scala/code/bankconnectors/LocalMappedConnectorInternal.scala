@@ -2,6 +2,7 @@ package code.bankconnectors
 
 import code.fx.fx.TTL
 import code.api.Constant._
+import code.api.berlin.group.ConstantsBG
 import code.api.berlin.group.v1_3.model.TransactionStatus.mapTransactionStatus
 import code.api.cache.Caching
 import code.api.util.APIUtil._
@@ -154,6 +155,8 @@ object LocalMappedConnectorInternal extends MdcLoggable {
           "", // chargePolicy is not used in BG so far.
           Some(paymentServiceType.toString),
           Some(transactionRequestBody),
+          Some(ConstantsBG.berlinGroupVersion1.apiStandard),
+          Some(ConstantsBG.berlinGroupVersion1.apiShortVersion),
           callContext
         )
         transactionRequest
