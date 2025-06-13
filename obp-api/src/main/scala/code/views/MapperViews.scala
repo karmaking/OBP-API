@@ -1076,7 +1076,7 @@ object MapperViews extends Views with MdcLoggable {
       canDeleteCustomView_(false).
       canUpdateCustomView_(false).
       canGetCustomView_(false).
-      canTrasactionStatus_(true).
+      canSeeTransactionStatus_(true)
   }
 
   def createAndSaveDefaultPublicCustomView(bankId : BankId, accountId: AccountId, description: String) : Box[View] = {

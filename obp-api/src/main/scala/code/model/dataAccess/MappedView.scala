@@ -443,7 +443,7 @@ class ViewImpl extends View with LongKeyedMapper[ViewImpl] with ManyToMany with 
   object canAddTransactionRequestToBeneficiary_ extends MappedBoolean(this){
     override def defaultValue = false
   }
-  object canAddTransactionStatus_ extends MappedBoolean(this){
+  object canSeeTransactionStatus_ extends MappedBoolean(this){
     override def defaultValue = false
   }
   object canSeeBankAccountCreditLimit_ extends MappedBoolean(this){
@@ -596,7 +596,7 @@ class ViewImpl extends View with LongKeyedMapper[ViewImpl] with ManyToMany with 
 
   override def canAddTransactionRequestToBeneficiary: Boolean = canAddTransactionRequestToBeneficiary_.get
 
-  override def canSeeTransactionStatus: Boolean = canAddTransactionStatus_.get
+  override def canSeeTransactionStatus: Boolean = canSeeTransactionStatus_.get
 }
 
 object ViewImpl extends ViewImpl with LongKeyedMetaMapper[ViewImpl]{
