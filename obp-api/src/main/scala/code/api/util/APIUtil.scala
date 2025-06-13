@@ -2707,7 +2707,7 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
       else
         false
     }
-    APIUtil.getPropsValue("server_mode", "apis,portal") match {
+    code.api.Constant.serverMode match {
       case mode if mode == "portal" => false
       case mode if mode == "apis" => checkVersion
       case mode if mode.contains("apis") && mode.contains("portal") => checkVersion
@@ -3467,7 +3467,7 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
                                   )= createOBPId(s"$thisBankId$thisAccountId$counterpartyName$otherAccountRoutingScheme$otherAccountRoutingAddress")
 
   def isDataFromOBPSide (methodName: String, argNameToValue: Array[(String, AnyRef)] = Array.empty): Boolean = {
-    val connectorNameInProps = APIUtil.getPropsValue("connector").openOrThrowException(attemptedToOpenAnEmptyBox)
+    val connectorNameInProps = code.api.Constant.Connector.openOrThrowException(attemptedToOpenAnEmptyBox)
     //if the connector == mapped, then the data is always over obp database
     if(connectorNameInProps == "mapped") {
       true

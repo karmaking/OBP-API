@@ -135,7 +135,7 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
     account: LinkHrefJson ,
    
   )
-  case class CreditorAccountJson(
+  case class BgTransactionAccountJson(
     iban: String,
     currency : Option[String] = None,
   )
@@ -145,12 +145,14 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
   )
   case class TransactionJsonV13(
     transactionId: String,
-    creditorName: String,
-    creditorAccount: CreditorAccountJson,
+    creditorName: Option[String],
+    creditorAccount: Option[BgTransactionAccountJson],
+    debtorName: Option[String],
+    debtorAccount: Option[BgTransactionAccountJson],
     transactionAmount: AmountOfMoneyV13,
-    bookingDate: String,
-    valueDate: String,
-    remittanceInformationUnstructured: String,
+    bookingDate: Option[String],
+    valueDate: Option[String],
+    remittanceInformationUnstructured: Option[String]
   )
   case class SingleTransactionJsonV13(
     description: String,
@@ -162,7 +164,7 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
   case class transactionsDetailsJsonV13(
     transactionId: String,
     creditorName: String,
-    creditorAccount: CreditorAccountJson,
+    creditorAccount: BgTransactionAccountJson,
     mandateId: String,
     transactionAmount: AmountOfMoneyV13,
     bookingDate: Date,
@@ -465,17 +467,20 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
     val bookingDate = transaction.startDate.orNull
     val valueDate = transaction.finishDate.orNull
     val creditorName = transaction.otherBankAccount.map(_.label.display).getOrElse(null)
+    val (iban: String, bban: String) = getIbanAndBban(bankAccount)
+    
     TransactionJsonV13(
       transactionId = transaction.id.value,
-      creditorName = creditorName,
-      creditorAccount = CreditorAccountJson(
-        transaction.otherBankAccount.map(_.iban.orNull).orNull,
-        transaction.currency
-      ),
+      creditorName = Some(creditorName),
+      creditorAccount = Some(BgTransactionAccountJson(
+        transaction.otherBankAccount.map(_.iban.orNull).orNull
+      )),
+      debtorName = Some(bankAccount.label),
+      debtorAccount = Some(BgTransactionAccountJson(iban)),
       transactionAmount = AmountOfMoneyV13(APIUtil.stringOptionOrNull(transaction.currency), transaction.amount.get.toString().trim.stripPrefix("-")),
-      bookingDate = BgSpecValidation.formatToISODate(bookingDate) ,
-      valueDate = BgSpecValidation.formatToISODate(valueDate),
-      remittanceInformationUnstructured = APIUtil.stringOptionOrNull(transaction.description)
+      bookingDate = Some(BgSpecValidation.formatToISODate(bookingDate)) ,
+      valueDate = Some(BgSpecValidation.formatToISODate(valueDate)),
+      remittanceInformationUnstructured = Some(APIUtil.stringOptionOrNull(transaction.description))
     )
   }
 
@@ -503,17 +508,20 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
   def createTransactionFromRequestJSON(bankAccount: BankAccount, tr : TransactionRequest) : TransactionJsonV13 = {
     val creditorName = bankAccount.accountHolder
     val remittanceInformationUnstructured = stringOrNull(tr.body.description)
+    val (iban: String, bban: String) = getIbanAndBban(bankAccount)
+    
     TransactionJsonV13(
       transactionId = tr.id.value,
-      creditorName = creditorName,
-      creditorAccount = CreditorAccountJson(
+      creditorName = Some(creditorName),
+      creditorAccount = Some(BgTransactionAccountJson(
         if (tr.other_account_routing_scheme == "IBAN") tr.other_account_routing_address else "",
-        Some(tr.body.value.currency)
-      ),
+      )),
+      debtorName = Some(bankAccount.name),
+      debtorAccount = Some(BgTransactionAccountJson(iban)),
       transactionAmount = AmountOfMoneyV13(tr.charge.value.currency, tr.charge.value.amount.trim.stripPrefix("-")),
-      bookingDate = BgSpecValidation.formatToISODate(tr.start_date),
-      valueDate = BgSpecValidation.formatToISODate(tr.end_date),
-      remittanceInformationUnstructured = remittanceInformationUnstructured
+      bookingDate = Some(BgSpecValidation.formatToISODate(tr.start_date)),
+      valueDate = Some(BgSpecValidation.formatToISODate(tr.end_date)),
+      remittanceInformationUnstructured = Some(remittanceInformationUnstructured)
     )
   }
 
@@ -528,8 +536,8 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
     TransactionsJsonV13(
       account,
       TransactionsV13Transactions(
-        booked= transactions.map(transaction => createTransactionJSON(bankAccount, transaction)),
-        pending = None, //transactionRequests.filter(_.status!="COMPLETED").map(transactionRequest => createTransactionFromRequestJSON(bankAccount, transactionRequest)),
+        booked = transactions.map(transaction => createTransactionJSON(bankAccount, transaction)),
+        pending = Some(transactions.filter(_.status!="booked" ).map(transaction => createTransactionJSON(bankAccount, transaction))), //transactionRequests.filter(_.status!="COMPLETED").map(transactionRequest => createTransactionFromRequestJSON(bankAccount, transactionRequest)),
         _links = TransactionsV13TransactionsLinks(LinkHrefJson(s"/${ConstantsBG.berlinGroupVersion1.apiShortVersion}/accounts/$accountId"))
       )
     )
@@ -537,7 +545,7 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
 
   def createTransactionJson(bankAccount: BankAccount, transaction: ModeratedTransaction) : SingleTransactionJsonV13 = {
     val (iban: String, bban: String) = getIbanAndBban(bankAccount)
-    val creditorAccount = CreditorAccountJson(
+    val creditorAccount = BgTransactionAccountJson(
       iban = iban,
     )
     SingleTransactionJsonV13(

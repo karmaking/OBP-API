@@ -23,30 +23,24 @@ Osloerstrasse 16/17
 Berlin 13359, Germany
 */
 
-import java.util.Date
-
 import code.api.ResourceDocs1_4_0.MessageDocsSwaggerDefinitions
-import code.api.berlin.group.v1_3.JSONFactory_BERLIN_GROUP_1_3.getIbanAndBban
 import code.api.util.APIUtil.{AdapterImplementation, MessageDoc, OBPReturnType, _}
 import code.api.util.ErrorMessages._
 import code.api.util.ExampleValue._
-import code.api.util.{APIUtil, CallContext, HashUtil, OBPQueryParam}
+import code.api.util.{CallContext, OBPQueryParam}
 import code.bankconnectors._
-import code.customer.internalMapping.MappedCustomerIdMappingProvider
-import code.model.dataAccess.internalMapping.MappedAccountIdMappingProvider
 import code.util.Helper
 import code.util.Helper.MdcLoggable
 import com.openbankproject.commons.ExecutionContext.Implicits.global
-import com.openbankproject.commons.dto.{InBoundTrait, _}
+import com.openbankproject.commons.dto._
 import com.openbankproject.commons.model.enums.StrongCustomerAuthenticationStatus.SCAStatus
 import com.openbankproject.commons.model.enums._
 import com.openbankproject.commons.model.{TopicTrait, _}
-import com.openbankproject.commons.util.ReflectUtils
-import net.liftweb.common.{Box, _}
+import net.liftweb.common._
 import net.liftweb.json._
 import net.liftweb.util.StringHelpers
 
-import scala.collection.immutable.List
+import java.util.Date
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
 import scala.language.postfixOps
@@ -1486,7 +1480,8 @@ trait StoredProcedureConnector_vDec2019 extends Connector with MdcLoggable {
       description=Some(transactionDescriptionExample.value),
       startDate=toDate(transactionStartDateExample),
       finishDate=toDate(transactionFinishDateExample),
-      balance=BigDecimal(balanceExample.value))))
+      balance=BigDecimal(balanceExample.value),
+      status=transactionStatusExample.value)))
     ),
     adapterImplementation = Some(AdapterImplementation("- Core", 1))
   )
@@ -1619,7 +1614,8 @@ trait StoredProcedureConnector_vDec2019 extends Connector with MdcLoggable {
       description=Some(transactionDescriptionExample.value),
       startDate=toDate(transactionStartDateExample),
       finishDate=toDate(transactionFinishDateExample),
-      balance=BigDecimal(balanceExample.value)))
+      balance=BigDecimal(balanceExample.value),
+      status=transactionStatusExample.value))
     ),
     adapterImplementation = Some(AdapterImplementation("- Core", 1))
   )

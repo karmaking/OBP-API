@@ -1140,7 +1140,8 @@ case class Transaction(
                    // The date when the money finished changing hands
                    finishDate : Date,
                    //the new balance for the bank account
-                   balance :  BigDecimal
+                   balance :  BigDecimal,
+                   status: String
                  ) {
 
   val bankId = thisAccount.bankId

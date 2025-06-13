@@ -28,8 +28,6 @@ TESOBE (http://www.tesobe.com/)
 
 package code.model
 
-import java.util.Date
-
 import code.api.util.ErrorMessages
 import code.metadata.counterparties.Counterparties
 import code.views.system.ViewDefinition
@@ -38,6 +36,8 @@ import com.openbankproject.commons.model._
 import com.openbankproject.commons.model.enums.AccountRoutingScheme
 import net.liftweb.common._
 import net.liftweb.util.StringHelpers
+
+import java.util.Date
 
 case class ViewExtended(val view: View) {
 
@@ -167,6 +167,10 @@ case class ViewExtended(val view: View) {
         if (view.canSeeTransactionBalance && transaction.balance != null) transaction.balance.toString()
         else ""
 
+      val transactionStatus =
+        if (view.canSeeTransactionStatus) transaction.status
+        else ""
+
       new ModeratedTransaction(
         UUID = transactionUUID,
         id = transactionId,
@@ -179,7 +183,8 @@ case class ViewExtended(val view: View) {
         description = transactionDescription,
         startDate = transactionStartDate,
         finishDate = transactionFinishDate,
-        balance = transactionBalance
+        balance = transactionBalance,
+        status = transactionStatus
       )
     }
 
