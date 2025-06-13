@@ -313,7 +313,8 @@ object SwaggerDefinitionsJSON {
     "can_see_views_with_permissions_for_one_user",
     "can_see_views_with_permissions_for_all_users",
     "can_grant_access_to_custom_views",
-    "can_revoke_access_to_custom_views"
+    "can_revoke_access_to_custom_views",
+    "can_see_transaction_status"
   )
   
   lazy val createCustomViewJson = CreateCustomViewJson(

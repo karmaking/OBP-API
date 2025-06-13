@@ -536,8 +536,8 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
     TransactionsJsonV13(
       account,
       TransactionsV13Transactions(
-        booked= transactions.map(transaction => createTransactionJSON(bankAccount, transaction)),
-        pending = None, //transactionRequests.filter(_.status!="COMPLETED").map(transactionRequest => createTransactionFromRequestJSON(bankAccount, transactionRequest)),
+        booked = transactions.map(transaction => createTransactionJSON(bankAccount, transaction)),
+        pending = Some(transactions.filter(_.status!="booked" ).map(transaction => createTransactionJSON(bankAccount, transaction))), //transactionRequests.filter(_.status!="COMPLETED").map(transactionRequest => createTransactionFromRequestJSON(bankAccount, transactionRequest)),
         _links = TransactionsV13TransactionsLinks(LinkHrefJson(s"/${ConstantsBG.berlinGroupVersion1.apiShortVersion}/accounts/$accountId"))
       )
     )
