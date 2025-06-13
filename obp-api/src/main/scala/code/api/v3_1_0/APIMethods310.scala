@@ -93,7 +93,7 @@ trait APIMethods310 {
         |* Git Commit""",
       EmptyBody,
       apiInfoJSON,
-      List(UnknownError, "no connector set"),
+      List(UnknownError, MandatoryPropertyIsNotSet),
       apiTagApi :: Nil)
 
     lazy val root : OBPEndpoint = {
@@ -1870,7 +1870,7 @@ trait APIMethods310 {
         cc => implicit val ec = EndpointContext(Some(cc))
           for {
             (_, callContext) <- anonymousAccess(cc)
-            connectorVersion = code.api.Constant.Connector.openOrThrowException("connector props field `connector` not set")
+            connectorVersion = code.api.Constant.Connector.openOrThrowException(s"$MandatoryPropertyIsNotSet The missing props is 'connector'")
             starConnectorProps = APIUtil.getPropsValue("starConnector_supported_types").openOr("notfound")
             //TODO we need to decide what kind of connector should we use.
             obpApiLoopback = ObpApiLoopback(

@@ -28,13 +28,13 @@ package code.model.dataAccess
 
 import code.UserRefreshes.UserRefreshes
 import code.accountholders.AccountHolders
+import code.api._
 import code.api.cache.Caching
 import code.api.dynamic.endpoint.helper.DynamicEndpointHelper
 import code.api.util.APIUtil._
 import code.api.util.CommonFunctions.validUri
 import code.api.util.ErrorMessages._
 import code.api.util._
-import code.api._
 import code.bankconnectors.Connector
 import code.context.UserAuthContextProvider
 import code.entitlement.Entitlement
@@ -419,7 +419,7 @@ import net.liftweb.util.Helpers._
   /**Marking the locked state to show different error message */
   val usernameLockedStateCode = Long.MaxValue
 
-  val connector = code.api.Constant.Connector.openOrThrowException("no connector set")
+  val connector = code.api.Constant.Connector.openOrThrowException(s"$MandatoryPropertyIsNotSet. The missing prop is `connector` ")
   val starConnectorSupportedTypes = APIUtil.getPropsValue("starConnector_supported_types","")
 
   override def dbIndexes: List[BaseIndex[AuthUser]] = UniqueIndex(username, provider) ::super.dbIndexes

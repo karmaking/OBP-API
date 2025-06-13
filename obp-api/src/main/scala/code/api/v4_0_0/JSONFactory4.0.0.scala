@@ -29,6 +29,7 @@ package code.api.v4_0_0
 import code.api.Constant
 import code.api.attributedefinition.AttributeDefinition
 import code.api.util.APIUtil.{DateWithDay, DateWithSeconds, gitCommit, stringOptionOrNull, stringOrNull}
+import code.api.util.ErrorMessages.MandatoryPropertyIsNotSet
 import code.api.util.{APIUtil, CallContext, NewStyle}
 import code.api.v1_2_1.JSONFactory.{createAmountOfMoneyJSON, createOwnersJSON}
 import code.api.v1_2_1.{BankRoutingJsonV121, JSONFactory, UserJSONV121, ViewJSONV121}
@@ -1107,7 +1108,7 @@ object JSONFactory400 {
     val organisationWebsiteEnergySource = APIUtil.getPropsValue("energy_source.organisation_website", "")
     val energySource = new EnergySource400(organisationEnergySource, organisationWebsiteEnergySource)
 
-    val connector = code.api.Constant.Connector.openOrThrowException("no connector set")
+    val connector = code.api.Constant.Connector.openOrThrowException(s"$MandatoryPropertyIsNotSet. The missing prop is `connector` ")
     val resourceDocsRequiresRole = APIUtil.getPropsAsBoolValue("resource_docs_requires_role", false)
 
     APIInfoJson400(

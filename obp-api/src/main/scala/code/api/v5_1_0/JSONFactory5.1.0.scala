@@ -30,6 +30,7 @@ import code.api.Constant
 import code.api.berlin.group.ConstantsBG
 import code.api.berlin.group.v1_3.JSONFactory_BERLIN_GROUP_1_3.ConsentAccessJson
 import code.api.util.APIUtil.{DateWithDay, DateWithSeconds, gitCommit, stringOrNull}
+import code.api.util.ErrorMessages.MandatoryPropertyIsNotSet
 import code.api.util._
 import code.api.v1_2_1.BankRoutingJsonV121
 import code.api.v1_4_0.JSONFactory1_4_0.{ChallengeJsonV140, LocationJsonV140, MetaJsonV140, TransactionRequestAccountJsonV140, transformToLocationFromV140, transformToMetaFromV140}
@@ -968,7 +969,7 @@ object JSONFactory510 extends CustomJsonFormats {
     val organisationWebsiteEnergySource = APIUtil.getPropsValue("energy_source.organisation_website", "")
     val energySource = EnergySource400(organisationEnergySource, organisationWebsiteEnergySource)
 
-    val connector = code.api.Constant.Connector.openOrThrowException("no connector set")
+    val connector = code.api.Constant.Connector.openOrThrowException(s"$MandatoryPropertyIsNotSet. The missing prop is `connector` ")
     val resourceDocsRequiresRole = APIUtil.getPropsAsBoolValue("resource_docs_requires_role", false)
 
     APIInfoJsonV510(

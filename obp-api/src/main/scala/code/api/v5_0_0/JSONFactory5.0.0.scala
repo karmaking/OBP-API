@@ -29,6 +29,7 @@ package code.api.v5_0_0
 import code.api.Constant
 import code.api.util.APIUtil
 import code.api.util.APIUtil.{gitCommit, nullToString, stringOptionOrNull, stringOrNull}
+import code.api.util.ErrorMessages.MandatoryPropertyIsNotSet
 import code.api.v1_2_1.BankRoutingJsonV121
 import code.api.v1_3_0.JSONFactory1_3_0.{cardActionsToString, createAccountJson, createPinResetJson, createReplacementJson}
 import code.api.v1_3_0.{PinResetJSON, ReplacementJSON}
@@ -558,7 +559,7 @@ object JSONFactory500 {
     val organisationWebsiteEnergySource = APIUtil.getPropsValue("energy_source.organisation_website", "")
     val energySource = new EnergySource400(organisationEnergySource, organisationWebsiteEnergySource)
 
-    val connector = code.api.Constant.Connector.openOrThrowException("no connector set")
+    val connector = code.api.Constant.Connector.openOrThrowException(s"$MandatoryPropertyIsNotSet. The missing prop is `connector` ")
     val resourceDocsRequiresRole = APIUtil.getPropsAsBoolValue("resource_docs_requires_role", false)
 
     APIInfoJson400(

@@ -28,6 +28,7 @@ package code.api.v1_2_1
 
 import code.api.util.APIUtil
 import code.api.util.APIUtil._
+import code.api.util.ErrorMessages.MandatoryPropertyIsNotSet
 import code.model._
 import com.openbankproject.commons.model._
 import com.openbankproject.commons.util.ApiVersion
@@ -371,7 +372,7 @@ object JSONFactory{
       val phone = APIUtil.getPropsValue("hosted_by.phone", "+49 (0)30 8145 3994")
       val organisationWebsite = APIUtil.getPropsValue("organisation_website", "https://www.tesobe.com")
 
-      val connector = code.api.Constant.Connector.openOrThrowException("no connector set")
+      val connector = code.api.Constant.Connector.openOrThrowException(s"$MandatoryPropertyIsNotSet. The missing prop is `connector` ")
 
       val hostedBy = new HostedBy(organisation, email, phone, organisationWebsite)
       val apiInfoJSON = new APIInfoJSON(apiVersion.vDottedApiVersion, apiVersionStatus, gitCommit, connector, hostedBy)

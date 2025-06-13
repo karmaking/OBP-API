@@ -42,6 +42,7 @@ import code.api.attributedefinition.AttributeDefinition
 import code.api.cache.Redis
 import code.api.util.APIUtil.{enableVersionIfAllowed, errorJsonResponse, getPropsValue}
 import code.api.util.ApiRole.CanCreateEntitlementAtAnyBank
+import code.api.util.ErrorMessages.MandatoryPropertyIsNotSet
 import code.api.util._
 import code.api.util.migration.Migration
 import code.api.util.migration.Migration.DbFunction
@@ -405,7 +406,7 @@ class Boot extends MdcLoggable {
     }
     
     // ensure our relational database's tables are created/fit the schema
-    val connector = code.api.Constant.Connector.openOrThrowException("no connector set")
+    val connector = code.api.Constant.Connector.openOrThrowException(s"$MandatoryPropertyIsNotSet. The missing prop is `connector` ")
     
     val runningMode = Props.mode match {
       case Props.RunModes.Production => "Production mode"
