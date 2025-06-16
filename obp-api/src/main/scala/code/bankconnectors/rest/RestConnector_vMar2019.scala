@@ -2511,7 +2511,7 @@ trait RestConnector_vMar2019 extends Connector with MdcLoggable {
     inboundTopic = None,
     exampleOutboundMessage = (
      OutBoundCreateTransactionRequestSepaCreditTransfersBGV1(outboundAdapterCallContext=MessageDocsSwaggerDefinitions.outboundAdapterCallContext,
-      initiator= UserCommons(userPrimaryKey=UserPrimaryKey(123),
+      initiator= Some(UserCommons(userPrimaryKey=UserPrimaryKey(123),
       userId=userIdExample.value,
       idGivenByProvider="string",
       provider=providerExample.value,
@@ -2520,7 +2520,7 @@ trait RestConnector_vMar2019 extends Connector with MdcLoggable {
       createdByConsentId=Some("string"),
       createdByUserInvitationId=Some("string"),
       isDeleted=Some(true),
-      lastMarketingAgreementSignedDate=Some(toDate(dateExample))),
+      lastMarketingAgreementSignedDate=Some(toDate(dateExample)))),
       paymentServiceType=com.openbankproject.commons.model.enums.PaymentServiceTypes.example,
       transactionRequestType=com.openbankproject.commons.model.enums.TransactionRequestTypes.example,
       transactionRequestBody= SepaCreditTransfersBerlinGroupV13(endToEndIdentification=Some("string"),
@@ -2560,7 +2560,7 @@ trait RestConnector_vMar2019 extends Connector with MdcLoggable {
     adapterImplementation = Some(AdapterImplementation("- Core", 1))
   )
 
-  override def createTransactionRequestSepaCreditTransfersBGV1(initiator: User, paymentServiceType: PaymentServiceTypes, transactionRequestType: TransactionRequestTypes, transactionRequestBody: SepaCreditTransfersBerlinGroupV13, callContext: Option[CallContext]): OBPReturnType[Box[TransactionRequestBGV1]] = {
+  override def createTransactionRequestSepaCreditTransfersBGV1(initiator: Option[User], paymentServiceType: PaymentServiceTypes, transactionRequestType: TransactionRequestTypes, transactionRequestBody: SepaCreditTransfersBerlinGroupV13, callContext: Option[CallContext]): OBPReturnType[Box[TransactionRequestBGV1]] = {
         import com.openbankproject.commons.dto.{InBoundCreateTransactionRequestSepaCreditTransfersBGV1 => InBound, OutBoundCreateTransactionRequestSepaCreditTransfersBGV1 => OutBound}  
         val req = OutBound(callContext.map(_.toOutboundAdapterCallContext).orNull, initiator, paymentServiceType, transactionRequestType, transactionRequestBody)
         val response: Future[Box[InBound]] = sendRequest[InBound](getUrl(callContext, "createTransactionRequestSepaCreditTransfersBGV1"), HttpMethods.POST, req, callContext)
@@ -2576,7 +2576,7 @@ trait RestConnector_vMar2019 extends Connector with MdcLoggable {
     inboundTopic = None,
     exampleOutboundMessage = (
      OutBoundCreateTransactionRequestPeriodicSepaCreditTransfersBGV1(outboundAdapterCallContext=MessageDocsSwaggerDefinitions.outboundAdapterCallContext,
-      initiator= UserCommons(userPrimaryKey=UserPrimaryKey(123),
+      initiator= Some(UserCommons(userPrimaryKey=UserPrimaryKey(123),
       userId=userIdExample.value,
       idGivenByProvider="string",
       provider=providerExample.value,
@@ -2585,7 +2585,7 @@ trait RestConnector_vMar2019 extends Connector with MdcLoggable {
       createdByConsentId=Some("string"),
       createdByUserInvitationId=Some("string"),
       isDeleted=Some(true),
-      lastMarketingAgreementSignedDate=Some(toDate(dateExample))),
+      lastMarketingAgreementSignedDate=Some(toDate(dateExample)))),
       paymentServiceType=com.openbankproject.commons.model.enums.PaymentServiceTypes.example,
       transactionRequestType=com.openbankproject.commons.model.enums.TransactionRequestTypes.example,
       transactionRequestBody= PeriodicSepaCreditTransfersBerlinGroupV13(endToEndIdentification=Some("string"),
@@ -2630,7 +2630,7 @@ trait RestConnector_vMar2019 extends Connector with MdcLoggable {
     adapterImplementation = Some(AdapterImplementation("- Core", 1))
   )
 
-  override def createTransactionRequestPeriodicSepaCreditTransfersBGV1(initiator: User, paymentServiceType: PaymentServiceTypes, transactionRequestType: TransactionRequestTypes, transactionRequestBody: PeriodicSepaCreditTransfersBerlinGroupV13, callContext: Option[CallContext]): OBPReturnType[Box[TransactionRequestBGV1]] = {
+  override def createTransactionRequestPeriodicSepaCreditTransfersBGV1(initiator: Option[User], paymentServiceType: PaymentServiceTypes, transactionRequestType: TransactionRequestTypes, transactionRequestBody: PeriodicSepaCreditTransfersBerlinGroupV13, callContext: Option[CallContext]): OBPReturnType[Box[TransactionRequestBGV1]] = {
         import com.openbankproject.commons.dto.{InBoundCreateTransactionRequestPeriodicSepaCreditTransfersBGV1 => InBound, OutBoundCreateTransactionRequestPeriodicSepaCreditTransfersBGV1 => OutBound}  
         val req = OutBound(callContext.map(_.toOutboundAdapterCallContext).orNull, initiator, paymentServiceType, transactionRequestType, transactionRequestBody)
         val response: Future[Box[InBound]] = sendRequest[InBound](getUrl(callContext, "createTransactionRequestPeriodicSepaCreditTransfersBGV1"), HttpMethods.POST, req, callContext)

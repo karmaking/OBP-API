@@ -42,17 +42,17 @@ import code.views.Views
 import code.webhook.AccountWebhook
 import com.github.dwickern.macros.NameOf.nameOf
 import com.openbankproject.commons.dto.{CustomerAndAttribute, GetProductsParam, ProductCollectionItemsTree}
+import com.openbankproject.commons.model._
 import com.openbankproject.commons.model.enums.StrongCustomerAuthentication.SCA
 import com.openbankproject.commons.model.enums.StrongCustomerAuthenticationStatus.SCAStatus
 import com.openbankproject.commons.model.enums.{SuppliedAnswerType, _}
-import com.openbankproject.commons.model.{TransactionRequestStatus, _}
 import com.openbankproject.commons.util.JsonUtils
 import com.tesobe.CacheKeyFromArguments
 import net.liftweb.common._
 import net.liftweb.http.JsonResponse
 import net.liftweb.http.provider.HTTPParam
 import net.liftweb.json.JsonDSL._
-import net.liftweb.json.{Meta, _}
+import net.liftweb.json._
 import net.liftweb.util.Helpers.tryo
 import net.liftweb.util.Props
 import org.apache.commons.lang3.StringUtils
@@ -60,7 +60,6 @@ import org.apache.commons.lang3.StringUtils
 import java.security.AccessControlException
 import java.util.Date
 import java.util.UUID.randomUUID
-import scala.collection.immutable.List
 import scala.concurrent.Future
 import scala.reflect.runtime.universe.MethodSymbol
 
@@ -1181,7 +1180,7 @@ object NewStyle extends MdcLoggable{
     }
     
     def createTransactionRequestBGV1(
-      initiator: User,
+      initiator: Option[User],
       paymentServiceType: PaymentServiceTypes,
       transactionRequestType: TransactionRequestTypes,
       transactionRequestBody: BerlinGroupTransactionRequestCommonBodyJson,
@@ -1189,7 +1188,7 @@ object NewStyle extends MdcLoggable{
     ): OBPReturnType[TransactionRequestBGV1] = {
       val response = if(paymentServiceType.equals(PaymentServiceTypes.payments)){
         Connector.connector.vend.createTransactionRequestSepaCreditTransfersBGV1(
-          initiator: User,
+          initiator: Option[User],
           paymentServiceType: PaymentServiceTypes,
           transactionRequestType: TransactionRequestTypes,
           transactionRequestBody.asInstanceOf[SepaCreditTransfersBerlinGroupV13],
@@ -1197,7 +1196,7 @@ object NewStyle extends MdcLoggable{
         ) 
       }else if(paymentServiceType.equals(PaymentServiceTypes.periodic_payments)){
         Connector.connector.vend.createTransactionRequestPeriodicSepaCreditTransfersBGV1(
-          initiator: User,
+          initiator: Option[User],
           paymentServiceType: PaymentServiceTypes,
           transactionRequestType: TransactionRequestTypes,
           transactionRequestBody.asInstanceOf[PeriodicSepaCreditTransfersBerlinGroupV13],

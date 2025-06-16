@@ -4766,14 +4766,14 @@ object LocalMappedConnector extends Connector with MdcLoggable {
   }
   
   override def createTransactionRequestSepaCreditTransfersBGV1(
-    initiator: User,
+    initiator: Option[User],
     paymentServiceType: PaymentServiceTypes,
     transactionRequestType: TransactionRequestTypes,
     transactionRequestBody: SepaCreditTransfersBerlinGroupV13,
     callContext: Option[CallContext]
   ): OBPReturnType[Box[TransactionRequestBGV1]] = {
-    LocalMappedConnectorInternal.createTransactionRequestBGInternal( 
-      initiator: User,
+    LocalMappedConnectorInternal.createTransactionRequestBGInternal(
+      initiator: Option[User],
       paymentServiceType: PaymentServiceTypes,
       transactionRequestType: TransactionRequestTypes,
       transactionRequestBody: SepaCreditTransfersBerlinGroupV13,
@@ -4782,14 +4782,14 @@ object LocalMappedConnector extends Connector with MdcLoggable {
   }
 
   override def createTransactionRequestPeriodicSepaCreditTransfersBGV1(
-    initiator: User,
+    initiator: Option[User],
     paymentServiceType: PaymentServiceTypes,
     transactionRequestType: TransactionRequestTypes,
     transactionRequestBody: PeriodicSepaCreditTransfersBerlinGroupV13,
     callContext: Option[CallContext]
   ): OBPReturnType[Box[TransactionRequestBGV1]] = {
     LocalMappedConnectorInternal.createTransactionRequestBGInternal(
-      initiator: User,
+      initiator: Option[User],
       paymentServiceType: PaymentServiceTypes,
       transactionRequestType: TransactionRequestTypes,
       transactionRequestBody: PeriodicSepaCreditTransfersBerlinGroupV13,

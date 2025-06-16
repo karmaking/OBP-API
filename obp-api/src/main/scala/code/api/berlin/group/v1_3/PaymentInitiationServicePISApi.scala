@@ -18,7 +18,6 @@ import com.openbankproject.commons.model._
 import com.openbankproject.commons.model.enums.TransactionRequestStatus._
 import com.openbankproject.commons.model.enums.TransactionRequestTypes._
 import com.openbankproject.commons.model.enums.{TransactionRequestStatus, _}
-import com.openbankproject.commons.util.ApiVersion
 import net.liftweb
 import net.liftweb.common.Box.tryo
 import net.liftweb.common.Full
@@ -560,7 +559,7 @@ Check the transaction status of a payment initiation.""",
         case TransactionRequestTypes.SEPA_CREDIT_TRANSFERS => {
           for {
             (createdTransactionRequest, callContext) <- NewStyle.function.createTransactionRequestBGV1(
-              initiator = u,
+              initiator = Some(u),
               paymentServiceType,
               transactionRequestType,
               transactionRequestBody = sepaCreditTransfersBerlinGroupV13,
