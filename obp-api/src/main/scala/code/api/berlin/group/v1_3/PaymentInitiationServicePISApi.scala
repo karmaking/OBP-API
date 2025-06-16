@@ -516,7 +516,7 @@ Check the transaction status of a payment initiation.""",
   """
     def initiatePaymentImplementation(paymentService: String, paymentProduct: String, json: liftweb.json.JValue, cc: CallContext) = {
     for {
-      (Full(u), callContext) <- authenticatedAccess(cc)
+      (u, callContext) <- applicationAccess(cc)
       _ <- passesPsd2Pisp(callContext)
 
       paymentServiceType <- NewStyle.function.tryons(checkPaymentServerTypeError(paymentService), 404, callContext) {
@@ -559,7 +559,7 @@ Check the transaction status of a payment initiation.""",
         case TransactionRequestTypes.SEPA_CREDIT_TRANSFERS => {
           for {
             (createdTransactionRequest, callContext) <- NewStyle.function.createTransactionRequestBGV1(
-              initiator = Some(u),
+              initiator = u,
               paymentServiceType,
               transactionRequestType,
               transactionRequestBody = sepaCreditTransfersBerlinGroupV13,
