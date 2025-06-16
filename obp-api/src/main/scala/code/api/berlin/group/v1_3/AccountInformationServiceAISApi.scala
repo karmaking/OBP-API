@@ -933,6 +933,21 @@ The ASPSP might add balance information, if transaction lists without balances a
                             "remittanceInformationUnstructured": "Example 2"
                           }
                         ],
+                        "pending": [
+                          {
+                            "transactionId": "1234569",
+                            "creditorName": "Claude Renault",
+                            "creditorAccount": {
+                              "iban": "FR7612345987650123456789014"
+                            },
+                            "transactionAmount": {
+                              "currency": "EUR",
+                              "amount": "-100.03"
+                            },
+                            "valueDate": "2017-10-26",
+                            "remittanceInformationUnstructured": "Example 3"
+                          }
+                        ],
                         "_links": {
                           "account": {
                             "href": "/v1.3/accounts/3dc3d5b3-7023-4848-9853-f5400a64e80f"
@@ -958,9 +973,6 @@ The ASPSP might add balance information, if transaction lists without balances a
             params <- Future { createQueriesByHttpParams(callContext.get.requestHeaders)} map {
               x => fullBoxOrException(x ~> APIFailureNewStyle(UnknownError, 400, callContext.map(_.toLight)))
             } map { unboxFull(_) }
-//            (transactionRequests, callContext) <- Future { Connector.connector.vend.getTransactionRequests210(u, bankAccount, callContext)} map {
-//              x => fullBoxOrException(x ~> APIFailureNewStyle(InvalidConnectorResponseForGetTransactionRequests210, 400, callContext.map(_.toLight)))
-//            } map { unboxFull(_) }
             (transactions, callContext) <-bankAccount.getModeratedTransactionsFuture(bank, Full(u), view, callContext, params) map {
               x => fullBoxOrException(x ~> APIFailureNewStyle(UnknownError, 400, callContext.map(_.toLight)))
             } map { unboxFull(_) }

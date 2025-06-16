@@ -95,7 +95,7 @@ trait APIMethods510 {
         |* Git Commit""",
       EmptyBody,
       apiInfoJson400,
-      List(UnknownError, "no connector set"),
+      List(UnknownError, MandatoryPropertyIsNotSet),
       apiTagApi  :: Nil)
 
     lazy val root: OBPEndpoint = {
@@ -296,7 +296,7 @@ trait APIMethods510 {
         |""".stripMargin,
       EmptyBody,
       WaitingForGodotJsonV510(sleep_in_milliseconds = 50),
-      List(UnknownError, "no connector set"),
+      List(UnknownError, MandatoryPropertyIsNotSet),
       apiTagApi  :: Nil)
 
     lazy val waitingForGodot: OBPEndpoint = {
