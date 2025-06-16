@@ -475,7 +475,7 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
       creditorAccount = Some(BgTransactionAccountJson(
         transaction.otherBankAccount.map(_.iban.orNull).orNull
       )),
-      debtorName = Some(bankAccount.label),
+      debtorName = Some(bankAccount.name),
       debtorAccount = Some(BgTransactionAccountJson(iban)),
       transactionAmount = AmountOfMoneyV13(APIUtil.stringOptionOrNull(transaction.currency), transaction.amount.get.toString().trim.stripPrefix("-")),
       bookingDate = Some(BgSpecValidation.formatToISODate(bookingDate)) ,
