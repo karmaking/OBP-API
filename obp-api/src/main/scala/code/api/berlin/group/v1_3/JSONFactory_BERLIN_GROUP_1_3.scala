@@ -136,7 +136,7 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
    
   )
   case class BgTransactionAccountJson(
-    iban: String,
+    iban: Option[String],
     currency : Option[String] = None,
   )
   case class FromAccountJson(
@@ -468,19 +468,27 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
     val valueDate = transaction.finishDate.orNull
     val creditorName = transaction.otherBankAccount.map(_.label.display).getOrElse(null)
     val (iban: String, bban: String) = getIbanAndBban(bankAccount)
+    val creditorAccountIban = stringOrNone(transaction.otherBankAccount.map(_.iban.getOrElse("")).getOrElse(""))
+    val debtorAccountIdIban = stringOrNone(iban)
     
     TransactionJsonV13(
       transactionId = transaction.id.value,
-      creditorName = Some(creditorName),
-      creditorAccount = Some(BgTransactionAccountJson(
-        transaction.otherBankAccount.map(_.iban.orNull).orNull
-      )),
-      debtorName = Some(bankAccount.name),
-      debtorAccount = Some(BgTransactionAccountJson(iban)),
-      transactionAmount = AmountOfMoneyV13(APIUtil.stringOptionOrNull(transaction.currency), transaction.amount.get.toString().trim.stripPrefix("-")),
+      creditorName = stringOrNone(creditorName),
+      creditorAccount = 
+        if(creditorAccountIban.isEmpty) 
+          None 
+        else 
+          Some(BgTransactionAccountJson(iban=creditorAccountIban)),
+      debtorName = stringOrNone(bankAccount.name),
+      debtorAccount =
+        if(debtorAccountIdIban.isEmpty) 
+          None
+        else 
+          Some(BgTransactionAccountJson(iban = debtorAccountIdIban)),
+      transactionAmount = AmountOfMoneyV13(transaction.currency.getOrElse(""), transaction.amount.get.toString().trim.stripPrefix("-")),
       bookingDate = Some(BgSpecValidation.formatToISODate(bookingDate)) ,
       valueDate = Some(BgSpecValidation.formatToISODate(valueDate)),
-      remittanceInformationUnstructured = Some(APIUtil.stringOptionOrNull(transaction.description))
+      remittanceInformationUnstructured = transaction.description
     )
   }
 
@@ -493,37 +501,37 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
 //    val (iban, bban, pan, maskedPan, currency) = extractAccountData(scheme, address)
     CardTransactionJsonV13(
       cardTransactionId = transaction.id.value,
-      transactionAmount = AmountOfMoneyV13(APIUtil.stringOptionOrNull(transaction.currency), transaction.amount.get.toString()),
+      transactionAmount = AmountOfMoneyV13(transaction.currency.getOrElse(""), transaction.amount.get.toString()),
       transactionDate = transaction.finishDate.get,
       bookingDate = transaction.startDate.get,
       originalAmount = AmountOfMoneyV13(orignalCurrency, orignalBalnce),
       maskedPan = "",
       proprietaryBankTransactionCode = "",
       invoiced = true,
-      transactionDetails = APIUtil.stringOptionOrNull(transaction.description)
+      transactionDetails = transaction.description.getOrElse("")
     )
   }
-
   
-  def createTransactionFromRequestJSON(bankAccount: BankAccount, tr : TransactionRequest) : TransactionJsonV13 = {
-    val creditorName = bankAccount.accountHolder
-    val remittanceInformationUnstructured = stringOrNull(tr.body.description)
-    val (iban: String, bban: String) = getIbanAndBban(bankAccount)
-    
-    TransactionJsonV13(
-      transactionId = tr.id.value,
-      creditorName = Some(creditorName),
-      creditorAccount = Some(BgTransactionAccountJson(
-        if (tr.other_account_routing_scheme == "IBAN") tr.other_account_routing_address else "",
-      )),
-      debtorName = Some(bankAccount.name),
-      debtorAccount = Some(BgTransactionAccountJson(iban)),
-      transactionAmount = AmountOfMoneyV13(tr.charge.value.currency, tr.charge.value.amount.trim.stripPrefix("-")),
-      bookingDate = Some(BgSpecValidation.formatToISODate(tr.start_date)),
-      valueDate = Some(BgSpecValidation.formatToISODate(tr.end_date)),
-      remittanceInformationUnstructured = Some(remittanceInformationUnstructured)
-    )
-  }
+//  def createTransactionFromRequestJSON(bankAccount: BankAccount, tr : TransactionRequest) : TransactionJsonV13 = {
+//    val creditorName = bankAccount.accountHolder
+//    val remittanceInformationUnstructured = tr.body.description
+//    val (iban: String, bban: String) = getIbanAndBban(bankAccount)
+//
+//    val creditorAccountIban = if (tr.other_account_routing_scheme == "IBAN") stringOrNone(tr.other_account_routing_address) else None
+//    val debtorAccountIdIban = stringOrNone(iban)
+//    
+//    TransactionJsonV13(
+//      transactionId = tr.id.value,
+//      creditorName = stringOrNone(creditorName),
+//      creditorAccount = if (creditorAccountIban.isEmpty) None else Some(BgTransactionAccountJson(creditorAccountIban)), // If creditorAccountIban is None, it will return None
+//      debtorName = stringOrNone(bankAccount.name),
+//      debtorAccount = if (debtorAccountIdIban.isEmpty) None else Some(BgTransactionAccountJson(debtorAccountIdIban)),// If debtorAccountIdIban is None, it will return None
+//      transactionAmount = AmountOfMoneyV13(tr.charge.value.currency, tr.charge.value.amount.trim.stripPrefix("-")),
+//      bookingDate = Some(BgSpecValidation.formatToISODate(tr.start_date)),
+//      valueDate = Some(BgSpecValidation.formatToISODate(tr.end_date)),
+//      remittanceInformationUnstructured = Some(remittanceInformationUnstructured)
+//    )
+//  }
 
   def createTransactionsJson(bankAccount: BankAccount, transactions: List[ModeratedTransaction], transactionRequests: List[TransactionRequest] = Nil) : TransactionsJsonV13 = {
     val accountId = bankAccount.accountId.value
@@ -546,7 +554,7 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
   def createTransactionJson(bankAccount: BankAccount, transaction: ModeratedTransaction) : SingleTransactionJsonV13 = {
     val (iban: String, bban: String) = getIbanAndBban(bankAccount)
     val creditorAccount = BgTransactionAccountJson(
-      iban = iban,
+      iban = stringOrNone(iban),
     )
     SingleTransactionJsonV13(
       description = transaction.description.getOrElse(""),
