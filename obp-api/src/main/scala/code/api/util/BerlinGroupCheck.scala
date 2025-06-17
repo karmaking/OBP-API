@@ -27,22 +27,55 @@ object BerlinGroupCheck extends MdcLoggable {
     .map(_.trim.toLowerCase)
     .toList.filterNot(_.isEmpty)
 
-  private def validateHeaders(verb: String, url: String, reqHeaders: List[HTTPParam], forwardResult: (Box[User], Option[CallContext])): (Box[User], Option[CallContext]) = {
-    val headerMap = reqHeaders.map(h => h.name.toLowerCase -> h).toMap
-    val missingHeaders = if(url.contains(ConstantsBG.berlinGroupVersion1.urlPrefix) && url.endsWith("/consents"))
-      (berlinGroupMandatoryHeaders ++ berlinGroupMandatoryHeaderConsent).filterNot(headerMap.contains)
-    else
-      berlinGroupMandatoryHeaders.filterNot(headerMap.contains)
+  private def validateHeaders(
+                               verb: String,
+                               url: String,
+                               reqHeaders: List[HTTPParam],
+                               forwardResult: (Box[User], Option[CallContext])
+                             ): (Box[User], Option[CallContext]) = {
 
-    if (missingHeaders.isEmpty) {
-      forwardResult // All mandatory headers are present
-    } else {
-      if(missingHeaders.size == 1) {
-        (fullBoxOrException(Empty ~> APIFailureNewStyle(s"${ErrorMessages.MissingMandatoryBerlinGroupHeaders.replace("headers", "header")}(${missingHeaders.mkString(", ")})", 400, forwardResult._2.map(_.toLight))), forwardResult._2)
-      } else {
-        (fullBoxOrException(Empty ~> APIFailureNewStyle(s"${ErrorMessages.MissingMandatoryBerlinGroupHeaders}(${missingHeaders.mkString(", ")})", 400, forwardResult._2.map(_.toLight))), forwardResult._2)
-      }
+    val headerMap: Map[String, HTTPParam] = reqHeaders.map(h => h.name.toLowerCase -> h).toMap
+    val maybeRequestId: Option[String] = headerMap.get(RequestHeader.`X-Request-ID`.toLowerCase).flatMap(_.values.headOption)
+
+    val missingHeaders: List[String] = {
+      if (url.contains(ConstantsBG.berlinGroupVersion1.urlPrefix) && url.endsWith("/consents"))
+        (berlinGroupMandatoryHeaders ++ berlinGroupMandatoryHeaderConsent).filterNot(headerMap.contains)
+      else
+        berlinGroupMandatoryHeaders.filterNot(headerMap.contains)
     }
+
+    val resultWithMissingHeaderCheck: Option[(Box[User], Option[CallContext])] =
+      if (missingHeaders.nonEmpty) {
+        val message = if (missingHeaders.size == 1)
+          ErrorMessages.MissingMandatoryBerlinGroupHeaders.replace("headers", "header")
+        else
+          ErrorMessages.MissingMandatoryBerlinGroupHeaders
+
+        Some(
+          (
+            fullBoxOrException(
+              Empty ~> APIFailureNewStyle(s"$message(${missingHeaders.mkString(", ")})", 400, forwardResult._2.map(_.toLight))
+            ),
+            forwardResult._2
+          )
+        )
+      } else None
+
+    val resultWithInvalidRequestIdCheck: Option[(Box[User], Option[CallContext])] =
+      if (maybeRequestId.exists(id => !APIUtil.checkIfStringIsUUID(id))) {
+        Some(
+          (
+            fullBoxOrException(
+              Empty ~> APIFailureNewStyle(s"${ErrorMessages.InvalidUuidValue} (${RequestHeader.`X-Request-ID`})", 400, forwardResult._2.map(_.toLight))
+            ),
+            forwardResult._2
+          )
+        )
+      } else None
+
+    resultWithMissingHeaderCheck
+      .orElse(resultWithInvalidRequestIdCheck)
+      .getOrElse(forwardResult)
   }
 
   def isTppRequestsWithoutPsuInvolvement(requestHeaders: List[HTTPParam]): Boolean = {
