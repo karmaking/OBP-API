@@ -3082,19 +3082,7 @@ trait APIMethods510 {
       s"""Create a Consumer (Authenticated access).
          |
          |""",
-      CreateConsumerRequestJsonV510(
-        "Test",
-        "Test",
-        "Description",
-        "some@email.com",
-        "company",
-        "redirecturl",
-        true,
-        Some("""-----BEGIN CERTIFICATE-----
-          |client_certificate_content
-          |-----END CERTIFICATE-----""".stripMargin),
-        Some("logoUrl")
-      ),
+      createConsumerRequestJsonV510,
       consumerJsonOnlyForPostResponseV510,
       List(
         UserNotLoggedIn,
@@ -3147,21 +3135,7 @@ trait APIMethods510 {
       s"""Create a Consumer (Authenticated access).
          |
          |""",
-      CreateConsumerRequestJsonV510(
-        "Test",
-        "Test",
-        "Description",
-        "some@email.com",
-        "company",
-        "redirecturl",
-        "createdby",
-        true,
-        new Date(),
-        """-----BEGIN CERTIFICATE-----
-          |client_certificate_content
-          |-----END CERTIFICATE-----""".stripMargin,
-        Some("logoUrl")
-      ),
+      createConsumerRequestJsonV510,
       consumerJsonV510,
       List(
         UserNotLoggedIn,
@@ -3192,12 +3166,12 @@ trait APIMethods510 {
               company = Some(postedJson.company),
               redirectURL = Some(postedJson.redirect_url),
               createdByUserId = Some(u.userId),
-              clientCertificate = Some(postedJson.client_certificate),
+              clientCertificate = postedJson.client_certificate,
               logoURL = postedJson.logo_url,
               callContext
             )
           } yield {
-            (JSONFactory510.createMyConsumerJSON(consumer, None), HttpCode.`201`(callContext))
+            (JSONFactory510.createConsumerJsonOnlyForPostResponseV510(consumer, None), HttpCode.`201`(callContext))
           }
       }
     }
