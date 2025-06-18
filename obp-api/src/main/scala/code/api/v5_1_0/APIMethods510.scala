@@ -3082,21 +3082,7 @@ trait APIMethods510 {
       s"""Create a Consumer (Authenticated access).
          |
          |""",
-      CreateConsumerRequestJsonV510(
-        "Test",
-        "Test",
-        "Description",
-        "some@email.com",
-        "company",
-        "redirecturl",
-        "createdby",
-        true,
-        new Date(),
-        """-----BEGIN CERTIFICATE-----
-          |client_certificate_content
-          |-----END CERTIFICATE-----""".stripMargin,
-        Some("logoUrl")
-      ),
+      createConsumerRequestJsonV510,
       consumerJsonV510,
       List(
         UserNotLoggedIn,
@@ -3135,6 +3121,70 @@ trait APIMethods510 {
             )
           } yield {
             (JSONFactory510.createConsumerJSON(consumer, None), HttpCode.`201`(callContext))
+          }
+      }
+    }
+    staticResourceDocs += ResourceDoc(
+      createMyConsumer,
+      implementedInApiVersion,
+      nameOf(createMyConsumer),
+      "POST",
+      "/my/consumers",
+      "Create a Consumer",
+      s"""Create a Consumer (Authenticated access).
+         |
+         |""",
+      CreateConsumerRequestJsonV510(
+        "Test",
+        "Test",
+        "Description",
+        "some@email.com",
+        "company",
+        "redirecturl",
+        "createdby",
+        true,
+        new Date(),
+        """-----BEGIN CERTIFICATE-----
+          |client_certificate_content
+          |-----END CERTIFICATE-----""".stripMargin,
+        Some("logoUrl")
+      ),
+      consumerJsonV510,
+      List(
+        UserNotLoggedIn,
+        InvalidJsonFormat,
+        UnknownError
+      ),
+      List(apiTagConsumer)
+    )
+    
+    lazy val createMyConsumer: OBPEndpoint = {
+      case "my" :: "consumers" :: Nil JsonPost json -> _ => {
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(u), callContext) <- SS.user
+            (postedJson, appType)<- NewStyle.function.tryons(InvalidJsonFormat, 400, callContext) {
+              val createConsumerRequestJsonV510 = json.extract[CreateConsumerRequestJsonV510]
+              val appType = if(createConsumerRequestJsonV510.app_type.equals("Confidential")) AppType.valueOf("Confidential") else AppType.valueOf("Public")
+              (createConsumerRequestJsonV510,appType)
+            }
+            (consumer, callContext) <- createConsumerNewStyle(
+              key = Some(Helpers.randomString(40).toLowerCase),
+              secret = Some(Helpers.randomString(40).toLowerCase),
+              isActive = Some(postedJson.enabled),
+              name = Some(postedJson.app_name),
+              appType = Some(appType),
+              description = Some(postedJson.description),
+              developerEmail = Some(postedJson.developer_email),
+              company = Some(postedJson.company),
+              redirectURL = Some(postedJson.redirect_url),
+              createdByUserId = Some(u.userId),
+              clientCertificate = Some(postedJson.client_certificate),
+              logoURL = postedJson.logo_url,
+              callContext
+            )
+          } yield {
+            (JSONFactory510.createMyConsumerJSON(consumer, None), HttpCode.`201`(callContext))
           }
       }
     }
