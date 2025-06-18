@@ -3082,8 +3082,20 @@ trait APIMethods510 {
       s"""Create a Consumer (Authenticated access).
          |
          |""",
-      createConsumerRequestJsonV510,
-      consumerJsonV510,
+      CreateConsumerRequestJsonV510(
+        "Test",
+        "Test",
+        "Description",
+        "some@email.com",
+        "company",
+        "redirecturl",
+        true,
+        Some("""-----BEGIN CERTIFICATE-----
+          |client_certificate_content
+          |-----END CERTIFICATE-----""".stripMargin),
+        Some("logoUrl")
+      ),
+      consumerJsonOnlyForPostResponseV510,
       List(
         UserNotLoggedIn,
         UserHasMissingRoles,
@@ -3115,15 +3127,16 @@ trait APIMethods510 {
               company = Some(postedJson.company),
               redirectURL = Some(postedJson.redirect_url),
               createdByUserId = Some(u.userId),
-              clientCertificate = Some(postedJson.client_certificate),
+              clientCertificate = postedJson.client_certificate,
               logoURL = postedJson.logo_url,
               callContext
             )
           } yield {
-            (JSONFactory510.createConsumerJSON(consumer, None), HttpCode.`201`(callContext))
+            (JSONFactory510.createConsumerJsonOnlyForPostResponseV510(consumer, None), HttpCode.`201`(callContext))
           }
       }
     }
+
     staticResourceDocs += ResourceDoc(
       createMyConsumer,
       implementedInApiVersion,
@@ -3157,7 +3170,7 @@ trait APIMethods510 {
       ),
       List(apiTagConsumer)
     )
-    
+
     lazy val createMyConsumer: OBPEndpoint = {
       case "my" :: "consumers" :: Nil JsonPost json -> _ => {
         cc => implicit val ec = EndpointContext(Some(cc))

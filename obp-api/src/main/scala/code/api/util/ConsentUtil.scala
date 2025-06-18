@@ -530,25 +530,30 @@ object Consent extends MdcLoggable {
     }
 
     def checkFrequencyPerDay(storedConsent: consent.ConsentTrait) = {
-      def isSameDay(date1: Date, date2: Date): Boolean = {
-        val fmt = new SimpleDateFormat("yyyyMMdd")
-        fmt.format(date1).equals(fmt.format(date2))
-      }
-      var usesSoFarTodayCounter = storedConsent.usesSoFarTodayCounter
-      storedConsent.recurringIndicator match {
-        case false => // The consent is for one access to the account data
-          if(usesSoFarTodayCounter == 0) // Maximum value is "1".
-            (true, 0) // All good
-          else
-            (false, 1) // Exceeded rate limit
-        case true => // The consent is for recurring access to the account data
-          if(!isSameDay(storedConsent.usesSoFarTodayCounterUpdatedAt, new Date())) {
-            usesSoFarTodayCounter = 0 // Reset counter
-          }
-          if(usesSoFarTodayCounter < storedConsent.frequencyPerDay)
-            (true, usesSoFarTodayCounter) // All good
-          else
-            (false, storedConsent.frequencyPerDay) // Exceeded rate limit
+      if(BerlinGroupCheck.isTppRequestsWithoutPsuInvolvement(callContext.requestHeaders)) {
+        def isSameDay(date1: Date, date2: Date): Boolean = {
+          val fmt = new SimpleDateFormat("yyyyMMdd")
+          fmt.format(date1).equals(fmt.format(date2))
+        }
+
+        var usesSoFarTodayCounter = storedConsent.usesSoFarTodayCounter
+        storedConsent.recurringIndicator match {
+          case false => // The consent is for one access to the account data
+            if (usesSoFarTodayCounter == 0) // Maximum value is "1".
+              (true, 0) // All good
+            else
+              (false, 1) // Exceeded rate limit
+          case true => // The consent is for recurring access to the account data
+            if (!isSameDay(storedConsent.usesSoFarTodayCounterUpdatedAt, new Date())) {
+              usesSoFarTodayCounter = 0 // Reset counter
+            }
+            if (usesSoFarTodayCounter < storedConsent.frequencyPerDay)
+              (true, usesSoFarTodayCounter) // All good
+            else
+              (false, storedConsent.frequencyPerDay) // Exceeded rate limit
+        }
+      } else {
+        (true, 0) // All good
       }
     }
 
@@ -1123,9 +1128,9 @@ object Consent extends MdcLoggable {
           By(MappedConsent.mUserId, consent.userId), // for the same PSU
           By(MappedConsent.mConsumerId, consent.consumerId), // from the same TPP
         ).filterNot(_.consentId == consent.consentId) // Exclude current consent
-        .map{ c => // Set to expired
-          val changedStatus = c.mStatus(ConsentStatus.expired.toString).mLastActionDate(new Date()).save
-          if(changedStatus) logger.warn(s"|---> Changed status to ${ConsentStatus.expired.toString} for consent ID: ${c.id}")
+        .map{ c => // Set to terminatedByTpp
+          val changedStatus = c.mStatus(ConsentStatus.terminatedByTpp.toString).mLastActionDate(new Date()).save
+          if(changedStatus) logger.warn(s"|---> Changed status to ${ConsentStatus.terminatedByTpp.toString} for consent ID: ${c.id}")
           changedStatus
         }.forall(_ == true)
     } else {
