@@ -3,7 +3,7 @@ package code.api.util
 import code.api.berlin.group.ConstantsBG
 import code.api.{APIFailureNewStyle, RequestHeader}
 import code.api.util.APIUtil.{OBPReturnType, fullBoxOrException}
-import code.api.util.BerlinGroupSigning.getHeaderValue
+import code.api.util.BerlinGroupSigning.{getCertificateFromTppSignatureCertificate, getHeaderValue}
 import code.util.Helper.MdcLoggable
 import com.openbankproject.commons.model.User
 import com.openbankproject.commons.util.ApiVersion
@@ -73,8 +73,51 @@ object BerlinGroupCheck extends MdcLoggable {
         )
       } else None
 
+    // === Signature Header Parsing ===
+    val resultWithInvalidSignatureHeaderCheck: Option[(Box[User], Option[CallContext])] = {
+      val maybeSignature: Option[String] = headerMap.get("signature").flatMap(_.values.headOption)
+      maybeSignature.flatMap { header =>
+        BerlinGroupSignatureHeaderParser.parseSignatureHeader(header) match {
+          case Right(parsed) =>
+            // Log parsed values
+            logger.debug(s"Parsed Signature Header:")
+            logger.debug(s"  SN: ${parsed.keyId.sn}")
+            logger.debug(s"  CA: ${parsed.keyId.ca}")
+            logger.debug(s"  O:  ${parsed.keyId.o}")
+            logger.debug(s"  Headers: ${parsed.headers.mkString(", ")}")
+            logger.debug(s"  Signature: ${parsed.signature}")
+            val certificate = getCertificateFromTppSignatureCertificate(reqHeaders)
+            val serialNumber = certificate.getSerialNumber.toString
+            if(parsed.keyId.sn != serialNumber) {
+              logger.debug(s"Serial number from certificate: $serialNumber")
+              Some(
+                (
+                  fullBoxOrException(
+                    Empty ~> APIFailureNewStyle(s"${ErrorMessages.InvalidSignatureHeader}keyId.SN: ${parsed.keyId.sn} does not match the serial number from certificate: $serialNumber", 400, forwardResult._2.map(_.toLight))
+                  ),
+                  forwardResult._2
+                )
+              )
+            } else {
+              None // All good
+            }
+          case Left(error) =>
+            Some(
+              (
+                fullBoxOrException(
+                  Empty ~> APIFailureNewStyle(s"${ErrorMessages.InvalidSignatureHeader}$error", 400, forwardResult._2.map(_.toLight))
+                ),
+                forwardResult._2
+              )
+            )
+        }
+      }
+    }
+
+    // Chain validation steps
     resultWithMissingHeaderCheck
       .orElse(resultWithInvalidRequestIdCheck)
+      .orElse(resultWithInvalidSignatureHeaderCheck)
       .getOrElse(forwardResult)
   }
 

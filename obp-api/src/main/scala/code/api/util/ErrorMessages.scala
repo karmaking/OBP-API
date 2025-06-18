@@ -275,6 +275,7 @@ object ErrorMessages {
   val MissingMandatoryBerlinGroupHeaders= "OBP-20251: Missing mandatory request headers. "
   val EmptyRequestHeaders = "OBP-20252: Empty or null headers are not allowed. "
   val InvalidUuidValue = "OBP-20253: Invalid format. Must be a UUID."
+  val InvalidSignatureHeader = "OBP-20254: Invalid Signature header. "
 
   // X.509
   val X509GeneralError = "OBP-20300: PEM Encoded Certificate issue."
