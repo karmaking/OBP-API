@@ -259,14 +259,14 @@ class ConsumerTest extends V510ServerSetup {
 
       val requestApiEndpoint6 = (v5_1_0_Request / "my" / "consumers").POST<@ (user1)
       val responseApiEndpoint6 = makePostRequest(requestApiEndpoint6, write(createConsumerRequestJsonV510))
-      val consumerJson6 = responseApiEndpoint6.body.extract[ConsumerJsonV510]
+      val consumerJson6 = responseApiEndpoint6.body.extract[ConsumerJsonOnlyForPostResponseV510]
       consumerJson6.app_name shouldBe createConsumerRequestJsonV510.app_name
       consumerJson6.redirect_url shouldBe createConsumerRequestJsonV510.redirect_url
       consumerJson6.logo_url.headOption shouldBe createConsumerRequestJsonV510.logo_url.headOption
       consumerJson6.description shouldBe createConsumerRequestJsonV510.description
       consumerJson6.developer_email shouldBe createConsumerRequestJsonV510.developer_email
       consumerJson6.enabled shouldBe createConsumerRequestJsonV510.enabled
-      consumerJson6.certificate_pem shouldBe createConsumerRequestJsonV510.client_certificate
+      consumerJson6.certificate_pem shouldBe createConsumerRequestJsonV510.client_certificate.head
 
     }
   }
