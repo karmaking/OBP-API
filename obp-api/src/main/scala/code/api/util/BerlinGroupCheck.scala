@@ -4,6 +4,7 @@ import code.api.berlin.group.ConstantsBG
 import code.api.{APIFailureNewStyle, RequestHeader}
 import code.api.util.APIUtil.{OBPReturnType, fullBoxOrException}
 import code.api.util.BerlinGroupSigning.{getCertificateFromTppSignatureCertificate, getHeaderValue}
+import code.metrics.MappedMetric
 import code.util.Helper.MdcLoggable
 import com.openbankproject.commons.model.User
 import com.openbankproject.commons.util.ApiVersion
@@ -12,6 +13,7 @@ import net.liftweb.http.provider.HTTPParam
 
 import scala.concurrent.Future
 import com.openbankproject.commons.ExecutionContext.Implicits.global
+import net.liftweb.mapper.By
 
 object BerlinGroupCheck extends MdcLoggable {
 
@@ -73,6 +75,26 @@ object BerlinGroupCheck extends MdcLoggable {
         )
       } else None
 
+    val resultWithRequestIdUsedTwiceCheck: Option[(Box[User], Option[CallContext])] = {
+      val alreadyUsed = maybeRequestId match {
+        case Some(id) =>
+          MappedMetric.findAll(By(MappedMetric.correlationId, id), By(MappedMetric.verb, "POST"), By(MappedMetric.httpCode, 201)).nonEmpty
+        case None =>
+          false
+      }
+      if (alreadyUsed) {
+        Some(
+          (
+            fullBoxOrException(
+              Empty ~> APIFailureNewStyle(s"${ErrorMessages.InvalidXRequestIdValueValue}(${RequestHeader.`X-Request-ID`})", 400, forwardResult._2.map(_.toLight))
+            ),
+            forwardResult._2
+          )
+        )
+      } else None
+    }
+
+
     // === Signature Header Parsing ===
     val resultWithInvalidSignatureHeaderCheck: Option[(Box[User], Option[CallContext])] = {
       val maybeSignature: Option[String] = headerMap.get("signature").flatMap(_.values.headOption)
@@ -117,6 +139,7 @@ object BerlinGroupCheck extends MdcLoggable {
     // Chain validation steps
     resultWithMissingHeaderCheck
       .orElse(resultWithInvalidRequestIdCheck)
+      .orElse(resultWithRequestIdUsedTwiceCheck)
       .orElse(resultWithInvalidSignatureHeaderCheck)
       .getOrElse(forwardResult)
   }

@@ -3003,6 +3003,9 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
     val url = URLDecoder.decode(ObpS.uriAndQueryString.getOrElse(""),"UTF-8")
     val correlationId = getCorrelationId()
     val reqHeaders = S.request.openOrThrowException(attemptedToOpenAnEmptyBox).request.headers
+    val xRequestId: Option[String] =
+      reqHeaders.find(_.name.toLowerCase() == RequestHeader.`X-Request-ID`.toLowerCase())
+        .map(_.values.mkString(","))
     val title = s"Request Headers for verb: $verb, URL: $url"
     surroundDebugMessage(reqHeaders.map(h => h.name + ": " + h.values.mkString(",")).mkString, title)
     val remoteIpAddress = getRemoteIpAddress()
@@ -3168,7 +3171,7 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
     } map {
       x => (x._1, x._2.map(_.copy(url = url)))
     } map {
-      x => (x._1, x._2.map(_.copy(correlationId = correlationId)))
+      x => (x._1, x._2.map(_.copy(correlationId = xRequestId.getOrElse(correlationId))))
     } map {
       x => (x._1, x._2.map(_.copy(requestHeaders = reqHeaders)))
     } map {
