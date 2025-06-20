@@ -357,7 +357,7 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
           iban = iBan,
           bban = None,
           currency = x.currency,
-          name = if(x.name.isBlank) None else Some(x.name),
+          name = if(APIUtil.getPropsAsBoolValue("BG_v1312_omit_account_name", defaultValue = false)) Some(x.name) else None,
           cashAccountType = cashAccountType,
           product = x.accountType,
           balances = if(canReadBalances) accountBalances else None,
