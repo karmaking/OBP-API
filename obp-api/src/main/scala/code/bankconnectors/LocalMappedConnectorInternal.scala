@@ -1,6 +1,7 @@
 package code.bankconnectors
 
 import code.api.Constant._
+import code.api.berlin.group.ConstantsBG
 import code.api.berlin.group.v1_3.model.TransactionStatus.mapTransactionStatus
 import code.api.cache.Caching
 import code.api.util.APIUtil._
@@ -65,6 +66,7 @@ object LocalMappedConnectorInternal extends MdcLoggable {
       }
       (toAccount, callContext) <- NewStyle.function.getToBankAccountByIban(toAccountIban, callContext)
 
+      // Removed view SYSTEM_INITIATE_PAYMENTS_BERLIN_GROUP_VIEW_ID
       viewId = ViewId(SYSTEM_INITIATE_PAYMENTS_BERLIN_GROUP_VIEW_ID)
       fromBankIdAccountId = BankIdAccountId(fromAccount.bankId, fromAccount.accountId)
       view <- NewStyle.function.checkAccountAccessAndGetView(viewId, fromBankIdAccountId, Full(user), callContext)
@@ -108,7 +110,7 @@ object LocalMappedConnectorInternal extends MdcLoggable {
         viewId.value,
         transactionRequestType.toString,
         transactionRequestBody.instructedAmount.currency,
-        user.userId, 
+        user.userId,
         user.name,
         callContext
       ) map { i =>
@@ -164,6 +166,8 @@ object LocalMappedConnectorInternal extends MdcLoggable {
           "", // chargePolicy is not used in BG so far.
           Some(paymentServiceType.toString),
           Some(transactionRequestBody),
+          Some(ConstantsBG.berlinGroupVersion1.apiStandard),
+          Some(ConstantsBG.berlinGroupVersion1.apiShortVersion),
           callContext
         )
         transactionRequest

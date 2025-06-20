@@ -66,7 +66,7 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
                                  iban: String,
                                  bban: Option[String],
                                  currency: String,
-                                 name: String,
+                                 name: Option[String],
                                  product: String,
                                  cashAccountType: String,
 //                                 status: String="enabled",
@@ -91,7 +91,7 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
                              currency: String,
                              product: String,
                              cashAccountType: String,
-                             name: String,
+                             name: Option[String],
                              _links: AccountDetailsLinksJsonV13,
                            )
 
@@ -167,8 +167,8 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
     creditorAccount: BgTransactionAccountJson,
     mandateId: String,
     transactionAmount: AmountOfMoneyV13,
-    bookingDate: Date,
-    valueDate: Date,
+    bookingDate: String,
+    valueDate: String,
     remittanceInformationUnstructured: String,
     bankTransactionCode: String,
   )
@@ -341,11 +341,11 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
         val transactionRef = LinkHrefJson(s"/$commonPath/transactions")
         val canReadTransactions = canReadTransactionsAccounts.map(_.accountId.value).contains(x.accountId.value)
         val accountBalances = if(withBalanceParam == Some(true)){
-          Some(balances.filter(_.accountId.equals(x.accountId)).map(balance =>(List(CoreAccountBalanceJson(
+          Some(balances.filter(_.accountId.equals(x.accountId)).flatMap(balance => (List(CoreAccountBalanceJson(
             balanceAmount = AmountOfMoneyV13(x.currency, balance.balanceAmount.toString()),
             balanceType = balance.balanceType,
-            lastChangeDateTime = APIUtil.dateOrNone(balance.lastChangeDateTime.getOrElse(null))
-          )))).flatten)
+            lastChangeDateTime = balance.lastChangeDateTime.map(APIUtil.DateWithMsAndTimeZoneOffset.format(_))
+          )))))
         }else{
           None
         }
@@ -357,7 +357,7 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
           iban = iBan,
           bban = None,
           currency = x.currency,
-          name = x.name,
+          name = if(APIUtil.getPropsAsBoolValue("BG_v1312_show_account_name", defaultValue = true)) Some(x.name) else None,
           cashAccountType = cashAccountType,
           product = x.accountType,
           balances = if(canReadBalances) accountBalances else None,
@@ -388,7 +388,7 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
           iban = iBan,
           bban = None,
           currency = x.currency,
-          name = x.name,
+          name = if(APIUtil.getPropsAsBoolValue("BG_v1312_show_account_name", defaultValue = true)) Some(x.name) else None,
           cashAccountType = x.accountType,
           product = x.accountType,
           balances = None,
@@ -423,7 +423,7 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
       resourceId = bankAccount.accountId.value,
       iban = iBan,
       currency = bankAccount.currency,
-      name = bankAccount.name,
+      name = if(bankAccount.name.isBlank) None else Some(bankAccount.name),
       cashAccountType = bankAccount.accountType,
       product = bankAccount.accountType,
       _links = AccountDetailsLinksJsonV13(
@@ -457,7 +457,7 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
       `balances` = accountBalances.map(accountBalance => AccountBalance(
         balanceAmount = AmountOfMoneyV13(bankAccount.currency, accountBalance.balanceAmount.toString()),
         balanceType = accountBalance.balanceType,
-        lastChangeDateTime = APIUtil.dateOrNone(accountBalance.lastChangeDateTime.getOrElse(null)),
+        lastChangeDateTime = accountBalance.lastChangeDateTime.map(APIUtil.DateWithMsAndTimeZoneOffset.format(_)),
         referenceDate = accountBalance.referenceDate,
       ) 
     ))
@@ -466,7 +466,7 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
   def createTransactionJSON(bankAccount: BankAccount, transaction : ModeratedTransaction) : TransactionJsonV13 = {
     val bookingDate = transaction.startDate.orNull
     val valueDate = transaction.finishDate.orNull
-    val creditorName = transaction.otherBankAccount.map(_.label.display).getOrElse(null)
+    val creditorName = transaction.otherBankAccount.map(_.label.display).getOrElse("")
     val (iban: String, bban: String) = getIbanAndBban(bankAccount)
     val creditorAccountIban = stringOrNone(transaction.otherBankAccount.map(_.iban.getOrElse("")).getOrElse(""))
     val debtorAccountIdIban = stringOrNone(iban)
@@ -572,8 +572,8 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
             transaction.currency.getOrElse(""),
             transaction.amount.getOrElse("").toString,
           ),
-          bookingDate = transaction.startDate.getOrElse(null),
-          valueDate = transaction.finishDate.getOrElse(null),
+          bookingDate = transaction.startDate.map(APIUtil.DateWithMsAndTimeZoneOffset.format(_)).getOrElse(""),
+          valueDate = transaction.finishDate.map(APIUtil.DateWithMsAndTimeZoneOffset.format(_)).getOrElse(""),
           remittanceInformationUnstructured = transaction.description.getOrElse(""),
           bankTransactionCode ="",
         )
@@ -585,9 +585,9 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
     val accountId = bankAccount.accountId.value
     val (iban: String, bban: String) = getIbanAndBban(bankAccount)
     // get the latest end_date of `COMPLETED` transactionRequests
-    val latestCompletedEndDate = transactionRequests.sortBy(_.end_date).reverse.filter(_.status == "COMPLETED").map(_.end_date).headOption.getOrElse(null)
+    val latestCompletedEndDate = transactionRequests.sortBy(_.end_date).reverse.filter(_.status == "COMPLETED").map(_.end_date).headOption.getOrElse("")
     //get the latest end_date of !`COMPLETED` transactionRequests
-    val latestUncompletedEndDate = transactionRequests.sortBy(_.end_date).reverse.filter(_.status != "COMPLETED").map(_.end_date).headOption.getOrElse(null)
+    val latestUncompletedEndDate = transactionRequests.sortBy(_.end_date).reverse.filter(_.status != "COMPLETED").map(_.end_date).headOption.getOrElse("")
 
     CardTransactionsJsonV13(
       CardBalanceAccount(
