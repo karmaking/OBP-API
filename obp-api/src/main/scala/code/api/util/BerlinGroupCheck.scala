@@ -86,7 +86,7 @@ object BerlinGroupCheck extends MdcLoggable {
         Some(
           (
             fullBoxOrException(
-              Empty ~> APIFailureNewStyle(s"${ErrorMessages.InvalidXRequestIdValueValue}(${RequestHeader.`X-Request-ID`})", 400, forwardResult._2.map(_.toLight))
+              Empty ~> APIFailureNewStyle(s"${ErrorMessages.InvalidRequestIdValueAlreadyUsed}(${RequestHeader.`X-Request-ID`})", 400, forwardResult._2.map(_.toLight))
             ),
             forwardResult._2
           )
