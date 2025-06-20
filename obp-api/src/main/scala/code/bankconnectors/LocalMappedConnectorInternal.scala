@@ -66,12 +66,18 @@ object LocalMappedConnectorInternal extends MdcLoggable {
       }
       (toAccount, callContext) <- NewStyle.function.getToBankAccountByIban(toAccountIban, callContext)
 
-      // Removed view SYSTEM_INITIATE_PAYMENTS_BERLIN_GROUP_VIEW_ID 10.06.2025
+      // Removed view SYSTEM_INITIATE_PAYMENTS_BERLIN_GROUP_VIEW_ID
+      viewId = ViewId(SYSTEM_INITIATE_PAYMENTS_BERLIN_GROUP_VIEW_ID)
+      fromBankIdAccountId = BankIdAccountId(fromAccount.bankId, fromAccount.accountId)
+      view <- NewStyle.function.checkAccountAccessAndGetView(viewId, fromBankIdAccountId, Full(user), callContext)
+      _ <- Helper.booleanToFuture(InsufficientAuthorisationToCreateTransactionRequest, cc = callContext) {
+        view.canAddTransactionRequestToAnyAccount
+      }
 
       (paymentLimit, callContext) <- Connector.connector.vend.getPaymentLimit(
         fromAccount.bankId.value,
         fromAccount.accountId.value,
-        "",
+        viewId.value,
         transactionRequestType.toString,
         transactionRequestBody.instructedAmount.currency,
         user.userId,
@@ -101,7 +107,7 @@ object LocalMappedConnectorInternal extends MdcLoggable {
       (challengeThreshold, callContext) <- Connector.connector.vend.getChallengeThreshold(
         fromAccount.bankId.value,
         fromAccount.accountId.value,
-        "",
+        viewId.value,
         transactionRequestType.toString,
         transactionRequestBody.instructedAmount.currency,
         user.userId,
@@ -122,7 +128,7 @@ object LocalMappedConnectorInternal extends MdcLoggable {
       (chargeLevel, callContext) <- Connector.connector.vend.getChargeLevelC2(
         BankId(fromAccount.bankId.value),
         AccountId(fromAccount.accountId.value),
-        ViewId(""),
+        viewId,
         user.userId,
         user.name,
         transactionRequestType.toString,
