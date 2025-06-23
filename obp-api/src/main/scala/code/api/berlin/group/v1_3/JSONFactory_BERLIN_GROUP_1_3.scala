@@ -11,7 +11,7 @@ import code.model.ModeratedTransaction
 import code.util.Helper.MdcLoggable
 import com.openbankproject.commons.ExecutionContext.Implicits.global
 import com.openbankproject.commons.model._
-import com.openbankproject.commons.model.enums.AccountRoutingScheme
+import com.openbankproject.commons.model.enums.{AccountRoutingScheme, TransactionRequestStatus}
 import net.liftweb.common.Box.tryo
 import net.liftweb.common.{Box, Full}
 import net.liftweb.json.{JValue, parse}
@@ -542,8 +542,8 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
       currency = Some(bankAccount.currency)
     )
     
-    val bookedTransactions = transactions.filter(_.status=="booked").map(transaction => createTransactionJSON(bankAccount, transaction))
-    val pendingTransactions = transactions.filter(_.status!="booked").map(transaction => createTransactionJSON(bankAccount, transaction))
+    val bookedTransactions = transactions.filter(_.status==TransactionRequestStatus.COMPLETED).map(transaction => createTransactionJSON(bankAccount, transaction))
+    val pendingTransactions = transactions.filter(_.status!=TransactionRequestStatus.COMPLETED).map(transaction => createTransactionJSON(bankAccount, transaction))
     
     TransactionsJsonV13(
       account,
