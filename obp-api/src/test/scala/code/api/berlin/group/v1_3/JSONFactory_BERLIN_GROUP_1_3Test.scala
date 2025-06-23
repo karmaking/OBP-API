@@ -31,7 +31,6 @@ import code.api.util.CustomJsonFormats
 import code.model.ModeratedTransaction
 import code.setup.PropsReset
 import com.openbankproject.commons.model._
-import com.openbankproject.commons.model.enums.AccountRoutingScheme
 import net.liftweb.json._
 import org.scalatest.{FeatureSpec, GivenWhenThen, Matchers}
 
@@ -42,25 +41,8 @@ class JSONFactory_BERLIN_GROUP_1_3Test extends FeatureSpec with Matchers with Gi
   
     feature("test createTransactionJSON method") {
     scenario("createTransactionJSON should return a valid JSON object") {
-      def mockBankAccount(): BankAccount = BankAccountCommons(
-        accountId = AccountId("test-account-id"),
-        accountType = "CURRENT",
-        balance = BigDecimal("1000.00"),
-        currency = "EUR",
-        name = "",
-        label = "Test Account",
-        number = "12345678",
-        bankId = BankId("test-bank-id"),
-        lastUpdate = new java.util.Date(),
-        branchId = "test-branch-id",
-        accountRoutings = List(AccountRouting(AccountRoutingScheme.IBAN.toString, "")),
-        accountRules = Nil,
-        accountHolder = "Test Holder",
-        attributes = Some(Nil)
-      )
-
       def mockModeratedTransaction(): ModeratedTransaction = {
-        val mockBankAccount = new code.model.ModeratedBankAccount(
+        val mockThisBankAccount = new code.model.ModeratedBankAccount(
           accountId = AccountId("test-account-id"),
           owners = Some(Set.empty),
           accountType = Some("CURRENT"),
@@ -73,9 +55,9 @@ class JSONFactory_BERLIN_GROUP_1_3Test extends FeatureSpec with Matchers with Gi
           bankName = Some("Test Bank"),
           bankId = BankId("test-bank-id"),
           bankRoutingScheme = Some("IBAN"),
-          bankRoutingAddress = Some("DE89370400440532013000"),
+          bankRoutingAddress = Some(""),
           accountRoutingScheme = Some("IBAN"),
-          accountRoutingAddress = Some("DE89370400440532013000"),
+          accountRoutingAddress = Some(""),
           accountRoutings = Nil,
           accountRules = Nil
         )
@@ -99,7 +81,7 @@ class JSONFactory_BERLIN_GROUP_1_3Test extends FeatureSpec with Matchers with Gi
         new ModeratedTransaction(
           UUID = "uuid-1234",
           id = TransactionId("test-transaction-id"),
-          bankAccount = Some(mockBankAccount),
+          bankAccount = Some(mockThisBankAccount),
           otherBankAccount = Some(mockOtherBankAccount),
           metadata = None,
           transactionType = Some("TRANSFER"),
@@ -112,11 +94,10 @@ class JSONFactory_BERLIN_GROUP_1_3Test extends FeatureSpec with Matchers with Gi
           status = "booked"
         )
       }
-
-      val bankAccount = mockBankAccount() 
+      
       val transaction = mockModeratedTransaction() 
 
-      val result = JSONFactory_BERLIN_GROUP_1_3.createTransactionJSON(bankAccount, transaction)
+      val result = JSONFactory_BERLIN_GROUP_1_3.createTransactionJSON(transaction)
 
       result.transactionId shouldBe transaction.id.value
       result.creditorName shouldBe None //Some("Creditor Name")

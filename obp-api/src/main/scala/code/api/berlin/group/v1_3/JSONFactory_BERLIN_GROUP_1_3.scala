@@ -463,13 +463,16 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
     ))
   }
   
-  def createTransactionJSON(bankAccount: BankAccount, transaction : ModeratedTransaction) : TransactionJsonV13 = {
+  def createTransactionJSON(transaction : ModeratedTransaction) : TransactionJsonV13 = {
     val bookingDate = transaction.startDate.orNull
     val valueDate = transaction.finishDate.orNull
+    
     val creditorName = transaction.otherBankAccount.map(_.label.display).getOrElse("")
-    val (iban: String, bban: String) = getIbanAndBban(bankAccount)
     val creditorAccountIban = stringOrNone(transaction.otherBankAccount.map(_.iban.getOrElse("")).getOrElse(""))
-    val debtorAccountIdIban = stringOrNone(iban)
+    
+    val debtorName = stringOrNone(transaction.bankAccount.map(_.label.getOrElse("")).getOrElse(""))
+    val debtorIban  = transaction.bankAccount.map(_.accountRoutingAddress.getOrElse("")).getOrElse("")
+    val debtorAccountIdIban = stringOrNone(debtorIban)
     
     TransactionJsonV13(
       transactionId = transaction.id.value,
@@ -479,7 +482,7 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
           None 
         else 
           Some(BgTransactionAccountJson(iban=creditorAccountIban)),
-      debtorName = stringOrNone(bankAccount.name),
+      debtorName = debtorName,
       debtorAccount =
         if(debtorAccountIdIban.isEmpty) 
           None
@@ -542,8 +545,8 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
       currency = Some(bankAccount.currency)
     )
     
-    val bookedTransactions = transactions.filter(_.status==TransactionRequestStatus.COMPLETED).map(transaction => createTransactionJSON(bankAccount, transaction))
-    val pendingTransactions = transactions.filter(_.status!=TransactionRequestStatus.COMPLETED).map(transaction => createTransactionJSON(bankAccount, transaction))
+    val bookedTransactions = transactions.filter(_.status==TransactionRequestStatus.COMPLETED).map(transaction => createTransactionJSON(transaction))
+    val pendingTransactions = transactions.filter(_.status!=TransactionRequestStatus.COMPLETED).map(transaction => createTransactionJSON(transaction))
     
     TransactionsJsonV13(
       account,
