@@ -166,6 +166,7 @@ object BerlinGroupSigning extends MdcLoggable {
               val signatureHeaderValue = getHeaderValue(RequestHeader.Signature, requestHeaders)
               val signature = parseSignatureHeader(signatureHeaderValue).getOrElse("signature", "NONE")
               val headersToSign = parseSignatureHeader(signatureHeaderValue).getOrElse("headers", "").split(" ").toList
+              val sn = parseSignatureHeader(signatureHeaderValue).getOrElse("keyId", "").split(" ").toList
               val headers = headersToSign.map(h =>
                 if (h.toLowerCase() == RequestHeader.Digest.toLowerCase()) {
                   s"$h: $generatedDigest"
