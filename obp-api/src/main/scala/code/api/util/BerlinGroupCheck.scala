@@ -112,10 +112,11 @@ object BerlinGroupCheck extends MdcLoggable {
             val serialNumber = certificate.getSerialNumber.toString
             if(parsed.keyId.sn != serialNumber) {
               logger.debug(s"Serial number from certificate: $serialNumber")
+              logger.debug(s"keyId.SN:${parsed.keyId.sn}")
               Some(
                 (
                   fullBoxOrException(
-                    Empty ~> APIFailureNewStyle(s"${ErrorMessages.InvalidSignatureHeader}keyId.SN: ${parsed.keyId.sn} does not match the serial number from certificate: $serialNumber", 400, forwardResult._2.map(_.toLight))
+                    Empty ~> APIFailureNewStyle(s"${ErrorMessages.InvalidSignatureHeader}keyId.SN does not match the serial number from certificate", 400, forwardResult._2.map(_.toLight))
                   ),
                   forwardResult._2
                 )
