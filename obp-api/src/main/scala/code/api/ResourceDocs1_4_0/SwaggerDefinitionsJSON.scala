@@ -26,7 +26,7 @@ import com.openbankproject.commons.model
 import com.openbankproject.commons.model.PinResetReason.{FORGOT, GOOD_SECURITY_PRACTICE}
 import com.openbankproject.commons.model._
 import com.openbankproject.commons.model.enums.TransactionRequestTypes._
-import com.openbankproject.commons.model.enums.{AttributeCategory, CardAttributeType, ChallengeType}
+import com.openbankproject.commons.model.enums.{AttributeCategory, CardAttributeType, ChallengeType, TransactionRequestStatus}
 import com.openbankproject.commons.util.{ApiVersion, FieldNameApiVersions, ReflectUtils}
 import net.liftweb.json
 
@@ -2054,7 +2054,7 @@ object SwaggerDefinitionsJSON {
     from = transactionRequestAccountJsonV140,
     details = transactionRequestBody,
     transaction_ids = "666666-9c63-4246-abfc-96c20ec46188",
-    status = "COMPLETED",
+    status = TransactionRequestStatus.COMPLETED.toString,
     start_date = DateWithDayExampleObject,
     end_date = DateWithDayExampleObject,
     challenge = challengeJsonV140,
@@ -2672,7 +2672,7 @@ object SwaggerDefinitionsJSON {
     from = transactionRequestAccountJsonV140,
     details = transactionRequestBodyAllTypes,
     transaction_ids = List("902ba3bb-dedd-45e7-9319-2fd3f2cd98a1"),
-    status = "COMPLETED",
+    status = TransactionRequestStatus.COMPLETED.toString,
     start_date = DateWithDayExampleObject,
     end_date = DateWithDayExampleObject,
     challenge = challengeJsonV140,
@@ -4920,7 +4920,7 @@ object SwaggerDefinitionsJSON {
     from = transactionRequestAccountJsonV140,
     details = transactionRequestBodyAllTypes,
     transaction_ids = List("902ba3bb-dedd-45e7-9319-2fd3f2cd98a1"),
-    status = "COMPLETED",
+    status = TransactionRequestStatus.COMPLETED.toString,
     start_date = DateWithDayExampleObject,
     end_date = DateWithDayExampleObject,
     challenges = List(challengeJsonV400),

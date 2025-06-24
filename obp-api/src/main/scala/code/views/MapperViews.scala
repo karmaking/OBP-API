@@ -715,7 +715,7 @@ object MapperViews extends Views with MdcLoggable {
       // Get permission value
       val permissionValue = view.getClass.getMethod(permissionName).invoke(view).asInstanceOf[Boolean]
 
-      ViewPermission.findViewPermissions(view.viewId).find(_.permission.get == permissionName) match {
+      ViewPermission.findSystemViewPermissions(view.viewId).find(_.permission.get == permissionName) match {
         case Some(permission) if !permissionValue =>
           ViewPermission.delete_!(permission)
         case Some(permission) if permissionValue =>
