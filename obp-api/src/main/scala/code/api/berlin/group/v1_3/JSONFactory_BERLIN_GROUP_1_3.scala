@@ -1,5 +1,6 @@
 package code.api.berlin.group.v1_3
 
+import code.api.Constant.bgRemoveSignOfAmounts
 import code.api.berlin.group.ConstantsBG
 import code.api.berlin.group.v1_3.model.TransactionStatus.mapTransactionStatus
 import code.api.berlin.group.v1_3.model._
@@ -488,7 +489,13 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
           None
         else 
           Some(BgTransactionAccountJson(iban = debtorAccountIdIban)),
-      transactionAmount = AmountOfMoneyV13(transaction.currency.getOrElse(""), transaction.amount.get.toString().trim.stripPrefix("-")),
+      transactionAmount = AmountOfMoneyV13(
+        transaction.currency.getOrElse(""), 
+        if(bgRemoveSignOfAmounts)
+          transaction.amount.get.toString().trim.stripPrefix("-")
+        else
+          transaction.amount.get.toString()
+      ),
       bookingDate = Some(BgSpecValidation.formatToISODate(bookingDate)) ,
       valueDate = Some(BgSpecValidation.formatToISODate(valueDate)),
       remittanceInformationUnstructured = transaction.description
@@ -504,7 +511,12 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
 //    val (iban, bban, pan, maskedPan, currency) = extractAccountData(scheme, address)
     CardTransactionJsonV13(
       cardTransactionId = transaction.id.value,
-      transactionAmount = AmountOfMoneyV13(transaction.currency.getOrElse(""), transaction.amount.get.toString()),
+      transactionAmount = AmountOfMoneyV13(transaction.currency.getOrElse(""),
+        if(bgRemoveSignOfAmounts)
+          transaction.amount.get.toString().trim.stripPrefix("-")
+        else
+          transaction.amount.get.toString()
+      ),
       transactionDate = transaction.finishDate.get,
       bookingDate = transaction.startDate.get,
       originalAmount = AmountOfMoneyV13(orignalCurrency, orignalBalnce),
@@ -573,7 +585,10 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
           mandateId =transaction.UUID,
           transactionAmount=AmountOfMoneyV13(
             transaction.currency.getOrElse(""),
-            transaction.amount.getOrElse("").toString,
+            if(bgRemoveSignOfAmounts)
+              transaction.amount.get.toString().trim.stripPrefix("-")
+            else
+              transaction.amount.get.toString()
           ),
           bookingDate = transaction.startDate.map(APIUtil.DateWithMsAndTimeZoneOffset.format(_)).getOrElse(""),
           valueDate = transaction.finishDate.map(APIUtil.DateWithMsAndTimeZoneOffset.format(_)).getOrElse(""),
