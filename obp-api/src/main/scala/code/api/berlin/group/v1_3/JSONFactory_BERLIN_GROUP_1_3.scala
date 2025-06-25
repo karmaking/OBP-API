@@ -545,8 +545,8 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
       currency = Some(bankAccount.currency)
     )
     
-    val bookedTransactions = transactions.filter(_.status==TransactionRequestStatus.COMPLETED).map(transaction => createTransactionJSON(transaction))
-    val pendingTransactions = transactions.filter(_.status!=TransactionRequestStatus.COMPLETED).map(transaction => createTransactionJSON(transaction))
+    val bookedTransactions = transactions.filter(_.status==TransactionRequestStatus.COMPLETED.toString).map(transaction => createTransactionJSON(transaction))
+    val pendingTransactions = transactions.filter(_.status!=TransactionRequestStatus.COMPLETED.toString).map(transaction => createTransactionJSON(transaction))
     
     TransactionsJsonV13(
       account,
