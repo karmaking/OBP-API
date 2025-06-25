@@ -384,13 +384,15 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
         val transactionRef = LinkHrefJson(s"/$commonPath/transactions")
         val canReadTransactions = canReadTransactionsAccounts.map(_.accountId.value).contains(x.accountId.value)
 
+        val cashAccountType = x.attributes.getOrElse(Nil).filter(_.name== "cashAccountType").map(_.value).headOption.getOrElse("")
+        
         CoreAccountJsonV13(
           resourceId = x.accountId.value,
           iban = iBan,
           bban = None,
           currency = x.currency,
           name = if(APIUtil.getPropsAsBoolValue("BG_v1312_show_account_name", defaultValue = true)) Some(x.name) else None,
-          cashAccountType = x.accountType,
+          cashAccountType = cashAccountType,
           product = x.accountType,
           balances = None,
           _links = CoreAccountLinksJsonV13(
@@ -420,12 +422,15 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
     val canReadBalances = canReadBalancesAccounts.map(_.accountId.value).contains(bankAccount.accountId.value)
     val transactionRef = LinkHrefJson(s"/$commonPath/transactions")
     val canReadTransactions = canReadTransactionsAccounts.map(_.accountId.value).contains(bankAccount.accountId.value)
+    val cashAccountType = bankAccount.attributes.getOrElse(Nil).filter(_.name== "cashAccountType").map(_.value).headOption.getOrElse("")
+    
+    
     val account = AccountJsonV13(
       resourceId = bankAccount.accountId.value,
       iban = iBan,
       currency = bankAccount.currency,
       name = if(bankAccount.name.isBlank) None else Some(bankAccount.name),
-      cashAccountType = bankAccount.accountType,
+      cashAccountType = cashAccountType,
       product = bankAccount.accountType,
       _links = AccountDetailsLinksJsonV13(
         balances = if (canReadBalances) Some(balanceRef) else None,
