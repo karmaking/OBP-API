@@ -26,6 +26,8 @@ object Constant extends MdcLoggable {
   final val Connector = APIUtil.getPropsValue("connector")
   final val openidConnectEnabled = APIUtil.getPropsAsBoolValue("openid_connect.enabled", false)
   
+  final val bgRemoveSignOfAmounts = APIUtil.getPropsAsBoolValue("BG_remove_sign_of_amounts", false)
+  
   final val ApiInstanceId = {
     val apiInstanceIdFromProps = APIUtil.getPropsValue("api_instance_id")
     if(apiInstanceIdFromProps.isDefined){
