@@ -423,7 +423,7 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
       resourceId = bankAccount.accountId.value,
       iban = iBan,
       currency = bankAccount.currency,
-      name = if(bankAccount.name.isBlank) None else Some(bankAccount.name),
+      name = if(APIUtil.getPropsAsBoolValue("BG_v1312_show_account_name", defaultValue = true)) Some(bankAccount.name) else None,
       cashAccountType = bankAccount.accountType,
       product = bankAccount.accountType,
       _links = AccountDetailsLinksJsonV13(
