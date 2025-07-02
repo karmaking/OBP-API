@@ -1,0 +1,34 @@
+package code.api.util
+
+import code.api.APIFailureNewStyle
+import code.api.util.APIUtil.fullBoxOrException
+import com.openbankproject.commons.model.User
+import net.liftweb.common.{Box, Empty, Failure}
+
+
+object ErrorUtil {
+  def apiFailure(errorMessage: String, httpCode: Int)(forwardResult: (Box[User], Option[CallContext])): (Box[User], Option[CallContext]) = {
+    val (_, second) = forwardResult
+    val apiFailure = APIFailureNewStyle(
+      failMsg = errorMessage,
+      failCode = httpCode,
+      ccl = second.map(_.toLight)
+    )
+    val failureBox = Empty ~> apiFailure
+    (
+      fullBoxOrException(failureBox),
+      second
+    )
+  }
+
+  def apiFailureToBox(errorMessage: String, httpCode: Int)(cc: Option[CallContext]): Box[Nothing] = {
+    val apiFailure = APIFailureNewStyle(
+      failMsg = errorMessage,
+      failCode = httpCode,
+      ccl = cc.map(_.toLight)
+    )
+    val failureBox = Empty ~> apiFailure
+    fullBoxOrException(failureBox)
+  }
+
+}
