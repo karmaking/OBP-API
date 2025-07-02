@@ -239,32 +239,36 @@ object Consent extends MdcLoggable {
     val consentBox = Consents.consentProvider.vend.getConsentByConsentId(consent.jti)
     logger.debug(s"code.api.util.Consent.checkConsent.getConsentByConsentId: consentBox($consentBox)")
     val result = consentBox match {
-      case Full(c) if c.mStatus.toString().toUpperCase == ConsentStatus.ACCEPTED.toString | c.mStatus.toString().toLowerCase() == ConsentStatus.valid.toString =>
-        verifyHmacSignedJwt(consentIdAsJwt, c) match {
-          case true =>
-            (System.currentTimeMillis / 1000) match {
-              case currentTimeInSeconds if currentTimeInSeconds < consent.nbf =>
-                Failure(ErrorMessages.ConsentNotBeforeIssue)
-              case currentTimeInSeconds if currentTimeInSeconds > consent.exp =>
-                Failure(ErrorMessages.ConsentExpiredIssue)
-              case _ =>
-                logger.debug(s"start code.api.util.Consent.checkConsent.checkConsumerIsActiveAndMatched(consent($consent))")
-                val result = checkConsumerIsActiveAndMatched(consent, callContext)
-                logger.debug(s"end code.api.util.Consent.checkConsent.checkConsumerIsActiveAndMatched: result($result)")
-                result
+      case Full(c) =>
+        // Always verify signature first
+        if (!verifyHmacSignedJwt(consentIdAsJwt, c)) {
+          Failure(ErrorMessages.ConsentVerificationIssue)
+        } else {
+          // Then check time constraints
+          val currentTimeInSeconds = System.currentTimeMillis / 1000
+          if (currentTimeInSeconds < consent.nbf) {
+            Failure(ErrorMessages.ConsentNotBeforeIssue)
+          } else if (currentTimeInSeconds > consent.exp) {
+            Failure(ErrorMessages.ConsentExpiredIssue)
+          } else {
+            // Then check consent status
+            if (c.apiStandard == ConstantsBG.berlinGroupVersion1.apiStandard &&
+              c.status.toLowerCase != ConsentStatus.valid.toString) {
+              Failure(s"${ErrorMessages.ConsentStatusIssue}${ConsentStatus.valid.toString}.")
+            } else if (c.mStatus.toString.toUpperCase != ConsentStatus.ACCEPTED.toString) {
+              Failure(s"${ErrorMessages.ConsentStatusIssue}${ConsentStatus.ACCEPTED.toString}.")
+            } else {
+              logger.debug(s"start code.api.util.Consent.checkConsent.checkConsumerIsActiveAndMatched(consent($consent))")
+              val consumerResult = checkConsumerIsActiveAndMatched(consent, callContext)
+              logger.debug(s"end code.api.util.Consent.checkConsent.checkConsumerIsActiveAndMatched: result($consumerResult)")
+              consumerResult
             }
-          case false =>
-            Failure(ErrorMessages.ConsentVerificationIssue)
+          }
         }
-      case Full(c) if c.apiStandard == ConstantsBG.berlinGroupVersion1.apiStandard && // Berlin Group Consent
-        c.status.toLowerCase() != ConsentStatus.valid.toString =>
-        Failure(s"${ErrorMessages.ConsentStatusIssue}${ConsentStatus.valid.toString}.")
-      case Full(c) if c.mStatus.toString().toUpperCase() != ConsentStatus.ACCEPTED.toString =>
-        Failure(s"${ErrorMessages.ConsentStatusIssue}${ConsentStatus.ACCEPTED.toString}.")
       case _ =>
         Failure(ErrorMessages.ConsentNotFound)
     }
-    logger.debug(s"code.api.util.Consent.checkConsent.consentBox.result: result($result)")
+    logger.debug(s"code.api.util.Consent.checkConsent.result: result($result)")
     result
   }
 
