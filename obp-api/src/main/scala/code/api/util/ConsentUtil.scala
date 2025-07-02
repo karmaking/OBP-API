@@ -26,6 +26,7 @@ import code.views.Views
 import com.nimbusds.jwt.JWTClaimsSet
 import com.openbankproject.commons.ExecutionContext.Implicits.global
 import com.openbankproject.commons.model._
+import com.openbankproject.commons.util.ApiStandards
 import net.liftweb.common._
 import net.liftweb.http.provider.HTTPParam
 import net.liftweb.json.JsonParser.ParseException
@@ -255,7 +256,8 @@ object Consent extends MdcLoggable {
             if (c.apiStandard == ConstantsBG.berlinGroupVersion1.apiStandard &&
               c.status.toLowerCase != ConsentStatus.valid.toString) {
               Failure(s"${ErrorMessages.ConsentStatusIssue}${ConsentStatus.valid.toString}.")
-            } else if (c.mStatus.toString.toUpperCase != ConsentStatus.ACCEPTED.toString) {
+            } else if ((c.apiStandard == ApiStandards.obp.toString || c.apiStandard.isBlank) &&
+              c.mStatus.toString.toUpperCase != ConsentStatus.ACCEPTED.toString) {
               Failure(s"${ErrorMessages.ConsentStatusIssue}${ConsentStatus.ACCEPTED.toString}.")
             } else {
               logger.debug(s"start code.api.util.Consent.checkConsent.checkConsumerIsActiveAndMatched(consent($consent))")
