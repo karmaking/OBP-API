@@ -1138,6 +1138,7 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
             value <- tryo(values.head.toBoolean) ?~! FilterIsDeletedFormatError
             deleted = OBPIsDeleted(value)
           } yield deleted
+        case "sort_by" => Full(OBPSortBy(values.head))
         case "status" => Full(OBPStatus(values.head))
         case "consumer_id" => Full(OBPConsumerId(values.head))
         case "azp" => Full(OBPAzp(values.head))
@@ -1180,6 +1181,7 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
 
   def createQueriesByHttpParams(httpParams: List[HTTPParam]): Box[List[OBPQueryParam]] = {
     for{
+      sortBy <- getHttpParamValuesByName(httpParams, "sort_by")
       sortDirection <- getSortDirection(httpParams)
       fromDate <- getFromDate(httpParams)
       toDate <- getToDate(httpParams)
@@ -1226,10 +1228,9 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
        *
        */
       //val sortBy = json.header("obp_sort_by")
-      val sortBy = None
-      val ordering = OBPOrdering(sortBy, sortDirection)
+      val ordering = OBPOrdering(None, sortDirection)
       //This guarantee the order 
-      List(limit, offset, ordering, fromDate, toDate,
+      List(limit, offset, ordering, sortBy, fromDate, toDate,
         anon, status, consumerId, azp, iss, consentId, userId, url, appName, implementedByPartialFunction, implementedInVersion,
         verb, correlationId, duration, excludeAppNames, excludeUrlPattern, excludeImplementedByPartialfunctions,
         includeAppNames, includeUrlPattern, includeImplementedByPartialfunctions, 
@@ -1259,6 +1260,7 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
    */
   def createHttpParamsByUrl(httpRequestUrl: String): Box[List[HTTPParam]] = {
     val sleep = getHttpRequestUrlParam(httpRequestUrl,"sleep")
+    val sortBy = getHttpRequestUrlParam(httpRequestUrl,"sort_by")
     val sortDirection = getHttpRequestUrlParam(httpRequestUrl,"sort_direction")
     val fromDate =  getHttpRequestUrlParam(httpRequestUrl,"from_date")
     val toDate =  getHttpRequestUrlParam(httpRequestUrl,"to_date")
@@ -1300,7 +1302,7 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
     val connectorName =  getHttpRequestUrlParam(httpRequestUrl, "connector_name")
 
     Full(List(
-      HTTPParam("sort_direction",sortDirection), HTTPParam("from_date",fromDate), HTTPParam("to_date", toDate), HTTPParam("limit",limit), HTTPParam("offset",offset),
+      HTTPParam("sort_by",sortBy), HTTPParam("sort_direction",sortDirection), HTTPParam("from_date",fromDate), HTTPParam("to_date", toDate), HTTPParam("limit",limit), HTTPParam("offset",offset),
       HTTPParam("anon", anon), HTTPParam("status", status), HTTPParam("consumer_id", consumerId), HTTPParam("azp", azp), HTTPParam("iss", iss), HTTPParam("consent_id", consentId), HTTPParam("user_id", userId), HTTPParam("url", url), HTTPParam("app_name", appName),
       HTTPParam("implemented_by_partial_function",implementedByPartialFunction), HTTPParam("implemented_in_version",implementedInVersion), HTTPParam("verb", verb),
       HTTPParam("correlation_id", correlationId), HTTPParam("duration", duration), HTTPParam("exclude_app_names", excludeAppNames),
