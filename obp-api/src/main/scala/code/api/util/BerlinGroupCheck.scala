@@ -29,6 +29,22 @@ object BerlinGroupCheck extends MdcLoggable {
     .map(_.trim.toLowerCase)
     .toList.filterNot(_.isEmpty)
 
+  def doNotUseConsentIdAtHeader(path: String, reqHeaders: List[HTTPParam]): Boolean = {
+    val headerMap: Map[String, HTTPParam] = reqHeaders.map(h => h.name.toLowerCase -> h).toMap
+    val hasConsentIdId = headerMap.get(RequestHeader.`Consent-ID`.toLowerCase).flatMap(_.values.headOption).isDefined
+
+    val parts = path.stripPrefix("/").stripSuffix("/").split("/").toList
+    val doesNotRequireConsentId = parts.reverse match {
+      case "consents" :: restOfThePath => true
+      case consentId :: "consents" :: restOfThePath => true
+      case "status" :: consentId :: "consents" :: restOfThePath => true
+      case "authorisations" :: consentId :: "consents" :: restOfThePath => true
+      case authorisationId :: "authorisations" :: consentId :: "consents" :: restOfThePath => true
+      case _ => false
+    }
+    doesNotRequireConsentId && hasConsentIdId && path.contains(ConstantsBG.berlinGroupVersion1.urlPrefix)
+  }
+
   private def validateHeaders(
                                verb: String,
                                url: String,

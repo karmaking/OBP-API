@@ -3028,6 +3028,9 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
         Future { (fullBoxOrException(Empty ~> APIFailureNewStyle(message, 400, Some(cc.toLight))), Some(cc)) }
       } else if (authHeaders.size > 1) { // Check Authorization Headers ambiguity
         Future { (Failure(ErrorMessages.AuthorizationHeaderAmbiguity + s"${authHeaders}"), Some(cc)) }
+      } else if (BerlinGroupCheck.doNotUseConsentIdAtHeader(url, reqHeaders)) {
+        val message = ErrorMessages.InvalidConsentIdUsage
+        Future { (fullBoxOrException(Empty ~> APIFailureNewStyle(message, 400, Some(cc.toLight))), Some(cc)) }
       } else if (APIUtil.`hasConsent-ID`(reqHeaders)) { // Berlin Group's Consent
         Consent.applyBerlinGroupRules(APIUtil.`getConsent-ID`(reqHeaders), cc.copy(consumer = consumerByCertificate))
       } else if (APIUtil.hasConsentJWT(reqHeaders)) { // Open Bank Project's Consent
