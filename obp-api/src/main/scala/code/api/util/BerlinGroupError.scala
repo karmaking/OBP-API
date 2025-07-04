@@ -106,6 +106,8 @@ object BerlinGroupError {
 
       case "400" if message.contains("OBP-50221") => "PAYMENT_FAILED"
 
+      case "405" if message.contains("OBP-10404") => "SERVICE_INVALID"
+
       case "429" if message.contains("OBP-10018") => "ACCESS_EXCEEDED"
 
 
