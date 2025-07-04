@@ -15,10 +15,7 @@ import net.liftweb.common.{Failure, Full, ParamFailure}
 import net.liftweb.mapper.MetaMapper
 import net.liftweb.util.Helpers._
 
-/**
- * Handles setting up views and permissions and account holders using ViewImpls, ViewPrivileges,
- * and MappedAccountHolder
- */
+
 trait TestConnectorSetupWithStandardPermissions extends TestConnectorSetup {
 
   override protected def setAccountHolder(user: User, bankId : BankId, accountId : AccountId) = {

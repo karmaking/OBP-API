@@ -60,9 +60,7 @@ object Migration extends MdcLoggable {
     def executeScripts(startedBeforeSchemifier: Boolean): Boolean = executeScript {
       dummyScript()
       addAccountAccessConsumerId()
-      populateTableViewDefinition()
       populateMigrationOfViewDefinitionPermissions(startedBeforeSchemifier)
-      populateTableAccountAccess()
       generateAndPopulateMissingCustomerUUIDs(startedBeforeSchemifier)
       generateAndPopulateMissingConsumersUUIDs(startedBeforeSchemifier)
       populateTableRateLimiting()
@@ -116,20 +114,6 @@ object Migration extends MdcLoggable {
       }
     }
     
-    private def populateTableAccountAccess(): Boolean = {
-      val name = nameOf(populateTableAccountAccess)
-      runOnce(name) {
-        TableAccountAccess.populate(name)
-      }
-    }
-
-    private def populateTableViewDefinition(): Boolean = {
-      val name = nameOf(populateTableViewDefinition)
-      runOnce(name) {
-        TableViewDefinition.populate(name)
-      }
-    } 
-
     private def populateViewDefinitionCanAddTransactionRequestToBeneficiary(): Boolean = {
       val name = nameOf(populateViewDefinitionCanAddTransactionRequestToBeneficiary)
       runOnce(name) {
