@@ -80,6 +80,7 @@ object BerlinGroupError {
       case "400" if message.contains("OBP-35001") => "CONSENT_UNKNOWN"
       case "403" if message.contains("OBP-35001") => "CONSENT_UNKNOWN"
 
+      case "400" if message.contains("OBP-50200") => "RESOURCE_UNKNOWN"
       case "404" if message.contains("OBP-30076") => "RESOURCE_UNKNOWN"
       case "404" if message.contains("OBP-40001") => "RESOURCE_UNKNOWN"
 

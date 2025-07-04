@@ -21,13 +21,13 @@ object ErrorUtil {
     )
   }
 
-  def apiFailureToBox(errorMessage: String, httpCode: Int)(cc: Option[CallContext]): Box[Nothing] = {
+  def apiFailureToBox[T](errorMessage: String, httpCode: Int)(cc: Option[CallContext]): Box[T] = {
     val apiFailure = APIFailureNewStyle(
       failMsg = errorMessage,
       failCode = httpCode,
       ccl = cc.map(_.toLight)
     )
-    val failureBox = Empty ~> apiFailure
+    val failureBox: Box[T] = Empty ~> apiFailure
     fullBoxOrException(failureBox)
   }
 
