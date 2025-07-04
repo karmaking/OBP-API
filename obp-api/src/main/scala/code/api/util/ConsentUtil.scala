@@ -250,7 +250,7 @@ object Consent extends MdcLoggable {
           if (currentTimeInSeconds < consent.nbf) {
             Failure(ErrorMessages.ConsentNotBeforeIssue)
           } else if (currentTimeInSeconds > consent.exp) {
-            Failure(ErrorMessages.ConsentExpiredIssue)
+            ErrorUtil.apiFailureToBox(ErrorMessages.ConsentExpiredIssue, 401)(Some(callContext))
           } else {
             // Then check consent status
             if (c.apiStandard == ConstantsBG.berlinGroupVersion1.apiStandard &&
