@@ -127,102 +127,195 @@ object Constant extends MdcLoggable {
   final val GET_DYNAMIC_RESOURCE_DOCS_TTL: Int = APIUtil.getPropsValue(s"dynamicResourceDocsObp.cache.ttl.seconds", "3600").toInt
   final val GET_STATIC_RESOURCE_DOCS_TTL: Int = APIUtil.getPropsValue(s"staticResourceDocsObp.cache.ttl.seconds", "3600").toInt
   final val SHOW_USED_CONNECTOR_METHODS: Boolean = APIUtil.getPropsAsBoolValue(s"show_used_connector_methods", false)
-
+  
+  final val CAN_SEE_TRANSACTION_OTHER_BANK_ACCOUNT = "canSeeTransactionOtherBankAccount"
+  final val CAN_SEE_TRANSACTION_METADATA = "canSeeTransactionMetadata"
+  final val CAN_SEE_TRANSACTION_DESCRIPTION = "canSeeTransactionDescription"
+  final val CAN_SEE_TRANSACTION_AMOUNT = "canSeeTransactionAmount"
+  final val CAN_SEE_TRANSACTION_TYPE = "canSeeTransactionType"
+  final val CAN_SEE_TRANSACTION_CURRENCY = "canSeeTransactionCurrency"
+  final val CAN_SEE_TRANSACTION_START_DATE = "canSeeTransactionStartDate"
+  final val CAN_SEE_TRANSACTION_FINISH_DATE = "canSeeTransactionFinishDate"
+  final val CAN_SEE_TRANSACTION_BALANCE = "canSeeTransactionBalance"
+  final val CAN_SEE_COMMENTS = "canSeeComments"
+  final val CAN_SEE_OWNER_COMMENT = "canSeeOwnerComment"
+  final val CAN_SEE_TAGS = "canSeeTags"
+  final val CAN_SEE_IMAGES = "canSeeImages"
+  final val CAN_SEE_BANK_ACCOUNT_OWNERS = "canSeeBankAccountOwners"
+  final val CAN_SEE_BANK_ACCOUNT_TYPE = "canSeeBankAccountType"
+  final val CAN_SEE_BANK_ACCOUNT_BALANCE = "canSeeBankAccountBalance"
+  final val CAN_QUERY_AVAILABLE_FUNDS = "canQueryAvailableFunds"
+  final val CAN_SEE_BANK_ACCOUNT_LABEL = "canSeeBankAccountLabel"
+  final val CAN_SEE_BANK_ACCOUNT_NATIONAL_IDENTIFIER = "canSeeBankAccountNationalIdentifier"
+  final val CAN_SEE_BANK_ACCOUNT_SWIFT_BIC = "canSeeBankAccountSwift_bic"
+  final val CAN_SEE_BANK_ACCOUNT_IBAN = "canSeeBankAccountIban"
+  final val CAN_SEE_BANK_ACCOUNT_NUMBER = "canSeeBankAccountNumber"
+  final val CAN_SEE_BANK_ACCOUNT_BANK_NAME = "canSeeBankAccountBankName"
+  final val CAN_SEE_BANK_ACCOUNT_BANK_PERMALINK = "canSeeBankAccountBankPermalink"
+  final val CAN_SEE_BANK_ROUTING_SCHEME = "canSeeBankRoutingScheme"
+  final val CAN_SEE_BANK_ROUTING_ADDRESS = "canSeeBankRoutingAddress"
+  final val CAN_SEE_BANK_ACCOUNT_ROUTING_SCHEME = "canSeeBankAccountRoutingScheme"
+  final val CAN_SEE_BANK_ACCOUNT_ROUTING_ADDRESS = "canSeeBankAccountRoutingAddress"
+  final val CAN_SEE_OTHER_ACCOUNT_NATIONAL_IDENTIFIER = "canSeeOtherAccountNationalIdentifier"
+  final val CAN_SEE_OTHER_ACCOUNT_SWIFT_BIC = "canSeeOtherAccountSWIFT_BIC"
+  final val CAN_SEE_OTHER_ACCOUNT_IBAN = "canSeeOtherAccountIBAN"
+  final val CAN_SEE_OTHER_ACCOUNT_BANK_NAME = "canSeeOtherAccountBankName"
+  final val CAN_SEE_OTHER_ACCOUNT_NUMBER = "canSeeOtherAccountNumber"
+  final val CAN_SEE_OTHER_ACCOUNT_METADATA = "canSeeOtherAccountMetadata"
+  final val CAN_SEE_OTHER_ACCOUNT_KIND = "canSeeOtherAccountKind"
+  final val CAN_SEE_OTHER_BANK_ROUTING_SCHEME = "canSeeOtherBankRoutingScheme"
+  final val CAN_SEE_OTHER_BANK_ROUTING_ADDRESS = "canSeeOtherBankRoutingAddress"
+  final val CAN_SEE_OTHER_ACCOUNT_ROUTING_SCHEME = "canSeeOtherAccountRoutingScheme"
+  final val CAN_SEE_OTHER_ACCOUNT_ROUTING_ADDRESS = "canSeeOtherAccountRoutingAddress"
+  final val CAN_SEE_MORE_INFO = "canSeeMoreInfo"
+  final val CAN_SEE_URL = "canSeeUrl"
+  final val CAN_SEE_IMAGE_URL = "canSeeImageUrl"
+  final val CAN_SEE_OPEN_CORPORATES_URL = "canSeeOpenCorporatesUrl"
+  final val CAN_SEE_CORPORATE_LOCATION = "canSeeCorporateLocation"
+  final val CAN_SEE_PHYSICAL_LOCATION = "canSeePhysicalLocation"
+  final val CAN_SEE_PUBLIC_ALIAS = "canSeePublicAlias"
+  final val CAN_SEE_PRIVATE_ALIAS = "canSeePrivateAlias"
+  final val CAN_ADD_MORE_INFO = "canAddMoreInfo"
+  final val CAN_ADD_URL = "canAddURL"
+  final val CAN_ADD_IMAGE_URL = "canAddImageURL"
+  final val CAN_ADD_OPEN_CORPORATES_URL = "canAddOpenCorporatesUrl"
+  final val CAN_ADD_CORPORATE_LOCATION = "canAddCorporateLocation"
+  final val CAN_ADD_PHYSICAL_LOCATION = "canAddPhysicalLocation"
+  final val CAN_ADD_PUBLIC_ALIAS = "canAddPublicAlias"
+  final val CAN_ADD_PRIVATE_ALIAS = "canAddPrivateAlias"
+  final val CAN_ADD_COUNTERPARTY = "canAddCounterparty"
+  final val CAN_GET_COUNTERPARTY = "canGetCounterparty"
+  final val CAN_DELETE_COUNTERPARTY = "canDeleteCounterparty"
+  final val CAN_DELETE_CORPORATE_LOCATION = "canDeleteCorporateLocation"
+  final val CAN_DELETE_PHYSICAL_LOCATION = "canDeletePhysicalLocation"
+  final val CAN_EDIT_OWNER_COMMENT = "canEditOwnerComment"
+  final val CAN_ADD_COMMENT = "canAddComment"
+  final val CAN_DELETE_COMMENT = "canDeleteComment"
+  final val CAN_ADD_TAG = "canAddTag"
+  final val CAN_DELETE_TAG = "canDeleteTag"
+  final val CAN_ADD_IMAGE = "canAddImage"
+  final val CAN_DELETE_IMAGE = "canDeleteImage"
+  final val CAN_ADD_WHERE_TAG = "canAddWhereTag"
+  final val CAN_SEE_WHERE_TAG = "canSeeWhereTag"
+  final val CAN_DELETE_WHERE_TAG = "canDeleteWhereTag"
+  final val CAN_ADD_TRANSACTION_REQUEST_TO_OWN_ACCOUNT = "canAddTransactionRequestToOwnAccount"
+  final val CAN_ADD_TRANSACTION_REQUEST_TO_ANY_ACCOUNT = "canAddTransactionRequestToAnyAccount"
+  final val CAN_SEE_BANK_ACCOUNT_CREDIT_LIMIT = "canSeeBankAccountCreditLimit"
+  final val CAN_CREATE_DIRECT_DEBIT = "canCreateDirectDebit"
+  final val CAN_CREATE_STANDING_ORDER = "canCreateStandingOrder"
+  final val CAN_REVOKE_ACCESS_TO_CUSTOM_VIEWS = "canRevokeAccessToCustomViews"
+  final val CAN_GRANT_ACCESS_TO_CUSTOM_VIEWS = "canGrantAccessToCustomViews"
+  final val CAN_SEE_TRANSACTION_REQUESTS = "canSeeTransactionRequests"
+  final val CAN_SEE_TRANSACTION_REQUEST_TYPES = "canSeeTransactionRequestTypes"
+  final val CAN_SEE_AVAILABLE_VIEWS_FOR_BANK_ACCOUNT = "canSeeAvailableViewsForBankAccount"
+  final val CAN_UPDATE_BANK_ACCOUNT_LABEL = "canUpdateBankAccountLabel"
+  final val CAN_CREATE_CUSTOM_VIEW = "canCreateCustomView"
+  final val CAN_DELETE_CUSTOM_VIEW = "canDeleteCustomView"
+  final val CAN_UPDATE_CUSTOM_VIEW = "canUpdateCustomView"
+  final val CAN_GET_CUSTOM_VIEW = "canGetCustomView"
+  final val CAN_SEE_VIEWS_WITH_PERMISSIONS_FOR_ALL_USERS = "canSeeViewsWithPermissionsForAllUsers"
+  final val CAN_SEE_VIEWS_WITH_PERMISSIONS_FOR_ONE_USER = "canSeeViewsWithPermissionsForOneUser"
+  final val CAN_SEE_TRANSACTION_THIS_BANK_ACCOUNT = "canSeeTransactionThisBankAccount"
+  final val CAN_SEE_TRANSACTION_STATUS = "canSeeTransactionStatus"
+  final val CAN_SEE_BANK_ACCOUNT_CURRENCY = "canSeeBankAccountCurrency"
+  final val CAN_ADD_TRANSACTION_REQUEST_TO_BENEFICIARY = "canAddTransactionRequestToBeneficiary"
+  final val CAN_GRANT_ACCESS_TO_VIEWS = "canGrantAccessToViews"
+  final val CAN_REVOKE_ACCESS_TO_VIEWS = "canRevokeAccessToViews"
 
   final val VIEW_PERMISSION_NAMES = List(
-    "canSeeTransactionOtherBankAccount",
-    "canSeeTransactionMetadata",
-    "canSeeTransactionDescription",
-    "canSeeTransactionAmount",
-    "canSeeTransactionType",
-    "canSeeTransactionCurrency",
-    "canSeeTransactionStartDate",
-    "canSeeTransactionFinishDate",
-    "canSeeTransactionBalance",
-    "canSeeComments",
-    "canSeeOwnerComment",
-    "canSeeTags",
-    "canSeeImages",
-    "canSeeBankAccountOwners",
-    "canSeeBankAccountType",
-    "canSeeBankAccountBalance",
-    "canQueryAvailableFunds",
-    "canSeeBankAccountLabel",
-    "canSeeBankAccountNationalIdentifier",
-    "canSeeBankAccountSwift_bic",
-    "canSeeBankAccountIban",
-    "canSeeBankAccountNumber",
-    "canSeeBankAccountBankName",
-    "canSeeBankAccountBankPermalink",
-    "canSeeBankRoutingScheme",
-    "canSeeBankRoutingAddress",
-    "canSeeBankAccountRoutingScheme",
-    "canSeeBankAccountRoutingAddress",
-    "canSeeOtherAccountNationalIdentifier",
-    "canSeeOtherAccountSWIFT_BIC",
-    "canSeeOtherAccountIBAN",
-    "canSeeOtherAccountBankName",
-    "canSeeOtherAccountNumber",
-    "canSeeOtherAccountMetadata",
-    "canSeeOtherAccountKind",
-    "canSeeOtherBankRoutingScheme",
-    "canSeeOtherBankRoutingAddress",
-    "canSeeOtherAccountRoutingScheme",
-    "canSeeOtherAccountRoutingAddress",
-    "canSeeMoreInfo",
-    "canSeeUrl",
-    "canSeeImageUrl",
-    "canSeeOpenCorporatesUrl",
-    "canSeeCorporateLocation",
-    "canSeePhysicalLocation",
-    "canSeePublicAlias",
-    "canSeePrivateAlias",
-    "canAddMoreInfo",
-    "canAddURL",
-    "canAddImageURL",
-    "canAddOpenCorporatesUrl",
-    "canAddCorporateLocation",
-    "canAddPhysicalLocation",
-    "canAddPublicAlias",
-    "canAddPrivateAlias",
-    "canAddCounterparty",
-    "canGetCounterparty",
-    "canDeleteCounterparty",
-    "canDeleteCorporateLocation",
-    "canDeletePhysicalLocation",
-    "canEditOwnerComment",
-    "canAddComment",
-    "canDeleteComment",
-    "canAddTag",
-    "canDeleteTag",
-    "canAddImage",
-    "canDeleteImage",
-    "canAddWhereTag",
-    "canSeeWhereTag",
-    "canDeleteWhereTag",
-    "canAddTransactionRequestToOwnAccount",
-    "canAddTransactionRequestToAnyAccount",
-    "canSeeBankAccountCreditLimit",
-    "canCreateDirectDebit",
-    "canCreateStandingOrder",
-    "canRevokeAccessToCustomViews",
-    "canGrantAccessToCustomViews",
-    "canSeeTransactionRequests",
-    "canSeeTransactionRequestTypes",
-    "canSeeAvailableViewsForBankAccount",
-    "canUpdateBankAccountLabel",
-    "canCreateCustomView",
-    "canDeleteCustomView",
-    "canUpdateCustomView",
-    "canGetCustomView",
-    "canSeeViewsWithPermissionsForAllUsers",
-    "canSeeViewsWithPermissionsForOneUser",
-//    "canGrantAccessToViews", 
-//    "canRevokeAccessToViews", 
-    "canSeeTransactionThisBankAccount", 
-    "canSeeTransactionStatus", 
-    "canSeeBankAccountCurrency", 
-    "canAddTransactionRequestToBeneficiary"
+    CAN_SEE_TRANSACTION_OTHER_BANK_ACCOUNT,
+    CAN_SEE_TRANSACTION_METADATA,
+    CAN_SEE_TRANSACTION_DESCRIPTION,
+    CAN_SEE_TRANSACTION_AMOUNT,
+    CAN_SEE_TRANSACTION_TYPE,
+    CAN_SEE_TRANSACTION_CURRENCY,
+    CAN_SEE_TRANSACTION_START_DATE,
+    CAN_SEE_TRANSACTION_FINISH_DATE,
+    CAN_SEE_TRANSACTION_BALANCE,
+    CAN_SEE_COMMENTS,
+    CAN_SEE_OWNER_COMMENT,
+    CAN_SEE_TAGS,
+    CAN_SEE_IMAGES,
+    CAN_SEE_BANK_ACCOUNT_OWNERS,
+    CAN_SEE_BANK_ACCOUNT_TYPE,
+    CAN_SEE_BANK_ACCOUNT_BALANCE,
+    CAN_QUERY_AVAILABLE_FUNDS,
+    CAN_SEE_BANK_ACCOUNT_LABEL,
+    CAN_SEE_BANK_ACCOUNT_NATIONAL_IDENTIFIER,
+    CAN_SEE_BANK_ACCOUNT_SWIFT_BIC,
+    CAN_SEE_BANK_ACCOUNT_IBAN,
+    CAN_SEE_BANK_ACCOUNT_NUMBER,
+    CAN_SEE_BANK_ACCOUNT_BANK_NAME,
+    CAN_SEE_BANK_ACCOUNT_BANK_PERMALINK,
+    CAN_SEE_BANK_ROUTING_SCHEME,
+    CAN_SEE_BANK_ROUTING_ADDRESS,
+    CAN_SEE_BANK_ACCOUNT_ROUTING_SCHEME,
+    CAN_SEE_BANK_ACCOUNT_ROUTING_ADDRESS,
+    CAN_SEE_OTHER_ACCOUNT_NATIONAL_IDENTIFIER,
+    CAN_SEE_OTHER_ACCOUNT_SWIFT_BIC,
+    CAN_SEE_OTHER_ACCOUNT_IBAN,
+    CAN_SEE_OTHER_ACCOUNT_BANK_NAME,
+    CAN_SEE_OTHER_ACCOUNT_NUMBER,
+    CAN_SEE_OTHER_ACCOUNT_METADATA,
+    CAN_SEE_OTHER_ACCOUNT_KIND,
+    CAN_SEE_OTHER_BANK_ROUTING_SCHEME,
+    CAN_SEE_OTHER_BANK_ROUTING_ADDRESS,
+    CAN_SEE_OTHER_ACCOUNT_ROUTING_SCHEME,
+    CAN_SEE_OTHER_ACCOUNT_ROUTING_ADDRESS,
+    CAN_SEE_MORE_INFO,
+    CAN_SEE_URL,
+    CAN_SEE_IMAGE_URL,
+    CAN_SEE_OPEN_CORPORATES_URL,
+    CAN_SEE_CORPORATE_LOCATION,
+    CAN_SEE_PHYSICAL_LOCATION,
+    CAN_SEE_PUBLIC_ALIAS,
+    CAN_SEE_PRIVATE_ALIAS,
+    CAN_ADD_MORE_INFO,
+    CAN_ADD_URL,
+    CAN_ADD_IMAGE_URL,
+    CAN_ADD_OPEN_CORPORATES_URL,
+    CAN_ADD_CORPORATE_LOCATION,
+    CAN_ADD_PHYSICAL_LOCATION,
+    CAN_ADD_PUBLIC_ALIAS,
+    CAN_ADD_PRIVATE_ALIAS,
+    CAN_ADD_COUNTERPARTY,
+    CAN_GET_COUNTERPARTY,
+    CAN_DELETE_COUNTERPARTY,
+    CAN_DELETE_CORPORATE_LOCATION,
+    CAN_DELETE_PHYSICAL_LOCATION,
+    CAN_EDIT_OWNER_COMMENT,
+    CAN_ADD_COMMENT,
+    CAN_DELETE_COMMENT,
+    CAN_ADD_TAG,
+    CAN_DELETE_TAG,
+    CAN_ADD_IMAGE,
+    CAN_DELETE_IMAGE,
+    CAN_ADD_WHERE_TAG,
+    CAN_SEE_WHERE_TAG,
+    CAN_DELETE_WHERE_TAG,
+    CAN_ADD_TRANSACTION_REQUEST_TO_OWN_ACCOUNT,
+    CAN_ADD_TRANSACTION_REQUEST_TO_ANY_ACCOUNT,
+    CAN_SEE_BANK_ACCOUNT_CREDIT_LIMIT,
+    CAN_CREATE_DIRECT_DEBIT,
+    CAN_CREATE_STANDING_ORDER,
+    CAN_REVOKE_ACCESS_TO_CUSTOM_VIEWS,
+    CAN_GRANT_ACCESS_TO_CUSTOM_VIEWS,
+    CAN_SEE_TRANSACTION_REQUESTS,
+    CAN_SEE_TRANSACTION_REQUEST_TYPES,
+    CAN_SEE_AVAILABLE_VIEWS_FOR_BANK_ACCOUNT,
+    CAN_UPDATE_BANK_ACCOUNT_LABEL,
+    CAN_CREATE_CUSTOM_VIEW,
+    CAN_DELETE_CUSTOM_VIEW,
+    CAN_UPDATE_CUSTOM_VIEW,
+    CAN_GET_CUSTOM_VIEW,
+    CAN_SEE_VIEWS_WITH_PERMISSIONS_FOR_ALL_USERS,
+    CAN_SEE_VIEWS_WITH_PERMISSIONS_FOR_ONE_USER,
+    CAN_GRANT_ACCESS_TO_VIEWS,
+    CAN_REVOKE_ACCESS_TO_VIEWS,
+    CAN_SEE_TRANSACTION_THIS_BANK_ACCOUNT,
+    CAN_SEE_TRANSACTION_STATUS,
+    CAN_SEE_BANK_ACCOUNT_CURRENCY,
+    CAN_ADD_TRANSACTION_REQUEST_TO_BENEFICIARY
   )
 }
 
