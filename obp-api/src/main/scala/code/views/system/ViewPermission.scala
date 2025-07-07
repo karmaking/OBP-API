@@ -9,6 +9,7 @@ class ViewPermission extends LongKeyedMapper[ViewPermission] with IdPK with Crea
   object account_id extends MappedString(this, 255)
   object view_id extends UUIDString(this)
   object permission extends MappedString(this, 255)
+  object metaData extends MappedString(this, 1024) //this is for special permissions like "canRevokeAccessToViews" and "canGrantAccessToViews", it need to support list of views.
 }
 object ViewPermission extends ViewPermission with LongKeyedMetaMapper[ViewPermission] {
   override def dbIndexes: List[BaseIndex[ViewPermission]] = UniqueIndex(bank_id, account_id, view_id, permission) :: super.dbIndexes
