@@ -435,7 +435,13 @@ object MapperViews extends Views with MdcLoggable {
         account_id(bankAccountId.accountId.value)
 
       createdView.setFromViewData(view)
-      Full(createdView.saveMe)
+      
+      val viewSaved = Full(createdView.saveMe)
+
+      viewSaved.map(v => MapperViews.migrateViewPermissions(v))
+
+      viewSaved
+      
     }
   }
 
