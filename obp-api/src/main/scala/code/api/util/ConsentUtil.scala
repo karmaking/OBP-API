@@ -594,18 +594,18 @@ object Consent extends MdcLoggable {
                     Future(Failure(ErrorMessages.ConsentCheckExpiredIssue), Some(updatedCallContext))
                 }
               } catch { // Possible exceptions
-                case e: ParseException => {
+                case e: ParseException =>
                   logger.debug(s"code.api.util.JwtUtil.getSignedPayloadAsJson.ParseException: $e")
                   Future(Failure("ParseException: " + e.getMessage), Some(updatedCallContext))
-                }
-                case e: MappingException => {
+                case e: MappingException =>
                   logger.debug(s"code.api.util.JwtUtil.getSignedPayloadAsJson.MappingException: $e")
                   Future(Failure("MappingException: " + e.getMessage), Some(updatedCallContext))
-                }
-                case e: Throwable => {
+                case e: Throwable =>
                   logger.debug(s"code.api.util.JwtUtil.getSignedPayloadAsJson.Throwable: $e")
-                  Future(Failure("parsing failed: " + e.getMessage), Some(updatedCallContext))
-                }
+                  val message = net.liftweb.json.parse(e.getMessage)
+                    .extractOpt[APIFailureNewStyle].map(_.failMsg) // Extract message from APIFailureNewStyle
+                    .getOrElse(e.getMessage) // or fail to original one
+                  Future(Failure(message), Some(updatedCallContext))
               }
             case failure@Failure(_, _, _) =>
               Future(failure, Some(updatedCallContext))

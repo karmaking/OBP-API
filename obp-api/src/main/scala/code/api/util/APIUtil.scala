@@ -3400,7 +3400,7 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
         val apiFailure = af.copy(failMsg = failuresMsg).copy(ccl = callContext)
         throw new Exception(JsonAST.compactRender(Extraction.decompose(apiFailure)))
       case ParamFailure(_, _, _, failure : APIFailure) =>
-        val callContext = CallContextLight(partialFunctionName = "", directLoginToken= "", oAuthToken= "")
+        val callContext = CallContextLight()
         val apiFailure = APIFailureNewStyle(failMsg = failure.msg, failCode = failure.responseCode, ccl = Some(callContext))
         throw new Exception(JsonAST.compactRender(Extraction.decompose(apiFailure)))
       case ParamFailure(msg,_,_,_) =>

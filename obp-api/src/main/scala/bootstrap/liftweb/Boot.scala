@@ -723,7 +723,7 @@ class Boot extends MdcLoggable {
     }
     
     LiftRules.uriNotFound.prepend{
-      case (r, aaa) if r.uri.contains(ConstantsBG.berlinGroupVersion1.urlPrefix) => NotFoundAsResponse(errorJsonResponse(
+      case (r, _) if r.uri.contains(ConstantsBG.berlinGroupVersion1.urlPrefix) => NotFoundAsResponse(errorJsonResponse(
         s"${ErrorMessages.InvalidUri}Current Url is (${r.uri.toString}), Current Content-Type Header is (${r.headers.find(_._1.equals("Content-Type")).map(_._2).getOrElse("")})",
         405,
         Some(CallContextLight(url = r.uri))
