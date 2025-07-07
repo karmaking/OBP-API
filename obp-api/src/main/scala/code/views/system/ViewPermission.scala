@@ -31,4 +31,17 @@ object ViewPermission extends ViewPermission with LongKeyedMetaMapper[ViewPermis
       NullRef(ViewPermission.account_id),
       By(ViewPermission.view_id, viewId.value)
     )
+
+  /**
+   * Finds the permissions for a given view, if it is sytem view, 
+   * it will search in system view permission, otherwise it will search in custom view permissions.
+   * @param view
+   * @return
+   */
+  def findViewPermissions(view: View): List[ViewPermission] =
+    if(view.isSystem) {
+      findSystemViewPermissions(view.viewId)
+    } else {
+      findCustomViewPermissions(view.bankId, view.accountId, view.viewId)
+    }
 }

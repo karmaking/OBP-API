@@ -620,7 +620,7 @@ object MapperViews extends Views with MdcLoggable {
     theView
   }
 
-  private def migrateViewPermissions(view: View): Unit = {
+  def migrateViewPermissions(view: View): Unit = {
 
     val permissionNames: List[String] = code.api.Constant.VIEW_PERMISSION_NAMES
     
@@ -628,15 +628,22 @@ object MapperViews extends Views with MdcLoggable {
       // Get permission value
       val permissionValue = view.getClass.getMethod(permissionName).invoke(view).asInstanceOf[Boolean]
 
-      ViewPermission.findSystemViewPermissions(view.viewId).find(_.permission.get == permissionName) match {
+      ViewPermission.findViewPermissions(view).find(_.permission.get == permissionName) match {
         case Some(permission) if !permissionValue =>
           ViewPermission.delete_!(permission)
         case Some(permission) if permissionValue =>
           // View definition is in accordance with View permission
-        case _ =>
+        case _ if(view.isSystem) => 
           ViewPermission.create
             .bank_id(null)
             .account_id(null)
+            .view_id(view.viewId.value)
+            .permission(permissionName)
+            .save
+        case _  =>
+          ViewPermission.create
+            .bank_id(view.bankId.value)
+            .account_id(view.accountId.value)
             .view_id(view.viewId.value)
             .permission(permissionName)
             .save
@@ -672,8 +679,13 @@ object MapperViews extends Views with MdcLoggable {
 
   def getOrCreateCustomPublicView(bankId: BankId, accountId: AccountId, description: String = "Public View") : Box[View] = {
     getExistingCustomView(bankId, accountId, CUSTOM_PUBLIC_VIEW_ID) match {
-      case Empty=> createDefaultCustomPublicView(bankId, accountId, description)
-      case Full(v)=> Full(v)
+      case Empty=> 
+        val view = createDefaultCustomPublicView(bankId, accountId, description)
+        view.map(v => migrateViewPermissions(v))
+        view
+      case Full(v)=>
+        migrateViewPermissions(v)
+        Full(v)
       case Failure(msg, t, c) => Failure(msg, t, c)
       case ParamFailure(x,y,z,q) => ParamFailure(x,y,z,q)
     }

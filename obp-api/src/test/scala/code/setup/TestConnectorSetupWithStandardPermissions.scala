@@ -43,7 +43,7 @@ trait TestConnectorSetupWithStandardPermissions extends TestConnectorSetup {
       
       getExistingCustomView(bankId, accountId, viewId) match {
         case net.liftweb.common.Empty => {
-          tryo {
+          val view = tryo {
             ViewDefinition.create.
               isSystem_(false).
               isFirehose_(false).
@@ -132,6 +132,8 @@ trait TestConnectorSetupWithStandardPermissions extends TestConnectorSetup {
               canSeeTransactionStatus_(true).
               saveMe
           }
+          view.map(v => MapperViews.migrateViewPermissions(v))
+          view
         }
         case Full(v) => Full(v)
         case Failure(msg, t, c) => Failure(msg, t, c)
