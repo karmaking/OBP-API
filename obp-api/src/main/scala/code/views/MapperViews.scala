@@ -395,7 +395,9 @@ object MapperViews extends Views with MdcLoggable {
               createdView.setFromViewData(view)
               createdView.isSystem_(true)
               createdView.isPublic_(false)
-              Full(createdView.saveMe)
+              val viewSaved = Full(createdView.saveMe)
+              viewSaved.map(v => MapperViews.migrateViewPermissions(v))
+              viewSaved
           }
       }
     }
@@ -454,6 +456,8 @@ object MapperViews extends Views with MdcLoggable {
     } yield {
       view.setFromViewData(viewUpdateJson)
       view.saveMe
+      MapperViews.migrateViewPermissions(view)
+      view
     }
   }
   /* Update the specification of the system view (what data/actions are allowed) */
@@ -463,6 +467,8 @@ object MapperViews extends Views with MdcLoggable {
     } yield {
       view.setFromViewData(viewUpdateJson)
       view.saveMe
+      MapperViews.migrateViewPermissions(view)
+      view
     }
   }
 
