@@ -650,7 +650,7 @@ object MapperViews extends Views with MdcLoggable {
             .bank_id(null)
             .account_id(null)
             .view_id(view.viewId.value)
-            .permission(permissionName)
+            .permission(permissionName) //TODO here ,we need to handle canRevokeAccessToViews and canGrantAccessToViews 
             .save
         case _  =>
           ViewPermission.create

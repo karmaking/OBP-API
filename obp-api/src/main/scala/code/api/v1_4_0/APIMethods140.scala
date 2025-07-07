@@ -1,5 +1,6 @@
 package code.api.v1_4_0
 
+import code.api.Constant._
 import code.api.util.ApiRole._
 import code.api.util.ApiTag._
 import code.api.util.FutureUtil.EndpointContext
@@ -14,7 +15,7 @@ import code.branches.Branches
 import code.customer.CustomerX
 import code.usercustomerlinks.UserCustomerLink
 import code.util.Helper
-import code.views.system.ViewDefinition
+import code.views.system.ViewPermission
 import com.github.dwickern.macros.NameOf.nameOf
 import com.openbankproject.commons.model._
 import com.openbankproject.commons.util.ApiVersion
@@ -452,10 +453,10 @@ trait APIMethods140 extends MdcLoggable with APIMethods130 with APIMethods121{
             _ <- NewStyle.function.isValidCurrencyISOCode(fromAccount.currency, failMsg, callContext)
             view <- NewStyle.function.checkViewAccessAndReturnView(viewId, BankIdAccountId(fromAccount.bankId, fromAccount.accountId), Some(u), callContext)
             _ <- Helper.booleanToFuture(
-              s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${StringHelpers.snakify(nameOf(ViewDefinition.canSeeTransactionRequestTypes_)).dropRight(1)}` permission on the View(${viewId.value} )",
+              s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${StringHelpers.snakify(CAN_SEE_TRANSACTION_REQUEST_TYPES)}` permission on the View(${viewId.value} )",
               cc = callContext
             ) {
-              view.canSeeTransactionRequestTypes
+              ViewPermission.findViewPermissions(view).exists(_.permission.get == CAN_SEE_TRANSACTION_REQUEST_TYPES)
             }
             // TODO: Consider storing allowed_transaction_request_types (List of String) in View Definition. 
             // TODO:  This would allow us to restrict transaction request types available to the User for an Account
