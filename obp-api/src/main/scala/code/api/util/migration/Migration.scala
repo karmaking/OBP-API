@@ -99,6 +99,7 @@ object Migration extends MdcLoggable {
       populateViewDefinitionCanAddTransactionRequestToBeneficiary()
       populateViewDefinitionCanSeeTransactionStatus()
       alterCounterpartyLimitFieldType()
+      populateMigrationOfViewPermissions(startedBeforeSchemifier)
     }
     
     private def dummyScript(): Boolean = {
@@ -137,6 +138,18 @@ object Migration extends MdcLoggable {
         val name = nameOf(populateMigrationOfViewDefinitionPermissions(startedBeforeSchemifier))
         runOnce(name) {
           MigrationOfViewDefinitionPermissions.populate(name)
+        }
+      }
+    }  
+
+    private def populateMigrationOfViewPermissions(startedBeforeSchemifier: Boolean): Boolean = {
+      if (startedBeforeSchemifier == true) {
+        logger.warn(s"Migration.database.populateMigrationOfViewPermissions(true) cannot be run before Schemifier.")
+        true
+      } else {
+        val name = nameOf(populateMigrationOfViewPermissions(startedBeforeSchemifier))
+        runOnce(name) {
+          MigrationOfViewPermissions.populate(name)
         }
       }
     }  
