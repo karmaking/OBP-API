@@ -1321,7 +1321,7 @@ trait APIMethods200 {
             _ <- Helper.booleanToFuture(ErrorMessages.InvalidStrongPasswordFormat, 400, cc.callContext) {
               fullPasswordValidation(postedData.password)
             }
-            _ <- Helper.booleanToFuture("User with the same username already exists.", 409, cc.callContext) {
+            _ <- Helper.booleanToFuture(s"$InvalidJsonFormat User with the same username already exists.", 409, cc.callContext) {
               AuthUser.find(By(AuthUser.username, postedData.username)).isEmpty
             }
             userCreated <- Future {
@@ -1333,13 +1333,13 @@ trait APIMethods200 {
                 .password(postedData.password)
                 .validated(APIUtil.getPropsAsBoolValue("authUser.skipEmailValidation", defaultValue = false))
             }
-            _ <- Helper.booleanToFuture(userCreated.validate.map(_.msg).mkString(";"), 400, cc.callContext) {
+            _ <- Helper.booleanToFuture(ErrorMessages.InvalidJsonFormat+userCreated.validate.map(_.msg).mkString(";"), 400, cc.callContext) {
               userCreated.validate.size == 0
             }
             savedUser <- NewStyle.function.tryons(ErrorMessages.InvalidJsonFormat, 400, cc.callContext) {
               userCreated.saveMe()
             }
-            _ <- Helper.booleanToFuture("Error occurred during user creation.", 400, cc.callContext) {
+            _ <- Helper.booleanToFuture(s"$UnknownError Error occurred during user creation.", 400, cc.callContext) {
               userCreated.saved_?
             }
           } yield {
