@@ -277,6 +277,7 @@ object ErrorMessages {
   val InvalidUuidValue = "OBP-20253: Invalid format. Must be a UUID."
   val InvalidSignatureHeader = "OBP-20254: Invalid Signature header. "
   val InvalidRequestIdValueAlreadyUsed = "OBP-20255: Request Id value already used. "
+  val InvalidConsentIdUsage = "OBP-20256: Consent-Id must not be used for this API Endpoint. "
 
   // X.509
   val X509GeneralError = "OBP-20300: PEM Encoded Certificate issue."
