@@ -2,7 +2,9 @@ package code.views.system
 
 import code.util.UUIDString
 import com.openbankproject.commons.model._
+import net.liftweb.common.Box
 import net.liftweb.mapper._
+
 class ViewPermission extends LongKeyedMapper[ViewPermission] with IdPK with CreatedUpdated {
   def getSingleton = ViewPermission
   object bank_id extends MappedString(this, 255)
@@ -13,10 +15,7 @@ class ViewPermission extends LongKeyedMapper[ViewPermission] with IdPK with Crea
 }
 object ViewPermission extends ViewPermission with LongKeyedMetaMapper[ViewPermission] {
   override def dbIndexes: List[BaseIndex[ViewPermission]] = UniqueIndex(bank_id, account_id, view_id, permission) :: super.dbIndexes
-//  "ReadAccountsBerlinGroup"
   
-  
-  //Work in progress
   def findCustomViewPermissions(bankId: BankId, accountId: AccountId, viewId: ViewId): List[ViewPermission] =
     ViewPermission.findAll(
       By(ViewPermission.bank_id, bankId.value),
@@ -24,12 +23,27 @@ object ViewPermission extends ViewPermission with LongKeyedMetaMapper[ViewPermis
       By(ViewPermission.view_id, viewId.value)
     )  
     
-  //Work in progress
   def findSystemViewPermissions(viewId: ViewId): List[ViewPermission] =
     ViewPermission.findAll(
       NullRef(ViewPermission.bank_id),
       NullRef(ViewPermission.account_id),
       By(ViewPermission.view_id, viewId.value)
+    )
+    
+  def findCustomViewPermission(bankId: BankId, accountId: AccountId, viewId: ViewId, permission: String): Box[ViewPermission] =
+    ViewPermission.find(
+      By(ViewPermission.bank_id, bankId.value),
+      By(ViewPermission.account_id, accountId.value),
+      By(ViewPermission.view_id, viewId.value),
+      By(ViewPermission.permission,permission)
+    )  
+    
+  def findSystemViewPermission(viewId: ViewId, permission: String): Box[ViewPermission] =
+    ViewPermission.find(
+      NullRef(ViewPermission.bank_id),
+      NullRef(ViewPermission.account_id),
+      By(ViewPermission.view_id, viewId.value),
+      By(ViewPermission.permission,permission),
     )
 
   /**
@@ -43,5 +57,12 @@ object ViewPermission extends ViewPermission with LongKeyedMetaMapper[ViewPermis
       findSystemViewPermissions(view.viewId)
     } else {
       findCustomViewPermissions(view.bankId, view.accountId, view.viewId)
+    }
+    
+  def findViewPermission(view: View, permission: String): Box[ViewPermission] =
+    if(view.isSystem) {
+      findSystemViewPermission(view.viewId, permission)
+    } else {
+      findCustomViewPermission(view.bankId, view.accountId, view.viewId, permission)
     }
 }

@@ -313,10 +313,9 @@ object Constant extends MdcLoggable {
     CAN_SEE_TRANSACTION_THIS_BANK_ACCOUNT,
     CAN_SEE_TRANSACTION_STATUS,
     CAN_SEE_BANK_ACCOUNT_CURRENCY,
-    CAN_ADD_TRANSACTION_REQUEST_TO_BENEFICIARY
-    //TODO These two are speicial permissions, they need metaData for the view list, will fix it later
-//    CAN_GRANT_ACCESS_TO_VIEWS,
-//    CAN_REVOKE_ACCESS_TO_VIEWS,
+    CAN_ADD_TRANSACTION_REQUEST_TO_BENEFICIARY,
+    CAN_GRANT_ACCESS_TO_VIEWS,
+    CAN_REVOKE_ACCESS_TO_VIEWS,
   )
 }
 

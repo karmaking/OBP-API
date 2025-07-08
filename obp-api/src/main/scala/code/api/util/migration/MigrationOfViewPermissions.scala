@@ -13,12 +13,14 @@ object MigrationOfViewPermissions {
         val commitId: String = APIUtil.gitCommit
         
         val allViewDefinitions = ViewDefinition.findAll()
+        val viewPermissionRowNumberBefore = ViewPermission.count
         allViewDefinitions.map(v => MapperViews.migrateViewPermissions(v))
+        val viewPermissionRowNumberAfter = ViewPermission.count
         
         val isSuccessful = true
         val endDate = System.currentTimeMillis()
 
-        val comment: String = s"""migrate all permissions from ViewDefinition (${allViewDefinitions.length} rows) to ViewPermission .""".stripMargin
+        val comment: String = s"""migrate all permissions from ViewDefinition (${allViewDefinitions.length} rows) to ViewPermission (${viewPermissionRowNumberAfter-viewPermissionRowNumberBefore} added) .""".stripMargin
         saveLog(name, commitId, isSuccessful, startDate, endDate, comment)
         isSuccessful
         
