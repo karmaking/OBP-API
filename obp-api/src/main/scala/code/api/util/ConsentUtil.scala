@@ -602,10 +602,7 @@ object Consent extends MdcLoggable {
                   Future(Failure("MappingException: " + e.getMessage), Some(updatedCallContext))
                 case e: Throwable =>
                   logger.debug(s"code.api.util.JwtUtil.getSignedPayloadAsJson.Throwable: $e")
-                  val message = net.liftweb.json.parse(e.getMessage)
-                    .extractOpt[APIFailureNewStyle].map(_.failMsg) // Extract message from APIFailureNewStyle
-                    .getOrElse(e.getMessage) // or fail to original one
-                  Future(Failure(message), Some(updatedCallContext))
+                  Future(Failure(ErrorUtil.extractFailureMessage(e)), Some(updatedCallContext))
               }
             case failure@Failure(_, _, _) =>
               Future(failure, Some(updatedCallContext))

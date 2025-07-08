@@ -4,6 +4,7 @@ import code.api.APIFailureNewStyle
 import code.api.util.APIUtil.fullBoxOrException
 import com.openbankproject.commons.model.User
 import net.liftweb.common.{Box, Empty, Failure}
+import net.liftweb.json._
 
 
 object ErrorUtil {
@@ -30,5 +31,16 @@ object ErrorUtil {
     val failureBox: Box[T] = Empty ~> apiFailure
     fullBoxOrException(failureBox)
   }
+
+
+
+  implicit val formats: Formats = DefaultFormats
+  def extractFailureMessage(e: Throwable): String = {
+    parse(e.getMessage)
+      .extractOpt[APIFailureNewStyle] // Extract message from APIFailureNewStyle
+      .map(_.failMsg) // or prpovide a original one
+      .getOrElse(e.getMessage)
+  }
+
 
 }
