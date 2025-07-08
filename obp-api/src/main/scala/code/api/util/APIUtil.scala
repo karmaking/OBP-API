@@ -3028,7 +3028,7 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
         Future { (fullBoxOrException(Empty ~> APIFailureNewStyle(message, 400, Some(cc.toLight))), Some(cc)) }
       } else if (authHeaders.size > 1) { // Check Authorization Headers ambiguity
         Future { (Failure(ErrorMessages.AuthorizationHeaderAmbiguity + s"${authHeaders}"), Some(cc)) }
-      } else if (BerlinGroupCheck.doNotUseConsentIdAtHeader(url, reqHeaders)) {
+      } else if (BerlinGroupCheck.hasUnwantedConsentIdHeaderForBGEndpoint(url, reqHeaders)) {
         val message = ErrorMessages.InvalidConsentIdUsage
         Future { (fullBoxOrException(Empty ~> APIFailureNewStyle(message, 400, Some(cc.toLight))), Some(cc)) }
       } else if (APIUtil.`hasConsent-ID`(reqHeaders)) { // Berlin Group's Consent

@@ -29,7 +29,7 @@ object BerlinGroupCheck extends MdcLoggable {
     .map(_.trim.toLowerCase)
     .toList.filterNot(_.isEmpty)
 
-  def doNotUseConsentIdAtHeader(path: String, reqHeaders: List[HTTPParam]): Boolean = {
+  def hasUnwantedConsentIdHeaderForBGEndpoint(path: String, reqHeaders: List[HTTPParam]): Boolean = {
     val headerMap: Map[String, HTTPParam] = reqHeaders.map(h => h.name.toLowerCase -> h).toMap
     val hasConsentIdId = headerMap.get(RequestHeader.`Consent-ID`.toLowerCase).flatMap(_.values.headOption).isDefined
 
