@@ -38,7 +38,7 @@ object ErrorUtil {
   def extractFailureMessage(e: Throwable): String = {
     parse(e.getMessage)
       .extractOpt[APIFailureNewStyle] // Extract message from APIFailureNewStyle
-      .map(_.failMsg) // or prpovide a original one
+      .map(_.failMsg) // or provide a original one
       .getOrElse(e.getMessage)
   }
 
