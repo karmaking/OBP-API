@@ -43,6 +43,7 @@ import code.util.Helper
 import code.util.Helper.ObpS
 import code.views.Views
 import code.views.system.{AccountAccess, ViewDefinition}
+import code.webuiprops.{MappedWebUiPropsProvider, WebUiPropsCommons}
 import com.github.dwickern.macros.NameOf.nameOf
 import com.openbankproject.commons.ExecutionContext.Implicits.global
 import com.openbankproject.commons.model._
@@ -5141,6 +5142,70 @@ trait APIMethods510 {
             )
           } yield {
             (Full(deleted), HttpCode.`204`(callContext))
+          }
+      }
+    }
+
+
+    resourceDocs += ResourceDoc(
+      getWebUiProps,
+      implementedInApiVersion,
+      nameOf(getWebUiProps),
+      "GET",
+      "/webui_props",
+      "Get WebUiProps",
+      s"""
+         |
+         |Get the all WebUiProps key values, those props key with "webui_" can be stored in DB, this endpoint get all from DB.
+         |
+         |url query parameter: 
+         |active: It must be a boolean string. and If active = true, it will show
+         |          combination of explicit (inserted) + implicit (default)  method_routings.
+         |
+         |eg:  
+         |${getObpApiRoot}/v5.1.0/webui_props
+         |${getObpApiRoot}/v5.1.0/webui_props?active=true
+         |
+         |""",
+      EmptyBody,
+      ListResult(
+        "webui_props",
+        (List(WebUiPropsCommons("webui_api_explorer_url", "https://apiexplorer.openbankproject.com", Some("web-ui-props-id"))))
+      )
+      ,
+      List(
+        UserNotLoggedIn,
+        UserHasMissingRoles,
+        UnknownError
+      ),
+      List(apiTagWebUiProps)
+    )
+    lazy val getWebUiProps: OBPEndpoint = {
+      case "webui_props":: Nil JsonGet req => {
+        cc => implicit val ec = EndpointContext(Some(cc))
+          val active = ObpS.param("active").getOrElse("false")
+          for {
+            (Full(u), callContext) <- authenticatedAccess(cc)
+            invalidMsg = s"""$InvalidFilterParameterFormat `active` must be a boolean, but current `active` value is: ${active} """
+            isActived <- NewStyle.function.tryons(invalidMsg, 400, callContext) {
+              active.toBoolean
+            }
+            explicitWebUiProps <- Future{ MappedWebUiPropsProvider.getAll() }
+            implicitWebUiPropsRemovedDuplicated = if(isActived){
+              val implicitWebUiProps = getWebUIPropsPairs.map(webUIPropsPairs=>WebUiPropsCommons(webUIPropsPairs._1, webUIPropsPairs._2, webUiPropsId= Some("default")))
+              if(explicitWebUiProps.nonEmpty){
+                //get the same name props in the `implicitWebUiProps`
+                val duplicatedProps : List[WebUiPropsCommons]= explicitWebUiProps.map(explicitWebUiProp => implicitWebUiProps.filter(_.name == explicitWebUiProp.name)).flatten
+                //remove the duplicated fields from `implicitWebUiProps`
+                implicitWebUiProps diff duplicatedProps
+              }
+              else implicitWebUiProps.distinct
+            } else {
+              List.empty[WebUiPropsCommons]
+            }
+          } yield {
+            val listCommons: List[WebUiPropsCommons] = explicitWebUiProps ++ implicitWebUiPropsRemovedDuplicated
+            (ListResult("webui_props", listCommons), HttpCode.`200`(callContext))
           }
       }
     }
