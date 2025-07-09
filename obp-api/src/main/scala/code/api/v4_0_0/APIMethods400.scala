@@ -18,7 +18,7 @@ import code.api.util.ExampleValue._
 import code.api.util.FutureUtil.EndpointContext
 import code.api.util.Glossary.getGlossaryItem
 import code.api.util.NewStyle.HttpCode
-import code.api.util.NewStyle.function._
+import code.api.util.NewStyle.function.{isValidCurrencyISOCode => isValidCurrencyISOCodeNS, _}
 import code.api.util._
 import code.api.util.migration.Migration
 import code.api.util.newstyle.AttributeDefinition._
