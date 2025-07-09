@@ -218,7 +218,7 @@ class MappedTransaction extends LongKeyedMapper[MappedTransaction] with IdPK wit
   }
 
   def toTransaction : Option[Transaction] = {
-    code.api.Constant.Connector match {
+    code.api.Constant.CONNECTOR match {
       case Full("akka_vDec2018") =>
         for {
           acc <- getBankAccountCommon(theBankId, theAccountId, None).map(_._1)

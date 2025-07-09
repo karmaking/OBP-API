@@ -2,6 +2,7 @@ package code.api.v2_0_0
 
 import code.TransactionTypes.TransactionType
 import code.api.APIFailureNewStyle
+import code.api.Constant._
 import code.api.ResourceDocs1_4_0.SwaggerDefinitionsJSON._
 import code.api.util.APIUtil._
 import code.api.util.ApiTag._
@@ -25,8 +26,6 @@ import code.users.Users
 import code.util.Helper
 import code.util.Helper.{booleanToBox, booleanToFuture}
 import code.views.Views
-import code.views.system.ViewDefinition
-import com.github.dwickern.macros.NameOf.nameOf
 import com.openbankproject.commons.ExecutionContext.Implicits.global
 import com.openbankproject.commons.model._
 import com.openbankproject.commons.util.ApiVersion
@@ -1051,9 +1050,9 @@ trait APIMethods200 {
             (_, callContext) <- NewStyle.function.getBank(bankId, callContext)
             (account, callContext) <- NewStyle.function.getBankAccount(bankId, accountId, callContext)
             anyViewContainsCanSeeViewsWithPermissionsForAllUsersPermission = Views.views.vend.permission(BankIdAccountId(account.bankId, account.accountId), u)
-              .map(_.views.map(_.canSeeViewsWithPermissionsForAllUsers).find(_.==(true)).getOrElse(false)).getOrElse(false)
+              .map(_.views.map(_.allowed_actions.exists(_ == CAN_SEE_VIEWS_WITH_PERMISSIONS_FOR_ALL_USERS)).find(_.==(true)).getOrElse(false)).getOrElse(false)
             _ <- Helper.booleanToFuture(
-              s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${StringHelpers.snakify(nameOf(ViewDefinition.canSeeViewsWithPermissionsForAllUsers_)).dropRight(1)}` permission on any your views",
+              s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${StringHelpers.snakify(CAN_SEE_VIEWS_WITH_PERMISSIONS_FOR_ALL_USERS)}` permission on any your views",
               cc = callContext
             ) {
               anyViewContainsCanSeeViewsWithPermissionsForAllUsersPermission
@@ -1093,11 +1092,12 @@ trait APIMethods200 {
             (bank, callContext) <- BankX(bankId, Some(cc)) ?~! BankNotFound // Check bank exists.
             account <- BankAccountX(bank.bankId, accountId) ?~! {ErrorMessages.AccountNotFound} // Check Account exists.
             loggedInUserPermissionBox = Views.views.vend.permission(BankIdAccountId(bankId, accountId), loggedInUser)
-            anyViewContainsCanSeePermissionForOneUserPermission = loggedInUserPermissionBox.map(_.views.map(_.canSeeViewsWithPermissionsForOneUser)
+            anyViewContainsCanSeePermissionForOneUserPermission = loggedInUserPermissionBox.map(_.views.map(_.allowed_actions.exists( _ == CAN_SEE_VIEWS_WITH_PERMISSIONS_FOR_ONE_USER))
               .find(_.==(true)).getOrElse(false)).getOrElse(false)
+            
             _ <- booleanToBox(
               anyViewContainsCanSeePermissionForOneUserPermission,
-              s"${ErrorMessages.CreateCustomViewError} You need the `${StringHelpers.snakify(nameOf(ViewDefinition.canSeeViewsWithPermissionsForOneUser_)).dropRight(1)}` permission on any your views"
+              s"${ErrorMessages.CreateCustomViewError} You need the `${StringHelpers.snakify(CAN_SEE_VIEWS_WITH_PERMISSIONS_FOR_ONE_USER)}` permission on any your views"
             )
             userFromURL <- UserX.findByProviderId(provider, providerId) ?~! UserNotFoundByProviderAndProvideId
             permission <- Views.views.vend.permission(BankIdAccountId(bankId, accountId), userFromURL)

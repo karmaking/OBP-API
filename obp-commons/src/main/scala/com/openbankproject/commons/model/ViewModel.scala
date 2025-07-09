@@ -249,7 +249,12 @@ trait View {
   def usePrivateAliasIfOneExists: Boolean
 
   def hideOtherAccountMetadataIfAlias: Boolean
-
+  /**
+   * These three will get the allowed actions from viewPermission table
+   */
+  def allowed_actions : List[String]
+  
+  
   def canGrantAccessToViews : Option[List[String]] = None
   def canRevokeAccessToViews : Option[List[String]] = None
   

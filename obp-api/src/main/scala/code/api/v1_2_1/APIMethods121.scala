@@ -1,5 +1,6 @@
 package code.api.v1_2_1
 
+import code.api.Constant._
 import code.api.ResourceDocs1_4_0.SwaggerDefinitionsJSON._
 import code.api.cache.Caching
 import code.api.util.APIUtil._
@@ -14,8 +15,6 @@ import code.model.{BankAccountX, BankX, ModeratedTransactionMetadata, UserX, toB
 import code.util.Helper
 import code.util.Helper.booleanToBox
 import code.views.Views
-import code.views.system.ViewDefinition
-import com.github.dwickern.macros.NameOf.nameOf
 import com.openbankproject.commons.ExecutionContext.Implicits.global
 import com.openbankproject.commons.model._
 import com.openbankproject.commons.util.ApiVersion
@@ -478,10 +477,10 @@ trait APIMethods121 {
             (Full(u), callContext) <- authenticatedAccess(cc)
             json <- NewStyle.function.tryons(InvalidJsonFormat, 400, callContext) { json.extract[UpdateAccountJSON] }
             (account, callContext) <- NewStyle.function.checkBankAccountExists(bankId, accountId, callContext)
-            anyViewContainsCanUpdateBankAccountLabelPermission = Views.views.vend.permission(BankIdAccountId(account.bankId, account.accountId), u)
-              .map(_.views.map(_.canUpdateBankAccountLabel).find(_.==(true)).getOrElse(false)).getOrElse(false)
+            permission <- NewStyle.function.permission(account.bankId, account.accountId, u, callContext)
+            anyViewContainsCanUpdateBankAccountLabelPermission =  permission.views.map(_.allowed_actions.exists(_ ==  CAN_UPDATE_BANK_ACCOUNT_LABEL)).find(true == _).getOrElse(false)
             _ <- Helper.booleanToFuture(
-              s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${StringHelpers.snakify(nameOf(ViewDefinition.canUpdateBankAccountLabel_)).dropRight(1)}` permission on any your views",
+              s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${StringHelpers.snakify(CAN_UPDATE_BANK_ACCOUNT_LABEL)}` permission on any your views",
               cc = callContext
             ) {
               anyViewContainsCanUpdateBankAccountLabelPermission
@@ -541,10 +540,10 @@ trait APIMethods121 {
             u <- cc.user ?~  UserNotLoggedIn
             bankAccount <- BankAccountX(bankId, accountId) ?~! BankAccountNotFound
             permission <- Views.views.vend.permission(BankIdAccountId(bankAccount.bankId, bankAccount.accountId), u)
-            anyViewContainsCanSeeAvailableViewsForBankAccountPermission = permission.views.map(_.canSeeAvailableViewsForBankAccount).find(_.==(true)).getOrElse(false)
+            anyViewContainsCanSeeAvailableViewsForBankAccountPermission =  permission.views.map(_.allowed_actions.exists(_ == CAN_SEE_AVAILABLE_VIEWS_FOR_BANK_ACCOUNT)).find(_.==(true)).getOrElse(false)
             _ <- Helper.booleanToBox(
               anyViewContainsCanSeeAvailableViewsForBankAccountPermission, 
-              s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${StringHelpers.snakify(nameOf(ViewDefinition.canSeeAvailableViewsForBankAccount_)).dropRight(1)}` permission on any your views"
+              s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${StringHelpers.snakify(CAN_SEE_AVAILABLE_VIEWS_FOR_BANK_ACCOUNT)}` permission on any your views"
             )
             views <- Full(Views.views.vend.availableViewsForAccount(BankIdAccountId(bankAccount.bankId, bankAccount.accountId)))
           } yield {
@@ -606,10 +605,10 @@ trait APIMethods121 {
               createViewJsonV121.allowed_actions
             )
             anyViewContainsCanCreateCustomViewPermission = Views.views.vend.permission(BankIdAccountId(account.bankId, account.accountId), u)
-              .map(_.views.map(_.canCreateCustomView).find(_.==(true)).getOrElse(false)).getOrElse(false)
+              .map(_.views.map(_.allowed_actions.exists(_ == CAN_CREATE_CUSTOM_VIEW)).find(_.==(true)).getOrElse(false)).getOrElse(false)
             _ <- booleanToBox(
               anyViewContainsCanCreateCustomViewPermission,
-              s"${ErrorMessages.CreateCustomViewError} You need the `${StringHelpers.snakify(nameOf(ViewDefinition.canCreateCustomView_)).dropRight(1)}` permission on any your views"
+              s"${ErrorMessages.CreateCustomViewError} You need the `${StringHelpers.snakify(CAN_CREATE_CUSTOM_VIEW)}` permission on any your views"
             )
             view <- Views.views.vend.createCustomView(BankIdAccountId(bankId,accountId), createViewJson)?~ CreateCustomViewError
           } yield {
@@ -668,10 +667,10 @@ trait APIMethods121 {
               allowed_actions = updateJsonV121.allowed_actions
             )
             anyViewContainsCanUpdateCustomViewPermission = Views.views.vend.permission(BankIdAccountId(account.bankId, account.accountId), u)
-              .map(_.views.map(_.canUpdateCustomView).find(_.==(true)).getOrElse(false)).getOrElse(false)
+              .map(_.views.map(_.allowed_actions.exists(_ == CAN_UPDATE_CUSTOM_VIEW)).find(_.==(true)).getOrElse(false)).getOrElse(false)
             _ <- booleanToBox(
               anyViewContainsCanUpdateCustomViewPermission,
-              s"${ErrorMessages.CreateCustomViewError} You need the `${StringHelpers.snakify(nameOf(ViewDefinition.canUpdateCustomView_)).dropRight(1)}` permission on any your views"
+              s"${ErrorMessages.CreateCustomViewError} You need the `${StringHelpers.snakify(CAN_UPDATE_CUSTOM_VIEW)}` permission on any your views"
             )
             updatedView <- Views.views.vend.updateCustomView(BankIdAccountId(bankId, accountId),viewId,  updateViewJson) ?~ CreateCustomViewError
           } yield {
@@ -714,9 +713,9 @@ trait APIMethods121 {
             _ <- NewStyle.function.customView(viewId, BankIdAccountId(bankId, accountId), callContext)
 
             anyViewContainsCanDeleteCustomViewPermission = Views.views.vend.permission(BankIdAccountId(account.bankId, account.accountId), u)
-              .map(_.views.map(_.canDeleteCustomView).find(_.==(true)).getOrElse(false)).getOrElse(false)
+              .map(_.views.map(_.allowed_actions.exists(_ == CAN_DELETE_CUSTOM_VIEW)).find(_.==(true)).getOrElse(false)).getOrElse(false)
             _ <- Helper.booleanToFuture(
-              s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${StringHelpers.snakify(nameOf(ViewDefinition.canDeleteCustomView_)).dropRight(1)}` permission on any your views",
+              s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${StringHelpers.snakify(CAN_DELETE_CUSTOM_VIEW)}` permission on any your views",
               cc = callContext
             ) {
               anyViewContainsCanDeleteCustomViewPermission
@@ -753,10 +752,10 @@ trait APIMethods121 {
             u <- cc.user ?~  UserNotLoggedIn
             account <- BankAccountX(bankId, accountId) ?~! BankAccountNotFound
             anyViewContainsCanSeeViewsWithPermissionsForAllUsersPermission = Views.views.vend.permission(BankIdAccountId(account.bankId, account.accountId), u)
-              .map(_.views.map(_.canSeeViewsWithPermissionsForAllUsers).find(_.==(true)).getOrElse(false)).getOrElse(false)
+              .map(_.views.map(_.allowed_actions.exists(_ == CAN_SEE_VIEWS_WITH_PERMISSIONS_FOR_ALL_USERS)).find(_.==(true)).getOrElse(false)).getOrElse(false)
             _ <- booleanToBox(
               anyViewContainsCanSeeViewsWithPermissionsForAllUsersPermission,
-              s"${ErrorMessages.CreateCustomViewError} You need the `${StringHelpers.snakify(nameOf(ViewDefinition.canSeeViewsWithPermissionsForAllUsers_)).dropRight(1)}` permission on any your views"
+              s"${ErrorMessages.CreateCustomViewError} You need the `${StringHelpers.snakify(CAN_SEE_VIEWS_WITH_PERMISSIONS_FOR_ALL_USERS)}` permission on any your views"
             )
             permissions = Views.views.vend.permissions(BankIdAccountId(bankId, accountId))
           } yield {
@@ -797,11 +796,11 @@ trait APIMethods121 {
             loggedInUser <- cc.user ?~  UserNotLoggedIn
             account <- BankAccountX(bankId, accountId) ?~! BankAccountNotFound
             loggedInUserPermissionBox = Views.views.vend.permission(BankIdAccountId(bankId, accountId), loggedInUser)
-            anyViewContainsCanSeeViewsWithPermissionsForOneUserPermission = loggedInUserPermissionBox.map(_.views.map(_.canSeeViewsWithPermissionsForOneUser)
+            anyViewContainsCanSeeViewsWithPermissionsForOneUserPermission = loggedInUserPermissionBox.map(_.views.map(_.allowed_actions.exists(_ == CAN_SEE_VIEWS_WITH_PERMISSIONS_FOR_ONE_USER))
               .find(_.==(true)).getOrElse(false)).getOrElse(false)
             _ <- booleanToBox(
               anyViewContainsCanSeeViewsWithPermissionsForOneUserPermission,
-              s"${ErrorMessages.CreateCustomViewError} You need the `${StringHelpers.snakify(nameOf(ViewDefinition.canSeeViewsWithPermissionsForOneUser_)).dropRight(1)}` permission on any your views"
+              s"${ErrorMessages.CreateCustomViewError} You need the `${StringHelpers.snakify(CAN_SEE_VIEWS_WITH_PERMISSIONS_FOR_ONE_USER)}` permission on any your views"
             )
             userFromURL <- UserX.findByProviderId(provider, providerId) ?~! UserNotFoundByProviderAndProvideId
             permission <- Views.views.vend.permission(BankIdAccountId(bankId, accountId), userFromURL)

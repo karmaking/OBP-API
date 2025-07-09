@@ -3470,7 +3470,7 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
                                   )= createOBPId(s"$thisBankId$thisAccountId$counterpartyName$otherAccountRoutingScheme$otherAccountRoutingAddress")
 
   def isDataFromOBPSide (methodName: String, argNameToValue: Array[(String, AnyRef)] = Array.empty): Boolean = {
-    val connectorNameInProps = code.api.Constant.Connector.openOrThrowException(attemptedToOpenAnEmptyBox)
+    val connectorNameInProps = code.api.Constant.CONNECTOR.openOrThrowException(attemptedToOpenAnEmptyBox)
     //if the connector == mapped, then the data is always over obp database
     if(connectorNameInProps == "mapped") {
       true
@@ -3713,9 +3713,9 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
 
     lazy val view = APIUtil.checkViewAccessAndReturnView(viewId, bankAccountId, Some(user), callContext)
 
-    lazy val canAddTransactionRequestToAnyAccount = view.map(_.canAddTransactionRequestToAnyAccount).getOrElse(false)
+    lazy val canAddTransactionRequestToAnyAccount = view.map(_.allowed_actions.exists(_ == CAN_ADD_TRANSACTION_REQUEST_TO_ANY_ACCOUNT)).getOrElse(false)
 
-    lazy val canAddTransactionRequestToBeneficiary = view.map(_.canAddTransactionRequestToBeneficiary).getOrElse(false)
+    lazy val canAddTransactionRequestToBeneficiary = view.map(_.allowed_actions.exists( _ == CAN_ADD_TRANSACTION_REQUEST_TO_BENEFICIARY )).getOrElse(false)
     //1st check the admin level role/entitlement `canCreateAnyTransactionRequest`
     if (hasCanCreateAnyTransactionRequestRole) {
       Full(true)
@@ -4183,8 +4183,7 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
       allCanGrantAccessToViewsPermissions.contains(targetViewId.value)
     } else{
       //2. if targetViewId is customView, we only need to check the `canGrantAccessToCustomViews`. 
-      val allCanGrantAccessToCustomViewsPermissions: List[Boolean] = permission.map(_.views.map(_.canGrantAccessToCustomViews)).getOrElse(Nil)
-
+      val allCanGrantAccessToCustomViewsPermissions: List[Boolean] = permission.map(_.views.map(_.allowed_actions.exists(_ == CAN_GRANT_ACCESS_TO_CUSTOM_VIEWS))).getOrElse(Nil)
       allCanGrantAccessToCustomViewsPermissions.contains(true)
     }
   }
@@ -4194,13 +4193,13 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
     //1st: get the view 
     val view: Box[View] = Views.views.vend.getViewByBankIdAccountIdViewIdUserPrimaryKey(bankIdAccountIdViewId, user.userPrimaryKey)
 
-    //2rd: If targetViewId is systemView. we need to check `view.canGrantAccessToViews` field.
+    //2nd: If targetViewId is systemView. we need to check `view.canGrantAccessToViews` field.
     if(isValidSystemViewId(targetViewId.value)){
       val canGrantAccessToSystemViews: Box[List[String]] = view.map(_.canGrantAccessToViews.getOrElse(Nil))
       canGrantAccessToSystemViews.getOrElse(Nil).contains(targetViewId.value)
     } else{ 
       //3rd. if targetViewId is customView, we need to check `view.canGrantAccessToCustomViews` field. 
-      view.map(_.canGrantAccessToCustomViews).getOrElse(false)
+      view.map(_.allowed_actions.exists(_ == CAN_GRANT_ACCESS_TO_CUSTOM_VIEWS)).getOrElse(false)
     }
   }
 
@@ -4219,7 +4218,7 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
     //if the targetViewIds contains custom view ids, we need to check the both canGrantAccessToCustomViews and canGrantAccessToSystemViews
     if (targetViewIds.map(_.value).distinct.find(isValidCustomViewId).isDefined){
       //check if we can grant all customViews Access.
-      val allCanGrantAccessToCustomViewsPermissions: List[Boolean] = permissionBox.map(_.views.map(_.canGrantAccessToCustomViews)).getOrElse(Nil)
+      val allCanGrantAccessToCustomViewsPermissions: List[Boolean] = permissionBox.map(_.views.map(_.allowed_actions.exists(_ ==CAN_GRANT_ACCESS_TO_CUSTOM_VIEWS))).getOrElse(Nil)
       val canGrantAccessToAllCustomViews = allCanGrantAccessToCustomViewsPermissions.contains(true)
       //we need merge both system and custom access
       canGrantAllSystemViewsIdsTobeGranted && canGrantAccessToAllCustomViews
@@ -4238,7 +4237,7 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
       canRevokeAccessToSystemViews.getOrElse(Nil).contains(targetViewId.value)
     } else {
       //3rd. if targetViewId is customView, we need to check `view.canGrantAccessToCustomViews` field. 
-      view.map(_.canRevokeAccessToCustomViews).getOrElse(false)
+      view.map(_.allowed_actions.exists(_ == CAN_REVOKE_ACCESS_TO_CUSTOM_VIEWS)).getOrElse(false)
     }
   }
   
@@ -4255,7 +4254,7 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
       allCanRevokeAccessToSystemViews.contains(targetViewId.value)
     } else {
       //2. if targetViewId is customView, we only need to check the `canRevokeAccessToCustomViews`. 
-      val allCanRevokeAccessToCustomViewsPermissions: List[Boolean] = permission.map(_.views.map(_.canRevokeAccessToCustomViews)).getOrElse(Nil)
+      val allCanRevokeAccessToCustomViewsPermissions: List[Boolean] = permission.map(_.views.map(_.allowed_actions.exists( _ ==CAN_REVOKE_ACCESS_TO_CUSTOM_VIEWS))).getOrElse(Nil)
 
       allCanRevokeAccessToCustomViewsPermissions.contains(true)
     }
@@ -4279,7 +4278,8 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
     //if allTargetViewIds contains customViewId,we need to check both `canRevokeAccessToCustomViews` and `canRevokeAccessToSystemViews` fields
     if (allTargetViewIds.find(isValidCustomViewId).isDefined) {
       //check if we can revoke all customViews Access
-      val allCanRevokeAccessToCustomViewsPermissions: List[Boolean] = permissionBox.map(_.views.map(_.canRevokeAccessToCustomViews)).getOrElse(Nil)
+      val allCanRevokeAccessToCustomViewsPermissions: List[Boolean] = permissionBox.map(_.views.map(_.allowed_actions.exists( _ ==CAN_REVOKE_ACCESS_TO_CUSTOM_VIEWS))).getOrElse(Nil)
+        
       val canRevokeAccessToAllCustomViews = allCanRevokeAccessToCustomViewsPermissions.contains(true)
       //we need merge both system and custom access
       canRevokeAccessToAllSystemTargetViews && canRevokeAccessToAllCustomViews

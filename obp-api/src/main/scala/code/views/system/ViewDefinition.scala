@@ -482,6 +482,29 @@ class ViewDefinition extends View with LongKeyedMapper[ViewDefinition] with Many
   def usePublicAliasIfOneExists: Boolean = usePublicAliasIfOneExists_.get
   def hideOtherAccountMetadataIfAlias: Boolean = hideOtherAccountMetadataIfAlias_.get
 
+  override def allowed_actions : List[String] = ViewPermission.findViewPermissions(this).map(_.permission.get).distinct
+
+//  override def canGrantAccessToViews : Option[List[String]] = {
+//    ViewPermission.findViewPermission(this, CAN_GRANT_ACCESS_TO_VIEWS).flatMap(vp =>
+//    {
+//      vp.metaData.get match {
+//        case value if(value != null && !value.isEmpty) => Some(value.split(",").toList.map(_.trim))
+//        case _ => None
+//      }
+//    })
+//  }
+//
+//  override def canRevokeAccessToViews : Option[List[String]] = {
+//    ViewPermission.findViewPermission(this, CAN_REVOKE_ACCESS_TO_VIEWS).flatMap(vp =>
+//    {
+//      vp.metaData.get match {
+//        case value if(value != null && !value.isEmpty) => Some(value.split(",").toList.map(_.trim))
+//        case _ => None
+//      }
+//    })
+//  }
+  
+  
   //This current view can grant access to other views.
   override def canGrantAccessToViews : Option[List[String]] = {
     canGrantAccessToViews_.get == null || canGrantAccessToViews_.get.isEmpty() match {

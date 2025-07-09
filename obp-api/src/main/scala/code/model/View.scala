@@ -28,10 +28,10 @@ TESOBE (http://www.tesobe.com/)
 
 package code.model
 
+import code.api.Constant._
 import code.api.util.ErrorMessages
 import code.metadata.counterparties.Counterparties
-import code.views.system.{ViewDefinition, ViewPermission}
-import com.github.dwickern.macros.NameOf.nameOf
+import code.views.system.ViewPermission
 import com.openbankproject.commons.model._
 import com.openbankproject.commons.model.enums.AccountRoutingScheme
 import net.liftweb.common._
@@ -372,7 +372,7 @@ case class ViewExtended(val view: View) {
       )
     }
     else
-      Failure(s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${StringHelpers.snakify(nameOf(ViewDefinition.canSeeTransactionThisBankAccount_)).dropRight(1)}` permission on the view(${view.viewId.value})")
+      Failure(s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${StringHelpers.snakify(CAN_SEE_TRANSACTION_THIS_BANK_ACCOUNT)}` permission on the view(${view.viewId.value})")
   }
 
 
@@ -424,7 +424,7 @@ case class ViewExtended(val view: View) {
       )
     }
     else
-      Failure(s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${StringHelpers.snakify(nameOf(ViewDefinition.canSeeTransactionThisBankAccount_)).dropRight(1)}` permission on the view(${view.viewId.value})")
+      Failure(s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${StringHelpers.snakify(CAN_SEE_TRANSACTION_THIS_BANK_ACCOUNT)}` permission on the view(${view.viewId.value})")
   }
 
   def moderateAccountCore(bankAccount: BankAccount) : Box[ModeratedBankAccountCore] = {
@@ -459,7 +459,7 @@ case class ViewExtended(val view: View) {
       )
     }
     else
-      Failure(s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${StringHelpers.snakify(nameOf(ViewDefinition.canSeeTransactionThisBankAccount_)).dropRight(1)}` permission on the view(${view.viewId.value})")
+      Failure(s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${StringHelpers.snakify(CAN_SEE_TRANSACTION_THIS_BANK_ACCOUNT)}` permission on the view(${view.viewId.value})")
   }
 
   // Moderate the Counterparty side of the Transaction (i.e. the Other Account involved in the transaction)
@@ -584,7 +584,7 @@ case class ViewExtended(val view: View) {
       )
     }
     else
-      Failure(s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${StringHelpers.snakify(nameOf(ViewDefinition.canSeeTransactionOtherBankAccount_)).dropRight(1)}` permission on the view(${view.viewId.value})")
+      Failure(s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${StringHelpers.snakify(CAN_SEE_TRANSACTION_OTHER_BANK_ACCOUNT)}` permission on the view(${view.viewId.value})")
   }
 
   def moderateCore(counterpartyCore : CounterpartyCore) : Box[ModeratedOtherBankAccountCore] = {
@@ -635,6 +635,6 @@ case class ViewExtended(val view: View) {
       )
     }
     else
-      Failure(s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${StringHelpers.snakify(nameOf(ViewDefinition.canSeeTransactionOtherBankAccount_)).dropRight(1)}` permission on the view(${view.viewId.value})")
+      Failure(s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${StringHelpers.snakify(CAN_SEE_TRANSACTION_OTHER_BANK_ACCOUNT)}` permission on the view(${view.viewId.value})")
   }
 }

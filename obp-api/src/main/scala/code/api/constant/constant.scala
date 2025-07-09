@@ -23,7 +23,7 @@ object Constant extends MdcLoggable {
   final val h2DatabaseDefaultUrlValue = "jdbc:h2:mem:OBPTest_H2_v2.1.214;NON_KEYWORDS=VALUE;DB_CLOSE_DELAY=10"
 
   final val HostName = APIUtil.getPropsValue("hostname").openOrThrowException(ErrorMessages.HostnameNotSpecified)
-  final val Connector = APIUtil.getPropsValue("connector")
+  final val CONNECTOR = APIUtil.getPropsValue("connector")
   final val openidConnectEnabled = APIUtil.getPropsAsBoolValue("openid_connect.enabled", false)
   
   final val bgRemoveSignOfAmounts = APIUtil.getPropsAsBoolValue("BG_remove_sign_of_amounts", false)

@@ -71,7 +71,7 @@ object LocalMappedConnectorInternal extends MdcLoggable {
       fromBankIdAccountId = BankIdAccountId(fromAccount.bankId, fromAccount.accountId)
       view <- NewStyle.function.checkAccountAccessAndGetView(viewId, fromBankIdAccountId, Full(user), callContext)
       _ <- Helper.booleanToFuture(InsufficientAuthorisationToCreateTransactionRequest, cc = callContext) {
-        view.canAddTransactionRequestToAnyAccount
+        view.allowed_actions.exists(_ ==CAN_ADD_TRANSACTION_REQUEST_TO_ANY_ACCOUNT)
       }
 
       (paymentLimit, callContext) <- Connector.connector.vend.getPaymentLimit(

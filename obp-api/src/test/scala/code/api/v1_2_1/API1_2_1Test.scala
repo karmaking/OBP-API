@@ -26,12 +26,13 @@ TESOBE (http://www.tesobe.com/)
   */
 package code.api.v1_2_1
 
-import code.api.Constant._
 import _root_.net.liftweb.json.Serialization.write
+import code.api.Constant._
 import code.api.ResourceDocs1_4_0.SwaggerDefinitionsJSON
 import code.api.util.APIUtil
 import code.api.util.APIUtil.OAuth._
 import code.api.util.APIUtil.isValidSystemViewId
+import code.api.util.ErrorMessages._
 import code.bankconnectors.Connector
 import code.setup.{APIResponse, DefaultUsers, PrivateUser2AccountsAndSetUpWithTestData, ServerSetupWithTestData}
 import code.views.Views
@@ -39,7 +40,6 @@ import com.openbankproject.commons.model._
 import net.liftweb.json._
 import net.liftweb.util.Helpers._
 import org.scalatest.Tag
-import code.api.util.ErrorMessages._
 
 import scala.util.Random._
 
@@ -2017,8 +2017,10 @@ class API1_2_1Test extends ServerSetupWithTestData with DefaultUsers with Privat
       val viewId = SYSTEM_OWNER_VIEW_ID
       val userId1 = resourceUser2.idGivenByProvider
       val userId2 = resourceUser2.idGivenByProvider
-      grantUserAccessToView(bankId, bankAccount.id, userId1, viewId, user1)
-      grantUserAccessToView(bankId, bankAccount.id, userId2, viewId, user1)
+      val replyGrant1 = grantUserAccessToView(bankId, bankAccount.id, userId1, viewId, user1)
+      replyGrant1.code should equal (201)
+      val replyGrant2 = grantUserAccessToView(bankId, bankAccount.id, userId2, viewId, user1)
+      replyGrant2.code should equal (201)
       val viewsBefore = getUserAccountPermission(bankId, bankAccount.id, userId1, user1).body.extract[ViewsJSONV121].views.length
       When("the request is sent")
       val reply = revokeUserAccessToView(bankId, bankAccount.id, userId1, viewId, user1)

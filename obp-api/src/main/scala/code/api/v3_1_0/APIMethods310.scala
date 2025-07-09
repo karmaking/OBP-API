@@ -1,7 +1,7 @@
 package code.api.v3_1_0
 
 import code.api.Constant
-import code.api.Constant.localIdentityProvider
+import code.api.Constant._
 import code.api.ResourceDocs1_4_0.SwaggerDefinitionsJSON._
 import code.api.ResourceDocs1_4_0.{MessageDocsSwaggerDefinitions, ResourceDocsAPIMethodsUtil, SwaggerDefinitionsJSON, SwaggerJSONFactory}
 import code.api.cache.Caching
@@ -37,7 +37,6 @@ import code.users.Users
 import code.util.Helper
 import code.util.Helper.ObpS
 import code.views.Views
-import code.views.system.ViewDefinition
 import code.webhook.AccountWebhook
 import code.webuiprops.{MappedWebUiPropsProvider, WebUiPropsCommons}
 import com.github.dwickern.macros.NameOf.nameOf
@@ -654,8 +653,8 @@ trait APIMethods310 {
             (_, callContext) <- NewStyle.function.getBank(bankId, callContext)
             (account, callContext) <- NewStyle.function.checkBankAccountExists(bankId, accountId, callContext)
             view <- NewStyle.function.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), Some(u), callContext) 
-            _ <- Helper.booleanToFuture(failMsg = s"$ViewDoesNotPermitAccess +  You need the `${StringHelpers.snakify(nameOf(ViewDefinition.canQueryAvailableFunds_)).dropRight(1)}` permission on any your views", cc=callContext) {
-              view.canQueryAvailableFunds
+            _ <- Helper.booleanToFuture(failMsg = s"$ViewDoesNotPermitAccess +  You need the `${StringHelpers.snakify(CAN_QUERY_AVAILABLE_FUNDS)}` permission on any your views", cc=callContext) {
+              view.allowed_actions.exists(_ ==CAN_QUERY_AVAILABLE_FUNDS)
             }
             httpParams: List[HTTPParam] <- NewStyle.function.extractHttpParamsFromUrl(cc.url)
             _ <- Helper.booleanToFuture(failMsg = MissingQueryParams + amount, cc=callContext) {
@@ -672,7 +671,7 @@ trait APIMethods310 {
             _ <- NewStyle.function.moderatedBankAccountCore(account, view, Full(u), callContext)
           } yield {
             val ccy = httpParams.filter(_.name == currency).map(_.values.head).head
-            val fundsAvailable =  (view.canQueryAvailableFunds, account.balance, account.currency) match {
+            val fundsAvailable =  ( view.allowed_actions.exists(_ ==CAN_QUERY_AVAILABLE_FUNDS), account.balance, account.currency) match {
               case (false, _, _) => "" // 1st condition: MUST have a view can_query_available_funds
               case (true, _, c) if c != ccy => "no" // 2nd condition: Currency has to be matched
               case (true, b, _) if b.compare(available) >= 0 => "yes" // We have the vew, the right currency and enough funds
@@ -1125,9 +1124,9 @@ trait APIMethods310 {
             (fromAccount, callContext) <- NewStyle.function.checkBankAccountExists(bankId, accountId, callContext)
             view <- NewStyle.function.checkAccountAccessAndGetView(viewId, BankIdAccountId(bankId, accountId), Full(u), callContext)
             _ <- Helper.booleanToFuture(
-              s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${StringHelpers.snakify(nameOf(ViewDefinition.canSeeTransactionRequests_)).dropRight(1)}` permission on the View(${viewId.value})",
+              s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${StringHelpers.snakify(CAN_SEE_TRANSACTION_REQUESTS)}` permission on the View(${viewId.value})",
               cc=callContext){
-              view.canSeeTransactionRequests
+              view.allowed_actions.exists(_ ==CAN_SEE_TRANSACTION_REQUESTS)
             }
             (transactionRequests, callContext) <- Future(Connector.connector.vend.getTransactionRequests210(u, fromAccount, callContext)) map {
               unboxFullOrFail(_, callContext, GetTransactionRequestsException)
@@ -1870,7 +1869,7 @@ trait APIMethods310 {
         cc => implicit val ec = EndpointContext(Some(cc))
           for {
             (_, callContext) <- anonymousAccess(cc)
-            connectorVersion = code.api.Constant.Connector.openOrThrowException(s"$MandatoryPropertyIsNotSet The missing props is 'connector'")
+            connectorVersion = code.api.Constant.CONNECTOR.openOrThrowException(s"$MandatoryPropertyIsNotSet The missing props is 'connector'")
             starConnectorProps = APIUtil.getPropsValue("starConnector_supported_types").openOr("notfound")
             //TODO we need to decide what kind of connector should we use.
             obpApiLoopback = ObpApiLoopback(

@@ -406,7 +406,7 @@ class Boot extends MdcLoggable {
     }
     
     // ensure our relational database's tables are created/fit the schema
-    val connector = code.api.Constant.Connector.openOrThrowException(s"$MandatoryPropertyIsNotSet. The missing prop is `connector` ")
+    val connector = code.api.Constant.CONNECTOR.openOrThrowException(s"$MandatoryPropertyIsNotSet. The missing prop is `connector` ")
     
     val runningMode = Props.mode match {
       case Props.RunModes.Production => "Production mode"
@@ -788,7 +788,7 @@ class Boot extends MdcLoggable {
     // export one Connector's methods as endpoints, it is just for develop
     APIUtil.getPropsValue("connector.name.export.as.endpoints").foreach { connectorName =>
       // validate whether "connector.name.export.as.endpoints" have set a correct value
-      code.api.Constant.Connector match {
+      code.api.Constant.CONNECTOR match {
         case Full("star") =>
           val starConnectorTypes = APIUtil.getPropsValue("starConnector_supported_types","mapped")
             .trim

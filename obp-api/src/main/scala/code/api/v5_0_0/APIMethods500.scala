@@ -1,6 +1,7 @@
 package code.api.v5_0_0
 
 import code.accountattribute.AccountAttributeX
+import code.api.Constant._
 import code.api.ResourceDocs1_4_0.SwaggerDefinitionsJSON._
 import code.api.util.APIUtil._
 import code.api.util.ApiRole._
@@ -776,7 +777,7 @@ trait APIMethods500 {
                 val accountId = AccountId(viewsFromJwtToken.head.account_id)
                 val viewId = ViewId(viewsFromJwtToken.head.view_id)
                 val helperInfoFromJwtToken = viewsFromJwtToken.head.helper_info
-                val viewCanGetCounterparty = Views.views.vend.customView(viewId, BankIdAccountId(bankId, accountId)).map(_.canGetCounterparty)
+                val viewCanGetCounterparty = Views.views.vend.customView(viewId, BankIdAccountId(bankId, accountId)).map(_.allowed_actions.exists( _ == CAN_GET_COUNTERPARTY))
                 val helperInfo = if(viewCanGetCounterparty==Full(true)) helperInfoFromJwtToken else None
                 (Some(bankId), Some(accountId), Some(viewId), helperInfo)
               }else{
@@ -1884,9 +1885,9 @@ trait APIMethods500 {
             for {
               (Full(u), callContext) <- SS.user
               permission <- NewStyle.function.permission(bankId, accountId, u, callContext)
-              anyViewContainsCanSeeAvailableViewsForBankAccountPermission = permission.views.map(_.canSeeAvailableViewsForBankAccount).find(_.==(true)).getOrElse(false)
+              anyViewContainsCanSeeAvailableViewsForBankAccountPermission =  permission.views.map(_.allowed_actions.exists(_ == CAN_SEE_AVAILABLE_VIEWS_FOR_BANK_ACCOUNT)).find(_.==(true)).getOrElse(false)
               _ <- Helper.booleanToFuture(
-                s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${StringHelpers.snakify(nameOf(ViewDefinition.canSeeAvailableViewsForBankAccount_)).dropRight(1)}` permission on any your views",
+                s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${StringHelpers.snakify(CAN_SEE_AVAILABLE_VIEWS_FOR_BANK_ACCOUNT)}` permission on any your views",
                 cc = callContext
               ) {
                 anyViewContainsCanSeeAvailableViewsForBankAccountPermission

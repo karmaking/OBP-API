@@ -999,7 +999,7 @@ object JSONFactory510 extends CustomJsonFormats {
     val organisationWebsiteEnergySource = APIUtil.getPropsValue("energy_source.organisation_website", "")
     val energySource = EnergySource400(organisationEnergySource, organisationWebsiteEnergySource)
 
-    val connector = code.api.Constant.Connector.openOrThrowException(s"$MandatoryPropertyIsNotSet. The missing prop is `connector` ")
+    val connector = code.api.Constant.CONNECTOR.openOrThrowException(s"$MandatoryPropertyIsNotSet. The missing prop is `connector` ")
     val resourceDocsRequiresRole = APIUtil.getPropsAsBoolValue("resource_docs_requires_role", false)
 
     APIInfoJsonV510(
