@@ -58,6 +58,9 @@ import java.util.Date
 import scala.util.Try
 
 
+case class WellKnownUrisJsonV510(well_known_uris: List[WellKnownUriJsonV510])
+case class WellKnownUriJsonV510(provider: String, url: String)
+
 case class RegulatedEntityAttributeRequestJsonV510(
   name: String,
   attribute_type: String,
