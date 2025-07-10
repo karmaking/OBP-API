@@ -65,7 +65,7 @@ object BerlinGroupCheck extends MdcLoggable {
 
     val resultWithMissingHeaderCheck: Option[(Box[User], Option[CallContext])] = {
       val date: Option[String] = headerMap.get(RequestHeader.Date.toLowerCase).flatMap(_.values.headOption)
-      if (!BgSpecValidation.isValidRfc7231Date(date.get)) {
+      if (date.isDefined && !BgSpecValidation.isValidRfc7231Date(date.get)) {
         val message = ErrorMessages.NotValidRfc7231Date
         Some(
           (
