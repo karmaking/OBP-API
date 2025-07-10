@@ -278,6 +278,7 @@ object ErrorMessages {
   val InvalidSignatureHeader = "OBP-20254: Invalid Signature header. "
   val InvalidRequestIdValueAlreadyUsed = "OBP-20255: Request Id value already used. "
   val InvalidConsentIdUsage = "OBP-20256: Consent-Id must not be used for this API Endpoint. "
+  val NotValidRfc7231Date = "OBP-20257: Request header Date is not in accordance with RFC 7231 "
 
   // X.509
   val X509GeneralError = "OBP-20300: PEM Encoded Certificate issue."

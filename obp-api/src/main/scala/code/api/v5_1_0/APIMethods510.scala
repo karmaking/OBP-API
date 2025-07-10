@@ -2,6 +2,7 @@ package code.api.v5_1_0
 
 
 import code.api.Constant
+import code.api.OAuth2Login.Keycloak
 import code.api.ResourceDocs1_4_0.SwaggerDefinitionsJSON._
 import code.api.berlin.group.v1_3.JSONFactory_BERLIN_GROUP_1_3.{ConsentAccessAccountsJson, ConsentAccessJson}
 import code.api.util.APIUtil._
@@ -134,6 +135,37 @@ trait APIMethods510 {
           } yield {
             (SuggestedSessionTimeoutV510(timeoutInSeconds.toString), HttpCode.`200`(cc.callContext))
           }
+    }
+
+
+    staticResourceDocs += ResourceDoc(
+      getOAuth2ServerWellKnown,
+      implementedInApiVersion,
+      "getOAuth2ServerWellKnown",
+      "GET",
+      "/well-known",
+      "Get Well Known URIs",
+      """Get the OAuth2 server's public Well Known URIs.
+        |
+      """.stripMargin,
+      EmptyBody,
+      oAuth2ServerJwksUrisJson,
+      List(
+        UnknownError
+      ),
+      List(apiTagApi))
+
+    lazy val getOAuth2ServerWellKnown: OBPEndpoint = {
+      case "well-known" :: Nil JsonGet _ => {
+        cc =>
+          implicit val ec = EndpointContext(Some(cc))
+          for {
+            (_, callContext) <- anonymousAccess(cc)
+          } yield {
+            val keycloak: WellKnownUriJsonV510 = WellKnownUriJsonV510("keycloak", Keycloak.wellKnownOpenidConfiguration.toURL.toString)
+            (WellKnownUrisJsonV510(List(keycloak)), HttpCode.`200`(callContext))
+          }
+      }
     }
 
 

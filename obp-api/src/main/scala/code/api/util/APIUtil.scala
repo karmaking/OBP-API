@@ -104,7 +104,7 @@ import java.security.AccessControlException
 import java.text.{ParsePosition, SimpleDateFormat}
 import java.util.concurrent.ConcurrentHashMap
 import java.util.regex.Pattern
-import java.util.{Calendar, Date, UUID}
+import java.util.{Calendar, Date, Locale, UUID}
 import scala.collection.JavaConverters._
 import scala.collection.immutable.{List, Nil}
 import scala.collection.mutable
@@ -132,6 +132,7 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
   val DateWithSecondsFormat = new SimpleDateFormat(DateWithSeconds)
   val DateWithMsFormat = new SimpleDateFormat(DateWithMs)
   val DateWithMsRollbackFormat = new SimpleDateFormat(DateWithMsAndTimeZoneOffset)
+  val rfc7231Date = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z", Locale.ENGLISH)
 
   val DateWithYearExampleString: String = "1100"
   val DateWithMonthExampleString: String = "1100-01"
