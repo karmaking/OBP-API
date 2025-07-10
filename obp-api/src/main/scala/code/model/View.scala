@@ -160,7 +160,7 @@ case class ViewExtended(val view: View) {
         else None
 
       val transactionFinishDate =
-        if (view.canSeeTransactionFinishDate) Some(transaction.finishDate)
+        if (view.canSeeTransactionFinishDate) transaction.finishDate
         else None
 
       val transactionBalance =
