@@ -57,7 +57,7 @@ class WebUiPropsTest extends V510ServerSetup {
   feature("Get WebUiPropss v5.1.0 ") {
     scenario("We will call the endpoint without user credentials", VersionOfApi) {
       When("We make a request v5.1.0")
-      val request510 = (v5_1_0_Request / "webui_props").GET
+      val request510 = (v5_1_0_Request / "webui-props").GET
       val response510 = makeGetRequest(request510)
       Then("We should get a 401")
       response510.code should equal(401)
@@ -74,7 +74,7 @@ class WebUiPropsTest extends V510ServerSetup {
       response510.code should equal(201)
       val customerJson = response510.body.extract[WebUiPropsCommons]
       
-      val requestGet510 = (v5_1_0_Request / "webui_props").GET <@(user1)
+      val requestGet510 = (v5_1_0_Request / "webui-props").GET <@(user1)
       val responseGet510 = makeGetRequest(requestGet510)
       Then("We should get a 200")
       responseGet510.code should equal(200)

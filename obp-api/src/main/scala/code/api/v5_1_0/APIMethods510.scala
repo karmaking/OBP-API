@@ -5152,7 +5152,7 @@ trait APIMethods510 {
       implementedInApiVersion,
       nameOf(getWebUiProps),
       "GET",
-      "/webui_props",
+      "/webui-props",
       "Get WebUiProps",
       s"""
          |
@@ -5163,13 +5163,13 @@ trait APIMethods510 {
          |          combination of explicit (inserted) + implicit (default)  method_routings.
          |
          |eg:  
-         |${getObpApiRoot}/v5.1.0/webui_props
-         |${getObpApiRoot}/v5.1.0/webui_props?active=true
+         |${getObpApiRoot}/v5.1.0/webui-props
+         |${getObpApiRoot}/v5.1.0/webui-props?active=true
          |
          |""",
       EmptyBody,
       ListResult(
-        "webui_props",
+        "webui-props",
         (List(WebUiPropsCommons("webui_api_explorer_url", "https://apiexplorer.openbankproject.com", Some("web-ui-props-id"))))
       )
       ,
@@ -5181,7 +5181,7 @@ trait APIMethods510 {
       List(apiTagWebUiProps)
     )
     lazy val getWebUiProps: OBPEndpoint = {
-      case "webui_props":: Nil JsonGet req => {
+      case "webui-props":: Nil JsonGet req => {
         cc => implicit val ec = EndpointContext(Some(cc))
           val active = ObpS.param("active").getOrElse("false")
           for {
