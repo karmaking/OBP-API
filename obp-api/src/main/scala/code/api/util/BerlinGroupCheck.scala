@@ -139,6 +139,7 @@ object BerlinGroupCheck extends MdcLoggable {
             logger.debug(s"  CN: ${parsed.keyId.cn}")
             logger.debug(s"  O:  ${parsed.keyId.o}")
             logger.debug(s"  Headers: ${parsed.headers.mkString(", ")}")
+            logger.debug(s"  Algorithm: ${parsed.algorithm}")
             logger.debug(s"  Signature: ${parsed.signature}")
 
             val certificate = getCertificateFromTppSignatureCertificate(reqHeaders)

@@ -6,7 +6,7 @@ object BerlinGroupSignatureHeaderParser extends MdcLoggable {
 
   case class ParsedKeyId(sn: String, ca: String, cn: String, o: String)
 
-  case class ParsedSignature(keyId: ParsedKeyId, headers: List[String], signature: String)
+  case class ParsedSignature(keyId: ParsedKeyId, algorithm: String, headers: List[String], signature: String)
 
   def parseQuotedValue(value: String): String =
     value.stripPrefix("\"").stripSuffix("\"").trim
@@ -50,7 +50,7 @@ object BerlinGroupSignatureHeaderParser extends MdcLoggable {
   }
 
   def parseSignatureHeader(header: String): Either[String, ParsedSignature] = {
-    val fields = header.split(",(?=\\s*(keyId|headers|signature)=)").map(_.trim)
+    val fields = header.split(",(?=\\s*(keyId|headers|algorithm|signature)=)").map(_.trim)
 
     val kvMap = fields.flatMap { field =>
       field.split("=", 2) match {
@@ -64,7 +64,8 @@ object BerlinGroupSignatureHeaderParser extends MdcLoggable {
       keyId <- parseKeyIdField(keyIdStr)
       headers <- kvMap.get("headers").map(_.split("\\s+").toList).toRight("Missing 'headers' field")
       sig <- kvMap.get("signature").toRight("Missing 'signature' field")
-    } yield ParsedSignature(keyId, headers, sig)
+      algorithm <- kvMap.get("algorithm").toRight("Missing 'algorithm' field")
+    } yield ParsedSignature(keyId, algorithm, headers, sig)
   }
 
   /**
