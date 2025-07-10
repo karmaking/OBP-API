@@ -55,21 +55,6 @@ object BgSpecValidation {
     }
   }
 
-
-  // Define the correct RFC 7231 date format (IMF-fixdate)
-  private val dateFormat = rfc7231Date
-  // Force timezone to be GMT
-  dateFormat.setLenient(false)
-  def isValidRfc7231Date(dateStr: String): Boolean = {
-    try {
-      val parsedDate = dateFormat.parse(dateStr)
-      // Check that the timezone part is exactly "GMT"
-      dateStr.endsWith(" GMT")
-    } catch {
-      case _: Exception => false
-    }
-  }
-
   // Example usage
   def main(args: Array[String]): Unit = {
     val testDates = Seq(
