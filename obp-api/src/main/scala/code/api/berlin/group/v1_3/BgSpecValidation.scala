@@ -1,6 +1,7 @@
 package code.api.berlin.group.v1_3
 
 import code.api.util.APIUtil.DateWithDayFormat
+import code.api.util.APIUtil.rfc7231Date
 import code.api.util.ErrorMessages.InvalidDateFormat
 
 import java.text.SimpleDateFormat
@@ -56,7 +57,7 @@ object BgSpecValidation {
 
 
   // Define the correct RFC 7231 date format (IMF-fixdate)
-  private val dateFormat = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z", Locale.ENGLISH)
+  private val dateFormat = rfc7231Date
   // Force timezone to be GMT
   dateFormat.setLenient(false)
   def isValidRfc7231Date(dateStr: String): Boolean = {
