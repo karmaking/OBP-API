@@ -557,7 +557,7 @@ class ViewDefinition extends View with LongKeyedMapper[ViewDefinition] with Many
   def canSeeBankAccountLabel : Boolean = canSeeBankAccountLabel_.get
   def canUpdateBankAccountLabel : Boolean = canUpdateBankAccountLabel_.get
   def canSeeBankAccountNationalIdentifier : Boolean = canSeeBankAccountNationalIdentifier_.get
-  def canSeeBankAccountSwift_bic : Boolean = canSeeBankAccountSwift_bic_.get
+  def canSeeBankAccountSwiftBic : Boolean = canSeeBankAccountSwift_bic_.get
   def canSeeBankAccountIban : Boolean = canSeeBankAccountIban_.get
   def canSeeBankAccountNumber : Boolean = canSeeBankAccountNumber_.get
   def canSeeBankAccountBankName : Boolean = canSeeBankAccountBankName_.get
@@ -571,8 +571,8 @@ class ViewDefinition extends View with LongKeyedMapper[ViewDefinition] with Many
 
   //other bank account fields
   def canSeeOtherAccountNationalIdentifier : Boolean = canSeeOtherAccountNationalIdentifier_.get
-  def canSeeOtherAccountSWIFT_BIC : Boolean = canSeeOtherAccountSWIFT_BIC_.get
-  def canSeeOtherAccountIBAN : Boolean = canSeeOtherAccountIBAN_.get
+  def canSeeOtherAccountSwiftBic : Boolean = canSeeOtherAccountSWIFT_BIC_.get
+  def canSeeOtherAccountIban : Boolean = canSeeOtherAccountIBAN_.get
   def canSeeOtherAccountBankName : Boolean = canSeeOtherAccountBankName_.get
   def canSeeOtherAccountNumber : Boolean = canSeeOtherAccountNumber_.get
   def canSeeOtherAccountMetadata : Boolean = canSeeOtherAccountMetadata_.get
@@ -592,8 +592,8 @@ class ViewDefinition extends View with LongKeyedMapper[ViewDefinition] with Many
   def canSeePublicAlias : Boolean = canSeePublicAlias_.get
   def canSeePrivateAlias : Boolean = canSeePrivateAlias_.get
   def canAddMoreInfo : Boolean = canAddMoreInfo_.get
-  def canAddURL : Boolean = canAddURL_.get
-  def canAddImageURL : Boolean = canAddImageURL_.get
+  def canAddUrl : Boolean = canAddURL_.get
+  def canAddImageUrl : Boolean = canAddImageURL_.get
   def canAddOpenCorporatesUrl : Boolean = canAddOpenCorporatesUrl_.get
   def canAddCorporateLocation : Boolean = canAddCorporateLocation_.get
   def canAddPhysicalLocation : Boolean = canAddPhysicalLocation_.get

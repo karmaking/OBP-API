@@ -317,7 +317,7 @@ trait View {
 
   def canSeeBankAccountNationalIdentifier: Boolean
 
-  def canSeeBankAccountSwift_bic: Boolean
+  def canSeeBankAccountSwiftBic: Boolean
 
   def canSeeBankAccountIban: Boolean
 
@@ -340,9 +340,9 @@ trait View {
   //other bank account (counterparty) fields
   def canSeeOtherAccountNationalIdentifier: Boolean
 
-  def canSeeOtherAccountSWIFT_BIC: Boolean
+  def canSeeOtherAccountSwiftBic: Boolean
 
-  def canSeeOtherAccountIBAN: Boolean
+  def canSeeOtherAccountIban: Boolean
 
   def canSeeOtherAccountBankName: Boolean
 
@@ -380,9 +380,9 @@ trait View {
   //other bank account (Counterparty) meta data - write
   def canAddMoreInfo: Boolean
 
-  def canAddURL: Boolean
+  def canAddUrl: Boolean
 
-  def canAddImageURL: Boolean
+  def canAddImageUrl: Boolean
 
   def canAddOpenCorporatesUrl: Boolean
 

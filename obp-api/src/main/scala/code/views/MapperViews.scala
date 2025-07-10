@@ -647,32 +647,32 @@ object MapperViews extends Views with MdcLoggable {
       // For the rest of the permissions, they are just boolean values.
       if (permissionName == CAN_REVOKE_ACCESS_TO_VIEWS || permissionName == CAN_GRANT_ACCESS_TO_VIEWS) {
 
-        val permissionValueFromViewdefinition = viewDefinition.getClass.getMethod(permissionName).invoke(viewDefinition).asInstanceOf[Option[List[String]]]
+        val permissionValueFromViewDefinition = viewDefinition.getClass.getMethod(StringHelpers.camelifyMethod(permissionName)).invoke(viewDefinition).asInstanceOf[Option[List[String]]]
 
         ViewPermission.findViewPermission(viewDefinition, permissionName) match {
-          // If the permission already exists in ViewPermission, but permissionValueFromViewdefinition is empty, we delete it.
-          case Full(permission) if permissionValueFromViewdefinition.isEmpty =>
+          // If the permission already exists in ViewPermission, but permissionValueFromViewDefinition is empty, we delete it.
+          case Full(permission) if permissionValueFromViewDefinition.isEmpty =>
             permission.delete_!
-          // If the permission already exists and permissionValueFromViewdefinition is defined, we update the metadata.
-          case Full(permission) if permissionValueFromViewdefinition.isDefined =>
-            permission.metaData(permissionValueFromViewdefinition.get.mkString(",")).save
+          // If the permission already exists and permissionValueFromViewDefinition is defined, we update the metadata.
+          case Full(permission) if permissionValueFromViewDefinition.isDefined =>
+            permission.metaData(permissionValueFromViewDefinition.get.mkString(",")).save
           //if the permission is not existing in ViewPermission,but it is defined in the viewDefinition, we create it. --systemView
-          case Empty if (viewDefinition.isSystem && permissionValueFromViewdefinition.isDefined) =>
+          case Empty if (viewDefinition.isSystem && permissionValueFromViewDefinition.isDefined) =>
             ViewPermission.create
               .bank_id(null)
               .account_id(null)
               .view_id(viewDefinition.viewId.value)
               .permission(permissionName)
-              .metaData(permissionValueFromViewdefinition.get.mkString(","))
+              .metaData(permissionValueFromViewDefinition.get.mkString(","))
               .save
           //if the permission is not existing in ViewPermission,but it is defined in the viewDefinition, we create it. --customView
-          case Empty if (!viewDefinition.isSystem && permissionValueFromViewdefinition.isDefined) =>
+          case Empty if (!viewDefinition.isSystem && permissionValueFromViewDefinition.isDefined) =>
             ViewPermission.create
               .bank_id(viewDefinition.bankId.value)
               .account_id(viewDefinition.accountId.value)
               .view_id(viewDefinition.viewId.value)
               .permission(permissionName)
-              .metaData(permissionValueFromViewdefinition.get.mkString(","))
+              .metaData(permissionValueFromViewDefinition.get.mkString(","))
               .save
           case _ =>
             // This case should not happen, but if it does, we add an error log
@@ -680,7 +680,7 @@ object MapperViews extends Views with MdcLoggable {
         }
       } else {
         // For the rest of the permissions, they are just boolean values.
-        val permissionValue = viewDefinition.getClass.getMethod(permissionName).invoke(viewDefinition).asInstanceOf[Boolean]
+        val permissionValue = viewDefinition.getClass.getMethod(StringHelpers.camelifyMethod(permissionName)).invoke(viewDefinition).asInstanceOf[Boolean]
 
         ViewPermission.findViewPermission(viewDefinition, permissionName) match {
           // If the permission already exists in ViewPermission, but permissionValueFromViewdefinition is false, we delete it.
