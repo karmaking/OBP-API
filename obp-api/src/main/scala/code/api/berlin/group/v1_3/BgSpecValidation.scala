@@ -3,9 +3,10 @@ package code.api.berlin.group.v1_3
 import code.api.util.APIUtil.DateWithDayFormat
 import code.api.util.ErrorMessages.InvalidDateFormat
 
+import java.text.SimpleDateFormat
 import java.time.format.{DateTimeFormatter, DateTimeParseException}
 import java.time.{LocalDate, ZoneId}
-import java.util.Date
+import java.util.{Date, Locale}
 
 object BgSpecValidation {
 
@@ -50,6 +51,21 @@ object BgSpecValidation {
     else {
       val localDate: LocalDate = date.toInstant.atZone(ZoneId.systemDefault()).toLocalDate
       localDate.format(DateTimeFormatter.ISO_LOCAL_DATE)
+    }
+  }
+
+
+  // Define the correct RFC 7231 date format (IMF-fixdate)
+  private val dateFormat = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z", Locale.ENGLISH)
+  // Force timezone to be GMT
+  dateFormat.setLenient(false)
+  def isValidRfc7231Date(dateStr: String): Boolean = {
+    try {
+      val parsedDate = dateFormat.parse(dateStr)
+      // Check that the timezone part is exactly "GMT"
+      dateStr.endsWith(" GMT")
+    } catch {
+      case _: Exception => false
     }
   }
 

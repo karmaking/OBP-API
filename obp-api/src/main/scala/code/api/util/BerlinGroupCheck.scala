@@ -1,6 +1,7 @@
 package code.api.util
 
 import code.api.berlin.group.ConstantsBG
+import code.api.berlin.group.v1_3.BgSpecValidation
 import code.api.{APIFailureNewStyle, RequestHeader}
 import code.api.util.APIUtil.{OBPReturnType, fullBoxOrException}
 import code.api.util.BerlinGroupSigning.{getCertificateFromTppSignatureCertificate, getHeaderValue}
@@ -62,7 +63,22 @@ object BerlinGroupCheck extends MdcLoggable {
         berlinGroupMandatoryHeaders.filterNot(headerMap.contains)
     }
 
-    val resultWithMissingHeaderCheck: Option[(Box[User], Option[CallContext])] =
+    val resultWithMissingHeaderCheck: Option[(Box[User], Option[CallContext])] = {
+      val date: Option[String] = headerMap.get(RequestHeader.Date.toLowerCase).flatMap(_.values.headOption)
+      if (!BgSpecValidation.isValidRfc7231Date(date.get)) {
+        val message = ErrorMessages.NotValidRfc7231Date
+        Some(
+          (
+            fullBoxOrException(
+              Empty ~> APIFailureNewStyle(message, 400, forwardResult._2.map(_.toLight))
+            ),
+            forwardResult._2
+          )
+        )
+      } else None
+    }
+
+    val resultWithWrongDateHeaderCheck: Option[(Box[User], Option[CallContext])] =
       if (missingHeaders.nonEmpty) {
         val message = if (missingHeaders.size == 1)
           ErrorMessages.MissingMandatoryBerlinGroupHeaders.replace("headers", "header")
@@ -170,6 +186,7 @@ object BerlinGroupCheck extends MdcLoggable {
 
     // Chain validation steps
     resultWithMissingHeaderCheck
+      .orElse(resultWithMissingHeaderCheck)
       .orElse(resultWithInvalidRequestIdCheck)
       .orElse(resultWithRequestIdUsedTwiceCheck)
       .orElse(resultWithInvalidSignatureHeaderCheck)
