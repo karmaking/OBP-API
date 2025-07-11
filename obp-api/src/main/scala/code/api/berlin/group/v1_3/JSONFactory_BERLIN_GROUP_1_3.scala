@@ -471,7 +471,7 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
   
   def createTransactionJSON(transaction : ModeratedTransaction) : TransactionJsonV13 = {
     val bookingDate = transaction.startDate.orNull
-    val valueDate = transaction.finishDate.orNull
+    val valueDate = if(transaction.finishDate.isDefined) Some(BgSpecValidation.formatToISODate(transaction.finishDate.orNull)) else None
     
     val creditorName = transaction.otherBankAccount.map(_.label.display).getOrElse("")
     val creditorAccountIban = stringOrNone(transaction.otherBankAccount.map(_.iban.getOrElse("")).getOrElse(""))
@@ -502,7 +502,7 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
           transaction.amount.get.toString()
       ),
       bookingDate = Some(BgSpecValidation.formatToISODate(bookingDate)) ,
-      valueDate = Some(BgSpecValidation.formatToISODate(valueDate)),
+      valueDate = valueDate,
       remittanceInformationUnstructured = transaction.description
     )
   }
