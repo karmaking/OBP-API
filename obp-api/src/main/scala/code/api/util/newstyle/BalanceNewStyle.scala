@@ -37,6 +37,8 @@ object BalanceNewStyle {
     Future {
       val (views, accountAccesses) = Views.views.vend.privateViewsUserCanAccessAtBank(user, bankId)
       // Filter views which can read the balance
+//      println("xxxxxxx")
+      println(views.map(_.allowed_actions))
       val canSeeBankAccountBalanceViews = views.filter(_.allowed_actions.exists( _ == CAN_SEE_BANK_ACCOUNT_BALANCE))
       // Filter accounts the user has permission to see balances and remove duplicates
       val allowedAccounts = APIUtil.intersectAccountAccessAndView(accountAccesses, canSeeBankAccountBalanceViews)
