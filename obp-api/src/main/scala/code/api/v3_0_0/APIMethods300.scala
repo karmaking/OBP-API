@@ -210,7 +210,7 @@ trait APIMethods300 {
               (account, callContext) <- NewStyle.function.getBankAccount(bankId, accountId, callContext)
 
               anyViewContainsCanCreateCustomViewPermission = Views.views.vend.permission(BankIdAccountId(account.bankId, account.accountId), u)
-                .map(_.views.map(_.allowed_actions.exists(_ == CAN_CREATE_CUSTOM_VIEW)).find(_.==(true)).getOrElse(false)).getOrElse(false)
+                .map(_.views.map(_.allowed_actions.exists(_ == CAN_CREATE_CUSTOM_VIEW))).getOrElse(Nil).find(_.==(true)).getOrElse(false)
               
               _ <- Helper.booleanToFuture(
                 s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${StringHelpers.snakify(CAN_CREATE_CUSTOM_VIEW)}` permission on any your views",
@@ -250,7 +250,7 @@ trait APIMethods300 {
             (_, callContext) <- NewStyle.function.getBank(bankId, callContext)
             (account, callContext) <- NewStyle.function.checkBankAccountExists(bankId, accountId, callContext)
             anyViewContainsCanSeePermissionForOneUserPermission = Views.views.vend.permission(BankIdAccountId(account.bankId, account.accountId), loggedInUser)
-              .map(_.views.map(_.allowed_actions.exists(_ == CAN_SEE_VIEWS_WITH_PERMISSIONS_FOR_ONE_USER)).find(_.==(true)).getOrElse(false)).getOrElse(false)
+              .map(_.views.map(_.allowed_actions.exists(_ == CAN_SEE_VIEWS_WITH_PERMISSIONS_FOR_ONE_USER))).getOrElse(Nil).find(_.==(true)).getOrElse(false)
             _ <- Helper.booleanToFuture(
               s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${StringHelpers.snakify(CAN_SEE_VIEWS_WITH_PERMISSIONS_FOR_ONE_USER)}` permission on any your views",
               cc = callContext
@@ -316,7 +316,7 @@ trait APIMethods300 {
               (account, callContext) <- NewStyle.function.getBankAccount(bankId, accountId, callContext)
 
               anyViewContainsCancanUpdateCustomViewPermission = Views.views.vend.permission(BankIdAccountId(account.bankId, account.accountId), u)
-                .map(_.views.map(_.allowed_actions.exists(_ == CAN_UPDATE_CUSTOM_VIEW)).find(_.==(true)).getOrElse(false)).getOrElse(false)
+                .map(_.views.map(_.allowed_actions.exists(_ == CAN_UPDATE_CUSTOM_VIEW))).getOrElse(Nil).find(_.==(true)).getOrElse(false)
 
               _ <- Helper.booleanToFuture(
                 s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${StringHelpers.snakify(CAN_UPDATE_CUSTOM_VIEW)}` permission on any your views",

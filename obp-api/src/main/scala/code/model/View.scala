@@ -67,60 +67,60 @@ case class ViewExtended(val view: View) {
 
       //transaction metadata
       val transactionMetadata =
-        if(viewPermissions.exists(_ == "canSeeTransactionMetadata"))
+        if(viewPermissions.exists(_ == CAN_SEE_TRANSACTION_METADATA))
         {
-          val ownerComment = if (viewPermissions.exists(_ == "canSeeOwnerComment")) Some(transaction.metadata.ownerComment()) else None
+          val ownerComment = if (viewPermissions.exists(_ == CAN_SEE_OWNER_COMMENT)) Some(transaction.metadata.ownerComment()) else None
           val comments =
-            if (viewPermissions.exists(_ == "canSeeComments"))
+            if (viewPermissions.exists(_ == CAN_SEE_COMMENTS))
               Some(transaction.metadata.comments(view.viewId))
             else None
-          val addCommentFunc= if(viewPermissions.exists(_ == "canAddComment")) Some(transaction.metadata.addComment) else None
+          val addCommentFunc= if(viewPermissions.exists(_ == CAN_ADD_COMMENT)) Some(transaction.metadata.addComment) else None
           val deleteCommentFunc =
-            if(viewPermissions.exists(_ == "canDeleteComment"))
+            if(viewPermissions.exists(_ == CAN_DELETE_COMMENT))
               Some(transaction.metadata.deleteComment)
             else
               None
-          val addOwnerCommentFunc:Option[String=> Boolean] = if (viewPermissions.exists(_ == "canEditOwnerComment")) Some(transaction.metadata.addOwnerComment) else None
+          val addOwnerCommentFunc:Option[String=> Boolean] = if (viewPermissions.exists(_ == CAN_EDIT_OWNER_COMMENT)) Some(transaction.metadata.addOwnerComment) else None
           val tags =
-            if(viewPermissions.exists(_ == "canSeeTags"))
+            if(viewPermissions.exists(_ == CAN_SEE_TAGS))
               Some(transaction.metadata.tags(view.viewId))
             else None
           val addTagFunc =
-            if(viewPermissions.exists(_ == "canAddTag"))
+            if(viewPermissions.exists(_ == CAN_ADD_TAG))
               Some(transaction.metadata.addTag)
             else
               None
           val deleteTagFunc =
-            if(viewPermissions.exists(_ == "canDeleteTag"))
+            if(viewPermissions.exists(_ == CAN_DELETE_TAG))
               Some(transaction.metadata.deleteTag)
             else
               None
           val images =
-            if(viewPermissions.exists(_ == "canSeeImages")) Some(transaction.metadata.images(view.viewId))
+            if(viewPermissions.exists(_ == CAN_SEE_IMAGES)) Some(transaction.metadata.images(view.viewId))
             else None
 
           val addImageFunc =
-            if(viewPermissions.exists(_ == "canAddImage")) Some(transaction.metadata.addImage)
+            if(viewPermissions.exists(_ == CAN_ADD_IMAGE)) Some(transaction.metadata.addImage)
             else None
 
           val deleteImageFunc =
-            if(viewPermissions.exists(_ == "canDeleteImage")) Some(transaction.metadata.deleteImage)
+            if(viewPermissions.exists(_ == CAN_DELETE_IMAGE)) Some(transaction.metadata.deleteImage)
             else None
 
           val whereTag =
-            if(viewPermissions.exists(_ == "canSeeWhereTag"))
+            if(viewPermissions.exists(_ == CAN_SEE_WHERE_TAG))
               Some(transaction.metadata.whereTags(view.viewId))
             else
               None
 
           val addWhereTagFunc : Option[(UserPrimaryKey, ViewId, Date, Double, Double) => Boolean] =
-            if(viewPermissions.exists(_ == "canAddWhereTag"))
+            if(viewPermissions.exists(_ == CAN_ADD_WHERE_TAG))
               Some(transaction.metadata.addWhereTag)
             else
               Empty
 
           val deleteWhereTagFunc : Option[(ViewId) => Boolean] =
-            if (viewPermissions.exists(_ == "canDeleteWhereTag"))
+            if (viewPermissions.exists(_ == CAN_DELETE_WHERE_TAG))
               Some(transaction.metadata.deleteWhereTag)
             else
               Empty
@@ -149,35 +149,35 @@ case class ViewExtended(val view: View) {
           None
 
       val transactionType =
-        if (viewPermissions.exists(_ == "canSeeTransactionType")) Some(transaction.transactionType)
+        if (viewPermissions.exists(_ == CAN_SEE_TRANSACTION_TYPE)) Some(transaction.transactionType)
         else None
 
       val transactionAmount =
-        if (viewPermissions.exists(_ == "canSeeTransactionAmount")) Some(transaction.amount)
+        if (viewPermissions.exists(_ == CAN_SEE_TRANSACTION_AMOUNT)) Some(transaction.amount)
         else None
 
       val transactionCurrency =
-        if (viewPermissions.exists(_ == "canSeeTransactionCurrency")) Some(transaction.currency)
+        if (viewPermissions.exists(_ == CAN_SEE_TRANSACTION_CURRENCY)) Some(transaction.currency)
         else None
 
       val transactionDescription =
-        if (viewPermissions.exists(_ == "canSeeTransactionDescription")) transaction.description
+        if (viewPermissions.exists(_ == CAN_SEE_TRANSACTION_DESCRIPTION)) transaction.description
         else None
 
       val transactionStartDate =
-        if (viewPermissions.exists(_ == "canSeeTransactionStartDate")) Some(transaction.startDate)
+        if (viewPermissions.exists(_ == CAN_SEE_TRANSACTION_START_DATE)) Some(transaction.startDate)
         else None
 
       val transactionFinishDate =
-        if (viewPermissions.exists(_ == "canSeeTransactionFinishDate")) Some(transaction.finishDate)
+        if (viewPermissions.exists(_ == CAN_SEE_TRANSACTION_FINISH_DATE)) Some(transaction.finishDate)
         else None
 
       val transactionBalance =
-        if (viewPermissions.exists(_ == "canSeeTransactionBalance") && transaction.balance != null) transaction.balance.toString()
+        if (viewPermissions.exists(_ == CAN_SEE_TRANSACTION_BALANCE) && transaction.balance != null) transaction.balance.toString()
         else ""
 
       val transactionStatus =
-        if (viewPermissions.exists(_ == "canSeeTransactionStatus")) transaction.status
+        if (viewPermissions.exists(_ == CAN_SEE_TRANSACTION_STATUS)) transaction.status
         else ""
 
       new ModeratedTransaction(
@@ -223,31 +223,31 @@ case class ViewExtended(val view: View) {
       val otherBankAccount = moderateCore(transactionCore.otherAccount)
 
       val transactionType =
-        if (viewPermissions.exists(_ == "canSeeTransactionType")) Some(transactionCore.transactionType)
+        if (viewPermissions.exists(_ == CAN_SEE_TRANSACTION_TYPE)) Some(transactionCore.transactionType)
         else None
 
       val transactionAmount =
-        if (viewPermissions.exists(_ == "canSeeTransactionAmount")) Some(transactionCore.amount)
+        if (viewPermissions.exists(_ == CAN_SEE_TRANSACTION_AMOUNT)) Some(transactionCore.amount)
         else None
 
       val transactionCurrency =
-        if (viewPermissions.exists(_ == "canSeeTransactionCurrency")) Some(transactionCore.currency)
+        if (viewPermissions.exists(_ == CAN_SEE_TRANSACTION_CURRENCY)) Some(transactionCore.currency)
         else None
 
       val transactionDescription =
-        if (viewPermissions.exists(_ == "canSeeTransactionDescription")) transactionCore.description
+        if (viewPermissions.exists(_ == CAN_SEE_TRANSACTION_DESCRIPTION)) transactionCore.description
         else None
 
       val transactionStartDate =
-        if (viewPermissions.exists(_ == "canSeeTransactionStartDate")) Some(transactionCore.startDate)
+        if (viewPermissions.exists(_ == CAN_SEE_TRANSACTION_START_DATE)) Some(transactionCore.startDate)
         else None
 
       val transactionFinishDate =
-        if (viewPermissions.exists(_ == "canSeeTransactionFinishDate")) Some(transactionCore.finishDate)
+        if (viewPermissions.exists(_ == CAN_SEE_TRANSACTION_FINISH_DATE)) Some(transactionCore.finishDate)
         else None
 
       val transactionBalance =
-        if (viewPermissions.exists(_ == "canSeeTransactionBalance") && transactionCore.balance != null) transactionCore.balance.toString()
+        if (viewPermissions.exists(_ == CAN_SEE_TRANSACTION_BALANCE) && transactionCore.balance != null) transactionCore.balance.toString()
         else ""
 
       new ModeratedTransactionCore(
@@ -327,27 +327,27 @@ case class ViewExtended(val view: View) {
   def moderateAccount(bank: Bank, bankAccount: BankAccount) : Box[ModeratedBankAccount] = {
     val viewPermissions = getViewPermissions
 
-    if(viewPermissions.exists(_ == "canSeeTransactionThisBankAccount"))
+    if(viewPermissions.exists(_ == CAN_SEE_TRANSACTION_THIS_BANK_ACCOUNT))
     {
-      val owners : Set[User] = if(viewPermissions.exists(_ == "canSeeBankAccountOwners")) bankAccount.userOwners else Set()
-      val balance = if(viewPermissions.exists(_ == "canSeeBankAccountBalance") && bankAccount.balance != null) bankAccount.balance.toString else ""
-      val accountType = if(viewPermissions.exists(_ == "canSeeBankAccountType")) Some(bankAccount.accountType) else None
-      val currency = if(viewPermissions.exists(_ == "canSeeBankAccountCurrency")) Some(bankAccount.currency) else None
-      val label = if (viewPermissions.exists(_ == "canSeeBankAccountLabel")) Some(bankAccount.label) else None
-      val iban = if (viewPermissions.exists(_ == "canSeeBankAccountIban")) bankAccount.accountRoutings.find(_.scheme == AccountRoutingScheme.IBAN.toString).map(_.address) else None
-      val number = if (viewPermissions.exists(_ == "canSeeBankAccountNumber")) Some(bankAccount.number) else None
+      val owners : Set[User] = if(viewPermissions.exists(_ == CAN_SEE_BANK_ACCOUNT_OWNERS)) bankAccount.userOwners else Set()
+      val balance = if(viewPermissions.exists(_ == CAN_SEE_BANK_ACCOUNT_BALANCE) && bankAccount.balance != null) bankAccount.balance.toString else ""
+      val accountType = if(viewPermissions.exists(_ == CAN_SEE_BANK_ACCOUNT_TYPE)) Some(bankAccount.accountType) else None
+      val currency = if(viewPermissions.exists(_ == CAN_SEE_BANK_ACCOUNT_CURRENCY)) Some(bankAccount.currency) else None
+      val label = if (viewPermissions.exists(_ == CAN_SEE_BANK_ACCOUNT_LABEL)) Some(bankAccount.label) else None
+      val iban = if (viewPermissions.exists(_ == CAN_SEE_BANK_ACCOUNT_IBAN)) bankAccount.accountRoutings.find(_.scheme == AccountRoutingScheme.IBAN.toString).map(_.address) else None
+      val number = if (viewPermissions.exists(_ == CAN_SEE_BANK_ACCOUNT_NUMBER)) Some(bankAccount.number) else None
       //From V300, use scheme and address stuff...
-      val accountRoutingScheme = if (viewPermissions.exists(_ == "canSeeBankAccountRoutingScheme")) bankAccount.accountRoutings.headOption.map(_.scheme) else None
-      val accountRoutingAddress = if (viewPermissions.exists(_ == "canSeeBankAccountRoutingAddress")) bankAccount.accountRoutings.headOption.map(_.address) else None
-      val accountRoutings = if (viewPermissions.exists(_ == "canSeeBankAccountRoutingScheme") && viewPermissions.exists(_ == "canSeeBankAccountRoutingAddress")) bankAccount.accountRoutings else Nil
-      val accountRules = if (viewPermissions.exists(_ == "canSeeBankAccountCreditLimit")) bankAccount.accountRules else Nil
+      val accountRoutingScheme = if (viewPermissions.exists(_ == CAN_SEE_BANK_ACCOUNT_ROUTING_SCHEME)) bankAccount.accountRoutings.headOption.map(_.scheme) else None
+      val accountRoutingAddress = if (viewPermissions.exists(_ == CAN_SEE_BANK_ACCOUNT_ROUTING_ADDRESS)) bankAccount.accountRoutings.headOption.map(_.address) else None
+      val accountRoutings = if (viewPermissions.exists(_ == CAN_SEE_BANK_ACCOUNT_ROUTING_SCHEME) && viewPermissions.exists(_ == CAN_SEE_BANK_ACCOUNT_ROUTING_ADDRESS)) bankAccount.accountRoutings else Nil
+      val accountRules = if (viewPermissions.exists(_ == CAN_SEE_BANK_ACCOUNT_CREDIT_LIMIT)) bankAccount.accountRules else Nil
 
       //followings are from the bank object.
       val bankId = bank.bankId
-      val bankName = if (viewPermissions.exists(_ == "canSeeBankAccountBankName")) Some(bank.fullName) else None
-      val nationalIdentifier = if (viewPermissions.exists(_ == "canSeeBankAccountNationalIdentifier")) Some(bank.nationalIdentifier) else None
-      val bankRoutingScheme = if (viewPermissions.exists(_ == "canSeeBankRoutingScheme")) Some(bank.bankRoutingScheme) else None
-      val bankRoutingAddress = if (viewPermissions.exists(_ == "canSeeBankRoutingAddress")) Some(bank.bankRoutingAddress) else None
+      val bankName = if (viewPermissions.exists(_ == CAN_SEE_BANK_ACCOUNT_BANK_NAME)) Some(bank.fullName) else None
+      val nationalIdentifier = if (viewPermissions.exists(_ == CAN_SEE_BANK_ACCOUNT_NATIONAL_IDENTIFIER)) Some(bank.nationalIdentifier) else None
+      val bankRoutingScheme = if (viewPermissions.exists(_ == CAN_SEE_BANK_ROUTING_SCHEME)) Some(bank.bankRoutingScheme) else None
+      val bankRoutingAddress = if (viewPermissions.exists(_ == CAN_SEE_BANK_ROUTING_ADDRESS)) Some(bank.bankRoutingAddress) else None
 
       Some(
         new ModeratedBankAccount(
@@ -381,25 +381,25 @@ case class ViewExtended(val view: View) {
   def moderateAccountLegacy(bankAccount: BankAccount) : Box[ModeratedBankAccount] = {
     val viewPermissions = getViewPermissions
 
-    if(viewPermissions.exists(_ == "canSeeTransactionThisBankAccount"))
+    if(viewPermissions.exists(_ == CAN_SEE_TRANSACTION_THIS_BANK_ACCOUNT))
     {
-      val owners : Set[User] = if(viewPermissions.exists(_ == "canSeeBankAccountOwners")) bankAccount.userOwners else Set()
-      val balance = if(viewPermissions.exists(_ == "canSeeBankAccountBalance") && bankAccount.balance !=null) bankAccount.balance.toString else ""
-      val accountType = if(viewPermissions.exists(_ == "canSeeBankAccountType")) Some(bankAccount.accountType) else None
-      val currency = if(viewPermissions.exists(_ == "canSeeBankAccountCurrency")) Some(bankAccount.currency) else None
-      val label = if(viewPermissions.exists(_ == "canSeeBankAccountLabel")) Some(bankAccount.label) else None
-      val nationalIdentifier = if(viewPermissions.exists(_ == "canSeeBankAccountNationalIdentifier")) Some(bankAccount.nationalIdentifier) else None
-      val iban = if(viewPermissions.exists(_ == "canSeeBankAccountIban")) bankAccount.accountRoutings.find(_.scheme == AccountRoutingScheme.IBAN.toString).map(_.address) else None
-      val number = if(viewPermissions.exists(_ == "canSeeBankAccountNumber")) Some(bankAccount.number) else None
-      val bankName = if(viewPermissions.exists(_ == "canSeeBankAccountBankName")) Some(bankAccount.bankName) else None
+      val owners : Set[User] = if(viewPermissions.exists(_ == CAN_SEE_BANK_ACCOUNT_OWNERS)) bankAccount.userOwners else Set()
+      val balance = if(viewPermissions.exists(_ == CAN_SEE_BANK_ACCOUNT_BALANCE) && bankAccount.balance !=null) bankAccount.balance.toString else ""
+      val accountType = if(viewPermissions.exists(_ == CAN_SEE_BANK_ACCOUNT_TYPE)) Some(bankAccount.accountType) else None
+      val currency = if(viewPermissions.exists(_ == CAN_SEE_BANK_ACCOUNT_CURRENCY)) Some(bankAccount.currency) else None
+      val label = if(viewPermissions.exists(_ == CAN_SEE_BANK_ACCOUNT_LABEL)) Some(bankAccount.label) else None
+      val nationalIdentifier = if(viewPermissions.exists(_ == CAN_SEE_BANK_ACCOUNT_NATIONAL_IDENTIFIER)) Some(bankAccount.nationalIdentifier) else None
+      val iban = if(viewPermissions.exists(_ == CAN_SEE_BANK_ACCOUNT_IBAN)) bankAccount.accountRoutings.find(_.scheme == AccountRoutingScheme.IBAN.toString).map(_.address) else None
+      val number = if(viewPermissions.exists(_ == CAN_SEE_BANK_ACCOUNT_NUMBER)) Some(bankAccount.number) else None
+      val bankName = if(viewPermissions.exists(_ == CAN_SEE_BANK_ACCOUNT_BANK_NAME)) Some(bankAccount.bankName) else None
       val bankId = bankAccount.bankId
       //From V300, use scheme and address stuff...
-      val bankRoutingScheme = if(viewPermissions.exists(_ == "canSeeBankRoutingScheme")) Some(bankAccount.bankRoutingScheme) else None
-      val bankRoutingAddress = if(viewPermissions.exists(_ == "canSeeBankRoutingAddress")) Some(bankAccount.bankRoutingAddress) else None
-      val accountRoutingScheme = if(viewPermissions.exists(_ == "canSeeBankAccountRoutingScheme")) bankAccount.accountRoutings.headOption.map(_.scheme) else None
-      val accountRoutingAddress = if(viewPermissions.exists(_ == "canSeeBankAccountRoutingAddress")) bankAccount.accountRoutings.headOption.map(_.address) else None
-      val accountRoutings = if(viewPermissions.exists(_ == "canSeeBankAccountRoutingScheme") && viewPermissions.exists(_ == "canSeeBankAccountRoutingAddress")) bankAccount.accountRoutings else Nil
-      val accountRules = if(viewPermissions.exists(_ == "canSeeBankAccountCreditLimit")) bankAccount.accountRules else Nil
+      val bankRoutingScheme = if(viewPermissions.exists(_ == CAN_SEE_BANK_ROUTING_SCHEME)) Some(bankAccount.bankRoutingScheme) else None
+      val bankRoutingAddress = if(viewPermissions.exists(_ == CAN_SEE_BANK_ROUTING_ADDRESS)) Some(bankAccount.bankRoutingAddress) else None
+      val accountRoutingScheme = if(viewPermissions.exists(_ == CAN_SEE_BANK_ACCOUNT_ROUTING_SCHEME)) bankAccount.accountRoutings.headOption.map(_.scheme) else None
+      val accountRoutingAddress = if(viewPermissions.exists(_ == CAN_SEE_BANK_ACCOUNT_ROUTING_ADDRESS)) bankAccount.accountRoutings.headOption.map(_.address) else None
+      val accountRoutings = if(viewPermissions.exists(_ == CAN_SEE_BANK_ACCOUNT_ROUTING_SCHEME) && viewPermissions.exists(_ == CAN_SEE_BANK_ACCOUNT_ROUTING_ADDRESS)) bankAccount.accountRoutings else Nil
+      val accountRules = if(viewPermissions.exists(_ == CAN_SEE_BANK_ACCOUNT_CREDIT_LIMIT)) bankAccount.accountRules else Nil
 
       Some(
         new ModeratedBankAccount(
@@ -429,19 +429,19 @@ case class ViewExtended(val view: View) {
 
   def moderateAccountCore(bankAccount: BankAccount) : Box[ModeratedBankAccountCore] = {
     val viewPermissions = getViewPermissions
-    
-    if(viewPermissions.exists(_ == "canSeeTransactionThisBankAccount"))
+
+    if(viewPermissions.exists(_ == CAN_SEE_TRANSACTION_THIS_BANK_ACCOUNT))
     {
-      val owners : Set[User] = if(viewPermissions.exists(_ == "canSeeBankAccountOwners")) bankAccount.userOwners else Set()
-      val balance = if(viewPermissions.exists(_ == "canSeeBankAccountBalance") && bankAccount.balance != null) Some(bankAccount.balance.toString) else None
-      val accountType = if(viewPermissions.exists(_ == "canSeeBankAccountType")) Some(bankAccount.accountType) else None
-      val currency = if(viewPermissions.exists(_ == "canSeeBankAccountCurrency")) Some(bankAccount.currency) else None
-      val label = if(viewPermissions.exists(_ == "canSeeBankAccountLabel")) Some(bankAccount.label) else None
-      val number = if(viewPermissions.exists(_ == "canSeeBankAccountNumber")) Some(bankAccount.number) else None
+      val owners : Set[User] = if(viewPermissions.exists(_ == CAN_SEE_BANK_ACCOUNT_OWNERS)) bankAccount.userOwners else Set()
+      val balance = if(viewPermissions.exists(_ == CAN_SEE_BANK_ACCOUNT_BALANCE) && bankAccount.balance != null) Some(bankAccount.balance.toString) else None
+      val accountType = if(viewPermissions.exists(_ == CAN_SEE_BANK_ACCOUNT_TYPE)) Some(bankAccount.accountType) else None
+      val currency = if(viewPermissions.exists(_ == CAN_SEE_BANK_ACCOUNT_CURRENCY)) Some(bankAccount.currency) else None
+      val label = if(viewPermissions.exists(_ == CAN_SEE_BANK_ACCOUNT_LABEL)) Some(bankAccount.label) else None
+      val number = if(viewPermissions.exists(_ == CAN_SEE_BANK_ACCOUNT_NUMBER)) Some(bankAccount.number) else None
       val bankId = bankAccount.bankId
       //From V300, use scheme and address stuff...
-      val accountRoutings = if(viewPermissions.exists(_ == "canSeeBankAccountRoutingScheme") && viewPermissions.exists(_ == "canSeeBankAccountRoutingAddress")) bankAccount.accountRoutings else Nil
-      val accountRules = if(viewPermissions.exists(_ == "canSeeBankAccountCreditLimit")) bankAccount.accountRules else Nil
+      val accountRoutings = if(viewPermissions.exists(_ == CAN_SEE_BANK_ACCOUNT_ROUTING_SCHEME) && viewPermissions.exists(_ == CAN_SEE_BANK_ACCOUNT_ROUTING_ADDRESS)) bankAccount.accountRoutings else Nil
+      val accountRules = if(viewPermissions.exists(_ == CAN_SEE_BANK_ACCOUNT_CREDIT_LIMIT)) bankAccount.accountRules else Nil
 
       Some(
         ModeratedBankAccountCore(
@@ -465,8 +465,8 @@ case class ViewExtended(val view: View) {
   // Moderate the Counterparty side of the Transaction (i.e. the Other Account involved in the transaction)
   def moderateOtherAccount(otherBankAccount : Counterparty) : Box[ModeratedOtherBankAccount] = {
     val viewPermissions = getViewPermissions
-    
-    if (viewPermissions.exists(_ == "canSeeTransactionOtherBankAccount"))
+
+    if (viewPermissions.exists(_ == CAN_SEE_TRANSACTION_OTHER_BANK_ACCOUNT))
     {
       //other account data
       val otherAccountId = otherBankAccount.counterpartyId
@@ -507,37 +507,37 @@ case class ViewExtended(val view: View) {
       }
 
       implicit def optionStringToString(x : Option[String]) : String = x.getOrElse("")
-      val otherAccountNationalIdentifier = if(viewPermissions.exists(_ == "canSeeOtherAccountNationalIdentifier")) Some(otherBankAccount.nationalIdentifier) else None
-      val otherAccountSWIFT_BIC = if(viewPermissions.exists(_ == "canSeeOtherAccountSWIFT_BIC")) otherBankAccount.otherBankRoutingAddress else None
-      val otherAccountIBAN = if(viewPermissions.exists(_ == "canSeeOtherAccountIBAN")) otherBankAccount.otherAccountRoutingAddress else None
-      val otherAccountBankName = if(viewPermissions.exists(_ == "canSeeOtherAccountBankName")) Some(otherBankAccount.thisBankId.value) else None
-      val otherAccountNumber = if(viewPermissions.exists(_ == "canSeeOtherAccountNumber")) Some(otherBankAccount.thisAccountId.value) else None
-      val otherAccountKind = if(viewPermissions.exists(_ == "canSeeOtherAccountKind")) Some(otherBankAccount.kind) else None
-      val otherBankRoutingScheme = if(viewPermissions.exists(_ == "canSeeOtherBankRoutingScheme")) Some(otherBankAccount.otherBankRoutingScheme) else None
-      val otherBankRoutingAddress = if(viewPermissions.exists(_ == "canSeeOtherBankRoutingAddress")) otherBankAccount.otherBankRoutingAddress else None
-      val otherAccountRoutingScheme = if(viewPermissions.exists(_ == "canSeeOtherAccountRoutingScheme")) Some(otherBankAccount.otherAccountRoutingScheme) else None
-      val otherAccountRoutingAddress = if(viewPermissions.exists(_ == "canSeeOtherAccountRoutingAddress")) otherBankAccount.otherAccountRoutingAddress else None
+      val otherAccountNationalIdentifier = if(viewPermissions.exists(_ == CAN_SEE_OTHER_ACCOUNT_NATIONAL_IDENTIFIER)) Some(otherBankAccount.nationalIdentifier) else None
+      val otherAccountSWIFT_BIC = if(viewPermissions.exists(_ == CAN_SEE_OTHER_ACCOUNT_SWIFT_BIC)) otherBankAccount.otherBankRoutingAddress else None
+      val otherAccountIBAN = if(viewPermissions.exists(_ == CAN_SEE_OTHER_ACCOUNT_IBAN)) otherBankAccount.otherAccountRoutingAddress else None
+      val otherAccountBankName = if(viewPermissions.exists(_ == CAN_SEE_OTHER_ACCOUNT_BANK_NAME)) Some(otherBankAccount.thisBankId.value) else None
+      val otherAccountNumber = if(viewPermissions.exists(_ == CAN_SEE_OTHER_ACCOUNT_NUMBER)) Some(otherBankAccount.thisAccountId.value) else None
+      val otherAccountKind = if(viewPermissions.exists(_ == CAN_SEE_OTHER_ACCOUNT_KIND)) Some(otherBankAccount.kind) else None
+      val otherBankRoutingScheme = if(viewPermissions.exists(_ == CAN_SEE_OTHER_BANK_ROUTING_SCHEME)) Some(otherBankAccount.otherBankRoutingScheme) else None
+      val otherBankRoutingAddress = if(viewPermissions.exists(_ == CAN_SEE_OTHER_BANK_ROUTING_ADDRESS)) otherBankAccount.otherBankRoutingAddress else None
+      val otherAccountRoutingScheme = if(viewPermissions.exists(_ == CAN_SEE_OTHER_ACCOUNT_ROUTING_SCHEME)) Some(otherBankAccount.otherAccountRoutingScheme) else None
+      val otherAccountRoutingAddress = if(viewPermissions.exists(_ == CAN_SEE_OTHER_ACCOUNT_ROUTING_ADDRESS)) otherBankAccount.otherAccountRoutingAddress else None
       val otherAccountMetadata =
-        if(viewPermissions.exists(_ == "canSeeOtherAccountMetadata")){
+        if(viewPermissions.exists(_ == CAN_SEE_OTHER_ACCOUNT_METADATA)){
           //other bank account metadata
-          val moreInfo = moderateField(viewPermissions.exists(_ == "canSeeMoreInfo"), Counterparties.counterparties.vend.getMoreInfo(otherBankAccount.counterpartyId).getOrElse("Unknown"))
-          val url = moderateField(viewPermissions.exists(_ == "canSeeUrl"), Counterparties.counterparties.vend.getUrl(otherBankAccount.counterpartyId).getOrElse("Unknown"))
-          val imageUrl = moderateField(viewPermissions.exists(_ == "canSeeImageUrl"), Counterparties.counterparties.vend.getImageURL(otherBankAccount.counterpartyId).getOrElse("Unknown"))
-          val openCorporatesUrl = moderateField (viewPermissions.exists(_ == "canSeeOpenCorporatesUrl"), Counterparties.counterparties.vend.getOpenCorporatesURL(otherBankAccount.counterpartyId).getOrElse("Unknown"))
-          val corporateLocation : Option[Option[GeoTag]] = moderateField(viewPermissions.exists(_ == "canSeeCorporateLocation"), Counterparties.counterparties.vend.getCorporateLocation(otherBankAccount.counterpartyId).toOption)
-          val physicalLocation : Option[Option[GeoTag]] = moderateField(viewPermissions.exists(_ == "canSeePhysicalLocation"), Counterparties.counterparties.vend.getPhysicalLocation(otherBankAccount.counterpartyId).toOption)
-          val addMoreInfo = moderateField(viewPermissions.exists(_ == "canAddMoreInfo"), otherBankAccount.metadata.addMoreInfo)
-          val addURL = moderateField(viewPermissions.exists(_ == "canAddURL"), otherBankAccount.metadata.addURL)
-          val addImageURL = moderateField(viewPermissions.exists(_ == "canAddImageURL"), otherBankAccount.metadata.addImageURL)
-          val addOpenCorporatesUrl = moderateField(viewPermissions.exists(_ == "canAddOpenCorporatesUrl"), otherBankAccount.metadata.addOpenCorporatesURL)
-          val addCorporateLocation = moderateField(viewPermissions.exists(_ == "canAddCorporateLocation"), otherBankAccount.metadata.addCorporateLocation)
-          val addPhysicalLocation = moderateField(viewPermissions.exists(_ == "canAddPhysicalLocation"), otherBankAccount.metadata.addPhysicalLocation)
-          val publicAlias = moderateField(viewPermissions.exists(_ == "canSeePublicAlias"), Counterparties.counterparties.vend.getPublicAlias(otherBankAccount.counterpartyId).getOrElse("Unknown"))
-          val privateAlias = moderateField(viewPermissions.exists(_ == "canSeePrivateAlias"), Counterparties.counterparties.vend.getPrivateAlias(otherBankAccount.counterpartyId).getOrElse("Unknown"))
-          val addPublicAlias = moderateField(viewPermissions.exists(_ == "canAddPublicAlias"), otherBankAccount.metadata.addPublicAlias)
-          val addPrivateAlias = moderateField(viewPermissions.exists(_ == "canAddPrivateAlias"), otherBankAccount.metadata.addPrivateAlias)
-          val deleteCorporateLocation = moderateField(viewPermissions.exists(_ == "canDeleteCorporateLocation"), otherBankAccount.metadata.deleteCorporateLocation)
-          val deletePhysicalLocation= moderateField(viewPermissions.exists(_ == "canDeletePhysicalLocation"), otherBankAccount.metadata.deletePhysicalLocation)
+          val moreInfo = moderateField(viewPermissions.exists(_ == CAN_SEE_MORE_INFO), Counterparties.counterparties.vend.getMoreInfo(otherBankAccount.counterpartyId).getOrElse("Unknown"))
+          val url = moderateField(viewPermissions.exists(_ == CAN_SEE_URL), Counterparties.counterparties.vend.getUrl(otherBankAccount.counterpartyId).getOrElse("Unknown"))
+          val imageUrl = moderateField(viewPermissions.exists(_ == CAN_SEE_IMAGE_URL), Counterparties.counterparties.vend.getImageURL(otherBankAccount.counterpartyId).getOrElse("Unknown"))
+          val openCorporatesUrl = moderateField (viewPermissions.exists(_ == CAN_SEE_OPEN_CORPORATES_URL), Counterparties.counterparties.vend.getOpenCorporatesURL(otherBankAccount.counterpartyId).getOrElse("Unknown"))
+          val corporateLocation : Option[Option[GeoTag]] = moderateField(viewPermissions.exists(_ == CAN_SEE_CORPORATE_LOCATION), Counterparties.counterparties.vend.getCorporateLocation(otherBankAccount.counterpartyId).toOption)
+          val physicalLocation : Option[Option[GeoTag]] = moderateField(viewPermissions.exists(_ == CAN_SEE_PHYSICAL_LOCATION), Counterparties.counterparties.vend.getPhysicalLocation(otherBankAccount.counterpartyId).toOption)
+          val addMoreInfo = moderateField(viewPermissions.exists(_ == CAN_ADD_MORE_INFO), otherBankAccount.metadata.addMoreInfo)
+          val addURL = moderateField(viewPermissions.exists(_ == CAN_ADD_URL), otherBankAccount.metadata.addURL)
+          val addImageURL = moderateField(viewPermissions.exists(_ == CAN_ADD_IMAGE_URL), otherBankAccount.metadata.addImageURL)
+          val addOpenCorporatesUrl = moderateField(viewPermissions.exists(_ == CAN_ADD_OPEN_CORPORATES_URL), otherBankAccount.metadata.addOpenCorporatesURL)
+          val addCorporateLocation = moderateField(viewPermissions.exists(_ == CAN_ADD_CORPORATE_LOCATION), otherBankAccount.metadata.addCorporateLocation)
+          val addPhysicalLocation = moderateField(viewPermissions.exists(_ == CAN_ADD_PHYSICAL_LOCATION), otherBankAccount.metadata.addPhysicalLocation)
+          val publicAlias = moderateField(viewPermissions.exists(_ == CAN_SEE_PUBLIC_ALIAS), Counterparties.counterparties.vend.getPublicAlias(otherBankAccount.counterpartyId).getOrElse("Unknown"))
+          val privateAlias = moderateField(viewPermissions.exists(_ == CAN_SEE_PRIVATE_ALIAS), Counterparties.counterparties.vend.getPrivateAlias(otherBankAccount.counterpartyId).getOrElse("Unknown"))
+          val addPublicAlias = moderateField(viewPermissions.exists(_ == CAN_ADD_PUBLIC_ALIAS), otherBankAccount.metadata.addPublicAlias)
+          val addPrivateAlias = moderateField(viewPermissions.exists(_ == CAN_ADD_PRIVATE_ALIAS), otherBankAccount.metadata.addPrivateAlias)
+          val deleteCorporateLocation = moderateField(viewPermissions.exists(_ == CAN_DELETE_CORPORATE_LOCATION), otherBankAccount.metadata.deleteCorporateLocation)
+          val deletePhysicalLocation= moderateField(viewPermissions.exists(_ == CAN_DELETE_PHYSICAL_LOCATION), otherBankAccount.metadata.deletePhysicalLocation)
 
           Some(
             new ModeratedOtherBankAccountMetadata(
@@ -589,8 +589,8 @@ case class ViewExtended(val view: View) {
 
   def moderateCore(counterpartyCore : CounterpartyCore) : Box[ModeratedOtherBankAccountCore] = {
     val viewPermissions = getViewPermissions
-    
-    if (viewPermissions.exists(_ == "canSeeTransactionOtherBankAccount"))
+
+    if (viewPermissions.exists(_ == CAN_SEE_TRANSACTION_OTHER_BANK_ACCOUNT))
     {
       //other account data
       val otherAccountId = counterpartyCore.counterpartyId
@@ -609,15 +609,15 @@ case class ViewExtended(val view: View) {
       }
 
       implicit def optionStringToString(x : Option[String]) : String = x.getOrElse("")
-      val otherAccountSWIFT_BIC = if(viewPermissions.exists(_ == "canSeeOtherAccountSWIFT_BIC")) counterpartyCore.otherBankRoutingAddress else None
-      val otherAccountIBAN = if(viewPermissions.exists(_ == "canSeeOtherAccountIBAN")) counterpartyCore.otherAccountRoutingAddress else None
-      val otherAccountBankName = if(viewPermissions.exists(_ == "canSeeOtherAccountBankName")) Some(counterpartyCore.thisBankId.value) else None
-      val otherAccountNumber = if(viewPermissions.exists(_ == "canSeeOtherAccountNumber")) Some(counterpartyCore.thisAccountId.value) else None
-      val otherAccountKind = if(viewPermissions.exists(_ == "canSeeOtherAccountKind")) Some(counterpartyCore.kind) else None
-      val otherBankRoutingScheme = if(viewPermissions.exists(_ == "canSeeOtherBankRoutingScheme")) Some(counterpartyCore.otherBankRoutingScheme) else None
-      val otherBankRoutingAddress = if(viewPermissions.exists(_ == "canSeeOtherBankRoutingAddress")) counterpartyCore.otherBankRoutingAddress else None
-      val otherAccountRoutingScheme = if(viewPermissions.exists(_ == "canSeeOtherAccountRoutingScheme")) Some(counterpartyCore.otherAccountRoutingScheme) else None
-      val otherAccountRoutingAddress = if(viewPermissions.exists(_ == "canSeeOtherAccountRoutingAddress")) counterpartyCore.otherAccountRoutingAddress else None
+      val otherAccountSWIFT_BIC = if(viewPermissions.exists(_ == CAN_SEE_OTHER_ACCOUNT_SWIFT_BIC)) counterpartyCore.otherBankRoutingAddress else None
+      val otherAccountIBAN = if(viewPermissions.exists(_ == CAN_SEE_OTHER_ACCOUNT_IBAN)) counterpartyCore.otherAccountRoutingAddress else None
+      val otherAccountBankName = if(viewPermissions.exists(_ == CAN_SEE_OTHER_ACCOUNT_BANK_NAME)) Some(counterpartyCore.thisBankId.value) else None
+      val otherAccountNumber = if(viewPermissions.exists(_ == CAN_SEE_OTHER_ACCOUNT_NUMBER)) Some(counterpartyCore.thisAccountId.value) else None
+      val otherAccountKind = if(viewPermissions.exists(_ == CAN_SEE_OTHER_ACCOUNT_KIND)) Some(counterpartyCore.kind) else None
+      val otherBankRoutingScheme = if(viewPermissions.exists(_ == CAN_SEE_OTHER_BANK_ROUTING_SCHEME)) Some(counterpartyCore.otherBankRoutingScheme) else None
+      val otherBankRoutingAddress = if(viewPermissions.exists(_ == CAN_SEE_OTHER_BANK_ROUTING_ADDRESS)) counterpartyCore.otherBankRoutingAddress else None
+      val otherAccountRoutingScheme = if(viewPermissions.exists(_ == CAN_SEE_OTHER_ACCOUNT_ROUTING_SCHEME)) Some(counterpartyCore.otherAccountRoutingScheme) else None
+      val otherAccountRoutingAddress = if(viewPermissions.exists(_ == CAN_SEE_OTHER_ACCOUNT_ROUTING_ADDRESS)) counterpartyCore.otherAccountRoutingAddress else None
       Some(
         new ModeratedOtherBankAccountCore(
           id = counterpartyCore.counterpartyId,

@@ -5054,7 +5054,6 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
   }
   
   //get all the permission Pair from one record, eg:
-  //List("can_see_transaction_this_bank_account","can_see_transaction_requests"....)
   //Note, do not contain can_revoke_access_to_views and can_grant_access_to_views permission yet.
   def getViewPermissions(view: ViewDefinition) = view.allFields.map(x => (x.name, x.get))
     .filter(pair =>pair._2.isInstanceOf[Boolean])

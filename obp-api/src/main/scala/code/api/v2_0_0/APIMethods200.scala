@@ -1050,7 +1050,7 @@ trait APIMethods200 {
             (_, callContext) <- NewStyle.function.getBank(bankId, callContext)
             (account, callContext) <- NewStyle.function.getBankAccount(bankId, accountId, callContext)
             anyViewContainsCanSeeViewsWithPermissionsForAllUsersPermission = Views.views.vend.permission(BankIdAccountId(account.bankId, account.accountId), u)
-              .map(_.views.map(_.allowed_actions.exists(_ == CAN_SEE_VIEWS_WITH_PERMISSIONS_FOR_ALL_USERS)).find(_.==(true)).getOrElse(false)).getOrElse(false)
+              .map(_.views.map(_.allowed_actions.exists(_ == CAN_SEE_VIEWS_WITH_PERMISSIONS_FOR_ALL_USERS))).getOrElse(Nil).find(_.==(true)).getOrElse(false)
             _ <- Helper.booleanToFuture(
               s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${StringHelpers.snakify(CAN_SEE_VIEWS_WITH_PERMISSIONS_FOR_ALL_USERS)}` permission on any your views",
               cc = callContext
@@ -1092,8 +1092,8 @@ trait APIMethods200 {
             (bank, callContext) <- BankX(bankId, Some(cc)) ?~! BankNotFound // Check bank exists.
             account <- BankAccountX(bank.bankId, accountId) ?~! {ErrorMessages.AccountNotFound} // Check Account exists.
             loggedInUserPermissionBox = Views.views.vend.permission(BankIdAccountId(bankId, accountId), loggedInUser)
-            anyViewContainsCanSeePermissionForOneUserPermission = loggedInUserPermissionBox.map(_.views.map(_.allowed_actions.exists( _ == CAN_SEE_VIEWS_WITH_PERMISSIONS_FOR_ONE_USER))
-              .find(_.==(true)).getOrElse(false)).getOrElse(false)
+            anyViewContainsCanSeePermissionForOneUserPermission = loggedInUserPermissionBox.map(_.views.map(_.allowed_actions.exists( _ == CAN_SEE_VIEWS_WITH_PERMISSIONS_FOR_ONE_USER)))
+              .getOrElse(Nil).find(_.==(true)).getOrElse(false)
             
             _ <- booleanToBox(
               anyViewContainsCanSeePermissionForOneUserPermission,

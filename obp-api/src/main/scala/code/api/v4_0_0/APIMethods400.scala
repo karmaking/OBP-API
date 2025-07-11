@@ -1014,7 +1014,7 @@ trait APIMethods400 extends MdcLoggable {
       "POST",
       "/banks/BANK_ID/accounts/ACCOUNT_ID/VIEW_ID/transaction-request-types/TRANSACTION_REQUEST_TYPE/transaction-requests/TRANSACTION_REQUEST_ID/challenge",
       "Answer Transaction Request Challenge",
-      """In Sandbox mode, any string that can be converted to a positive integer will be accepted as an answer.
+      s"""In Sandbox mode, any string that can be converted to a positive integer will be accepted as an answer.
         |
         |This endpoint totally depends on createTransactionRequest, it need get the following data from createTransactionRequest response body.
         |
@@ -1051,7 +1051,7 @@ trait APIMethods400 extends MdcLoggable {
         |
         |Rule for calculating number of security challenges:
         |If Product Account attribute REQUIRED_CHALLENGE_ANSWERS=N then create N challenges
-        |(one for every user that has a View where permission "can_add_transaction_request_to_any_account"=true)
+        |(one for every user that has a View where permission $CAN_ADD_TRANSACTION_REQUEST_TO_ANY_ACCOUNT=true)
         |In the case REQUIRED_CHALLENGE_ANSWERS is not defined as an account attribute, the default number of security challenges created is one.
         |
       """.stripMargin,
@@ -2305,7 +2305,7 @@ trait APIMethods400 extends MdcLoggable {
               json.extract[UpdateAccountJsonV400]
             }
             anyViewContainsCanUpdateBankAccountLabelPermission = Views.views.vend.permission(BankIdAccountId(account.bankId, account.accountId), u)
-              .map(_.views.map(_.allowed_actions.exists(_ == CAN_UPDATE_BANK_ACCOUNT_LABEL)).find(_.==(true)).getOrElse(false)).getOrElse(false)
+              .map(_.views.map(_.allowed_actions.exists(_ == CAN_UPDATE_BANK_ACCOUNT_LABEL))).getOrElse(Nil).find(_.==(true)).getOrElse(false)
             _ <- Helper.booleanToFuture(
               s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${StringHelpers.snakify(CAN_UPDATE_BANK_ACCOUNT_LABEL)}` permission on any your views",
               cc = callContext

@@ -655,7 +655,7 @@ object MapperViews extends Views with MdcLoggable {
             permission.delete_!
           // If the permission already exists and permissionValueFromViewDefinition is defined, we update the metadata.
           case Full(permission) if permissionValueFromViewDefinition.isDefined =>
-            permission.metaData(permissionValueFromViewDefinition.get.mkString(",")).save
+            permission.extraData(permissionValueFromViewDefinition.get.mkString(",")).save
           //if the permission is not existing in ViewPermission,but it is defined in the viewDefinition, we create it. --systemView
           case Empty if (viewDefinition.isSystem && permissionValueFromViewDefinition.isDefined) =>
             ViewPermission.create
@@ -663,7 +663,7 @@ object MapperViews extends Views with MdcLoggable {
               .account_id(null)
               .view_id(viewDefinition.viewId.value)
               .permission(permissionName)
-              .metaData(permissionValueFromViewDefinition.get.mkString(","))
+              .extraData(permissionValueFromViewDefinition.get.mkString(","))
               .save
           //if the permission is not existing in ViewPermission,but it is defined in the viewDefinition, we create it. --customView
           case Empty if (!viewDefinition.isSystem && permissionValueFromViewDefinition.isDefined) =>
@@ -672,7 +672,7 @@ object MapperViews extends Views with MdcLoggable {
               .account_id(viewDefinition.accountId.value)
               .view_id(viewDefinition.viewId.value)
               .permission(permissionName)
-              .metaData(permissionValueFromViewDefinition.get.mkString(","))
+              .extraData(permissionValueFromViewDefinition.get.mkString(","))
               .save
           case _ =>
             // This case should not happen, but if it does, we add an error log
