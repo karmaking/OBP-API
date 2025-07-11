@@ -136,6 +136,7 @@ object SwaggerDefinitionsJSON {
     which_alias_to_use = "family",
     hide_metadata_if_alias_used = false,
     allowed_actions = List(
+      CAN_EDIT_OWNER_COMMENT,
       CAN_SEE_TRANSACTION_THIS_BANK_ACCOUNT,
       CAN_SEE_TRANSACTION_OTHER_BANK_ACCOUNT,
       CAN_SEE_TRANSACTION_METADATA,
