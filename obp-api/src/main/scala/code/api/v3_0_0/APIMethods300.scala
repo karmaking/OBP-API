@@ -142,7 +142,7 @@ trait APIMethods300 {
               permission <- NewStyle.function.permission(bankId, accountId, u, callContext)
               anyViewContainsCanSeeAvailableViewsForBankAccountPermission =  permission.views.map(_.allowed_actions.exists(_ == CAN_SEE_AVAILABLE_VIEWS_FOR_BANK_ACCOUNT)).find(_.==(true)).getOrElse(false)
               _ <- Helper.booleanToFuture(
-                s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${StringHelpers.snakify(CAN_SEE_AVAILABLE_VIEWS_FOR_BANK_ACCOUNT)}` permission on any your views",
+                s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${(CAN_SEE_AVAILABLE_VIEWS_FOR_BANK_ACCOUNT)}` permission on any your views",
                 cc = callContext 
               ) {
                 anyViewContainsCanSeeAvailableViewsForBankAccountPermission
@@ -213,7 +213,7 @@ trait APIMethods300 {
                 .map(_.views.map(_.allowed_actions.exists(_ == CAN_CREATE_CUSTOM_VIEW))).getOrElse(Nil).find(_.==(true)).getOrElse(false)
               
               _ <- Helper.booleanToFuture(
-                s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${StringHelpers.snakify(CAN_CREATE_CUSTOM_VIEW)}` permission on any your views",
+                s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${(CAN_CREATE_CUSTOM_VIEW)}` permission on any your views",
                 cc = callContext
               ) {anyViewContainsCanCreateCustomViewPermission}
               (view, callContext) <- NewStyle.function.createCustomView(BankIdAccountId(bankId, accountId), createViewJson, callContext)
@@ -252,7 +252,7 @@ trait APIMethods300 {
             anyViewContainsCanSeePermissionForOneUserPermission = Views.views.vend.permission(BankIdAccountId(account.bankId, account.accountId), loggedInUser)
               .map(_.views.map(_.allowed_actions.exists(_ == CAN_SEE_VIEWS_WITH_PERMISSIONS_FOR_ONE_USER))).getOrElse(Nil).find(_.==(true)).getOrElse(false)
             _ <- Helper.booleanToFuture(
-              s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${StringHelpers.snakify(CAN_SEE_VIEWS_WITH_PERMISSIONS_FOR_ONE_USER)}` permission on any your views",
+              s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${(CAN_SEE_VIEWS_WITH_PERMISSIONS_FOR_ONE_USER)}` permission on any your views",
               cc = callContext
             ) {
               anyViewContainsCanSeePermissionForOneUserPermission
@@ -319,7 +319,7 @@ trait APIMethods300 {
                 .map(_.views.map(_.allowed_actions.exists(_ == CAN_UPDATE_CUSTOM_VIEW))).getOrElse(Nil).find(_.==(true)).getOrElse(false)
 
               _ <- Helper.booleanToFuture(
-                s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${StringHelpers.snakify(CAN_UPDATE_CUSTOM_VIEW)}` permission on any your views",
+                s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${(CAN_UPDATE_CUSTOM_VIEW)}` permission on any your views",
                 cc = callContext
               ) {
                 anyViewContainsCancanUpdateCustomViewPermission

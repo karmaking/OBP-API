@@ -1052,7 +1052,7 @@ trait APIMethods200 {
             anyViewContainsCanSeeViewsWithPermissionsForAllUsersPermission = Views.views.vend.permission(BankIdAccountId(account.bankId, account.accountId), u)
               .map(_.views.map(_.allowed_actions.exists(_ == CAN_SEE_VIEWS_WITH_PERMISSIONS_FOR_ALL_USERS))).getOrElse(Nil).find(_.==(true)).getOrElse(false)
             _ <- Helper.booleanToFuture(
-              s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${StringHelpers.snakify(CAN_SEE_VIEWS_WITH_PERMISSIONS_FOR_ALL_USERS)}` permission on any your views",
+              s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${(CAN_SEE_VIEWS_WITH_PERMISSIONS_FOR_ALL_USERS)}` permission on any your views",
               cc = callContext
             ) {
               anyViewContainsCanSeeViewsWithPermissionsForAllUsersPermission
@@ -1097,7 +1097,7 @@ trait APIMethods200 {
             
             _ <- booleanToBox(
               anyViewContainsCanSeePermissionForOneUserPermission,
-              s"${ErrorMessages.CreateCustomViewError} You need the `${StringHelpers.snakify(CAN_SEE_VIEWS_WITH_PERMISSIONS_FOR_ONE_USER)}` permission on any your views"
+              s"${ErrorMessages.CreateCustomViewError} You need the `${(CAN_SEE_VIEWS_WITH_PERMISSIONS_FOR_ONE_USER)}` permission on any your views"
             )
             userFromURL <- UserX.findByProviderId(provider, providerId) ?~! UserNotFoundByProviderAndProvideId
             permission <- Views.views.vend.permission(BankIdAccountId(bankId, accountId), userFromURL)

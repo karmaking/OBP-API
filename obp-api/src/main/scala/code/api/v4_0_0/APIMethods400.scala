@@ -2307,7 +2307,7 @@ trait APIMethods400 extends MdcLoggable {
             anyViewContainsCanUpdateBankAccountLabelPermission = Views.views.vend.permission(BankIdAccountId(account.bankId, account.accountId), u)
               .map(_.views.map(_.allowed_actions.exists(_ == CAN_UPDATE_BANK_ACCOUNT_LABEL))).getOrElse(Nil).find(_.==(true)).getOrElse(false)
             _ <- Helper.booleanToFuture(
-              s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${StringHelpers.snakify(CAN_UPDATE_BANK_ACCOUNT_LABEL)}` permission on any your views",
+              s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${(CAN_UPDATE_BANK_ACCOUNT_LABEL)}` permission on any your views",
               cc = callContext
             ) {
               anyViewContainsCanUpdateBankAccountLabelPermission
@@ -4723,7 +4723,7 @@ trait APIMethods400 extends MdcLoggable {
             _ <- NewStyle.function.isEnabledTransactionRequests(callContext)
             view <- NewStyle.function.checkAccountAccessAndGetView(viewId, BankIdAccountId(bankId, accountId), Full(u), callContext)
             _ <- Helper.booleanToFuture(
-              s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${StringHelpers.snakify(CAN_SEE_TRANSACTION_REQUESTS)}` permission on the View(${viewId.value})",
+              s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${(CAN_SEE_TRANSACTION_REQUESTS)}` permission on the View(${viewId.value})",
               cc = callContext) {
               view.allowed_actions.exists(_ ==CAN_SEE_TRANSACTION_REQUESTS)
             }

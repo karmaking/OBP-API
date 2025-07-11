@@ -269,7 +269,7 @@ trait APIMethods220 {
               
             _ <- booleanToBox(
               anyViewContainsCancanUpdateCustomViewPermission,
-              s"${ErrorMessages.CreateCustomViewError} You need the `${StringHelpers.snakify(CAN_UPDATE_CUSTOM_VIEW)}` permission on any your views"
+              s"${ErrorMessages.CreateCustomViewError} You need the `${(CAN_UPDATE_CUSTOM_VIEW)}` permission on any your views"
             )
             updatedView <- Views.views.vend.updateCustomView(BankIdAccountId(bankId, accountId), viewId, updateViewJson) ?~ CreateCustomViewError
           } yield {
@@ -370,7 +370,7 @@ trait APIMethods220 {
             (account, callContext) <- NewStyle.function.checkBankAccountExists(bankId, accountId, callContext)
             view <- NewStyle.function.checkViewAccessAndReturnView(viewId, BankIdAccountId(account.bankId, account.accountId), Some(u), callContext)
             _ <- Helper.booleanToFuture(
-              s"${ErrorMessages.NoViewPermission} You need the `${StringHelpers.snakify(CAN_GET_COUNTERPARTY)}` permission on the View(${viewId.value} )",
+              s"${ErrorMessages.NoViewPermission} You need the `${(CAN_GET_COUNTERPARTY)}` permission on the View(${viewId.value} )",
               cc = callContext
             ) {
               ViewPermission.findViewPermissions(view).exists(_.permission.get == CAN_GET_COUNTERPARTY)
@@ -424,7 +424,7 @@ trait APIMethods220 {
             view <- NewStyle.function.checkViewAccessAndReturnView(viewId, BankIdAccountId(account.bankId, account.accountId), Some(u), callContext)
 
             _ <- Helper.booleanToFuture(
-              s"${ErrorMessages.NoViewPermission} You need the `${StringHelpers.snakify(CAN_GET_COUNTERPARTY)}` permission on the View(${viewId.value} )",
+              s"${ErrorMessages.NoViewPermission} You need the `${(CAN_GET_COUNTERPARTY)}` permission on the View(${viewId.value} )",
               cc = callContext
             ) {
               ViewPermission.findViewPermissions(view).exists(_.permission.get == CAN_GET_COUNTERPARTY)
@@ -1202,7 +1202,7 @@ trait APIMethods220 {
             }
             view <- NewStyle.function.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), Some(u), callContext)
             _ <- Helper.booleanToFuture(
-              s"${ErrorMessages.NoViewPermission} You need the `${StringHelpers.snakify(CAN_ADD_COUNTERPARTY)}` permission on the View(${viewId.value} )",
+              s"${ErrorMessages.NoViewPermission} You need the `${(CAN_ADD_COUNTERPARTY)}` permission on the View(${viewId.value} )",
               cc = callContext
             ) {
               ViewPermission.findViewPermissions(view).exists(_.permission.get == CAN_ADD_COUNTERPARTY)

@@ -1887,7 +1887,7 @@ trait APIMethods500 {
               permission <- NewStyle.function.permission(bankId, accountId, u, callContext)
               anyViewContainsCanSeeAvailableViewsForBankAccountPermission =  permission.views.map(_.allowed_actions.exists(_ == CAN_SEE_AVAILABLE_VIEWS_FOR_BANK_ACCOUNT)).find(_.==(true)).getOrElse(false)
               _ <- Helper.booleanToFuture(
-                s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${StringHelpers.snakify(CAN_SEE_AVAILABLE_VIEWS_FOR_BANK_ACCOUNT)}` permission on any your views",
+                s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${(CAN_SEE_AVAILABLE_VIEWS_FOR_BANK_ACCOUNT)}` permission on any your views",
                 cc = callContext
               ) {
                 anyViewContainsCanSeeAvailableViewsForBankAccountPermission

@@ -453,7 +453,7 @@ trait APIMethods140 extends MdcLoggable with APIMethods130 with APIMethods121{
             _ <- NewStyle.function.isValidCurrencyISOCode(fromAccount.currency, failMsg, callContext)
             view <- NewStyle.function.checkViewAccessAndReturnView(viewId, BankIdAccountId(fromAccount.bankId, fromAccount.accountId), Some(u), callContext)
             _ <- Helper.booleanToFuture(
-              s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${StringHelpers.snakify(CAN_SEE_TRANSACTION_REQUEST_TYPES)}` permission on the View(${viewId.value} )",
+              s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${(CAN_SEE_TRANSACTION_REQUEST_TYPES)}` permission on the View(${viewId.value} )",
               cc = callContext
             ) {
               ViewPermission.findViewPermissions(view).exists(_.permission.get == CAN_SEE_TRANSACTION_REQUEST_TYPES)

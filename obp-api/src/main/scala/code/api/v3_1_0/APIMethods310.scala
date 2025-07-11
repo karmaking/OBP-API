@@ -653,7 +653,7 @@ trait APIMethods310 {
             (_, callContext) <- NewStyle.function.getBank(bankId, callContext)
             (account, callContext) <- NewStyle.function.checkBankAccountExists(bankId, accountId, callContext)
             view <- NewStyle.function.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), Some(u), callContext) 
-            _ <- Helper.booleanToFuture(failMsg = s"$ViewDoesNotPermitAccess +  You need the `${StringHelpers.snakify(CAN_QUERY_AVAILABLE_FUNDS)}` permission on any your views", cc=callContext) {
+            _ <- Helper.booleanToFuture(failMsg = s"$ViewDoesNotPermitAccess +  You need the `${(CAN_QUERY_AVAILABLE_FUNDS)}` permission on any your views", cc=callContext) {
               view.allowed_actions.exists(_ ==CAN_QUERY_AVAILABLE_FUNDS)
             }
             httpParams: List[HTTPParam] <- NewStyle.function.extractHttpParamsFromUrl(cc.url)
@@ -1124,7 +1124,7 @@ trait APIMethods310 {
             (fromAccount, callContext) <- NewStyle.function.checkBankAccountExists(bankId, accountId, callContext)
             view <- NewStyle.function.checkAccountAccessAndGetView(viewId, BankIdAccountId(bankId, accountId), Full(u), callContext)
             _ <- Helper.booleanToFuture(
-              s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${StringHelpers.snakify(CAN_SEE_TRANSACTION_REQUESTS)}` permission on the View(${viewId.value})",
+              s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${(CAN_SEE_TRANSACTION_REQUESTS)}` permission on the View(${viewId.value})",
               cc=callContext){
               view.allowed_actions.exists(_ ==CAN_SEE_TRANSACTION_REQUESTS)
             }

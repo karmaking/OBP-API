@@ -372,7 +372,7 @@ case class ViewExtended(val view: View) {
       )
     }
     else
-      Failure(s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${StringHelpers.snakify(CAN_SEE_TRANSACTION_THIS_BANK_ACCOUNT)}` permission on the view(${view.viewId.value})")
+      Failure(s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${(CAN_SEE_TRANSACTION_THIS_BANK_ACCOUNT)}` permission on the view(${view.viewId.value})")
   }
 
 
@@ -424,7 +424,7 @@ case class ViewExtended(val view: View) {
       )
     }
     else
-      Failure(s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${StringHelpers.snakify(CAN_SEE_TRANSACTION_THIS_BANK_ACCOUNT)}` permission on the view(${view.viewId.value})")
+      Failure(s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${(CAN_SEE_TRANSACTION_THIS_BANK_ACCOUNT)}` permission on the view(${view.viewId.value})")
   }
 
   def moderateAccountCore(bankAccount: BankAccount) : Box[ModeratedBankAccountCore] = {
@@ -459,7 +459,7 @@ case class ViewExtended(val view: View) {
       )
     }
     else
-      Failure(s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${StringHelpers.snakify(CAN_SEE_TRANSACTION_THIS_BANK_ACCOUNT)}` permission on the view(${view.viewId.value})")
+      Failure(s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${(CAN_SEE_TRANSACTION_THIS_BANK_ACCOUNT)}` permission on the view(${view.viewId.value})")
   }
 
   // Moderate the Counterparty side of the Transaction (i.e. the Other Account involved in the transaction)
@@ -584,7 +584,7 @@ case class ViewExtended(val view: View) {
       )
     }
     else
-      Failure(s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${StringHelpers.snakify(CAN_SEE_TRANSACTION_OTHER_BANK_ACCOUNT)}` permission on the view(${view.viewId.value})")
+      Failure(s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${(CAN_SEE_TRANSACTION_OTHER_BANK_ACCOUNT)}` permission on the view(${view.viewId.value})")
   }
 
   def moderateCore(counterpartyCore : CounterpartyCore) : Box[ModeratedOtherBankAccountCore] = {
@@ -635,6 +635,6 @@ case class ViewExtended(val view: View) {
       )
     }
     else
-      Failure(s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${StringHelpers.snakify(CAN_SEE_TRANSACTION_OTHER_BANK_ACCOUNT)}` permission on the view(${view.viewId.value})")
+      Failure(s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${(CAN_SEE_TRANSACTION_OTHER_BANK_ACCOUNT)}` permission on the view(${view.viewId.value})")
   }
 }

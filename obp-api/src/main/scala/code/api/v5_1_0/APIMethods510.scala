@@ -3745,7 +3745,7 @@ trait APIMethods510 {
             (fromAccount, callContext) <- NewStyle.function.checkBankAccountExists(bankId, accountId, callContext)
             view <- NewStyle.function.checkAccountAccessAndGetView(viewId, BankIdAccountId(bankId, accountId), Full(u), callContext)
             _ <- Helper.booleanToFuture(
-              s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${StringHelpers.snakify(CAN_SEE_TRANSACTION_REQUESTS)}` permission on the View(${viewId.value})",
+              s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${(CAN_SEE_TRANSACTION_REQUESTS)}` permission on the View(${viewId.value})",
               cc=callContext){
               view.allowed_actions.exists(_ ==CAN_SEE_TRANSACTION_REQUESTS)
             }
@@ -3934,7 +3934,7 @@ trait APIMethods510 {
             bankIdAccountId = BankIdAccountId(bankId, accountId)
             view <- NewStyle.function.checkViewAccessAndReturnView(viewId, bankIdAccountId, Full(u), callContext)
             // Note we do one explicit check here rather than use moderated account because this provides an explicit message
-            failMsg = ViewDoesNotPermitAccess + s" You need the `${StringHelpers.snakify(CAN_SEE_BANK_ACCOUNT_BALANCE)}` permission on VIEW_ID(${viewId.value})"
+            failMsg = ViewDoesNotPermitAccess + s" You need the `${(CAN_SEE_BANK_ACCOUNT_BALANCE)}` permission on VIEW_ID(${viewId.value})"
             _ <- Helper.booleanToFuture(failMsg, 403, cc = callContext) {
               view.allowed_actions.exists(_ ==CAN_SEE_BANK_ACCOUNT_BALANCE)
             }
@@ -4433,7 +4433,7 @@ trait APIMethods510 {
               permissionsFromTarget.toSet.subsetOf(permissionsFromSource)
             }
 
-            failMsg = s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${StringHelpers.snakify(CAN_CREATE_CUSTOM_VIEW)}` permission on VIEW_ID(${viewId.value})"
+            failMsg = s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${(CAN_CREATE_CUSTOM_VIEW)}` permission on VIEW_ID(${viewId.value})"
 
             _ <- Helper.booleanToFuture(failMsg, cc = callContext) {
               view.allowed_actions.exists(_ ==CAN_CREATE_CUSTOM_VIEW)
@@ -4490,7 +4490,7 @@ trait APIMethods510 {
               permissionsFromTarget.toSet.subsetOf(permissionsFromSource)
             }
 
-            failmsg = s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${StringHelpers.snakify(CAN_UPDATE_CUSTOM_VIEW)}` permission on VIEW_ID(${viewId.value})"
+            failmsg = s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${(CAN_UPDATE_CUSTOM_VIEW)}` permission on VIEW_ID(${viewId.value})"
 
             _ <- Helper.booleanToFuture(failmsg, cc = callContext) {
               view.allowed_actions.exists(_ ==CAN_CREATE_CUSTOM_VIEW)
@@ -4556,7 +4556,7 @@ trait APIMethods510 {
               _ <- Helper.booleanToFuture(failMsg = InvalidCustomViewFormat + s"Current TARGET_VIEW_ID (${targetViewId.value})", cc = callContext) {
                 isValidCustomViewId(targetViewId.value)
               }
-              failmsg = s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${StringHelpers.snakify(CAN_GET_CUSTOM_VIEW)}`permission on any your views. Current VIEW_ID (${viewId.value})"
+              failmsg = s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${(CAN_GET_CUSTOM_VIEW)}`permission on any your views. Current VIEW_ID (${viewId.value})"
               _ <- Helper.booleanToFuture(failmsg, cc = callContext) {
                 view.allowed_actions.exists(_ ==CAN_GET_CUSTOM_VIEW)
               }
@@ -4598,7 +4598,7 @@ trait APIMethods510 {
             _ <- Helper.booleanToFuture(failMsg = InvalidCustomViewFormat + s"Current TARGET_VIEW_ID (${targetViewId.value})", cc = callContext) {
               isValidCustomViewId(targetViewId.value)
             }
-            failMsg = s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${StringHelpers.snakify(CAN_DELETE_CUSTOM_VIEW)}` permission on any your views.Current VIEW_ID (${viewId.value})"
+            failMsg = s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${(CAN_DELETE_CUSTOM_VIEW)}` permission on any your views.Current VIEW_ID (${viewId.value})"
             _ <- Helper.booleanToFuture(failMsg, cc = callContext) {
               view.allowed_actions.exists(_ ==CAN_DELETE_CUSTOM_VIEW)
             }
