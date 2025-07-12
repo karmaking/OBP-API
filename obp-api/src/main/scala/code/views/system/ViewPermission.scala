@@ -1,5 +1,6 @@
 package code.views.system
 
+import code.api.Constant.{CAN_GRANT_ACCESS_TO_VIEWS, CAN_REVOKE_ACCESS_TO_VIEWS}
 import code.util.UUIDString
 import com.openbankproject.commons.model._
 import net.liftweb.common.Box
@@ -68,4 +69,71 @@ object ViewPermission extends ViewPermission with LongKeyedMetaMapper[ViewPermis
     } else {
       findCustomViewPermission(view.bankId, view.accountId, view.viewId, permission)
     }
+
+  def createViewPermissions(
+    viewDefinition: View,
+    permissionNames: List[String],
+    canGrantAccessToViews: List[String] = Nil,
+    canRevokeAccessToViews: List[String] = Nil
+  ): Unit = {
+    if (viewDefinition.isSystem) {
+      permissionNames.map(
+        permissionName =>
+          if (permissionName.equals(CAN_GRANT_ACCESS_TO_VIEWS)) {
+            ViewPermission.create
+              .bank_id(null)
+              .account_id(null)
+              .view_id(viewDefinition.viewId.value)
+              .permission(permissionName)
+              .extraData(canGrantAccessToViews.mkString(","))
+              .save
+          } else if (permissionName.equals(CAN_REVOKE_ACCESS_TO_VIEWS)) {
+            ViewPermission.create
+              .bank_id(null)
+              .account_id(null)
+              .view_id(viewDefinition.viewId.value)
+              .permission(permissionName)
+              .extraData(canRevokeAccessToViews.mkString(","))
+              .save 
+          }
+          else {
+            ViewPermission.create
+              .bank_id(null)
+              .account_id(null)
+              .view_id(viewDefinition.viewId.value)
+              .permission(permissionName)
+              .extraData(null)
+              .save
+          })
+    } else {
+      permissionNames.map(
+        permissionName =>
+          if (permissionName.equals(CAN_GRANT_ACCESS_TO_VIEWS)) {
+            ViewPermission.create
+              .bank_id(viewDefinition.bankId.value)
+              .account_id(viewDefinition.accountId.value)
+              .view_id(viewDefinition.viewId.value)
+              .permission(permissionName)
+              .extraData(canGrantAccessToViews.mkString(","))
+              .save
+          } else if (permissionName.equals(CAN_REVOKE_ACCESS_TO_VIEWS)) {
+            ViewPermission.create
+              .bank_id(viewDefinition.bankId.value)
+              .account_id(viewDefinition.accountId.value)
+              .view_id(viewDefinition.viewId.value)
+              .permission(permissionName)
+              .extraData(canRevokeAccessToViews.mkString(","))
+              .save
+          }
+          else {
+            ViewPermission.create
+              .bank_id(viewDefinition.bankId.value)
+              .account_id(viewDefinition.accountId.value)
+              .view_id(viewDefinition.viewId.value)
+              .permission(permissionName)
+              .extraData(null)
+              .save
+          })
+    }
+  }
 }
