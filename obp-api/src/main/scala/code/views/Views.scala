@@ -102,10 +102,10 @@ trait Views {
 
   def getOwners(view: View): Set[User]
   
-  def removeAllPermissions(bankId: BankId, accountId: AccountId) : Boolean
-  def removeAllViews(bankId: BankId, accountId: AccountId) : Boolean
+  def removeAllAccountAccess(bankId: BankId, accountId: AccountId) : Boolean
+  def removeAllViewsAndVierPermissions(bankId: BankId, accountId: AccountId) : Boolean
 
-  def bulkDeleteAllPermissionsAndViews() : Boolean
+  def bulkDeleteAllViewsAndAccountAccessAndViewPermission() : Boolean
 
 }
 

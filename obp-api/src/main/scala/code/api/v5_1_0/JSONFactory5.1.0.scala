@@ -722,7 +722,7 @@ object JSONFactory510 extends CustomJsonFormats {
       is_public = view.isPublic,
       alias = alias,
       hide_metadata_if_alias_used = view.hideOtherAccountMetadataIfAlias,
-      allowed_permissions = APIUtil.getViewPermissions(view.asInstanceOf[ViewDefinition]).toList
+      allowed_permissions = view.asInstanceOf[ViewDefinition].allowed_actions.toList
     )
   }
   def createCustomersIds(customers :  List[Customer]): CustomersIdsJsonV510 =

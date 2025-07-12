@@ -78,6 +78,10 @@ class ViewDefinition extends View with LongKeyedMapper[ViewDefinition] with Many
     
   }
 
+  def deleteViewPermissions = {
+    ViewPermission.findViewPermissions(this).map(_.delete_!)
+  }
+
   
 
   def id: Long = id_.get

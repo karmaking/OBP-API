@@ -472,6 +472,7 @@ object MapperViews extends Views with MdcLoggable {
         case false => Full()
       }
     } yield {
+      customView.deleteViewPermissions
       customView.delete_!
     }
   }
@@ -483,6 +484,7 @@ object MapperViews extends Views with MdcLoggable {
         case false => Full()
       }
     } yield {
+      view.deleteViewPermissions
       view.delete_!
     }
   }
@@ -676,21 +678,22 @@ object MapperViews extends Views with MdcLoggable {
     res
   }
 
-  def removeAllPermissions(bankId: BankId, accountId: AccountId) : Boolean = {
+  def removeAllAccountAccess(bankId: BankId, accountId: AccountId) : Boolean = {
     AccountAccess.bulkDelete_!!(
       By(AccountAccess.bank_id, bankId.value),
       By(AccountAccess.account_id, accountId.value)
     )
   }
 
-  def removeAllViews(bankId: BankId, accountId: AccountId) : Boolean = {
+  def removeAllViewsAndVierPermissions(bankId: BankId, accountId: AccountId) : Boolean = {
     ViewDefinition.bulkDelete_!!(
       By(ViewDefinition.bank_id, bankId.value),
       By(ViewDefinition.account_id, accountId.value)
     )
+    ViewPermission.bulkDelete_!!()
   }
 
-  def bulkDeleteAllPermissionsAndViews() : Boolean = {
+  def bulkDeleteAllViewsAndAccountAccessAndViewPermission() : Boolean = {
     ViewDefinition.bulkDelete_!!()
     AccountAccess.bulkDelete_!!()
     ViewPermission.bulkDelete_!!()

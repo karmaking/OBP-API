@@ -28,7 +28,6 @@ import code.model.dataAccess.BankAccountCreation
 import code.util.Helper
 import code.util.Helper.{SILENCE_IS_GOLDEN, booleanToFuture}
 import code.views.Views
-import code.views.system.ViewDefinition
 import com.github.dwickern.macros.NameOf.nameOf
 import com.openbankproject.commons.ExecutionContext.Implicits.global
 import com.openbankproject.commons.model._
@@ -1015,7 +1014,7 @@ trait APIMethods500 {
                 //2rd: create the Custom View for the fromAccount.
                 //we do not need sourceViewId so far, we need to get all the view access for the login user, and
                 permission <- NewStyle.function.permission(fromAccount.bankId, fromAccount.accountId, user, callContext)
-                permissionsFromSource = permission.views.map(view =>APIUtil.getViewPermissions(view.asInstanceOf[ViewDefinition]).toList).flatten.toSet
+                permissionsFromSource = permission.views.map(_.allowed_actions).flatten.toSet
                 permissionsFromTarget = targetCreateCustomViewJson.allowed_permissions
 
                 //eg: permissionsFromTarget=List(1,2), permissionsFromSource = List(1,3,4) => userMissingPermissions = List(2)

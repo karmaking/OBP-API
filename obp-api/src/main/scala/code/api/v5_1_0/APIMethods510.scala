@@ -2,8 +2,8 @@ package code.api.v5_1_0
 
 
 import code.api.Constant
-import code.api.OAuth2Login.Keycloak
 import code.api.Constant._
+import code.api.OAuth2Login.Keycloak
 import code.api.ResourceDocs1_4_0.SwaggerDefinitionsJSON._
 import code.api.berlin.group.v1_3.JSONFactory_BERLIN_GROUP_1_3.{ConsentAccessAccountsJson, ConsentAccessJson}
 import code.api.util.APIUtil._
@@ -4459,7 +4459,7 @@ trait APIMethods510 {
               isValidCustomViewName(createCustomViewJson.name)
             }
 
-            permissionsFromSource = APIUtil.getViewPermissions(view.asInstanceOf[ViewDefinition])
+            permissionsFromSource = view.asInstanceOf[ViewDefinition].allowed_actions.toSet
             permissionsFromTarget = createCustomViewJson.allowed_permissions
 
             _ <- Helper.booleanToFuture(failMsg = SourceViewHasLessPermission + s"Current source viewId($viewId) permissions ($permissionsFromSource), target viewName${createCustomViewJson.name} permissions ($permissionsFromTarget)", cc = callContext) {
@@ -4516,7 +4516,7 @@ trait APIMethods510 {
             _ <- Helper.booleanToFuture(failMsg = InvalidCustomViewFormat + s"Current TARGET_VIEW_ID (${targetViewId})", cc = callContext) {
               isValidCustomViewId(targetViewId.value)
             }
-            permissionsFromSource = APIUtil.getViewPermissions(view.asInstanceOf[ViewDefinition])
+            permissionsFromSource = view.asInstanceOf[ViewDefinition].allowed_actions.toSet
             permissionsFromTarget = targetCreateCustomViewJson.allowed_permissions
 
             _ <- Helper.booleanToFuture(failMsg = SourceViewHasLessPermission + s"Current source view permissions ($permissionsFromSource), target view permissions ($permissionsFromTarget)", cc = callContext) {

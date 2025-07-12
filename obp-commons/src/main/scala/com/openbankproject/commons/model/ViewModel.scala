@@ -159,4 +159,6 @@ trait View {
   def canGrantAccessToViews : Option[List[String]] = None
   def canRevokeAccessToViews : Option[List[String]] = None
   
+  def createViewAndPermissions(viewSpecification : ViewSpecification) : Unit
+  def deleteViewPermissions :List[Boolean]
 }

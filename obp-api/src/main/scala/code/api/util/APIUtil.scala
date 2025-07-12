@@ -67,7 +67,7 @@ import code.usercustomerlinks.UserCustomerLink
 import code.users.Users
 import code.util.Helper.{MdcLoggable, ObpS, SILENCE_IS_GOLDEN}
 import code.util.{Helper, JsonSchemaUtil}
-import code.views.system.{AccountAccess, ViewDefinition}
+import code.views.system.AccountAccess
 import code.views.{MapperViews, Views}
 import code.webuiprops.MappedWebUiPropsProvider.getWebUiPropsValue
 import com.alibaba.ttl.internal.javassist.CannotCompileException
@@ -5058,16 +5058,5 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
       .map(item => BankIdAccountId(BankId(item.bank_id.get), AccountId(item.account_id.get)))
       .distinct // List pairs (bank_id, account_id)
   }
-  
-  //get all the permission Pair from one record, eg:
-  //Note, do not contain can_revoke_access_to_views and can_grant_access_to_views permission yet.
-  def getViewPermissions(view: ViewDefinition) = view.allFields.map(x => (x.name, x.get))
-    .filter(pair =>pair._2.isInstanceOf[Boolean])
-    .filter(pair => pair._1.startsWith("can"))
-    .filter(pair => pair._2.equals(true))
-    .map(pair => 
-      StringHelpers.snakify(pair._1)
-        .dropRight(1) //Remove the "_" in the end, eg canCreateStandingOrder_ --> canCreateStandingOrder
-    ).toSet
   
 }
