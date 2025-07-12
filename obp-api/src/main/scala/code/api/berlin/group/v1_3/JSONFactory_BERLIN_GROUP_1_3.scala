@@ -385,7 +385,7 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
         val canReadTransactions = canReadTransactionsAccounts.map(_.accountId.value).contains(x.accountId.value)
 
         val cashAccountType = x.attributes.getOrElse(Nil).filter(_.name== "cashAccountType").map(_.value).headOption.getOrElse("")
-        
+
         CoreAccountJsonV13(
           resourceId = x.accountId.value,
           iban = iBan,
@@ -423,13 +423,13 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
     val transactionRef = LinkHrefJson(s"/$commonPath/transactions")
     val canReadTransactions = canReadTransactionsAccounts.map(_.accountId.value).contains(bankAccount.accountId.value)
     val cashAccountType = bankAccount.attributes.getOrElse(Nil).filter(_.name== "cashAccountType").map(_.value).headOption.getOrElse("")
-    
-    
+
+
     val account = AccountJsonV13(
       resourceId = bankAccount.accountId.value,
       iban = iBan,
       currency = bankAccount.currency,
-      name = if(bankAccount.name.isBlank) None else Some(bankAccount.name),
+      name = if(APIUtil.getPropsAsBoolValue("BG_v1312_show_account_name", defaultValue = true)) Some(bankAccount.name) else None,
       cashAccountType = cashAccountType,
       product = bankAccount.accountType,
       _links = AccountDetailsLinksJsonV13(
@@ -471,7 +471,7 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
   
   def createTransactionJSON(transaction : ModeratedTransaction) : TransactionJsonV13 = {
     val bookingDate = transaction.startDate.orNull
-    val valueDate = transaction.finishDate.orNull
+    val valueDate = if(transaction.finishDate.isDefined) Some(BgSpecValidation.formatToISODate(transaction.finishDate.orNull)) else None
     
     val creditorName = transaction.otherBankAccount.map(_.label.display).getOrElse("")
     val creditorAccountIban = stringOrNone(transaction.otherBankAccount.map(_.iban.getOrElse("")).getOrElse(""))
@@ -495,14 +495,14 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
         else 
           Some(BgTransactionAccountJson(iban = debtorAccountIdIban)),
       transactionAmount = AmountOfMoneyV13(
-        transaction.currency.getOrElse(""), 
+        transaction.currency.getOrElse(""),
         if(bgRemoveSignOfAmounts)
           transaction.amount.get.toString().trim.stripPrefix("-")
         else
           transaction.amount.get.toString()
       ),
       bookingDate = Some(BgSpecValidation.formatToISODate(bookingDate)) ,
-      valueDate = Some(BgSpecValidation.formatToISODate(valueDate)),
+      valueDate = valueDate,
       remittanceInformationUnstructured = transaction.description
     )
   }

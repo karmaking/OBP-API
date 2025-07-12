@@ -2,6 +2,7 @@ package code.api.v5_1_0
 
 
 import code.api.Constant
+import code.api.OAuth2Login.Keycloak
 import code.api.Constant._
 import code.api.ResourceDocs1_4_0.SwaggerDefinitionsJSON._
 import code.api.berlin.group.v1_3.JSONFactory_BERLIN_GROUP_1_3.{ConsentAccessAccountsJson, ConsentAccessJson}
@@ -44,6 +45,7 @@ import code.util.Helper
 import code.util.Helper.ObpS
 import code.views.Views
 import code.views.system.{AccountAccess, ViewDefinition}
+import code.webuiprops.{MappedWebUiPropsProvider, WebUiPropsCommons}
 import com.github.dwickern.macros.NameOf.nameOf
 import com.openbankproject.commons.ExecutionContext.Implicits.global
 import com.openbankproject.commons.model._
@@ -134,6 +136,37 @@ trait APIMethods510 {
           } yield {
             (SuggestedSessionTimeoutV510(timeoutInSeconds.toString), HttpCode.`200`(cc.callContext))
           }
+    }
+
+
+    staticResourceDocs += ResourceDoc(
+      getOAuth2ServerWellKnown,
+      implementedInApiVersion,
+      "getOAuth2ServerWellKnown",
+      "GET",
+      "/well-known",
+      "Get Well Known URIs",
+      """Get the OAuth2 server's public Well Known URIs.
+        |
+      """.stripMargin,
+      EmptyBody,
+      oAuth2ServerJwksUrisJson,
+      List(
+        UnknownError
+      ),
+      List(apiTagApi))
+
+    lazy val getOAuth2ServerWellKnown: OBPEndpoint = {
+      case "well-known" :: Nil JsonGet _ => {
+        cc =>
+          implicit val ec = EndpointContext(Some(cc))
+          for {
+            (_, callContext) <- anonymousAccess(cc)
+          } yield {
+            val keycloak: WellKnownUriJsonV510 = WellKnownUriJsonV510("keycloak", Keycloak.wellKnownOpenidConfiguration.toURL.toString)
+            (WellKnownUrisJsonV510(List(keycloak)), HttpCode.`200`(callContext))
+          }
+      }
     }
 
 
@@ -5142,6 +5175,68 @@ trait APIMethods510 {
             )
           } yield {
             (Full(deleted), HttpCode.`204`(callContext))
+          }
+      }
+    }
+
+
+    resourceDocs += ResourceDoc(
+      getWebUiProps,
+      implementedInApiVersion,
+      nameOf(getWebUiProps),
+      "GET",
+      "/webui-props",
+      "Get WebUiProps",
+      s"""
+         |
+         |Get the all WebUiProps key values, those props key with "webui_" can be stored in DB, this endpoint get all from DB.
+         |
+         |url query parameter: 
+         |active: It must be a boolean string. and If active = true, it will show
+         |          combination of explicit (inserted) + implicit (default)  method_routings.
+         |
+         |eg:  
+         |${getObpApiRoot}/v5.1.0/webui-props
+         |${getObpApiRoot}/v5.1.0/webui-props?active=true
+         |
+         |""",
+      EmptyBody,
+      ListResult(
+        "webui-props",
+        (List(WebUiPropsCommons("webui_api_explorer_url", "https://apiexplorer.openbankproject.com", Some("web-ui-props-id"))))
+      )
+      ,
+      List(
+        UserHasMissingRoles,
+        UnknownError
+      ),
+      List(apiTagWebUiProps)
+    )
+    lazy val getWebUiProps: OBPEndpoint = {
+      case "webui-props":: Nil JsonGet req => {
+        cc => implicit val ec = EndpointContext(Some(cc))
+          val active = ObpS.param("active").getOrElse("false")
+          for {
+            invalidMsg <- Future(s"""$InvalidFilterParameterFormat `active` must be a boolean, but current `active` value is: ${active} """)
+            isActived <- NewStyle.function.tryons(invalidMsg, 400, cc.callContext) {
+              active.toBoolean
+            }
+            explicitWebUiProps <- Future{ MappedWebUiPropsProvider.getAll() }
+            implicitWebUiPropsRemovedDuplicated = if(isActived){
+              val implicitWebUiProps = getWebUIPropsPairs.map(webUIPropsPairs=>WebUiPropsCommons(webUIPropsPairs._1, webUIPropsPairs._2, webUiPropsId= Some("default")))
+              if(explicitWebUiProps.nonEmpty){
+                //get the same name props in the `implicitWebUiProps`
+                val duplicatedProps : List[WebUiPropsCommons]= explicitWebUiProps.map(explicitWebUiProp => implicitWebUiProps.filter(_.name == explicitWebUiProp.name)).flatten
+                //remove the duplicated fields from `implicitWebUiProps`
+                implicitWebUiProps diff duplicatedProps
+              }
+              else implicitWebUiProps.distinct
+            } else {
+              List.empty[WebUiPropsCommons]
+            }
+          } yield {
+            val listCommons: List[WebUiPropsCommons] = explicitWebUiProps ++ implicitWebUiPropsRemovedDuplicated
+            (ListResult("webui_props", listCommons), HttpCode.`200`(cc.callContext))
           }
       }
     }

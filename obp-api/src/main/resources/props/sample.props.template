@@ -365,6 +365,8 @@ BankMockKey=change_me
 #####################################################################################
 ## Web interface configuration
 
+## do not put sensitive information in any webui props, as these can be retrieved by a public endpoint.
+
 ## IMPLEMENTING BANK SPECIFIC BRANDING ON ONE OBP INSTANCE ########################
 # Note, you can specify bank specific branding by appending _FOR_BRAND_<BANK_ID> to the standard props names
 # e.g.
