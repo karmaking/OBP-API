@@ -6,7 +6,6 @@ import com.openbankproject.commons.model._
 import net.liftweb.common.Box
 import net.liftweb.mapper._
 
-
 class ViewPermission extends LongKeyedMapper[ViewPermission] with IdPK with CreatedUpdated {
   def getSingleton = ViewPermission
   object bank_id extends MappedString(this, 255)
@@ -72,30 +71,30 @@ object ViewPermission extends ViewPermission with LongKeyedMetaMapper[ViewPermis
     }
 
   /**
-   * This method will first remove all the current permissons.
-   * and will create new ones accouding to the parameters.
-   * 
-   * This is the logic from ViewDefinition before. because we can only update all the permissions before,
-   * we may support only update one permissioin later.
+   * This method first removes all existing permissions for the given view,
+   * then creates new ones based on the provided parameters.
+   *
+   * This follows the original logic from ViewDefinition, where permission updates
+   * were only supported in bulk (all at once). In the future, we may extend this
+   * to support updating individual permissions selectively.
    */
   def createViewPermissions(
-    viewDefinition: View,
+    view: View,
     permissionNames: List[String],
     canGrantAccessToViews: List[String] = Nil,
     canRevokeAccessToViews: List[String] = Nil
   ): Unit = {
 
-    // Delete all existing permissions for the view
-    viewDefinition.deleteViewPermissions
+    // Delete all existing permissions for this view
+    ViewPermission.findViewPermissions(view).foreach(_.delete_!)
 
-    // Determine bank_id and account_id for system or custom views
     val (bankId, accountId) =
-      if (viewDefinition.isSystem)
+      if (view.isSystem)
         (null, null)
       else
-        (viewDefinition.bankId.value, viewDefinition.accountId.value)
+        (view.bankId.value, view.accountId.value)
 
-    // Create fresh permission entries
+    // Insert each new permission
     permissionNames.foreach { permissionName =>
       val extraData = permissionName match {
         case CAN_GRANT_ACCESS_TO_VIEWS  => canGrantAccessToViews.mkString(",")
@@ -103,10 +102,22 @@ object ViewPermission extends ViewPermission with LongKeyedMetaMapper[ViewPermis
         case _                          => null
       }
 
+      // Dynamically build correct query conditions with NullRef if needed
+      val conditions: Seq[QueryParam[ViewPermission]] = Seq(
+        if (bankId == null) NullRef(ViewPermission.bank_id) else By(ViewPermission.bank_id, bankId),
+        if (accountId == null) NullRef(ViewPermission.account_id) else By(ViewPermission.account_id, accountId),
+        By(ViewPermission.view_id, view.viewId.value),
+        By(ViewPermission.permission, permissionName)
+      )
+
+      // Remove existing conflicting record if any
+      ViewPermission.find(conditions: _*).foreach(_.delete_!)
+
+      // Insert new permission
       ViewPermission.create
         .bank_id(bankId)
         .account_id(accountId)
-        .view_id(viewDefinition.viewId.value)
+        .view_id(view.viewId.value)
         .permission(permissionName)
         .extraData(extraData)
         .save
