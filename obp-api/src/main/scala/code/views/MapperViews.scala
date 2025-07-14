@@ -622,6 +622,87 @@ object MapperViews extends Views with MdcLoggable {
     theView
   }
 
+  /**
+   * This migrates the current View permissions to the new ViewPermission model.
+   * this will not add any new permission, it will only migrate the existing permissions.
+   * @param viewDefinition
+   */
+  def migrateViewPermissions(viewDefinition: View): Unit = {
+
+    //first, we list all the current view permissions.
+    val permissionNames: List[String] = ALL_VIEW_PERMISSION_NAMES
+
+    permissionNames.foreach { permissionName =>
+      // CAN_REVOKE_ACCESS_TO_VIEWS and CAN_GRANT_ACCESS_TO_VIEWS are special cases, they have a list of view ids as metadata.
+      // For the rest of the permissions, they are just boolean values.
+      if (permissionName == CAN_REVOKE_ACCESS_TO_VIEWS || permissionName == CAN_GRANT_ACCESS_TO_VIEWS) {
+
+        val permissionValueFromViewDefinition = viewDefinition.getClass.getMethod(StringHelpers.camelifyMethod(permissionName)).invoke(viewDefinition).asInstanceOf[Option[List[String]]]
+
+        ViewPermission.findViewPermission(viewDefinition, permissionName) match {
+          // If the permission already exists in ViewPermission, but permissionValueFromViewDefinition is empty, we delete it.
+          case Full(permission) if permissionValueFromViewDefinition.isEmpty =>
+            permission.delete_!
+          // If the permission already exists and permissionValueFromViewDefinition is defined, we update the metadata.
+          case Full(permission) if permissionValueFromViewDefinition.isDefined =>
+            permission.extraData(permissionValueFromViewDefinition.get.mkString(",")).save
+          //if the permission is not existing in ViewPermission,but it is defined in the viewDefinition, we create it. --systemView
+          case Empty if (viewDefinition.isSystem && permissionValueFromViewDefinition.isDefined) =>
+            ViewPermission.create
+              .bank_id(null)
+              .account_id(null)
+              .view_id(viewDefinition.viewId.value)
+              .permission(permissionName)
+              .extraData(permissionValueFromViewDefinition.get.mkString(","))
+              .save
+          //if the permission is not existing in ViewPermission,but it is defined in the viewDefinition, we create it. --customView
+          case Empty if (!viewDefinition.isSystem && permissionValueFromViewDefinition.isDefined) =>
+            ViewPermission.create
+              .bank_id(viewDefinition.bankId.value)
+              .account_id(viewDefinition.accountId.value)
+              .view_id(viewDefinition.viewId.value)
+              .permission(permissionName)
+              .extraData(permissionValueFromViewDefinition.get.mkString(","))
+              .save
+          case _ =>
+            // This case should not happen, but if it does, we add an error log
+            logger.error(s"Unexpected case for permission $permissionName for view ${viewDefinition.viewId.value}. No action taken.")
+        }
+      } else {
+        // For the rest of the permissions, they are just boolean values.
+        val permissionValue = viewDefinition.getClass.getMethod(StringHelpers.camelifyMethod(permissionName)).invoke(viewDefinition).asInstanceOf[Boolean]
+
+        ViewPermission.findViewPermission(viewDefinition, permissionName) match {
+          // If the permission already exists in ViewPermission, but permissionValueFromViewdefinition is false, we delete it.
+          case Full(permission) if !permissionValue =>
+            permission.delete_!
+          // If the permission already exists in ViewPermission, but permissionValueFromViewdefinition is empty, we udpate it.
+          case Full(permission) if permissionValue =>
+            permission.permission(permissionName).save
+          //if the permission is not existing in ViewPermission, but it is defined in the viewDefinition, we create it. --systemView  
+          case _ if (viewDefinition.isSystem && permissionValue) =>
+            ViewPermission.create
+              .bank_id(null)
+              .account_id(null)
+              .view_id(viewDefinition.viewId.value)
+              .permission(permissionName)
+              .save
+          //if the permission is not existing in ViewPermission, but it is defined in the viewDefinition, we create it. --customerView   
+          case _ if (!viewDefinition.isSystem && permissionValue) =>
+            ViewPermission.create
+              .bank_id(viewDefinition.bankId.value)
+              .account_id(viewDefinition.accountId.value)
+              .view_id(viewDefinition.viewId.value)
+              .permission(permissionName)
+              .save
+          case _ =>
+            // This case should not happen, but if it does, we do nothing
+            logger.warn(s"Unexpected case for permission $permissionName for view ${viewDefinition.viewId.value}. No action taken.")
+        }
+      }
+    }
+  }
+  
   def getOrCreateSystemView(viewId: String) : Box[View] = {
     getExistingSystemView(viewId) match {
       case Empty =>

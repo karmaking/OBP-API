@@ -5,10 +5,9 @@ import code.api.util.APIUtil.{isValidCustomViewId, isValidSystemViewId}
 import code.api.util.ErrorMessages.{CreateSystemViewError, InvalidCustomViewFormat, InvalidSystemViewFormat}
 import code.util.{AccountIdString, UUIDString}
 import com.openbankproject.commons.model._
-import net.liftweb.common.{Box, Full}
+import net.liftweb.common.Box
 import net.liftweb.common.Box.tryo
 import net.liftweb.mapper._
-import code.api.Constant._
 
 class ViewDefinition extends View with LongKeyedMapper[ViewDefinition] with ManyToMany with CreatedUpdated{
   def getSingleton = ViewDefinition
@@ -50,8 +49,301 @@ class ViewDefinition extends View with LongKeyedMapper[ViewDefinition] with Many
   object hideOtherAccountMetadataIfAlias_ extends MappedBoolean(this){
     override def defaultValue = false
   }
+  
+  //This is the system views list, custom views please check `canGrantAccessToCustomViews_` field
+  object canGrantAccessToViews_ extends MappedText(this){
+    override def defaultValue = ""
+  }
 
-  def createViewAndPermissions(viewSpecification : ViewSpecification) = {
+  //This is the system views list.custom views please check `canRevokeAccessToCustomViews_` field
+  object canRevokeAccessToViews_ extends MappedText(this){
+    override def defaultValue = ""
+  }
+  
+  object canRevokeAccessToCustomViews_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canGrantAccessToCustomViews_ extends MappedBoolean(this) {
+    override def defaultValue = false
+  }
+  object canSeeTransactionThisBankAccount_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canSeeTransactionRequests_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canSeeTransactionRequestTypes_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canSeeTransactionOtherBankAccount_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canSeeTransactionMetadata_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canSeeTransactionDescription_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canSeeTransactionAmount_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canSeeTransactionType_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canSeeTransactionCurrency_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canSeeTransactionStartDate_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canSeeTransactionFinishDate_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canSeeTransactionBalance_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canSeeComments_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canSeeOwnerComment_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canSeeTags_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canSeeImages_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canSeeBankAccountOwners_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canSeeAvailableViewsForBankAccount_ extends MappedBoolean(this){
+    override def defaultValue = true
+  }
+  object canSeeBankAccountType_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canSeeBankAccountBalance_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canQueryAvailableFunds_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canSeeBankAccountCurrency_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canSeeBankAccountLabel_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canUpdateBankAccountLabel_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canSeeBankAccountNationalIdentifier_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canSeeBankAccountSwift_bic_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canSeeBankAccountIban_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canSeeBankAccountNumber_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canSeeBankAccountBankName_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canSeeBankAccountBankPermalink_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canSeeBankRoutingScheme_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canSeeBankRoutingAddress_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canSeeBankAccountRoutingScheme_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canSeeBankAccountRoutingAddress_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canSeeOtherAccountNationalIdentifier_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canSeeOtherAccountSWIFT_BIC_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canSeeOtherAccountIBAN_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canSeeOtherAccountBankName_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canSeeOtherAccountNumber_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canSeeOtherAccountMetadata_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canSeeOtherAccountKind_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canSeeOtherBankRoutingScheme_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canSeeOtherBankRoutingAddress_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canSeeOtherAccountRoutingScheme_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canSeeOtherAccountRoutingAddress_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canSeeMoreInfo_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canSeeUrl_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canSeeImageUrl_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canSeeOpenCorporatesUrl_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canSeeCorporateLocation_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canSeePhysicalLocation_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canSeePublicAlias_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canSeePrivateAlias_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canAddMoreInfo_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canAddURL_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canAddImageURL_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canAddOpenCorporatesUrl_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canAddCorporateLocation_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canAddPhysicalLocation_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canAddPublicAlias_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canAddPrivateAlias_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canAddCounterparty_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canGetCounterparty_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canDeleteCounterparty_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canDeleteCorporateLocation_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canDeletePhysicalLocation_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canEditOwnerComment_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canAddComment_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canDeleteComment_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canAddTag_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canDeleteTag_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canAddImage_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canDeleteImage_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canAddWhereTag_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canSeeWhereTag_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canDeleteWhereTag_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  
+  //internal transfer between my own accounts
+
+  @deprecated("we added new field `canAddTransactionRequestToBeneficiary_`","25-07-2024")
+  object canAddTransactionRequestToOwnAccount_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+
+  object canAddTransactionRequestToBeneficiary_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  
+  // transfer to any account
+  object canAddTransactionRequestToAnyAccount_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canSeeBankAccountCreditLimit_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canCreateDirectDebit_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canCreateStandingOrder_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  
+  object canCreateCustomView_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canDeleteCustomView_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canUpdateCustomView_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canGetCustomView_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canSeeViewsWithPermissionsForAllUsers_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canSeeViewsWithPermissionsForOneUser_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+  object canSeeTransactionStatus_ extends MappedBoolean(this){
+    override def defaultValue = false
+  }
+
+  //Important! If you add a field, be sure to handle it here in this function
+  def setFromViewData(viewSpecification : ViewSpecification) = {
     if(viewSpecification.which_alias_to_use == "public"){
       usePublicAliasIfOneExists_(true)
       usePrivateAliasIfOneExists_(false)
@@ -78,6 +370,33 @@ class ViewDefinition extends View with LongKeyedMapper[ViewDefinition] with Many
     
   }
 
+  def createViewAndPermissions(viewSpecification : ViewSpecification) = {
+    if(viewSpecification.which_alias_to_use == "public"){
+      usePublicAliasIfOneExists_(true)
+      usePrivateAliasIfOneExists_(false)
+    } else if(viewSpecification.which_alias_to_use == "private"){
+      usePublicAliasIfOneExists_(false)
+      usePrivateAliasIfOneExists_(true)
+    } else {
+      usePublicAliasIfOneExists_(false)
+      usePrivateAliasIfOneExists_(false)
+    }
+
+    hideOtherAccountMetadataIfAlias_(viewSpecification.hide_metadata_if_alias_used)
+    description_(viewSpecification.description)
+    isPublic_(viewSpecification.is_public)
+    isFirehose_(viewSpecification.is_firehose.getOrElse(false))
+    metadataView_(viewSpecification.metadata_view)
+
+    ViewPermission.createViewPermissions(
+      this,
+      viewSpecification.allowed_actions,
+      viewSpecification.can_grant_access_to_views.getOrElse(Nil),
+      viewSpecification.can_revoke_access_to_views.getOrElse(Nil)
+    )
+
+  }
+  
   def deleteViewPermissions = {
     ViewPermission.findViewPermissions(this).map(_.delete_!)
   }
