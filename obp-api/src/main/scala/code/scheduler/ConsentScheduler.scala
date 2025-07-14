@@ -86,12 +86,19 @@ object ConsentScheduler extends MdcLoggable {
     Try {
       logger.debug("|---> Checking for expired Berlin Group consents...")
 
-      val expiredConsents = MappedConsent.findAll(
+      val expiredConsentsLowerCase: List[MappedConsent] = MappedConsent.findAll(
         By(MappedConsent.mStatus, ConsentStatus.valid.toString),
+        By(MappedConsent.mApiStandard, ConstantsBG.berlinGroupVersion1.apiStandard),
+        By_<(MappedConsent.mValidUntil, new Date())
+      )
+
+      val expiredConsentsUpperCase: List[MappedConsent] = MappedConsent.findAll(
         By(MappedConsent.mStatus, ConsentStatus.valid.toString.toUpperCase()), // Handle uppercase as well; should appear only during the transition period
         By(MappedConsent.mApiStandard, ConstantsBG.berlinGroupVersion1.apiStandard),
         By_<(MappedConsent.mValidUntil, new Date())
       )
+
+      val expiredConsents = expiredConsentsLowerCase ::: expiredConsentsUpperCase
 
       logger.debug(s"|---> Found ${expiredConsents.size} expired consents")
 
