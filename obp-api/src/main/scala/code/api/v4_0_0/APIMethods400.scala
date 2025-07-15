@@ -486,7 +486,7 @@ trait APIMethods400 extends MdcLoggable {
             }
             _ <-  Helper.booleanToFuture(InitialBalanceMustBeZero, cc=callContext){0 == initialBalanceAsNumber}
             currency = createAccountJson.balance.currency
-            _ <-  Helper.booleanToFuture(InvalidISOCurrencyCode, cc=callContext){isValidCurrencyISOCode(currency)}
+            _ <-  Helper.booleanToFuture(InvalidISOCurrencyCode, cc=callContext){APIUtil.isValidCurrencyISOCode(currency)}
 
             (_, callContext ) <- NewStyle.function.getBank(bankId, callContext)
             _ <- Helper.booleanToFuture(s"$InvalidAccountRoutings Duplication detected in account routings, please specify only one value per routing scheme", cc=callContext) {
@@ -2135,7 +2135,7 @@ trait APIMethods400 extends MdcLoggable {
               BigDecimal(initialBalanceAsString)
             }
             _ <-  Helper.booleanToFuture(InitialBalanceMustBeZero, cc=callContext){0 == initialBalanceAsNumber}
-            _ <-  Helper.booleanToFuture(InvalidISOCurrencyCode, cc=callContext){isValidCurrencyISOCode(createAccountJson.balance.currency)}
+            _ <-  Helper.booleanToFuture(InvalidISOCurrencyCode, cc=callContext){APIUtil.isValidCurrencyISOCode(createAccountJson.balance.currency)}
             currency = createAccountJson.balance.currency
             (_, callContext ) <- NewStyle.function.getBank(bankId, callContext)
             _ <- Helper.booleanToFuture(s"$InvalidAccountRoutings Duplication detected in account routings, please specify only one value per routing scheme", cc=callContext) {
@@ -3802,7 +3802,7 @@ trait APIMethods400 extends MdcLoggable {
               BigDecimal(postJson.amount.amount)
             }
             _ <- Helper.booleanToFuture(s"${InvalidISOCurrencyCode} Current input is: '${postJson.amount.currency}'", cc=callContext) {
-              code.api.util.APIUtil.isValidCurrencyISOCode(postJson.amount.currency)
+              APIUtil.isValidCurrencyISOCode(postJson.amount.currency)
             }
             (_, callContext) <- NewStyle.function.getCustomerByCustomerId(postJson.customer_id, callContext)
             _ <- Users.users.vend.getUserByUserIdFuture(postJson.user_id) map {
@@ -3873,7 +3873,7 @@ trait APIMethods400 extends MdcLoggable {
               BigDecimal(postJson.amount.amount)
             }
             _ <- Helper.booleanToFuture(s"${InvalidISOCurrencyCode} Current input is: '${postJson.amount.currency}'", cc=cc.callContext) {
-              isValidCurrencyISOCode(postJson.amount.currency)
+              APIUtil.isValidCurrencyISOCode(postJson.amount.currency)
             }
             (_, callContext) <- NewStyle.function.getCustomerByCustomerId(postJson.customer_id, cc.callContext)
             _ <- Users.users.vend.getUserByUserIdFuture(postJson.user_id) map {
@@ -4640,7 +4640,7 @@ trait APIMethods400 extends MdcLoggable {
             }
             // Prevent default value for transaction request type (at least).
             _ <- Helper.booleanToFuture(s"${InvalidISOCurrencyCode} Current input is: '${transDetailsJson.value.currency}'", cc=callContext) {
-              isValidCurrencyISOCode(transDetailsJson.value.currency)
+              APIUtil.isValidCurrencyISOCode(transDetailsJson.value.currency)
             }
             amountOfMoneyJson = AmountOfMoneyJsonV121(transDetailsJson.value.currency, transDetailsJson.value.amount)
             chargePolicy = transDetailsJson.charge_policy
@@ -7498,7 +7498,7 @@ trait APIMethods400 extends MdcLoggable {
               postJson.description.length <= 36
             }
             _ <- Helper.booleanToFuture(s"$InvalidISOCurrencyCode Current input is: '${postJson.currency}'", cc=callContext) {
-              isValidCurrencyISOCode(postJson.currency)
+              APIUtil.isValidCurrencyISOCode(postJson.currency)
             }
 
             //If other_account_routing_scheme=="OBP" or other_account_secondary_routing_address=="OBP" we will check if it is a real obp bank account.
@@ -7714,7 +7714,7 @@ trait APIMethods400 extends MdcLoggable {
             }
 
             _ <- Helper.booleanToFuture(s"$InvalidISOCurrencyCode Current input is: '${postJson.currency}'", cc=callContext) {
-              isValidCurrencyISOCode(postJson.currency)
+              APIUtil.isValidCurrencyISOCode(postJson.currency)
             }
 
             //If other_account_routing_scheme=="OBP" or other_account_secondary_routing_address=="OBP" we will check if it is a real obp bank account.
@@ -12292,7 +12292,7 @@ object APIMethods400 extends RestHelper with APIMethods400 {
       }
 
       _ <- Helper.booleanToFuture(s"${InvalidISOCurrencyCode} Current input is: '${transDetailsJson.value.currency}'", cc=callContext) {
-        isValidCurrencyISOCode(transDetailsJson.value.currency)
+        APIUtil.isValidCurrencyISOCode(transDetailsJson.value.currency)
       }
 
       (createdTransactionRequest, callContext) <- transactionRequestTypeValue match {

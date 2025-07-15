@@ -6,6 +6,7 @@ import code.api.util.ErrorMessages._
 import code.api.util.{APIUtil, CallContext}
 import code.model._
 import code.views.Views
+import code.views.system.ViewPermission
 import com.openbankproject.commons.model._
 import net.liftweb.common._
 
@@ -211,6 +212,34 @@ object ViewNewStyle {
         x,
         callContext,
         UserLacksPermissionCanRevokeAccessToViewForTargetAccount + s"Current ViewId(${bankIdAccountIdViewId.viewId.value}) and current UserId(${u.userId})",
+        403),
+        callContext
+      )
+  }
+  
+  
+  def findSystemViewPermission(viewId: ViewId, permissionName: String, callContext: Option[CallContext]) = Future {
+    ViewPermission.findSystemViewPermission(viewId: ViewId, permissionName: String)
+  } map {
+    x =>
+      (unboxFullOrFail(
+        x,
+        callContext,
+        ViewPermissionNotFound + s"Current System ViewId(${viewId.value}) and PermissionName (${permissionName})",
+        403),
+        callContext
+      )
+  }
+  
+  
+  def createSystemViewPermission(viewId: ViewId, permissionName: String, extraData: Option[List[String]], callContext: Option[CallContext]) = Future {
+    ViewPermission.createSystemViewPermission(viewId: ViewId, permissionName: String, extraData: Option[List[String]])
+  } map {
+    x =>
+      (unboxFullOrFail(
+        x,
+        callContext,
+        CreateViewPermissionError + s"Current System ViewId(${viewId.value}) and Permission (${permissionName})",
         403),
         callContext
       )

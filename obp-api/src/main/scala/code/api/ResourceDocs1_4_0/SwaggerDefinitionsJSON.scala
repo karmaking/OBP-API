@@ -5693,7 +5693,7 @@ object SwaggerDefinitionsJSON {
 
   lazy val createViewPermissionJson = CreateViewPermissionJson(
     permission_name = CAN_GRANT_ACCESS_TO_VIEWS,
-    extra_data = List(SYSTEM_ACCOUNTANT_VIEW_ID, SYSTEM_AUDITOR_VIEW_ID)
+    extra_data = Some(List(SYSTEM_ACCOUNTANT_VIEW_ID, SYSTEM_AUDITOR_VIEW_ID))
   )
   //The common error or success format.
   //Just some helper format to use in Json 

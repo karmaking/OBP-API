@@ -557,6 +557,11 @@ object ErrorMessages {
   val CannotAddEntitlement = "OBP-30332: Failed to add entitlement. Please check the provided details and try again."
   val CannotGetEntitlements = "OBP-30333: Cannot get entitlements for user id."
   
+  val ViewPermissionNameExists = "OBP-30334: View Permission name already exists. Please specify a different value."
+  val CreateViewPermissionError = "OBP-30335: Could not create the View Permission."
+  val ViewPermissionNotFound = "OBP-30336: View Permission not found by name. "
+  val InvalidViewPermissionName = "OBP-30337: The view permission name does not exist in OBP."
+  val DeleteViewPermissionError = "OBP-30338: Could not delete the View Permission."
   
   // Branch related messages
   val BranchesNotFoundLicense = "OBP-32001: No branches available. License may not be set."

@@ -4,7 +4,9 @@ import code.api.Constant.{CAN_GRANT_ACCESS_TO_VIEWS, CAN_REVOKE_ACCESS_TO_VIEWS}
 import code.util.UUIDString
 import com.openbankproject.commons.model._
 import net.liftweb.common.Box
+import net.liftweb.common.Box.tryo
 import net.liftweb.mapper._
+
 
 class ViewPermission extends LongKeyedMapper[ViewPermission] with IdPK with CreatedUpdated {
   def getSingleton = ViewPermission
@@ -49,6 +51,18 @@ object ViewPermission extends ViewPermission with LongKeyedMetaMapper[ViewPermis
       By(ViewPermission.view_id, viewId.value),
       By(ViewPermission.permission,permission),
     )
+
+  def createSystemViewPermission(viewId: ViewId, permissionName: String, extraData: Option[List[String]]): Box[ViewPermission] = {
+    tryo {
+      ViewPermission.create
+        .bank_id(null)
+        .account_id(null)
+        .view_id(viewId.value)
+        .permission(permissionName)
+        .extraData(extraData.map(_.mkString(",")).getOrElse(null))
+        .saveMe
+    }
+  }
 
   /**
    * Finds the permissions for a given view, if it is sytem view, 

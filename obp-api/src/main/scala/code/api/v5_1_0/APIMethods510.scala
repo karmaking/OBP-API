@@ -44,7 +44,7 @@ import code.users.Users
 import code.util.Helper
 import code.util.Helper.ObpS
 import code.views.Views
-import code.views.system.{AccountAccess, ViewDefinition}
+import code.views.system.{AccountAccess, ViewDefinition, ViewPermission}
 import code.webuiprops.{MappedWebUiPropsProvider, WebUiPropsCommons}
 import com.github.dwickern.macros.NameOf.nameOf
 import com.openbankproject.commons.ExecutionContext.Implicits.global
@@ -5241,6 +5241,79 @@ trait APIMethods510 {
       }
     }
 
+
+    resourceDocs += ResourceDoc(
+      addSystemViewPermission,
+      implementedInApiVersion,
+      nameOf(addSystemViewPermission),
+      "POST",
+      "/system-views/VIEW_ID/permissions",
+      "Add Permission to a System View",
+      """Add Permission to a System View.""",
+      createViewPermissionJson,
+      entitlementJSON,
+      List(
+        $UserNotLoggedIn,
+        InvalidJsonFormat,
+        IncorrectRoleName,
+        EntitlementAlreadyExists,
+        UnknownError
+      ),
+      List(apiTagSystemView),
+      Some(List(canCreateSystemViewPermission))
+    )
+    
+    lazy val addSystemViewPermission : OBPEndpoint = {
+      case "system-views" :: ViewId(viewId) :: "permissions" :: Nil JsonPost json -> _ => {
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            failMsg <- Future.successful(s"$InvalidJsonFormat The Json body should be the $CreateViewPermissionJson ")
+            createViewPermissionJson <- NewStyle.function.tryons(failMsg, 400, cc.callContext) {
+              json.extract[CreateViewPermissionJson]
+            }
+            _ <- Helper.booleanToFuture(s"$InvalidViewPermissionName The current value is ${createViewPermissionJson.permission_name}", 400, cc.callContext) {
+              ALL_VIEW_PERMISSION_NAMES.exists( _ == createViewPermissionJson.permission_name)
+            }
+            _ <- ViewNewStyle.systemView(viewId, cc.callContext)
+            _ <- Helper.booleanToFuture(s"$ViewPermissionNameExists The current value is ${createViewPermissionJson.permission_name}", 400, cc.callContext) {
+              ViewPermission.findSystemViewPermission(viewId, createViewPermissionJson.permission_name).isEmpty
+            }
+            (viewPermission,callContext) <- ViewNewStyle.createSystemViewPermission(viewId, createViewPermissionJson.permission_name, createViewPermissionJson.extra_data, cc.callContext)
+          } yield {
+            (JSONFactory510.createViewPermissionJson(viewPermission), HttpCode.`201`(callContext))
+          }
+      }
+    }
+
+    
+    resourceDocs += ResourceDoc(
+      deleteSystemViewPermission,
+      implementedInApiVersion,
+      nameOf(deleteSystemViewPermission),
+      "DELETE",
+      "/system-views/VIEW_ID/permissions/PERMISSION_NAME",
+      "Delete Permission to a System View",
+      """Delete Permission to a System View
+      """.stripMargin,
+      EmptyBody,
+      EmptyBody,
+      List(UserNotLoggedIn, UserHasMissingRoles, UnknownError),
+      List(apiTagSystemView),
+      Some(List(canDeleteSystemViewPermission))
+    )
+    lazy val deleteSystemViewPermission: OBPEndpoint = {
+      case "system-views" :: ViewId(viewId) :: "permissions" :: permissionName :: Nil JsonDelete _ => {
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            (viewPermission, callContext) <- ViewNewStyle.findSystemViewPermission(viewId, permissionName, cc.callContext)
+            _ <- Helper.booleanToFuture(s"$DeleteViewPermissionError The current value is ${createViewPermissionJson.permission_name}", 400, cc.callContext) {
+              viewPermission.delete_!
+            }
+          } yield (true, HttpCode.`204`(cc.callContext))
+      }
+    }
+
+    
   }
 }
 
