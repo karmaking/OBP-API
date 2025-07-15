@@ -5206,7 +5206,6 @@ trait APIMethods510 {
       )
       ,
       List(
-        UserNotLoggedIn,
         UserHasMissingRoles,
         UnknownError
       ),
@@ -5217,9 +5216,8 @@ trait APIMethods510 {
         cc => implicit val ec = EndpointContext(Some(cc))
           val active = ObpS.param("active").getOrElse("false")
           for {
-            (Full(u), callContext) <- authenticatedAccess(cc)
-            invalidMsg = s"""$InvalidFilterParameterFormat `active` must be a boolean, but current `active` value is: ${active} """
-            isActived <- NewStyle.function.tryons(invalidMsg, 400, callContext) {
+            invalidMsg <- Future(s"""$InvalidFilterParameterFormat `active` must be a boolean, but current `active` value is: ${active} """)
+            isActived <- NewStyle.function.tryons(invalidMsg, 400, cc.callContext) {
               active.toBoolean
             }
             explicitWebUiProps <- Future{ MappedWebUiPropsProvider.getAll() }
@@ -5237,7 +5235,7 @@ trait APIMethods510 {
             }
           } yield {
             val listCommons: List[WebUiPropsCommons] = explicitWebUiProps ++ implicitWebUiPropsRemovedDuplicated
-            (ListResult("webui_props", listCommons), HttpCode.`200`(callContext))
+            (ListResult("webui_props", listCommons), HttpCode.`200`(cc.callContext))
           }
       }
     }
