@@ -86,5 +86,20 @@ class SystemViewsPermissionsTests extends V510ServerSetup {
       val deleteResp = deleteSystemViewPermission(viewId, "can_grant_access_to_views", user1)
       deleteResp.code should equal(204)
     }
+    scenario("Authorized with proper Role with extra_data", ApiEndpoint2, VersionOfApi) {
+      val viewId = APIUtil.generateUUID()
+      createSystemView(viewId)
+      Entitlement.entitlement.vend.addEntitlement("", resourceUser1.userId, "CanCreateSystemViewPermission")
+      Entitlement.entitlement.vend.addEntitlement("", resourceUser1.userId, "CanDeleteSystemViewPermission")
+
+      val permissionJson = CreateViewPermissionJson("can_grant_access_to_views", Some(List("owner")))
+      val createResp = postSystemViewPermission(viewId, permissionJson, user1)
+      createResp.code should equal(201)
+      createResp.body.extract[CreateViewPermissionJson].permission_name should equal("can_grant_access_to_views")
+      createResp.body.extract[CreateViewPermissionJson].extra_data should equal (Some(List("owner")))
+
+      val deleteResp = deleteSystemViewPermission(viewId, "can_grant_access_to_views", user1)
+      deleteResp.code should equal(204)
+    }
   }
 }
