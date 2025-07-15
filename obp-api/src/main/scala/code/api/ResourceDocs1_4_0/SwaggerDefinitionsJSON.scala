@@ -5690,6 +5690,11 @@ object SwaggerDefinitionsJSON {
   lazy val bankAccountBalancesJsonV510 = BankAccountBalancesJsonV510(
     balances = List(bankAccountBalanceResponseJsonV510)
   )
+
+  lazy val createViewPermissionJson = CreateViewPermissionJson(
+    permission_name = CAN_GRANT_ACCESS_TO_VIEWS,
+    extra_data = List(SYSTEM_ACCOUNTANT_VIEW_ID, SYSTEM_AUDITOR_VIEW_ID)
+  )
   //The common error or success format.
   //Just some helper format to use in Json 
   case class NotSupportedYet()

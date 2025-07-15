@@ -26,7 +26,6 @@ TESOBE (http://www.tesobe.com/)
  */
 
 package code.api.util
-
 import bootstrap.liftweb.CustomDBVendor
 import code.accountholders.AccountHolders
 import code.api.Constant._
@@ -49,6 +48,7 @@ import code.api.util.ApiTag.{ResourceDocTag, apiTagBank}
 import code.api.util.BerlinGroupSigning.getCertificateFromTppSignatureCertificate
 import code.api.util.FutureUtil.{EndpointContext, EndpointTimeout}
 import code.api.util.Glossary.GlossaryItem
+import code.api.util.newstyle.ViewNewStyle
 import code.api.v1_2.ErrorMessage
 import code.api.v2_0_0.CreateEntitlementJSON
 import code.api.v2_2_0.OBPAPI2_2_0.Implementations2_2_0
@@ -4326,7 +4326,7 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
     case x => NewStyle.function.getBankAccount(x, _, _)
   }
   private val checkViewFun: PartialFunction[ViewId, (BankIdAccountId, Option[User], Option[CallContext]) => Future[View]] = {
-    case x => NewStyle.function.checkViewAccessAndReturnView(x, _, _, _)
+    case x => ViewNewStyle.checkViewAccessAndReturnView(x, _, _, _)
   }
   private val checkCounterpartyFun: PartialFunction[CounterpartyId, Option[CallContext] => OBPReturnType[CounterpartyTrait]] = {
     case x => NewStyle.function.getCounterpartyByCounterpartyId(x, _)

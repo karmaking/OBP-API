@@ -9,6 +9,7 @@ import code.api.util.ErrorMessages._
 import code.api.util.FutureUtil.EndpointContext
 import code.api.util.NewStyle.HttpCode
 import code.api.util._
+import code.api.util.newstyle.ViewNewStyle
 import code.bankconnectors._
 import code.metadata.counterparties.Counterparties
 import code.model.{BankAccountX, BankX, ModeratedTransactionMetadata, UserX, toBankAccountExtended, toBankExtended}
@@ -25,7 +26,6 @@ import net.liftweb.http.rest.RestHelper
 import net.liftweb.json.Extraction
 import net.liftweb.json.JsonAST.JValue
 import net.liftweb.util.Helpers._
-import net.liftweb.util.StringHelpers
 
 import java.net.URL
 import java.util.UUID.randomUUID
@@ -92,7 +92,7 @@ trait APIMethods121 {
   private def moderatedTransactionMetadataFuture(bankId : BankId, accountId : AccountId, viewId : ViewId, transactionID : TransactionId, user : Box[User], callContext: Option[CallContext]): Future[ModeratedTransactionMetadata] = {
     for {
       (account, callContext) <- NewStyle.function.checkBankAccountExists(bankId, accountId, callContext)
-      view: View <- NewStyle.function.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), user, callContext)
+      view: View <- ViewNewStyle.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), user, callContext)
       (moderatedTransaction, callContext) <- account.moderatedTransactionFuture(transactionID, view, user, callContext) map {
         unboxFullOrFail(_, callContext, GetTransactionsException)
       }
@@ -710,7 +710,7 @@ trait APIMethods121 {
             (account, callContext) <- NewStyle.function.getBankAccount(bankId, accountId, callContext)
             // custom views start with `_` eg _play, _work, and System views start with a letter, eg: owner
             _ <- Helper.booleanToFuture(InvalidCustomViewFormat+s"Current view_name (${viewId.value})", cc=callContext) { viewId.value.startsWith("_") }
-            _ <- NewStyle.function.customView(viewId, BankIdAccountId(bankId, accountId), callContext)
+            _ <- ViewNewStyle.customView(viewId, BankIdAccountId(bankId, accountId), callContext)
 
             anyViewContainsCanDeleteCustomViewPermission = Views.views.vend.permission(BankIdAccountId(account.bankId, account.accountId), u)
               .map(_.views.map(_.allowed_actions.exists(_ == CAN_DELETE_CUSTOM_VIEW))).getOrElse(Nil).find(_.==(true)).getOrElse(false)
@@ -721,7 +721,7 @@ trait APIMethods121 {
               anyViewContainsCanDeleteCustomViewPermission
             }
 
-            deleted <- NewStyle.function.removeCustomView(viewId, BankIdAccountId(bankId, accountId),callContext)
+            deleted <- ViewNewStyle.removeCustomView(viewId, BankIdAccountId(bankId, accountId),callContext)
           } yield {
             (Full(deleted), HttpCode.`204`(callContext))
           }
@@ -847,7 +847,7 @@ trait APIMethods121 {
             (account, callContext) <- NewStyle.function.getBankAccount(bankId, accountId, callContext)
             failMsg = "wrong format JSON"
             viewIds <- NewStyle.function.tryons(failMsg, 400, callContext) { json.extract[ViewIdsJson] }
-            (addedViews, callContext) <- NewStyle.function.grantAccessToMultipleViews(
+            (addedViews, callContext) <- ViewNewStyle.grantAccessToMultipleViews(
               account, u, 
               viewIds.views.map(viewIdString => BankIdAccountIdViewId(bankId, accountId,ViewId(viewIdString))), 
               provider, 
@@ -894,7 +894,7 @@ trait APIMethods121 {
             (Full(u), callContext) <- authenticatedAccess(cc)
             (_, callContext) <- NewStyle.function.getBank(bankId, callContext)
             (account, callContext) <- NewStyle.function.getBankAccount(bankId, accountId, callContext)
-            (addedView, callContext) <- NewStyle.function.grantAccessToView(account, u, BankIdAccountIdViewId(bankId, accountId, viewId), provider, providerId, callContext)
+            (addedView, callContext) <- ViewNewStyle.grantAccessToView(account, u, BankIdAccountIdViewId(bankId, accountId, viewId), provider, providerId, callContext)
           } yield {
             val viewJson = JSONFactory.createViewJSON(addedView)
             (viewJson, HttpCode.`201`(callContext))
@@ -954,7 +954,7 @@ trait APIMethods121 {
             (Full(u), callContext) <- authenticatedAccess(cc)
             (_, callContext) <- NewStyle.function.getBank(bankId, callContext)
             (account, callContext) <- NewStyle.function.getBankAccount(bankId, accountId, callContext)
-            _ <- NewStyle.function.revokeAccessToView(account, u, BankIdAccountIdViewId(bankId, accountId, viewId), provider, providerId, callContext)
+            _ <- ViewNewStyle.revokeAccessToView(account, u, BankIdAccountIdViewId(bankId, accountId, viewId), provider, providerId, callContext)
           } yield {
             (Full(""), HttpCode.`204`(callContext))
           }
@@ -1022,7 +1022,7 @@ trait APIMethods121 {
         cc => implicit val ec = EndpointContext(Some(cc))
           for {
             (account, callContext) <- NewStyle.function.checkBankAccountExists(bankId, accountId, Some(cc))
-            view <- NewStyle.function.checkViewAccessAndReturnView(viewId, BankIdAccountId(account.bankId, account.accountId), cc.user, callContext)
+            view <- ViewNewStyle.checkViewAccessAndReturnView(viewId, BankIdAccountId(account.bankId, account.accountId), cc.user, callContext)
             (otherBankAccounts, callContext) <- NewStyle.function.moderatedOtherBankAccounts(account, view, cc.user, callContext)
           } yield {
             (JSONFactory.createOtherBankAccountsJSON(otherBankAccounts), HttpCode.`200`(callContext))
@@ -1052,7 +1052,7 @@ trait APIMethods121 {
           for {
             (u, callContext) <- authenticatedAccess(cc)
             (account, callContext) <- NewStyle.function.checkBankAccountExists(bankId, accountId, callContext)
-            view <- NewStyle.function.checkViewAccessAndReturnView(viewId, BankIdAccountId(account.bankId, account.accountId), u, callContext)
+            view <- ViewNewStyle.checkViewAccessAndReturnView(viewId, BankIdAccountId(account.bankId, account.accountId), u, callContext)
             (otherBankAccount, callContext) <- NewStyle.function.moderatedOtherBankAccount(account, other_account_id, view, u, callContext)
           } yield {
             val otherBankAccountJson = JSONFactory.createOtherBankAccount(otherBankAccount)
@@ -1084,7 +1084,7 @@ trait APIMethods121 {
           for {
             (Full(u), callContext) <- authenticatedAccess(cc)
             (account, callContext) <- NewStyle.function.checkBankAccountExists(bankId, accountId, callContext)
-            view <- NewStyle.function.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), Some(u), callContext)
+            view <- ViewNewStyle.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), Some(u), callContext)
             (otherBankAccount, callContext) <- NewStyle.function.moderatedOtherBankAccount(account, other_account_id, view, Full(u), callContext)
             _ <- Helper.booleanToFuture(failMsg = s"$NoViewPermission can_see_other_account_metadata. Current ViewId($viewId)", cc=callContext) {
               otherBankAccount.metadata.isDefined
@@ -1123,7 +1123,7 @@ trait APIMethods121 {
           for {
             (Full(u), callContext) <- authenticatedAccess(cc)
             (account, callContext) <- NewStyle.function.checkBankAccountExists(bankId, accountId, callContext)
-            view <- NewStyle.function.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), Some(u), callContext)
+            view <- ViewNewStyle.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), Some(u), callContext)
             (otherBankAccount, callContext) <- NewStyle.function.moderatedOtherBankAccount(account, other_account_id, view, Full(u), callContext)
             _ <- Helper.booleanToFuture(failMsg = s"$NoViewPermission can_see_other_account_metadata. Current ViewId($viewId)", cc=callContext) {
               otherBankAccount.metadata.isDefined
@@ -1175,7 +1175,7 @@ trait APIMethods121 {
             (Full(u), callContext) <- authenticatedAccess(cc)
             (_, callContext) <- NewStyle.function.getBank(bankId, callContext)
             (account, callContext) <- NewStyle.function.checkBankAccountExists(bankId, accountId, callContext)
-            view <- NewStyle.function.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), Some(u), callContext)
+            view <- ViewNewStyle.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), Some(u), callContext)
             (otherBankAccount, callContext) <- NewStyle.function.moderatedOtherBankAccount(account, other_account_id, view, Full(u), callContext)
             _ <- Helper.booleanToFuture(failMsg = s"$NoViewPermission can_see_other_account_metadata. Current ViewId($viewId)", cc=callContext) {
               otherBankAccount.metadata.isDefined
@@ -1228,7 +1228,7 @@ trait APIMethods121 {
             (Full(u), callContext) <- authenticatedAccess(cc)
             (_, callContext) <- NewStyle.function.getBank(bankId, callContext)
             (account, callContext) <- NewStyle.function.checkBankAccountExists(bankId, accountId, callContext)
-            view <- NewStyle.function.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), Some(u), callContext)
+            view <- ViewNewStyle.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), Some(u), callContext)
             (otherBankAccount, callContext) <- NewStyle.function.moderatedOtherBankAccount(account, other_account_id, view, Full(u), callContext)
             _ <- Helper.booleanToFuture(failMsg = s"$NoViewPermission can_see_other_account_metadata. Current ViewId($viewId)", cc=callContext) {
               otherBankAccount.metadata.isDefined
@@ -1279,7 +1279,7 @@ trait APIMethods121 {
             (Full(u), callContext) <- authenticatedAccess(cc)
             (_, callContext) <- NewStyle.function.getBank(bankId, callContext)
             (account, callContext) <- NewStyle.function.checkBankAccountExists(bankId, accountId, callContext)
-            view <- NewStyle.function.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), Some(u), callContext)
+            view <- ViewNewStyle.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), Some(u), callContext)
             (otherBankAccount, callContext) <- NewStyle.function.moderatedOtherBankAccount(account, other_account_id, view, Full(u), callContext)
             _ <- Helper.booleanToFuture(failMsg = s"$NoViewPermission can_see_other_account_metadata. Current ViewId($viewId)", cc=callContext) {
               otherBankAccount.metadata.isDefined
@@ -1326,7 +1326,7 @@ trait APIMethods121 {
           for {
             (Full(u), callContext) <- authenticatedAccess(cc)
             (account, callContext) <- NewStyle.function.checkBankAccountExists(bankId, accountId, callContext)
-            view <- NewStyle.function.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), Some(u), callContext)
+            view <- ViewNewStyle.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), Some(u), callContext)
             (otherBankAccount, callContext) <- NewStyle.function.moderatedOtherBankAccount(account, other_account_id, view, Full(u), callContext)
             _ <- Helper.booleanToFuture(failMsg = s"$NoViewPermission can_see_other_account_metadata. Current ViewId($viewId)", cc=callContext) {
               otherBankAccount.metadata.isDefined
@@ -1372,7 +1372,7 @@ trait APIMethods121 {
             (Full(u), callContext) <- authenticatedAccess(cc)
             (_, callContext) <- NewStyle.function.getBank(bankId, callContext)
             (account, callContext) <- NewStyle.function.checkBankAccountExists(bankId, accountId, callContext)
-            view <- NewStyle.function.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), Some(u), callContext)
+            view <- ViewNewStyle.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), Some(u), callContext)
             (otherBankAccount, callContext) <- NewStyle.function.moderatedOtherBankAccount(account, other_account_id, view, Full(u), callContext)
             _ <- Helper.booleanToFuture(failMsg = s"$NoViewPermission can_see_other_account_metadata. Current ViewId($viewId)", cc=callContext) {
               otherBankAccount.metadata.isDefined
@@ -1424,7 +1424,7 @@ trait APIMethods121 {
             (Full(u), callContext) <- authenticatedAccess(cc)
             (_, callContext) <- NewStyle.function.getBank(bankId, callContext)
             (account, callContext) <- NewStyle.function.checkBankAccountExists(bankId, accountId, callContext)
-            view <- NewStyle.function.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), Some(u), callContext)
+            view <- ViewNewStyle.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), Some(u), callContext)
             (otherBankAccount, callContext) <- NewStyle.function.moderatedOtherBankAccount(account, other_account_id, view, Full(u), callContext)
             _ <- Helper.booleanToFuture(failMsg = s"$NoViewPermission can_see_other_account_metadata. Current ViewId($viewId)", cc=callContext) {
               otherBankAccount.metadata.isDefined
@@ -1475,7 +1475,7 @@ trait APIMethods121 {
             (Full(u), callContext) <- authenticatedAccess(cc)
             (_, callContext) <- NewStyle.function.getBank(bankId, callContext)
             (account, callContext) <- NewStyle.function.checkBankAccountExists(bankId, accountId, callContext)
-            view <- NewStyle.function.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), Some(u), callContext)
+            view <- ViewNewStyle.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), Some(u), callContext)
             (otherBankAccount, callContext) <- NewStyle.function.moderatedOtherBankAccount(account, other_account_id, view, Full(u), callContext)
             _ <- Helper.booleanToFuture(failMsg = s"$NoViewPermission can_see_other_account_metadata. Current ViewId($viewId)", cc=callContext) {
               otherBankAccount.metadata.isDefined
@@ -1524,7 +1524,7 @@ trait APIMethods121 {
             (Full(u), callContext) <- authenticatedAccess(cc)
             (_, callContext) <- NewStyle.function.getBank(bankId, callContext)
             (account, callContext) <- NewStyle.function.checkBankAccountExists(bankId, accountId, callContext)
-            view <- NewStyle.function.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), Some(u), callContext)
+            view <- ViewNewStyle.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), Some(u), callContext)
             (otherBankAccount, callContext) <- NewStyle.function.moderatedOtherBankAccount(account, other_account_id, view, Full(u), callContext)
             _ <- Helper.booleanToFuture(failMsg = s"$NoViewPermission can_see_other_account_metadata. Current ViewId($viewId)", cc=callContext) {
               otherBankAccount.metadata.isDefined
@@ -1573,7 +1573,7 @@ trait APIMethods121 {
             (Full(u), callContext) <- authenticatedAccess(cc)
             (_, callContext) <- NewStyle.function.getBank(bankId, callContext)
             (account, callContext) <- NewStyle.function.checkBankAccountExists(bankId, accountId, callContext)
-            view <- NewStyle.function.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), Some(u), callContext)
+            view <- ViewNewStyle.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), Some(u), callContext)
             (otherBankAccount, callContext) <- NewStyle.function.moderatedOtherBankAccount(account, other_account_id, view, Full(u), callContext)
             _ <- Helper.booleanToFuture(failMsg = s"$NoViewPermission can_see_other_account_metadata. Current ViewId($viewId)", cc=callContext) {
               otherBankAccount.metadata.isDefined
@@ -1621,7 +1621,7 @@ trait APIMethods121 {
             (Full(u), callContext) <- authenticatedAccess(cc)
             (_, callContext) <- NewStyle.function.getBank(bankId, callContext)
             (account, callContext) <- NewStyle.function.checkBankAccountExists(bankId, accountId, callContext)
-            view <- NewStyle.function.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), Some(u), callContext)
+            view <- ViewNewStyle.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), Some(u), callContext)
             (otherBankAccount, callContext) <- NewStyle.function.moderatedOtherBankAccount(account, other_account_id, view, Full(u), callContext)
             _ <- Helper.booleanToFuture(failMsg = s"$NoViewPermission can_see_other_account_metadata. Current ViewId($viewId)", cc=callContext) {
               otherBankAccount.metadata.isDefined
@@ -1670,7 +1670,7 @@ trait APIMethods121 {
             (Full(u), callContext) <- authenticatedAccess(cc)
             (_, callContext) <- NewStyle.function.getBank(bankId, callContext)
             (account, callContext) <- NewStyle.function.checkBankAccountExists(bankId, accountId, callContext)
-            view <- NewStyle.function.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), Some(u), callContext)
+            view <- ViewNewStyle.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), Some(u), callContext)
             (otherBankAccount, callContext) <- NewStyle.function.moderatedOtherBankAccount(account, other_account_id, view, Full(u), callContext)
             _ <- Helper.booleanToFuture(failMsg = s"$NoViewPermission can_see_other_account_metadata. Current ViewId($viewId)", cc=callContext) {
               otherBankAccount.metadata.isDefined
@@ -1719,7 +1719,7 @@ trait APIMethods121 {
             (Full(u), callContext) <- authenticatedAccess(cc)
             (_, callContext) <- NewStyle.function.getBank(bankId, callContext)
             (account, callContext) <- NewStyle.function.checkBankAccountExists(bankId, accountId, callContext)
-            view <- NewStyle.function.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), Some(u), callContext)
+            view <- ViewNewStyle.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), Some(u), callContext)
             (otherBankAccount, callContext) <- NewStyle.function.moderatedOtherBankAccount(account, other_account_id, view, Full(u), callContext)
             _ <- Helper.booleanToFuture(failMsg = s"$NoViewPermission can_see_other_account_metadata. Current ViewId($viewId)", cc=callContext) {
               otherBankAccount.metadata.isDefined
@@ -1767,7 +1767,7 @@ trait APIMethods121 {
             (Full(u), callContext) <- authenticatedAccess(cc)
             (_, callContext) <- NewStyle.function.getBank(bankId, callContext)
             (account, callContext) <- NewStyle.function.checkBankAccountExists(bankId, accountId, callContext)
-            view <- NewStyle.function.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), Some(u), callContext)
+            view <- ViewNewStyle.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), Some(u), callContext)
             (otherBankAccount, callContext) <- NewStyle.function.moderatedOtherBankAccount(account, other_account_id, view, Full(u), callContext)
             _ <- Helper.booleanToFuture(failMsg = s"$NoViewPermission can_see_other_account_metadata. Current ViewId($viewId)", cc=callContext) {
               otherBankAccount.metadata.isDefined
@@ -1815,7 +1815,7 @@ trait APIMethods121 {
             (Full(u), callContext) <- authenticatedAccess(cc)
             (_, callContext) <- NewStyle.function.getBank(bankId, callContext)
             (account, callContext) <- NewStyle.function.checkBankAccountExists(bankId, accountId, callContext)
-            view <- NewStyle.function.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), Some(u), callContext)
+            view <- ViewNewStyle.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), Some(u), callContext)
             (otherBankAccount, callContext) <- NewStyle.function.moderatedOtherBankAccount(account, other_account_id, view, Full(u), callContext)
             _ <- Helper.booleanToFuture(failMsg = s"$NoViewPermission can_see_other_account_metadata. Current ViewId($viewId)", cc=callContext) {
               otherBankAccount.metadata.isDefined
@@ -1863,7 +1863,7 @@ trait APIMethods121 {
             (Full(u), callContext) <- authenticatedAccess(cc)
             (_, callContext) <- NewStyle.function.getBank(bankId, callContext)
             (account, callContext) <- NewStyle.function.checkBankAccountExists(bankId, accountId, callContext)
-            view <- NewStyle.function.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), Some(u), callContext)
+            view <- ViewNewStyle.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), Some(u), callContext)
             (otherBankAccount, callContext) <- NewStyle.function.moderatedOtherBankAccount(account, other_account_id, view, Full(u), callContext)
             _ <- Helper.booleanToFuture(failMsg = s"$NoViewPermission can_see_other_account_metadata. Current ViewId($viewId)", cc=callContext) {
               otherBankAccount.metadata.isDefined
@@ -1905,7 +1905,7 @@ trait APIMethods121 {
             (Full(u), callContext) <- authenticatedAccess(cc)
             (_, callContext) <- NewStyle.function.getBank(bankId, callContext)
             (account, callContext) <- NewStyle.function.checkBankAccountExists(bankId, accountId, callContext)
-            view <- NewStyle.function.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), Some(u), callContext)
+            view <- ViewNewStyle.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), Some(u), callContext)
             (otherBankAccount, callContext) <- NewStyle.function.moderatedOtherBankAccount(account, other_account_id, view, Full(u), callContext)
             _ <- Helper.booleanToFuture(failMsg = s"$NoViewPermission can_see_other_account_metadata. Current ViewId($viewId)", cc=callContext) {
               otherBankAccount.metadata.isDefined
@@ -1952,7 +1952,7 @@ trait APIMethods121 {
             (Full(u), callContext) <- authenticatedAccess(cc)
             (_, callContext) <- NewStyle.function.getBank(bankId, callContext)
             (account, callContext) <- NewStyle.function.checkBankAccountExists(bankId, accountId, callContext)
-            view <- NewStyle.function.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), Some(u), callContext)
+            view <- ViewNewStyle.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), Some(u), callContext)
             (otherBankAccount, callContext) <- NewStyle.function.moderatedOtherBankAccount(account, other_account_id, view, Full(u), callContext)
             _ <- Helper.booleanToFuture(failMsg = s"$NoViewPermission can_see_other_account_metadata. Current ViewId($viewId)", cc=callContext) {
               otherBankAccount.metadata.isDefined
@@ -2001,7 +2001,7 @@ trait APIMethods121 {
             (Full(u), callContext) <- authenticatedAccess(cc)
             (_, callContext) <- NewStyle.function.getBank(bankId, callContext)
             (account, callContext) <- NewStyle.function.checkBankAccountExists(bankId, accountId, callContext)
-            view <- NewStyle.function.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), Some(u), callContext)
+            view <- ViewNewStyle.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), Some(u), callContext)
             (otherBankAccount, callContext) <- NewStyle.function.moderatedOtherBankAccount(account, other_account_id, view, Full(u), callContext)
             _ <- Helper.booleanToFuture(failMsg = s"$NoViewPermission can_see_other_account_metadata. Current ViewId($viewId)", cc=callContext) {
               otherBankAccount.metadata.isDefined
@@ -2049,7 +2049,7 @@ trait APIMethods121 {
             (Full(u), callContext) <- authenticatedAccess(cc)
             (_, callContext) <- NewStyle.function.getBank(bankId, callContext)
             (account, callContext) <- NewStyle.function.checkBankAccountExists(bankId, accountId, callContext)
-            view <- NewStyle.function.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), Some(u), callContext)
+            view <- ViewNewStyle.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), Some(u), callContext)
             (otherBankAccount, callContext) <- NewStyle.function.moderatedOtherBankAccount(account, other_account_id, view, Full(u), callContext)
             _ <- Helper.booleanToFuture(failMsg = s"$NoViewPermission can_see_other_account_metadata. Current ViewId($viewId)", cc=callContext) {
               otherBankAccount.metadata.isDefined
@@ -2097,7 +2097,7 @@ trait APIMethods121 {
             (Full(u), callContext) <- authenticatedAccess(cc)
             (_, callContext) <- NewStyle.function.getBank(bankId, callContext)
             (account, callContext) <- NewStyle.function.checkBankAccountExists(bankId, accountId, callContext)
-            view <- NewStyle.function.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), Some(u), callContext)
+            view <- ViewNewStyle.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), Some(u), callContext)
             (otherBankAccount, callContext) <- NewStyle.function.moderatedOtherBankAccount(account, other_account_id, view, Full(u), callContext)
             _ <- Helper.booleanToFuture(failMsg = s"$NoViewPermission can_see_other_account_metadata. Current ViewId($viewId)", cc=callContext) {
               otherBankAccount.metadata.isDefined
@@ -2152,7 +2152,7 @@ trait APIMethods121 {
             (Full(u), callContext) <- authenticatedAccess(cc)
             (_, callContext) <- NewStyle.function.getBank(bankId, callContext)
             (account, callContext) <- NewStyle.function.checkBankAccountExists(bankId, accountId, callContext)
-            view <- NewStyle.function.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), Some(u), callContext)
+            view <- ViewNewStyle.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), Some(u), callContext)
             (otherBankAccount, callContext) <- NewStyle.function.moderatedOtherBankAccount(account, other_account_id, view, Full(u), callContext)
             _ <- Helper.booleanToFuture(failMsg = s"$NoViewPermission can_see_other_account_metadata. Current ViewId($viewId)", cc=callContext) {
               otherBankAccount.metadata.isDefined
@@ -2203,7 +2203,7 @@ trait APIMethods121 {
             (Full(u), callContext) <- authenticatedAccess(cc)
             (_, callContext) <- NewStyle.function.getBank(bankId, callContext)
             (account, callContext) <- NewStyle.function.checkBankAccountExists(bankId, accountId, callContext)
-            view <- NewStyle.function.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), Some(u), callContext)
+            view <- ViewNewStyle.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), Some(u), callContext)
             (otherBankAccount, callContext) <- NewStyle.function.moderatedOtherBankAccount(account, other_account_id, view, Full(u), callContext)
             _ <- Helper.booleanToFuture(failMsg = s"$NoViewPermission can_see_other_account_metadata. Current ViewId($viewId)", cc=callContext) {
               otherBankAccount.metadata.isDefined
@@ -2254,7 +2254,7 @@ trait APIMethods121 {
             (Full(u), callContext) <- authenticatedAccess(cc)
             (_, callContext) <- NewStyle.function.getBank(bankId, callContext)
             (account, callContext) <- NewStyle.function.checkBankAccountExists(bankId, accountId, callContext)
-            view <- NewStyle.function.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), Some(u), callContext)
+            view <- ViewNewStyle.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), Some(u), callContext)
             (otherBankAccount, callContext) <- NewStyle.function.moderatedOtherBankAccount(account, other_account_id, view, Full(u), callContext)
             _ <- Helper.booleanToFuture(failMsg = s"$NoViewPermission can_see_other_account_metadata. Current ViewId($viewId)", cc=callContext) {
               otherBankAccount.metadata.isDefined
@@ -2309,7 +2309,7 @@ trait APIMethods121 {
             (Full(u), callContext) <- authenticatedAccess(cc)
             (_, callContext) <- NewStyle.function.getBank(bankId, callContext)
             (account, callContext) <- NewStyle.function.checkBankAccountExists(bankId, accountId, callContext)
-            view <- NewStyle.function.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), Some(u), callContext)
+            view <- ViewNewStyle.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), Some(u), callContext)
             (otherBankAccount, callContext) <- NewStyle.function.moderatedOtherBankAccount(account, other_account_id, view, Full(u), callContext)
             _ <- Helper.booleanToFuture(failMsg = s"$NoViewPermission can_see_other_account_metadata. Current ViewId($viewId)", cc=callContext) {
               otherBankAccount.metadata.isDefined
@@ -2360,7 +2360,7 @@ trait APIMethods121 {
             (Full(u), callContext) <- authenticatedAccess(cc)
             (_, callContext) <- NewStyle.function.getBank(bankId, callContext)
             (account, callContext) <- NewStyle.function.checkBankAccountExists(bankId, accountId, callContext)
-            view <- NewStyle.function.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), Some(u), callContext)
+            view <- ViewNewStyle.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), Some(u), callContext)
             (otherBankAccount, callContext) <- NewStyle.function.moderatedOtherBankAccount(account, other_account_id, view, Full(u), callContext)
             _ <- Helper.booleanToFuture(failMsg = s"$NoViewPermission can_see_other_account_metadata. Current ViewId($viewId)", cc=callContext) {
               otherBankAccount.metadata.isDefined
@@ -2745,7 +2745,7 @@ trait APIMethods121 {
           for {
             (Full(user), callContext) <- authenticatedAccess(cc)
             (account, callContext) <- NewStyle.function.checkBankAccountExists(bankId, accountId, callContext)
-            view <- NewStyle.function.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), Some(user), callContext)
+            view <- ViewNewStyle.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), Some(user), callContext)
             metadata <- moderatedTransactionMetadataFuture(bankId, accountId, viewId, transactionId, Full(user), callContext)
             delete <- Future(metadata.deleteComment(commentId, Full(user), account, view, callContext)) map {
               unboxFullOrFail(_, callContext, "")
@@ -2864,7 +2864,7 @@ trait APIMethods121 {
         cc => implicit val ec = EndpointContext(Some(cc))
           for {
             (Full(user), callContext) <- authenticatedAccess(cc)
-            view <- NewStyle.function.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), Some(user), callContext)
+            view <- ViewNewStyle.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), Some(user), callContext)
             metadata <- moderatedTransactionMetadataFuture(bankId, accountId, viewId, transactionId, Full(user), callContext)
             (bankAccount, callContext) <- NewStyle.function.checkBankAccountExists(bankId, accountId, callContext)
             delete <- Future(metadata.deleteTag(tagId, Full(user), bankAccount, view, callContext)) map {
@@ -2989,7 +2989,7 @@ trait APIMethods121 {
           for {
             (Full(user), callContext) <- authenticatedAccess(cc)
             metadata <- moderatedTransactionMetadataFuture(bankId, accountId, viewId, transactionId, Full(user), callContext)
-            view <- NewStyle.function.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), Some(user), callContext)
+            view <- ViewNewStyle.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), Some(user), callContext)
             (account, _) <- NewStyle.function.checkBankAccountExists(bankId, accountId, callContext)
             delete <- Future(metadata.deleteImage(imageId, Full(user), account, view, callContext)) map {
               unboxFullOrFail(_, callContext, "")
@@ -3162,7 +3162,7 @@ trait APIMethods121 {
           for {
             (user, callContext) <- authenticatedAccess(cc)
             (account, callContext) <- NewStyle.function.checkBankAccountExists(bankId, accountId, callContext)
-            view <- NewStyle.function.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), user, callContext)
+            view <- ViewNewStyle.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), user, callContext)
             metadata <- moderatedTransactionMetadataFuture(bankId, accountId, viewId, transactionId, user, callContext)
             delete <- Future(metadata.deleteWhereTag(viewId, user, account, view, callContext)) map {
               unboxFullOrFail(_, callContext, "Delete not completed")
@@ -3196,7 +3196,7 @@ trait APIMethods121 {
           for {
             (Full(u), callContext) <- authenticatedAccess(cc)
             (account, callContext) <- NewStyle.function.checkBankAccountExists(bankId, accountId, callContext)
-            view <- NewStyle.function.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), Some(u), callContext)
+            view <- ViewNewStyle.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), Some(u), callContext)
             (moderatedTransaction, callContext) <- account.moderatedTransactionFuture(transactionId, view, Full(u), callContext) map {
               unboxFullOrFail(_, callContext, GetTransactionsException)
             }

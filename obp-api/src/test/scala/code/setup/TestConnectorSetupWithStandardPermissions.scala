@@ -2,7 +2,7 @@ package code.setup
 
 import bootstrap.liftweb.ToSchemify
 import code.accountholders.AccountHolders
-import code.api.Constant.{CUSTOM_PUBLIC_VIEW_ID, SYSTEM_OWNER_VIEW_ID}
+import code.api.Constant._
 import code.api.util.APIUtil.isValidCustomViewName
 import code.api.util.ErrorMessages._
 import code.model._
@@ -14,7 +14,6 @@ import com.openbankproject.commons.model._
 import net.liftweb.common.{Failure, Full, ParamFailure}
 import net.liftweb.mapper.MetaMapper
 import net.liftweb.util.Helpers._
-import code.api.Constant._
 
 
 trait TestConnectorSetupWithStandardPermissions extends TestConnectorSetup {
@@ -134,7 +133,7 @@ trait TestConnectorSetupWithStandardPermissions extends TestConnectorSetup {
               hideOtherAccountMetadataIfAlias_(false).
               saveMe
           }
-          view.map(ViewPermission.createViewPermissions(
+          view.map(ViewPermission.resetViewPermissions(
             _,
             SYSTEM_CUSTOM_VIEW_PERMISSION_TEST
           ))

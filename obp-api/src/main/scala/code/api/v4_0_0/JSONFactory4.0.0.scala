@@ -30,7 +30,8 @@ import code.api.Constant
 import code.api.attributedefinition.AttributeDefinition
 import code.api.util.APIUtil.{DateWithDay, DateWithSeconds, gitCommit, stringOptionOrNull, stringOrNull}
 import code.api.util.ErrorMessages.MandatoryPropertyIsNotSet
-import code.api.util.{APIUtil, CallContext, NewStyle}
+import code.api.util.newstyle.ViewNewStyle
+import code.api.util.{APIUtil, CallContext}
 import code.api.v1_2_1.JSONFactory.{createAmountOfMoneyJSON, createOwnersJSON}
 import code.api.v1_2_1.{BankRoutingJsonV121, JSONFactory, UserJSONV121, ViewJSONV121}
 import code.api.v1_4_0.JSONFactory1_4_0.{LocationJsonV140, MetaJsonV140, TransactionRequestAccountJsonV140, transformToLocationFromV140, transformToMetaFromV140}
@@ -2059,15 +2060,15 @@ object JSONFactory400 {
 
   def getView(bankId: BankId, accountId: AccountId, postView: PostViewJsonV400, callContext: Option[CallContext]) = {
     postView.is_system match {
-      case true => NewStyle.function.systemView(ViewId(postView.view_id), callContext)
-      case false => NewStyle.function.customView(ViewId(postView.view_id), BankIdAccountId(bankId, accountId), callContext)
+      case true => ViewNewStyle.systemView(ViewId(postView.view_id), callContext)
+      case false => ViewNewStyle.customView(ViewId(postView.view_id), BankIdAccountId(bankId, accountId), callContext)
     }
   }
 
   def grantAccountAccessToUser(bankId: BankId, accountId: AccountId, user: User, view: View, callContext: Option[CallContext]) = {
     view.isSystem match {
-      case true => NewStyle.function.grantAccessToSystemView(bankId, accountId, view, user, callContext)
-      case false => NewStyle.function.grantAccessToCustomView(view, user, callContext)
+      case true => ViewNewStyle.grantAccessToSystemView(bankId, accountId, view, user, callContext)
+      case false => ViewNewStyle.grantAccessToCustomView(view, user, callContext)
     }
   }
 }

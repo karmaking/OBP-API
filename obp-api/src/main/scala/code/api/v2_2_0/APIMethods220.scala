@@ -9,6 +9,7 @@ import code.api.util.ErrorMessages.{BankAccountNotFound, _}
 import code.api.util.FutureUtil.EndpointContext
 import code.api.util.NewStyle.HttpCode
 import code.api.util._
+import code.api.util.newstyle.ViewNewStyle
 import code.api.v1_2_1.{CreateViewJsonV121, JSONFactory, UpdateViewJsonV121}
 import code.api.v2_1_0._
 import code.api.v2_2_0.JSONFactory220.transformV220ToBranch
@@ -368,7 +369,7 @@ trait APIMethods220 {
           for {
             (Full(u), callContext) <- authenticatedAccess(cc)
             (account, callContext) <- NewStyle.function.checkBankAccountExists(bankId, accountId, callContext)
-            view <- NewStyle.function.checkViewAccessAndReturnView(viewId, BankIdAccountId(account.bankId, account.accountId), Some(u), callContext)
+            view <- ViewNewStyle.checkViewAccessAndReturnView(viewId, BankIdAccountId(account.bankId, account.accountId), Some(u), callContext)
             _ <- Helper.booleanToFuture(
               s"${ErrorMessages.NoViewPermission} You need the `${(CAN_GET_COUNTERPARTY)}` permission on the View(${viewId.value} )",
               cc = callContext
@@ -421,7 +422,7 @@ trait APIMethods220 {
           for {
             (Full(u), callContext) <- authenticatedAccess(cc)
             (account, callContext) <- NewStyle.function.checkBankAccountExists(bankId, accountId, callContext)
-            view <- NewStyle.function.checkViewAccessAndReturnView(viewId, BankIdAccountId(account.bankId, account.accountId), Some(u), callContext)
+            view <- ViewNewStyle.checkViewAccessAndReturnView(viewId, BankIdAccountId(account.bankId, account.accountId), Some(u), callContext)
 
             _ <- Helper.booleanToFuture(
               s"${ErrorMessages.NoViewPermission} You need the `${(CAN_GET_COUNTERPARTY)}` permission on the View(${viewId.value} )",
@@ -1200,7 +1201,7 @@ trait APIMethods220 {
             postJson <- NewStyle.function.tryons(s"$InvalidJsonFormat The Json body should be the $PostCounterpartyJSON", 400, cc.callContext) {
               json.extract[PostCounterpartyJSON]
             }
-            view <- NewStyle.function.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), Some(u), callContext)
+            view <- ViewNewStyle.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), Some(u), callContext)
             _ <- Helper.booleanToFuture(
               s"${ErrorMessages.NoViewPermission} You need the `${(CAN_ADD_COUNTERPARTY)}` permission on the View(${viewId.value} )",
               cc = callContext

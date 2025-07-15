@@ -361,7 +361,7 @@ class ViewDefinition extends View with LongKeyedMapper[ViewDefinition] with Many
     isFirehose_(viewSpecification.is_firehose.getOrElse(false))
     metadataView_(viewSpecification.metadata_view)
     
-    ViewPermission.createViewPermissions(
+    ViewPermission.resetViewPermissions(
       this,
       viewSpecification.allowed_actions,
       viewSpecification.can_grant_access_to_views.getOrElse(Nil),
@@ -388,7 +388,7 @@ class ViewDefinition extends View with LongKeyedMapper[ViewDefinition] with Many
     isFirehose_(viewSpecification.is_firehose.getOrElse(false))
     metadataView_(viewSpecification.metadata_view)
 
-    ViewPermission.createViewPermissions(
+    ViewPermission.resetViewPermissions(
       this,
       viewSpecification.allowed_actions,
       viewSpecification.can_grant_access_to_views.getOrElse(Nil),

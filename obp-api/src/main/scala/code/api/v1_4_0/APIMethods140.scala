@@ -6,6 +6,7 @@ import code.api.util.ApiTag._
 import code.api.util.FutureUtil.EndpointContext
 import code.api.util.NewStyle.HttpCode
 import code.api.util._
+import code.api.util.newstyle.ViewNewStyle
 import code.api.v1_2_1.JSONFactory
 import code.api.v1_4_0.JSONFactory1_4_0._
 import code.api.v2_0_0.CreateCustomerJson
@@ -24,7 +25,7 @@ import net.liftweb.http.rest.RestHelper
 import net.liftweb.json.Extraction
 import net.liftweb.json.JsonAST.JValue
 import net.liftweb.util.Helpers.tryo
-import net.liftweb.util.{Props, StringHelpers}
+import net.liftweb.util.Props
 
 import scala.collection.immutable.{List, Nil}
 import scala.concurrent.Future
@@ -451,7 +452,7 @@ trait APIMethods140 extends MdcLoggable with APIMethods130 with APIMethods121{
             (fromAccount, callContext) <- NewStyle.function.getBankAccount(bankId, accountId, callContext)
             failMsg = ErrorMessages.InvalidISOCurrencyCode.concat("Please specify a valid value for CURRENCY of your Bank Account. ")
             _ <- NewStyle.function.isValidCurrencyISOCode(fromAccount.currency, failMsg, callContext)
-            view <- NewStyle.function.checkViewAccessAndReturnView(viewId, BankIdAccountId(fromAccount.bankId, fromAccount.accountId), Some(u), callContext)
+            view <- ViewNewStyle.checkViewAccessAndReturnView(viewId, BankIdAccountId(fromAccount.bankId, fromAccount.accountId), Some(u), callContext)
             _ <- Helper.booleanToFuture(
               s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${(CAN_SEE_TRANSACTION_REQUEST_TYPES)}` permission on the View(${viewId.value} )",
               cc = callContext

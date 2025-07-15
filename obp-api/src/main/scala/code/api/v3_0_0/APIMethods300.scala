@@ -11,6 +11,7 @@ import code.api.util.ErrorMessages._
 import code.api.util.FutureUtil.EndpointContext
 import code.api.util.NewStyle.HttpCode
 import code.api.util._
+import code.api.util.newstyle.ViewNewStyle
 import code.api.v1_2_1.JSONFactory
 import code.api.v2_0_0.AccountsHelper._
 import code.api.v2_0_0.JSONFactory200
@@ -40,7 +41,6 @@ import net.liftweb.http.rest.RestHelper
 import net.liftweb.json.JsonAST.JField
 import net.liftweb.json.compactRender
 import net.liftweb.util.Helpers.tryo
-import net.liftweb.util.StringHelpers
 
 import java.util.regex.Pattern
 import scala.collection.immutable.{List, Nil}
@@ -216,7 +216,7 @@ trait APIMethods300 {
                 s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${(CAN_CREATE_CUSTOM_VIEW)}` permission on any your views",
                 cc = callContext
               ) {anyViewContainsCanCreateCustomViewPermission}
-              (view, callContext) <- NewStyle.function.createCustomView(BankIdAccountId(bankId, accountId), createViewJson, callContext)
+              (view, callContext) <- ViewNewStyle.createCustomView(BankIdAccountId(bankId, accountId), createViewJson, callContext)
             } yield {
                (JSONFactory300.createViewJSON(view), HttpCode.`201`(callContext))
             }
@@ -309,7 +309,7 @@ trait APIMethods300 {
                 x => fullBoxOrException(
                   x ~> APIFailureNewStyle(s"$ViewNotFound. Check your post json body, metadata_view = ${updateJson.metadata_view}. It should be an existing VIEW_ID, eg: owner", 400, callContext.map(_.toLight)))
               } map { unboxFull(_) }
-              view <- NewStyle.function.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId),Some(u), callContext)
+              view <- ViewNewStyle.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId),Some(u), callContext)
               _ <- Helper.booleanToFuture(failMsg = SystemViewsCanNotBeModified, cc=callContext) {
                 !view.isSystem
               }
@@ -324,7 +324,7 @@ trait APIMethods300 {
               ) {
                 anyViewContainsCancanUpdateCustomViewPermission
               }
-              (view, callContext) <- NewStyle.function.updateCustomView(BankIdAccountId(bankId, accountId), viewId, updateJson.toUpdateViewJson, callContext)
+              (view, callContext) <- ViewNewStyle.updateCustomView(BankIdAccountId(bankId, accountId), viewId, updateJson.toUpdateViewJson, callContext)
             } yield {
               (JSONFactory300.createViewJSON(view), HttpCode.`200`(callContext))
             }
@@ -364,7 +364,7 @@ trait APIMethods300 {
           for {
             (Full(u), callContext) <- authenticatedAccess(cc)
             (account, callContext) <- NewStyle.function.checkBankAccountExists(bankId, accountId, callContext)
-            view <- NewStyle.function.checkViewAccessAndReturnView(viewId, BankIdAccountId(account.bankId, account.accountId),Some(u), callContext)
+            view <- ViewNewStyle.checkViewAccessAndReturnView(viewId, BankIdAccountId(account.bankId, account.accountId),Some(u), callContext)
             moderatedAccount <- NewStyle.function.moderatedBankAccountCore(account, view, Full(u), callContext)
           } yield {
             (createCoreBankAccountJSON(moderatedAccount), HttpCode.`200`(callContext))
@@ -407,7 +407,7 @@ trait APIMethods300 {
         cc => implicit val ec = EndpointContext(Some(cc))
           for {
             (account, callContext) <- NewStyle.function.getBankAccount(bankId, accountId, Some(cc))
-            view <- NewStyle.function.checkViewAccessAndReturnView(viewId, BankIdAccountId(account.bankId, account.accountId),cc.user, callContext)
+            view <- ViewNewStyle.checkViewAccessAndReturnView(viewId, BankIdAccountId(account.bankId, account.accountId),cc.user, callContext)
             moderatedAccount <- NewStyle.function.moderatedBankAccountCore(account, view, Empty, callContext)
           } yield {
             (createCoreBankAccountJSON(moderatedAccount), HttpCode.`200`(callContext))
@@ -451,7 +451,7 @@ trait APIMethods300 {
           (Full(u), callContext) <-  authenticatedAccess(cc)
           (account, callContext) <- NewStyle.function.checkBankAccountExists(bankId, accountId, callContext)
           // Assume owner view was requested
-          view <- NewStyle.function.checkOwnerViewAccessAndReturnOwnerView(u, BankIdAccountId(account.bankId, account.accountId), callContext)
+          view <- ViewNewStyle.checkOwnerViewAccessAndReturnOwnerView(u, BankIdAccountId(account.bankId, account.accountId), callContext)
           moderatedAccount <- NewStyle.function.moderatedBankAccountCore(account, view, Full(u), callContext)
         } yield {
           val availableViews: List[View] = Views.views.vend.privateViewsUserCanAccessForAccount(u, BankIdAccountId(account.bankId, account.accountId))
@@ -549,7 +549,7 @@ trait APIMethods300 {
             }
             _ <- NewStyle.function.hasAtLeastOneEntitlement(bankId.value, u.userId, ApiRole.canUseAccountFirehose :: canUseAccountFirehoseAtAnyBank :: Nil, callContext)
             (bank, callContext) <- NewStyle.function.getBank(bankId, callContext)
-            view <- NewStyle.function.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, AccountId("")), Some(u), callContext)
+            view <- ViewNewStyle.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, AccountId("")), Some(u), callContext)
             availableBankIdAccountIdList <- Future {
               Views.views.vend.getAllFirehoseAccounts(bank.bankId).map(a => BankIdAccountId(a.bankId,a.accountId)) 
             }
@@ -641,7 +641,7 @@ trait APIMethods300 {
             _ <- NewStyle.function.hasAtLeastOneEntitlement(failMsg = UserHasMissingRoles + allowedEntitlementsTxt)(bankId.value, u.userId, allowedEntitlements, callContext)
             (bank, callContext) <- NewStyle.function.getBank(bankId, callContext)
             (bankAccount, callContext) <- NewStyle.function.getBankAccount(bankId, accountId, callContext)
-            view <- NewStyle.function.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankAccount.bankId, bankAccount.accountId),Some(u), callContext)
+            view <- ViewNewStyle.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankAccount.bankId, bankAccount.accountId),Some(u), callContext)
             allowedParams = List("sort_direction", "limit", "offset", "from_date", "to_date")
             httpParams <- NewStyle.function.extractHttpParamsFromUrl(cc.url)
             (obpQueryParams, callContext) <- NewStyle.function.createObpParams(httpParams, allowedParams, callContext)
@@ -708,7 +708,7 @@ trait APIMethods300 {
             (bank, callContext) <- NewStyle.function.getBank(bankId, callContext)
             (bankAccount, callContext) <- NewStyle.function.checkBankAccountExists(bankId, accountId, callContext)
             // Assume owner view was requested
-            view <- NewStyle.function.checkOwnerViewAccessAndReturnOwnerView(user, BankIdAccountId(bankAccount.bankId, bankAccount.accountId), callContext)
+            view <- ViewNewStyle.checkOwnerViewAccessAndReturnOwnerView(user, BankIdAccountId(bankAccount.bankId, bankAccount.accountId), callContext)
             httpParams <- NewStyle.function.extractHttpParamsFromUrl(cc.url)
             (params, callContext) <- createQueriesByHttpParamsFuture(httpParams, callContext)
             (transactionsCore, callContext) <- bankAccount.getModeratedTransactionsCore(bank, Some(user), view, BankIdAccountId(bankId, accountId), params, callContext) map {
@@ -765,7 +765,7 @@ trait APIMethods300 {
             (user, callContext) <-  authenticatedAccess(cc)
             (bank, callContext) <- NewStyle.function.getBank(bankId, callContext)
             (bankAccount, callContext) <- NewStyle.function.checkBankAccountExists(bankId, accountId, callContext)
-            view <- NewStyle.function.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankAccount.bankId, bankAccount.accountId), user, callContext)
+            view <- ViewNewStyle.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankAccount.bankId, bankAccount.accountId), user, callContext)
             (params, callContext) <- createQueriesByHttpParamsFuture(callContext.get.requestHeaders, callContext)
             //Note: error handling and messages for getTransactionParams are in the sub method
             (transactions, callContext) <- bankAccount.getModeratedTransactionsFuture(bank, user, view, callContext, params) map {
@@ -1788,7 +1788,7 @@ trait APIMethods300 {
           for {
             (u, callContext) <- authenticatedAccess(cc)
             (account, callContext) <- NewStyle.function.checkBankAccountExists(bankId, accountId, callContext)
-            view <- NewStyle.function.checkViewAccessAndReturnView(viewId, BankIdAccountId(account.bankId, account.accountId), u, callContext)
+            view <- ViewNewStyle.checkViewAccessAndReturnView(viewId, BankIdAccountId(account.bankId, account.accountId), u, callContext)
             (otherBankAccounts, callContext) <- NewStyle.function.moderatedOtherBankAccounts(account, view, u, callContext)
           } yield {
             val otherBankAccountsJson = createOtherBankAccountsJson(otherBankAccounts)
@@ -1824,7 +1824,7 @@ trait APIMethods300 {
           for {
             (u, callContext) <- authenticatedAccess(cc)
             (account, callContext) <- NewStyle.function.checkBankAccountExists(bankId, accountId, callContext)
-            view <- NewStyle.function.checkViewAccessAndReturnView(viewId, BankIdAccountId(account.bankId, account.accountId), u, callContext)
+            view <- ViewNewStyle.checkViewAccessAndReturnView(viewId, BankIdAccountId(account.bankId, account.accountId), u, callContext)
             (otherBankAccount,callContext) <- NewStyle.function.moderatedOtherBankAccount(account, other_account_id, view, u, callContext)
           } yield {
             val otherBankAccountJson = createOtherBankAccount(otherBankAccount)

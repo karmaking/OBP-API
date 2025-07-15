@@ -797,7 +797,7 @@ object MapperViews extends Views with MdcLoggable {
     
     viewId match {
       case SYSTEM_OWNER_VIEW_ID | SYSTEM_STANDARD_VIEW_ID =>{
-        ViewPermission.createViewPermissions(
+        ViewPermission.resetViewPermissions(
           entity,
           SYSTEM_OWNER_VIEW_PERMISSION_ADMIN ++SYSTEM_VIEW_PERMISSION_COMMON,
           DEFAULT_CAN_GRANT_AND_REVOKE_ACCESS_TO_VIEWS,
@@ -806,21 +806,21 @@ object MapperViews extends Views with MdcLoggable {
         entity      
       }
       case SYSTEM_STAGE_ONE_VIEW_ID =>{
-        ViewPermission.createViewPermissions(
+        ViewPermission.resetViewPermissions(
           entity,
           SYSTEM_VIEW_PERMISSION_COMMON++SYSTEM_VIEW_PERMISSION_COMMON
         )
         entity
       }
       case SYSTEM_MANAGE_CUSTOM_VIEWS_VIEW_ID =>{
-        ViewPermission.createViewPermissions(
+        ViewPermission.resetViewPermissions(
           entity,
           SYSTEM_VIEW_PERMISSION_COMMON++SYSTEM_MANAGER_VIEW_PERMISSION
         )
         entity
       } 
       case SYSTEM_FIREHOSE_VIEW_ID =>{
-        ViewPermission.createViewPermissions(
+        ViewPermission.resetViewPermissions(
           entity,
           SYSTEM_VIEW_PERMISSION_COMMON
         )
@@ -831,14 +831,14 @@ object MapperViews extends Views with MdcLoggable {
            SYSTEM_READ_BALANCES_BERLIN_GROUP_VIEW_ID =>
         entity
       case SYSTEM_READ_TRANSACTIONS_BERLIN_GROUP_VIEW_ID =>{
-        ViewPermission.createViewPermissions(
+        ViewPermission.resetViewPermissions(
           entity,
           SYSTEM_READ_TRANSACTIONS_BERLIN_GROUP_VIEW_PERMISSION
         )
         entity
       }
       case SYSTEM_INITIATE_PAYMENTS_BERLIN_GROUP_VIEW_ID =>{
-        ViewPermission.createViewPermissions(
+        ViewPermission.resetViewPermissions(
           entity,
           SYSTEM_INITIATE_PAYMENTS_BERLIN_GROUP_PERMISSION
         )
@@ -853,7 +853,7 @@ object MapperViews extends Views with MdcLoggable {
         SYSTEM_READ_TRANSACTIONS_DEBITS_VIEW_ID |
         SYSTEM_READ_TRANSACTIONS_DETAIL_VIEW_ID => {
         
-        ViewPermission.createViewPermissions(
+        ViewPermission.resetViewPermissions(
           entity,
           SYSTEM_VIEW_PERMISSION_COMMON
         )
@@ -885,7 +885,7 @@ object MapperViews extends Views with MdcLoggable {
       usePublicAliasIfOneExists_(true).
       hideOtherAccountMetadataIfAlias_(true)
 
-    ViewPermission.createViewPermissions(
+    ViewPermission.resetViewPermissions(
       entity,
       SYSTEM_PUBLIC_VIEW_PERMISSION
     )

@@ -78,7 +78,7 @@ object ViewPermission extends ViewPermission with LongKeyedMetaMapper[ViewPermis
    * were only supported in bulk (all at once). In the future, we may extend this
    * to support updating individual permissions selectively.
    */
-  def createViewPermissions(
+  def resetViewPermissions(
     view: View,
     permissionNames: List[String],
     canGrantAccessToViews: List[String] = Nil,

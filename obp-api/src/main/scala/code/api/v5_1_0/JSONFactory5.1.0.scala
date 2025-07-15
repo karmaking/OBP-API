@@ -578,6 +578,11 @@ case class ConsentRequestToAccountJson(
   limit: PostCounterpartyLimitV510
 )
 
+case class CreateViewPermissionJson(
+  permission_name: String,
+  extra_data: List[String]
+)
+
 case class PostVRPConsentRequestJsonInternalV510(
   consent_type: String,
   from_account: ConsentRequestFromAccountJson,

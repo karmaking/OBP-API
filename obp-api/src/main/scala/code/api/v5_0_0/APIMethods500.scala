@@ -11,6 +11,7 @@ import code.api.util.FutureUtil.EndpointContext
 import code.api.util.NewStyle.HttpCode
 import code.api.util.NewStyle.function.extractQueryParams
 import code.api.util._
+import code.api.util.newstyle.ViewNewStyle
 import code.api.v2_1_0.JSONFactory210
 import code.api.v3_0_0.JSONFactory300
 import code.api.v3_1_0._
@@ -1025,9 +1026,9 @@ trait APIMethods500 {
                 _ <- Helper.booleanToFuture(failMsg, cc = callContext) {
                   userMissingPermissions.isEmpty
                 }
-                (vrpView, callContext) <- NewStyle.function.createCustomView(fromBankIdAccountId, targetCreateCustomViewJson.toCreateViewJson, callContext)
+                (vrpView, callContext) <- ViewNewStyle.createCustomView(fromBankIdAccountId, targetCreateCustomViewJson.toCreateViewJson, callContext)
 
-                _ <-NewStyle.function.grantAccessToCustomView(vrpView, user, callContext)
+                _ <-ViewNewStyle.grantAccessToCustomView(vrpView, user, callContext)
 
                 //3rd: Create a new counterparty on that view (_VRP-9d429899-24f5-42c8-8565-943ffa6a7945)
                 postJson = PostCounterpartyJson400(
@@ -1926,8 +1927,8 @@ trait APIMethods500 {
       case "system-views" :: viewId :: Nil JsonDelete req => {
         cc => implicit val ec = EndpointContext(Some(cc))
           for {
-            _ <- NewStyle.function.systemView(ViewId(viewId), cc.callContext)
-            view <- NewStyle.function.deleteSystemView(ViewId(viewId), cc.callContext)
+            _ <- ViewNewStyle.systemView(ViewId(viewId), cc.callContext)
+            view <- ViewNewStyle.deleteSystemView(ViewId(viewId), cc.callContext)
           } yield {
             (Full(view),  HttpCode.`200`(cc.callContext))
           }
@@ -2050,7 +2051,7 @@ trait APIMethods500 {
       case "system-views" :: viewId :: Nil JsonGet _ => {
         cc => implicit val ec = EndpointContext(Some(cc))
           for {
-            view <- NewStyle.function.systemView(ViewId(viewId), cc.callContext)
+            view <- ViewNewStyle.systemView(ViewId(viewId), cc.callContext)
           } yield {
             (createViewJsonV500(view), HttpCode.`200`(cc.callContext))
           }
@@ -2084,7 +2085,7 @@ trait APIMethods500 {
       case "system-views-ids" :: Nil JsonGet _ => {
         cc => implicit val ec = EndpointContext(Some(cc))
           for {
-            views <- NewStyle.function.systemViews()
+            views <- ViewNewStyle.systemViews()
           } yield {
             (createViewsIdsJsonV500(views), HttpCode.`200`(cc.callContext))
           }
@@ -2142,7 +2143,7 @@ trait APIMethods500 {
             _ <- Helper.booleanToFuture(failMsg = InvalidSystemViewFormat +s"Current view_name (${createViewJson.name})", cc = cc.callContext) {
               isValidSystemViewName(createViewJson.name)
             }
-            view <- NewStyle.function.createSystemView(createViewJson.toCreateViewJson, cc.callContext)
+            view <- ViewNewStyle.createSystemView(createViewJson.toCreateViewJson, cc.callContext)
           } yield {
             (createViewJsonV500(view),  HttpCode.`201`(cc.callContext))
           }
@@ -2187,8 +2188,8 @@ trait APIMethods500 {
             _ <- Helper.booleanToFuture(SystemViewCannotBePublicError, failCode=400, cc=cc.callContext) {
               updateJson.is_public == false
             }
-            _ <- NewStyle.function.systemView(ViewId(viewId), cc.callContext)
-            updatedView <- NewStyle.function.updateSystemView(ViewId(viewId), updateJson.toUpdateViewJson, cc.callContext)
+            _ <- ViewNewStyle.systemView(ViewId(viewId), cc.callContext)
+            updatedView <- ViewNewStyle.updateSystemView(ViewId(viewId), updateJson.toUpdateViewJson, cc.callContext)
           } yield {
             (createViewJsonV500(updatedView), HttpCode.`200`(cc.callContext))
           }

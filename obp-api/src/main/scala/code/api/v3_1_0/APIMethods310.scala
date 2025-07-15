@@ -13,7 +13,7 @@ import code.api.util.ExampleValue._
 import code.api.util.FutureUtil.EndpointContext
 import code.api.util.NewStyle.HttpCode
 import code.api.util._
-import code.api.util.newstyle.BalanceNewStyle
+import code.api.util.newstyle.{BalanceNewStyle, ViewNewStyle}
 import code.api.v1_2_1.{JSONFactory, RateLimiting}
 import code.api.v1_4_0.JSONFactory1_4_0
 import code.api.v2_0_0.CreateMeetingJson
@@ -52,7 +52,7 @@ import net.liftweb.json
 import net.liftweb.json._
 import net.liftweb.mapper.By
 import net.liftweb.util.Helpers.tryo
-import net.liftweb.util.{Helpers, Props, StringHelpers}
+import net.liftweb.util.{Helpers, Props}
 import org.apache.commons.lang3.{StringUtils, Validate}
 
 import java.text.SimpleDateFormat
@@ -136,7 +136,7 @@ trait APIMethods310 {
 
             (account, callContext) <- NewStyle.function.checkBankAccountExists(bankId, accountId, callContext)
 
-            view <- NewStyle.function.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), Some(u), callContext) 
+            view <- ViewNewStyle.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), Some(u), callContext) 
             
             (checkbookOrders, callContext)<- Connector.connector.vend.getCheckbookOrders(bankId.value,accountId.value, callContext) map {
               unboxFullOrFail(_, callContext, InvalidConnectorResponseForGetCheckbookOrdersFuture)
@@ -177,7 +177,7 @@ trait APIMethods310 {
 
             (account, callContext) <- NewStyle.function.checkBankAccountExists(bankId, accountId, callContext)
 
-            view <- NewStyle.function.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), Some(u), callContext) 
+            view <- ViewNewStyle.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), Some(u), callContext) 
             
             //TODO need error handling here
             (checkbookOrders,callContext) <- Connector.connector.vend.getStatusOfCreditCardOrder(bankId.value,accountId.value, callContext) map {
@@ -652,7 +652,7 @@ trait APIMethods310 {
             (Full(u), callContext) <- authenticatedAccess(cc)
             (_, callContext) <- NewStyle.function.getBank(bankId, callContext)
             (account, callContext) <- NewStyle.function.checkBankAccountExists(bankId, accountId, callContext)
-            view <- NewStyle.function.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), Some(u), callContext) 
+            view <- ViewNewStyle.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), Some(u), callContext) 
             _ <- Helper.booleanToFuture(failMsg = s"$ViewDoesNotPermitAccess +  You need the `${(CAN_QUERY_AVAILABLE_FUNDS)}` permission on any your views", cc=callContext) {
               view.allowed_actions.exists(_ ==CAN_QUERY_AVAILABLE_FUNDS)
             }
@@ -1057,7 +1057,7 @@ trait APIMethods310 {
             _ <- passesPsd2Pisp(callContext)
             (_, callContext) <- NewStyle.function.getBank(bankId, callContext)
             (account, callContext) <- NewStyle.function.checkBankAccountExists(bankId, accountId, callContext)
-            view <- NewStyle.function.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), user, callContext) 
+            view <- ViewNewStyle.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), user, callContext) 
             (moderatedTransaction, callContext) <- account.moderatedTransactionFuture(transactionId, view, user, callContext) map {
               unboxFullOrFail(_, callContext, GetTransactionsException)
             }
@@ -1122,7 +1122,7 @@ trait APIMethods310 {
             _ <- NewStyle.function.isEnabledTransactionRequests(callContext)
             (_, callContext) <- NewStyle.function.getBank(bankId, callContext)
             (fromAccount, callContext) <- NewStyle.function.checkBankAccountExists(bankId, accountId, callContext)
-            view <- NewStyle.function.checkAccountAccessAndGetView(viewId, BankIdAccountId(bankId, accountId), Full(u), callContext)
+            view <- ViewNewStyle.checkAccountAccessAndGetView(viewId, BankIdAccountId(bankId, accountId), Full(u), callContext)
             _ <- Helper.booleanToFuture(
               s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${(CAN_SEE_TRANSACTION_REQUESTS)}` permission on the View(${viewId.value})",
               cc=callContext){
@@ -3943,7 +3943,7 @@ trait APIMethods310 {
           for {
             (Full(user), callContext) <- authenticatedAccess(cc)
             _ <- NewStyle.function.hasEntitlement("", user.userId, canGetSystemView, callContext)
-            view <- NewStyle.function.systemView(ViewId(viewId), callContext)
+            view <- ViewNewStyle.systemView(ViewId(viewId), callContext)
           } yield {
             (JSONFactory310.createViewJSON(view), HttpCode.`200`(callContext))
           }
@@ -4003,7 +4003,7 @@ trait APIMethods310 {
             _ <- Helper.booleanToFuture(SystemViewCannotBePublicError, failCode=400, cc=callContext) {
               createViewJson.is_public == false
             }
-            view <- NewStyle.function.createSystemView(createViewJson.toCreateViewJson, callContext)
+            view <- ViewNewStyle.createSystemView(createViewJson.toCreateViewJson, callContext)
           } yield {
             (JSONFactory310.createViewJSON(view),  HttpCode.`201`(callContext))
           }
@@ -4037,8 +4037,8 @@ trait APIMethods310 {
           for {
             (Full(user), callContext) <- authenticatedAccess(cc)
             _ <- NewStyle.function.hasEntitlement("", user.userId, canDeleteSystemView, callContext)
-            _ <- NewStyle.function.systemView(ViewId(viewId), callContext)
-            view <- NewStyle.function.deleteSystemView(ViewId(viewId), callContext)
+            _ <- ViewNewStyle.systemView(ViewId(viewId), callContext)
+            view <- ViewNewStyle.deleteSystemView(ViewId(viewId), callContext)
           } yield {
             (Full(view),  HttpCode.`200`(callContext))
           }
@@ -4085,8 +4085,8 @@ trait APIMethods310 {
             _ <- Helper.booleanToFuture(SystemViewCannotBePublicError, failCode=400, cc=callContext) {
               updateJson.is_public == false
             }
-            _ <- NewStyle.function.systemView(ViewId(viewId), callContext)
-            updatedView <- NewStyle.function.updateSystemView(ViewId(viewId), updateJson, callContext)
+            _ <- ViewNewStyle.systemView(ViewId(viewId), callContext)
+            updatedView <- ViewNewStyle.updateSystemView(ViewId(viewId), updateJson, callContext)
           } yield {
             (JSONFactory310.createViewJSON(updatedView), HttpCode.`200`(callContext))
           }
@@ -5530,7 +5530,7 @@ trait APIMethods310 {
           for {
             (Full(u), callContext) <- authenticatedAccess(cc)
             (account, callContext) <- NewStyle.function.checkBankAccountExists(bankId, accountId, callContext)
-            view <- NewStyle.function.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), Some(u), callContext) 
+            view <- ViewNewStyle.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, accountId), Some(u), callContext) 
             moderatedAccount <- NewStyle.function.moderatedBankAccountCore(account, view, Full(u), callContext)
             (accountAttributes, callContext) <- NewStyle.function.getAccountAttributesByAccount(
               bankId,

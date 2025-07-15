@@ -18,13 +18,13 @@ import code.api.util.ExampleValue._
 import code.api.util.FutureUtil.EndpointContext
 import code.api.util.Glossary.getGlossaryItem
 import code.api.util.NewStyle.HttpCode
-import code.api.util.NewStyle.function.{isValidCurrencyISOCode => isValidCurrencyISOCodeNS, _}
+import code.api.util.NewStyle.function._
 import code.api.util._
 import code.api.util.migration.Migration
 import code.api.util.newstyle.AttributeDefinition._
 import code.api.util.newstyle.Consumer._
 import code.api.util.newstyle.UserCustomerLinkNewStyle.getUserCustomerLinks
-import code.api.util.newstyle.{BalanceNewStyle, UserCustomerLinkNewStyle}
+import code.api.util.newstyle.{BalanceNewStyle, UserCustomerLinkNewStyle, ViewNewStyle}
 import code.api.v1_2_1.{JSONFactory, PostTransactionTagJSON}
 import code.api.v1_4_0.JSONFactory1_4_0
 import code.api.v1_4_0.JSONFactory1_4_0.TransactionRequestAccountJsonV140
@@ -412,7 +412,7 @@ trait APIMethods400 extends MdcLoggable {
         cc => implicit val ec = EndpointContext(Some(cc))
           for {
             (doubleEntryTransaction, callContext) <- NewStyle.function.getBalancingTransaction(transactionId, cc.callContext)
-            _ <- NewStyle.function.checkBalancingTransactionAccountAccessAndReturnView(doubleEntryTransaction, cc.user, cc.callContext)
+            _ <- ViewNewStyle.checkBalancingTransactionAccountAccessAndReturnView(doubleEntryTransaction, cc.user, cc.callContext)
           } yield {
             (JSONFactory400.createDoubleEntryTransactionJson(doubleEntryTransaction), HttpCode.`200`(callContext))
           }
@@ -2681,7 +2681,7 @@ trait APIMethods400 extends MdcLoggable {
         cc => implicit val ec = EndpointContext(Some(cc))
           for {
             (user @Full(u), account, callContext) <- SS.userAccount
-            view <- NewStyle.function.checkOwnerViewAccessAndReturnOwnerView(u, BankIdAccountId(account.bankId, account.accountId), callContext)
+            view <- ViewNewStyle.checkOwnerViewAccessAndReturnOwnerView(u, BankIdAccountId(account.bankId, account.accountId), callContext)
             moderatedAccount <- NewStyle.function.moderatedBankAccountCore(account, view, user, callContext)
           } yield {
             val availableViews: List[View] = Views.views.vend.privateViewsUserCanAccessForAccount(u, BankIdAccountId(account.bankId, account.accountId))
@@ -2782,7 +2782,7 @@ trait APIMethods400 extends MdcLoggable {
               postJson.account_routing.scheme, postJson.account_routing.address, cc.callContext)
 
             user @Full(u) = cc.user
-            view <- NewStyle.function.checkOwnerViewAccessAndReturnOwnerView(u, BankIdAccountId(account.bankId, account.accountId), callContext)
+            view <- ViewNewStyle.checkOwnerViewAccessAndReturnOwnerView(u, BankIdAccountId(account.bankId, account.accountId), callContext)
             moderatedAccount <- NewStyle.function.moderatedBankAccountCore(account, view, user, callContext)
 
             (accountAttributes, callContext) <- NewStyle.function.getAccountAttributesByAccount(
@@ -2861,7 +2861,7 @@ trait APIMethods400 extends MdcLoggable {
 
             accountsJson <- Future.sequence(filteredAccountRoutings.map(accountRouting => for {
               (account, callContext) <- NewStyle.function.getBankAccount(accountRouting.bankId, accountRouting.accountId, callContext)
-              view <- NewStyle.function.checkOwnerViewAccessAndReturnOwnerView(u, BankIdAccountId(account.bankId, account.accountId), callContext)
+              view <- ViewNewStyle.checkOwnerViewAccessAndReturnOwnerView(u, BankIdAccountId(account.bankId, account.accountId), callContext)
               moderatedAccount <- NewStyle.function.moderatedBankAccountCore(account, view, user, callContext)
               (accountAttributes, callContext) <- NewStyle.function.getAccountAttributesByAccount(
                 account.bankId,
@@ -2984,7 +2984,7 @@ trait APIMethods400 extends MdcLoggable {
               allowAccountFirehose
             }
             // here must be a system view, not accountIds in the URL
-            view <- NewStyle.function.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, AccountId("")), Some(u), callContext)
+            view <- ViewNewStyle.checkViewAccessAndReturnView(viewId, BankIdAccountId(bankId, AccountId("")), Some(u), callContext)
             availableBankIdAccountIdList <- Future {
               Views.views.vend.getAllFirehoseAccounts(bank.bankId).map(a => BankIdAccountId(a.bankId,a.accountId))
             }
@@ -4059,12 +4059,12 @@ trait APIMethods400 extends MdcLoggable {
             }
             (user, callContext) <- NewStyle.function.findByUserId(postJson.user_id, cc.callContext)
             view <- postJson.view.is_system match {
-              case true => NewStyle.function.systemView(viewId, callContext)
-              case false => NewStyle.function.customView(viewId, BankIdAccountId(bankId, accountId), callContext)
+              case true => ViewNewStyle.systemView(viewId, callContext)
+              case false => ViewNewStyle.customView(viewId, BankIdAccountId(bankId, accountId), callContext)
             }
             revoked <- postJson.view.is_system match {
-              case true => NewStyle.function.revokeAccessToSystemView(bankId, accountId, view, user, callContext)
-              case false => NewStyle.function.revokeAccessToCustomView(view, user, callContext)
+              case true => ViewNewStyle.revokeAccessToSystemView(bankId, accountId, view, user, callContext)
+              case false => ViewNewStyle.revokeAccessToCustomView(view, user, callContext)
             }
           } yield {
             (RevokedJsonV400(revoked), HttpCode.`201`(callContext))
@@ -4721,7 +4721,7 @@ trait APIMethods400 extends MdcLoggable {
           for {
             (user @Full(u), _, account, view, callContext) <- SS.userBankAccountView
             _ <- NewStyle.function.isEnabledTransactionRequests(callContext)
-            view <- NewStyle.function.checkAccountAccessAndGetView(viewId, BankIdAccountId(bankId, accountId), Full(u), callContext)
+            view <- ViewNewStyle.checkAccountAccessAndGetView(viewId, BankIdAccountId(bankId, accountId), Full(u), callContext)
             _ <- Helper.booleanToFuture(
               s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${(CAN_SEE_TRANSACTION_REQUESTS)}` permission on the View(${viewId.value})",
               cc = callContext) {
