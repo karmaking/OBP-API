@@ -2,6 +2,7 @@ package code.api.v5_1_0
 
 
 import code.api.Constant
+import code.api.Constant._
 import code.api.OAuth2Login.Keycloak
 import code.api.ResourceDocs1_4_0.SwaggerDefinitionsJSON._
 import code.api.berlin.group.v1_3.JSONFactory_BERLIN_GROUP_1_3.{ConsentAccessAccountsJson, ConsentAccessJson}
@@ -17,7 +18,7 @@ import code.api.util.X509.{getCommonName, getEmailAddress, getOrganization}
 import code.api.util._
 import code.api.util.newstyle.Consumer.createConsumerNewStyle
 import code.api.util.newstyle.RegulatedEntityNewStyle.{createRegulatedEntityNewStyle, deleteRegulatedEntityNewStyle, getRegulatedEntitiesNewStyle, getRegulatedEntityByEntityIdNewStyle}
-import code.api.util.newstyle.{BalanceNewStyle, RegulatedEntityAttributeNewStyle}
+import code.api.util.newstyle.{BalanceNewStyle, RegulatedEntityAttributeNewStyle, ViewNewStyle}
 import code.api.v2_0_0.AccountsHelper.{accountTypeFilterText, getFilteredCoreAccounts}
 import code.api.v2_1_0.{ConsumerRedirectUrlJSON, JSONFactory210}
 import code.api.v3_0_0.JSONFactory300
@@ -43,7 +44,7 @@ import code.users.Users
 import code.util.Helper
 import code.util.Helper.ObpS
 import code.views.Views
-import code.views.system.{AccountAccess, ViewDefinition}
+import code.views.system.{AccountAccess, ViewDefinition, ViewPermission}
 import code.webuiprops.{MappedWebUiPropsProvider, WebUiPropsCommons}
 import com.github.dwickern.macros.NameOf.nameOf
 import com.openbankproject.commons.ExecutionContext.Implicits.global
@@ -3534,8 +3535,8 @@ trait APIMethods510 {
             }
             (user, callContext) <- NewStyle.function.findByUserId(postJson.user_id, callContext)
             view <- isValidSystemViewId(targetViewId.value) match {
-              case true => NewStyle.function.systemView(targetViewId, callContext)
-              case false => NewStyle.function.customView(targetViewId, BankIdAccountId(bankId, accountId), callContext)
+              case true => ViewNewStyle.systemView(targetViewId, callContext)
+              case false => ViewNewStyle.customView(targetViewId, BankIdAccountId(bankId, accountId), callContext)
             }
             addedView <- JSONFactory400.grantAccountAccessToUser(bankId, accountId, user, view, callContext)
             
@@ -3598,12 +3599,12 @@ trait APIMethods510 {
             }
             (user, callContext) <- NewStyle.function.findByUserId(postJson.user_id, cc.callContext)
             view <- isValidSystemViewId(targetViewId.value) match {
-              case true => NewStyle.function.systemView(targetViewId, callContext)
-              case false => NewStyle.function.customView(targetViewId, BankIdAccountId(bankId, accountId), callContext)
+              case true => ViewNewStyle.systemView(targetViewId, callContext)
+              case false => ViewNewStyle.customView(targetViewId, BankIdAccountId(bankId, accountId), callContext)
             }
             revoked <- isValidSystemViewId(targetViewId.value) match {
-              case true => NewStyle.function.revokeAccessToSystemView(bankId, accountId, view, user, callContext)
-              case false => NewStyle.function.revokeAccessToCustomView(view, user, callContext)
+              case true => ViewNewStyle.revokeAccessToSystemView(bankId, accountId, view, user, callContext)
+              case false => ViewNewStyle.revokeAccessToCustomView(view, user, callContext)
             }
           } yield {
             (RevokedJsonV400(revoked), HttpCode.`201`(callContext))
@@ -3672,12 +3673,12 @@ trait APIMethods510 {
             }
             (targetUser, callContext) <- NewStyle.function.getOrCreateResourceUser(postJson.provider, postJson.username, cc.callContext)
             view <- isValidSystemViewId(targetViewId.value) match {
-              case true => NewStyle.function.systemView(targetViewId, callContext)
-              case false => NewStyle.function.customView(targetViewId, BankIdAccountId(bankId, accountId), callContext)
+              case true => ViewNewStyle.systemView(targetViewId, callContext)
+              case false => ViewNewStyle.customView(targetViewId, BankIdAccountId(bankId, accountId), callContext)
             }
             addedView <- isValidSystemViewId(targetViewId.value) match {
-              case true => NewStyle.function.grantAccessToSystemView(bankId, accountId, view, targetUser, callContext)
-              case false => NewStyle.function.grantAccessToCustomView(view, targetUser, callContext)
+              case true => ViewNewStyle.grantAccessToSystemView(bankId, accountId, view, targetUser, callContext)
+              case false => ViewNewStyle.grantAccessToCustomView(view, targetUser, callContext)
             }
           } yield {
             val viewsJson = JSONFactory300.createViewJSON(addedView)
@@ -3775,11 +3776,11 @@ trait APIMethods510 {
             _ <- NewStyle.function.isEnabledTransactionRequests(callContext)
             (_, callContext) <- NewStyle.function.getBank(bankId, callContext)
             (fromAccount, callContext) <- NewStyle.function.checkBankAccountExists(bankId, accountId, callContext)
-            view <- NewStyle.function.checkAccountAccessAndGetView(viewId, BankIdAccountId(bankId, accountId), Full(u), callContext)
+            view <- ViewNewStyle.checkAccountAccessAndGetView(viewId, BankIdAccountId(bankId, accountId), Full(u), callContext)
             _ <- Helper.booleanToFuture(
-              s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${StringHelpers.snakify(nameOf(ViewDefinition.canSeeTransactionRequests_)).dropRight(1)}` permission on the View(${viewId.value})",
+              s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${(CAN_SEE_TRANSACTION_REQUESTS)}` permission on the View(${viewId.value})",
               cc=callContext){
-              view.canSeeTransactionRequests
+              view.allowed_actions.exists(_ ==CAN_SEE_TRANSACTION_REQUESTS)
             }
             (transactionRequests, callContext) <- Future(Connector.connector.vend.getTransactionRequests210(u, fromAccount, callContext)) map {
               unboxFullOrFail(_, callContext, GetTransactionRequestsException)
@@ -3929,7 +3930,7 @@ trait APIMethods510 {
           for {
             (user @Full(u), account, callContext) <- SS.userAccount
             bankIdAccountId = BankIdAccountId(account.bankId, account.accountId)
-            view <- NewStyle.function.checkViewAccessAndReturnView(viewId , bankIdAccountId, user, callContext)
+            view <- ViewNewStyle.checkViewAccessAndReturnView(viewId , bankIdAccountId, user, callContext)
             moderatedAccount <- NewStyle.function.moderatedBankAccountCore(account, view, user, callContext)
           } yield {
             val availableViews: List[View] = Views.views.vend.privateViewsUserCanAccessForAccount(u, BankIdAccountId(account.bankId, account.accountId))
@@ -3964,11 +3965,11 @@ trait APIMethods510 {
           for {
             (Full(u), callContext) <- SS.user
             bankIdAccountId = BankIdAccountId(bankId, accountId)
-            view <- NewStyle.function.checkViewAccessAndReturnView(viewId, bankIdAccountId, Full(u), callContext)
+            view <- ViewNewStyle.checkViewAccessAndReturnView(viewId, bankIdAccountId, Full(u), callContext)
             // Note we do one explicit check here rather than use moderated account because this provides an explicit message
-            failMsg = ViewDoesNotPermitAccess + s" You need the `${StringHelpers.snakify(nameOf(view.canSeeBankAccountBalance))}` permission on VIEW_ID(${viewId.value})"
+            failMsg = ViewDoesNotPermitAccess + s" You need the `${(CAN_SEE_BANK_ACCOUNT_BALANCE)}` permission on VIEW_ID(${viewId.value})"
             _ <- Helper.booleanToFuture(failMsg, 403, cc = callContext) {
-              view.canSeeBankAccountBalance
+              view.allowed_actions.exists(_ ==CAN_SEE_BANK_ACCOUNT_BALANCE)
             }
             (accountBalances, callContext) <- BalanceNewStyle.getBankAccountBalances(bankIdAccountId, callContext)
           } yield {
@@ -4458,19 +4459,19 @@ trait APIMethods510 {
               isValidCustomViewName(createCustomViewJson.name)
             }
 
-            permissionsFromSource = APIUtil.getViewPermissions(view.asInstanceOf[ViewDefinition])
+            permissionsFromSource = view.asInstanceOf[ViewDefinition].allowed_actions.toSet
             permissionsFromTarget = createCustomViewJson.allowed_permissions
 
             _ <- Helper.booleanToFuture(failMsg = SourceViewHasLessPermission + s"Current source viewId($viewId) permissions ($permissionsFromSource), target viewName${createCustomViewJson.name} permissions ($permissionsFromTarget)", cc = callContext) {
               permissionsFromTarget.toSet.subsetOf(permissionsFromSource)
             }
 
-            failMsg = s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${StringHelpers.snakify(nameOf(view.canCreateCustomView))}` permission on VIEW_ID(${viewId.value})"
+            failMsg = s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${(CAN_CREATE_CUSTOM_VIEW)}` permission on VIEW_ID(${viewId.value})"
 
             _ <- Helper.booleanToFuture(failMsg, cc = callContext) {
-              view.canCreateCustomView
+              view.allowed_actions.exists(_ ==CAN_CREATE_CUSTOM_VIEW)
             }
-            (view, callContext) <- NewStyle.function.createCustomView(BankIdAccountId(bankId, accountId), createCustomViewJson.toCreateViewJson, callContext)
+            (view, callContext) <- ViewNewStyle.createCustomView(BankIdAccountId(bankId, accountId), createCustomViewJson.toCreateViewJson, callContext)
           } yield {
             (JSONFactory510.createViewJson(view), HttpCode.`201`(callContext))
           }
@@ -4515,20 +4516,20 @@ trait APIMethods510 {
             _ <- Helper.booleanToFuture(failMsg = InvalidCustomViewFormat + s"Current TARGET_VIEW_ID (${targetViewId})", cc = callContext) {
               isValidCustomViewId(targetViewId.value)
             }
-            permissionsFromSource = APIUtil.getViewPermissions(view.asInstanceOf[ViewDefinition])
+            permissionsFromSource = view.asInstanceOf[ViewDefinition].allowed_actions.toSet
             permissionsFromTarget = targetCreateCustomViewJson.allowed_permissions
 
             _ <- Helper.booleanToFuture(failMsg = SourceViewHasLessPermission + s"Current source view permissions ($permissionsFromSource), target view permissions ($permissionsFromTarget)", cc = callContext) {
               permissionsFromTarget.toSet.subsetOf(permissionsFromSource)
             }
 
-            failmsg = s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${StringHelpers.snakify(nameOf(view.canUpdateCustomView))}` permission on VIEW_ID(${viewId.value})"
+            failmsg = s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${(CAN_UPDATE_CUSTOM_VIEW)}` permission on VIEW_ID(${viewId.value})"
 
             _ <- Helper.booleanToFuture(failmsg, cc = callContext) {
-              view.canCreateCustomView
+              view.allowed_actions.exists(_ ==CAN_CREATE_CUSTOM_VIEW)
             }
 
-            (view, callContext) <- NewStyle.function.updateCustomView(BankIdAccountId(bankId, accountId), targetViewId, targetCreateCustomViewJson.toUpdateViewJson, callContext)
+            (view, callContext) <- ViewNewStyle.updateCustomView(BankIdAccountId(bankId, accountId), targetViewId, targetCreateCustomViewJson.toUpdateViewJson, callContext)
           } yield {
             (JSONFactory510.createViewJson(view), HttpCode.`200`(callContext))
           }
@@ -4588,11 +4589,11 @@ trait APIMethods510 {
               _ <- Helper.booleanToFuture(failMsg = InvalidCustomViewFormat + s"Current TARGET_VIEW_ID (${targetViewId.value})", cc = callContext) {
                 isValidCustomViewId(targetViewId.value)
               }
-              failmsg = s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${StringHelpers.snakify(nameOf(view.canGetCustomView))}`permission on any your views. Current VIEW_ID (${viewId.value})"
+              failmsg = s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${(CAN_GET_CUSTOM_VIEW)}`permission on any your views. Current VIEW_ID (${viewId.value})"
               _ <- Helper.booleanToFuture(failmsg, cc = callContext) {
-                view.canGetCustomView
+                view.allowed_actions.exists(_ ==CAN_GET_CUSTOM_VIEW)
               }
-              targetView <- NewStyle.function.customView(targetViewId, BankIdAccountId(bankId, accountId), callContext)
+              targetView <- ViewNewStyle.customView(targetViewId, BankIdAccountId(bankId, accountId), callContext)
             } yield {
               (JSONFactory510.createViewJson(targetView), HttpCode.`200`(callContext))
             }
@@ -4630,12 +4631,12 @@ trait APIMethods510 {
             _ <- Helper.booleanToFuture(failMsg = InvalidCustomViewFormat + s"Current TARGET_VIEW_ID (${targetViewId.value})", cc = callContext) {
               isValidCustomViewId(targetViewId.value)
             }
-            failMsg = s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${StringHelpers.snakify(nameOf(view.canDeleteCustomView))}` permission on any your views.Current VIEW_ID (${viewId.value})"
+            failMsg = s"${ErrorMessages.ViewDoesNotPermitAccess} You need the `${(CAN_DELETE_CUSTOM_VIEW)}` permission on any your views.Current VIEW_ID (${viewId.value})"
             _ <- Helper.booleanToFuture(failMsg, cc = callContext) {
-              view.canDeleteCustomView
+              view.allowed_actions.exists(_ ==CAN_DELETE_CUSTOM_VIEW)
             }
-            _ <- NewStyle.function.customView(targetViewId, BankIdAccountId(bankId, accountId), callContext)
-            deleted <- NewStyle.function.removeCustomView(targetViewId, BankIdAccountId(bankId, accountId), callContext)
+            _ <- ViewNewStyle.customView(targetViewId, BankIdAccountId(bankId, accountId), callContext)
+            deleted <- ViewNewStyle.removeCustomView(targetViewId, BankIdAccountId(bankId, accountId), callContext)
           } yield {
             (Full(deleted), HttpCode.`204`(callContext))
           }
@@ -5240,6 +5241,79 @@ trait APIMethods510 {
       }
     }
 
+
+    resourceDocs += ResourceDoc(
+      addSystemViewPermission,
+      implementedInApiVersion,
+      nameOf(addSystemViewPermission),
+      "POST",
+      "/system-views/VIEW_ID/permissions",
+      "Add Permission to a System View",
+      """Add Permission to a System View.""",
+      createViewPermissionJson,
+      entitlementJSON,
+      List(
+        $UserNotLoggedIn,
+        InvalidJsonFormat,
+        IncorrectRoleName,
+        EntitlementAlreadyExists,
+        UnknownError
+      ),
+      List(apiTagSystemView),
+      Some(List(canCreateSystemViewPermission))
+    )
+    
+    lazy val addSystemViewPermission : OBPEndpoint = {
+      case "system-views" :: ViewId(viewId) :: "permissions" :: Nil JsonPost json -> _ => {
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            failMsg <- Future.successful(s"$InvalidJsonFormat The Json body should be the $CreateViewPermissionJson ")
+            createViewPermissionJson <- NewStyle.function.tryons(failMsg, 400, cc.callContext) {
+              json.extract[CreateViewPermissionJson]
+            }
+            _ <- Helper.booleanToFuture(s"$InvalidViewPermissionName The current value is ${createViewPermissionJson.permission_name}", 400, cc.callContext) {
+              ALL_VIEW_PERMISSION_NAMES.exists( _ == createViewPermissionJson.permission_name)
+            }
+            _ <- ViewNewStyle.systemView(viewId, cc.callContext)
+            _ <- Helper.booleanToFuture(s"$ViewPermissionNameExists The current value is ${createViewPermissionJson.permission_name}", 400, cc.callContext) {
+              ViewPermission.findSystemViewPermission(viewId, createViewPermissionJson.permission_name).isEmpty
+            }
+            (viewPermission,callContext) <- ViewNewStyle.createSystemViewPermission(viewId, createViewPermissionJson.permission_name, createViewPermissionJson.extra_data, cc.callContext)
+          } yield {
+            (JSONFactory510.createViewPermissionJson(viewPermission), HttpCode.`201`(callContext))
+          }
+      }
+    }
+
+    
+    resourceDocs += ResourceDoc(
+      deleteSystemViewPermission,
+      implementedInApiVersion,
+      nameOf(deleteSystemViewPermission),
+      "DELETE",
+      "/system-views/VIEW_ID/permissions/PERMISSION_NAME",
+      "Delete Permission to a System View",
+      """Delete Permission to a System View
+      """.stripMargin,
+      EmptyBody,
+      EmptyBody,
+      List(UserNotLoggedIn, UserHasMissingRoles, UnknownError),
+      List(apiTagSystemView),
+      Some(List(canDeleteSystemViewPermission))
+    )
+    lazy val deleteSystemViewPermission: OBPEndpoint = {
+      case "system-views" :: ViewId(viewId) :: "permissions" :: permissionName :: Nil JsonDelete _ => {
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            (viewPermission, callContext) <- ViewNewStyle.findSystemViewPermission(viewId, permissionName, cc.callContext)
+            _ <- Helper.booleanToFuture(s"$DeleteViewPermissionError The current value is ${createViewPermissionJson.permission_name}", 400, cc.callContext) {
+              viewPermission.delete_!
+            }
+          } yield (true, HttpCode.`204`(cc.callContext))
+      }
+    }
+
+    
   }
 }
 

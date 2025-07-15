@@ -11,6 +11,7 @@ import code.api.util.ApiTag._
 import code.api.util.ErrorMessages._
 import code.api.util.NewStyle.HttpCode
 import code.api.util._
+import code.api.util.newstyle.ViewNewStyle
 import code.consent.{ConsentStatus, Consents}
 import code.context.{ConsentAuthContextProvider, UserAuthContextProvider}
 import code.model
@@ -641,7 +642,7 @@ Reads account data from a given card account addressed by "account-id".
              (bank, callContext) <- NewStyle.function.getBank(bankAccount.bankId, callContext)
              viewId = ViewId(SYSTEM_READ_TRANSACTIONS_BERLIN_GROUP_VIEW_ID)
              bankIdAccountId = BankIdAccountId(bankAccount.bankId, bankAccount.accountId)
-             view <- NewStyle.function.checkAccountAccessAndGetView(viewId, bankIdAccountId, Full(u), callContext)
+             view <- ViewNewStyle.checkAccountAccessAndGetView(viewId, bankIdAccountId, Full(u), callContext)
              params <- Future { createQueriesByHttpParams(callContext.get.requestHeaders)} map {
                x => fullBoxOrException(x ~> APIFailureNewStyle(UnknownError, 400, callContext.map(_.toLight)))
              } map { unboxFull(_) }
@@ -875,7 +876,7 @@ of the "Read Transaction List" call within the _links subfield.
              (account: BankAccount, callContext) <- NewStyle.function.getBankAccountByAccountId(AccountId(accountId), callContext)
              viewId = ViewId(SYSTEM_READ_TRANSACTIONS_BERLIN_GROUP_VIEW_ID)
              bankIdAccountId = BankIdAccountId(account.bankId, account.accountId)
-             view <- NewStyle.function.checkAccountAccessAndGetView(viewId, bankIdAccountId, Full(user), callContext)
+             view <- ViewNewStyle.checkAccountAccessAndGetView(viewId, bankIdAccountId, Full(user), callContext)
              (moderatedTransaction, callContext) <- account.moderatedTransactionFuture(TransactionId(transactionId), view, Some(user), callContext) map {
                unboxFullOrFail(_, callContext, GetTransactionsException)
              }
@@ -969,7 +970,7 @@ The ASPSP might add balance information, if transaction lists without balances a
             (bank, callContext) <- NewStyle.function.getBank(bankAccount.bankId, callContext)
             viewId = ViewId(SYSTEM_READ_TRANSACTIONS_BERLIN_GROUP_VIEW_ID)
             bankIdAccountId = BankIdAccountId(bankAccount.bankId, bankAccount.accountId)
-            view <- NewStyle.function.checkAccountAccessAndGetView(viewId, bankIdAccountId, Full(u), callContext)
+            view <- ViewNewStyle.checkAccountAccessAndGetView(viewId, bankIdAccountId, Full(u), callContext)
             params <- Future { createQueriesByHttpParams(callContext.get.requestHeaders)} map {
               x => fullBoxOrException(x ~> APIFailureNewStyle(UnknownError, 400, callContext.map(_.toLight)))
             } map { unboxFull(_) }
