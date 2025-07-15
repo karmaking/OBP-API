@@ -1139,13 +1139,14 @@ object Consent extends MdcLoggable {
           By(MappedConsent.mConsumerId, consent.consumerId), // from the same TPP
         ).filterNot(_.consentId == consent.consentId) // Exclude current consent
         .map{ c => // Set to terminatedByTpp
-          val note = s"|---> Changed status from ${c.status} to ${ConsentStatus.terminatedByTpp.toString} for consent ID: ${c.id}"
+          val message = s"|---> Changed status from ${c.status} to ${ConsentStatus.terminatedByTpp.toString} for consent ID: ${c.id}"
+          val newNote = s"$currentDate\n$message\n" + consent.note // Prepend to existing note if any
           val changedStatus =
             c.mStatus(ConsentStatus.terminatedByTpp.toString)
-              .mNote(s"$currentDate\n$note")
+              .mNote(newNote)
               .mLastActionDate(new Date())
               .save
-          if(changedStatus) logger.warn(note)
+          if(changedStatus) logger.warn(message)
           changedStatus
         }.forall(_ == true)
     } else {
