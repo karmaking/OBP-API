@@ -78,7 +78,7 @@ object BerlinGroupCheck extends MdcLoggable {
       } else None
     }
 
-    val : Option[(Box[User], Option[CallContext])] =
+    val resultWithMissingHeaderCheck: Option[(Box[User], Option[CallContext])] =
       if (missingHeaders.nonEmpty) {
         val message = if (missingHeaders.size == 1)
           ErrorMessages.MissingMandatoryBerlinGroupHeaders.replace("headers", "header")
