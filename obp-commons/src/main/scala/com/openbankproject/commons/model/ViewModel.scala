@@ -161,4 +161,185 @@ trait View {
   
   def createViewAndPermissions(viewSpecification : ViewSpecification) : Unit
   def deleteViewPermissions :List[Boolean]
+ 
+  //TODO All the following methods can be removed later, we use ViewPermission table instead. 
+  def canSeeTransactionRequests: Boolean
+  
+  def canSeeTransactionRequestTypes: Boolean
+  
+  def canSeeTransactionThisBankAccount: Boolean
+
+  def canSeeTransactionOtherBankAccount: Boolean
+
+  def canSeeTransactionMetadata: Boolean
+
+  def canSeeTransactionDescription: Boolean
+
+  def canSeeTransactionAmount: Boolean
+
+  def canSeeTransactionType: Boolean
+
+  def canSeeTransactionCurrency: Boolean
+
+  def canSeeTransactionStartDate: Boolean
+
+  def canSeeTransactionFinishDate: Boolean
+
+  def canSeeTransactionBalance: Boolean
+  
+  def canSeeTransactionStatus: Boolean
+
+  //transaction metadata
+  def canSeeComments: Boolean
+
+  def canSeeOwnerComment: Boolean
+
+  def canSeeTags: Boolean
+
+  def canSeeImages: Boolean
+
+  //Bank account fields
+  def canSeeAvailableViewsForBankAccount: Boolean
+  
+  def canSeeBankAccountOwners: Boolean
+
+  def canSeeBankAccountType: Boolean
+  def canUpdateBankAccountLabel: Boolean
+
+  def canSeeBankAccountBalance: Boolean
+
+  def canQueryAvailableFunds: Boolean
+
+  def canSeeBankAccountCurrency: Boolean
+
+  def canSeeBankAccountLabel: Boolean
+
+  def canSeeBankAccountNationalIdentifier: Boolean
+
+  def canSeeBankAccountSwiftBic: Boolean
+
+  def canSeeBankAccountIban: Boolean
+
+  def canSeeBankAccountNumber: Boolean
+
+  def canSeeBankAccountBankName: Boolean
+
+  def canSeeBankRoutingScheme: Boolean
+
+  def canSeeBankRoutingAddress: Boolean
+
+  def canSeeBankAccountRoutingScheme: Boolean
+
+  def canSeeBankAccountRoutingAddress: Boolean
+
+  def canSeeViewsWithPermissionsForOneUser: Boolean 
+
+  def canSeeViewsWithPermissionsForAllUsers: Boolean
+  
+  //other bank account (counterparty) fields
+  def canSeeOtherAccountNationalIdentifier: Boolean
+
+  def canSeeOtherAccountSwiftBic: Boolean
+
+  def canSeeOtherAccountIban: Boolean
+
+  def canSeeOtherAccountBankName: Boolean
+
+  def canSeeOtherAccountNumber: Boolean
+
+  def canSeeOtherAccountMetadata: Boolean
+
+  def canSeeOtherAccountKind: Boolean
+
+  def canSeeOtherBankRoutingScheme: Boolean
+
+  def canSeeOtherBankRoutingAddress: Boolean
+
+  def canSeeOtherAccountRoutingScheme: Boolean
+
+  def canSeeOtherAccountRoutingAddress: Boolean
+
+  //other bank account meta data - read
+  def canSeeMoreInfo: Boolean
+
+  def canSeeUrl: Boolean
+
+  def canSeeImageUrl: Boolean
+
+  def canSeeOpenCorporatesUrl: Boolean
+
+  def canSeeCorporateLocation: Boolean
+
+  def canSeePhysicalLocation: Boolean
+
+  def canSeePublicAlias: Boolean
+
+  def canSeePrivateAlias: Boolean
+
+  //other bank account (Counterparty) meta data - write
+  def canAddMoreInfo: Boolean
+
+  def canAddUrl: Boolean
+
+  def canAddImageUrl: Boolean
+
+  def canAddOpenCorporatesUrl: Boolean
+
+  def canAddCorporateLocation: Boolean
+
+  def canAddPhysicalLocation: Boolean
+
+  def canAddPublicAlias: Boolean
+
+  def canAddPrivateAlias: Boolean
+
+  def canAddCounterparty: Boolean
+  
+  def canGetCounterparty: Boolean
+  
+  def canDeleteCounterparty: Boolean
+
+  def canDeleteCorporateLocation: Boolean
+
+  def canDeletePhysicalLocation: Boolean
+
+  //writing access
+  def canEditOwnerComment: Boolean
+
+  def canAddComment: Boolean
+
+  def canDeleteComment: Boolean
+
+  def canAddTag: Boolean
+
+  def canDeleteTag: Boolean
+
+  def canAddImage: Boolean
+
+  def canDeleteImage: Boolean
+
+  def canAddWhereTag: Boolean
+
+  def canSeeWhereTag: Boolean
+
+  def canDeleteWhereTag: Boolean
+
+  def canAddTransactionRequestToOwnAccount: Boolean //added following two for payments
+  def canAddTransactionRequestToAnyAccount: Boolean
+  def canAddTransactionRequestToBeneficiary: Boolean
+
+  def canSeeBankAccountCreditLimit: Boolean
+  
+  def canCreateDirectDebit: Boolean
+  
+  def canCreateStandingOrder: Boolean
+
+  //If any view set these to true, you can create/delete/update the custom view
+  def canCreateCustomView: Boolean
+  def canDeleteCustomView: Boolean
+  def canUpdateCustomView: Boolean
+  def canGetCustomView: Boolean
+
+  def canRevokeAccessToCustomViews : Boolean
+  def canGrantAccessToCustomViews : Boolean 
 }
