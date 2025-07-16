@@ -63,7 +63,7 @@ object BerlinGroupCheck extends MdcLoggable {
         berlinGroupMandatoryHeaders.filterNot(headerMap.contains)
     }
 
-    val resultWithMissingHeaderCheck: Option[(Box[User], Option[CallContext])] = {
+    val resultWithWrongDateHeaderCheck: Option[(Box[User], Option[CallContext])] = {
       val date: Option[String] = headerMap.get(RequestHeader.Date.toLowerCase).flatMap(_.values.headOption)
       if (date.isDefined && !DateTimeUtil.isValidRfc7231Date(date.get)) {
         val message = ErrorMessages.NotValidRfc7231Date
@@ -78,7 +78,7 @@ object BerlinGroupCheck extends MdcLoggable {
       } else None
     }
 
-    val resultWithWrongDateHeaderCheck: Option[(Box[User], Option[CallContext])] =
+    val : Option[(Box[User], Option[CallContext])] =
       if (missingHeaders.nonEmpty) {
         val message = if (missingHeaders.size == 1)
           ErrorMessages.MissingMandatoryBerlinGroupHeaders.replace("headers", "header")
@@ -187,7 +187,7 @@ object BerlinGroupCheck extends MdcLoggable {
 
     // Chain validation steps
     resultWithMissingHeaderCheck
-      .orElse(resultWithMissingHeaderCheck)
+      .orElse(resultWithWrongDateHeaderCheck)
       .orElse(resultWithInvalidRequestIdCheck)
       .orElse(resultWithRequestIdUsedTwiceCheck)
       .orElse(resultWithInvalidSignatureHeaderCheck)
