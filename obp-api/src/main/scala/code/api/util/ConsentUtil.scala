@@ -19,6 +19,7 @@ import code.context.{ConsentAuthContextProvider, UserAuthContextProvider}
 import code.entitlement.Entitlement
 import code.model.Consumer
 import code.model.dataAccess.BankAccountRouting
+import code.scheduler.ConsentScheduler.currentDate
 import code.users.Users
 import code.util.Helper.MdcLoggable
 import code.util.HydraUtil
@@ -1127,8 +1128,8 @@ object Consent extends MdcLoggable {
     consentsOfBank
   }
 
-  def expireAllPreviousValidBerlinGroupConsents(consent: MappedConsent, updateTostatus: ConsentStatus): Boolean = {
-    if(updateTostatus == ConsentStatus.valid &&
+  def expireAllPreviousValidBerlinGroupConsents(consent: MappedConsent, updateToStatus: ConsentStatus): Boolean = {
+    if(updateToStatus == ConsentStatus.valid &&
       consent.apiStandard == ConstantsBG.berlinGroupVersion1.apiStandard) {
       MappedConsent.findAll( // Find all
           By(MappedConsent.mApiStandard, ConstantsBG.berlinGroupVersion1.apiStandard), // Berlin Group
@@ -1138,8 +1139,14 @@ object Consent extends MdcLoggable {
           By(MappedConsent.mConsumerId, consent.consumerId), // from the same TPP
         ).filterNot(_.consentId == consent.consentId) // Exclude current consent
         .map{ c => // Set to terminatedByTpp
-          val changedStatus = c.mStatus(ConsentStatus.terminatedByTpp.toString).mLastActionDate(new Date()).save
-          if(changedStatus) logger.warn(s"|---> Changed status to ${ConsentStatus.terminatedByTpp.toString} for consent ID: ${c.id}")
+          val message = s"|---> Changed status from ${c.status} to ${ConsentStatus.terminatedByTpp.toString} for consent ID: ${c.id}"
+          val newNote = s"$currentDate\n$message\n" + Option(consent.note).getOrElse("") // Prepend to existing note if any
+          val changedStatus =
+            c.mStatus(ConsentStatus.terminatedByTpp.toString)
+              .mNote(newNote)
+              .mLastActionDate(new Date())
+              .save
+          if(changedStatus) logger.warn(message)
           changedStatus
         }.forall(_ == true)
     } else {

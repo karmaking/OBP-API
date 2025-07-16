@@ -178,6 +178,7 @@ case class AllConsentJsonV510(consent_reference_id: String,
                               remaining_requests: Option[Int] = None,
                               api_standard: String,
                               api_version: String,
+                              note: String,
                              )
 case class ConsentsJsonV510(consents: List[AllConsentJsonV510])
 
@@ -991,7 +992,8 @@ object JSONFactory510 extends CustomJsonFormats {
           frequency_per_day = if(c.apiStandard == ConstantsBG.berlinGroupVersion1.apiStandard) Some(c.frequencyPerDay) else None,
           remaining_requests = if(c.apiStandard == ConstantsBG.berlinGroupVersion1.apiStandard) Some(c.frequencyPerDay - c.usesSoFarTodayCounter) else None,
           api_standard = c.apiStandard,
-          api_version = c.apiVersion
+          api_version = c.apiVersion,
+          note = c.note
         )
       }
     )
