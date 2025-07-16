@@ -66,7 +66,7 @@ object ConsentScheduler extends MdcLoggable {
       outdatedConsents.foreach { consent =>
         Try {
           val message = s"|---> Changed status from ${consent.status} to ${ConsentStatus.rejected} for consent ID: ${consent.id}"
-          val newNote = s"$currentDate\n$message\n" + consent.note // Prepend to existing note if any
+          val newNote = s"$currentDate\n$message\n" + Option(consent.note).getOrElse("") // Prepend to existing note if any
           consent
             .mStatus(ConsentStatus.rejected.toString)
             .mNote(newNote)
@@ -106,7 +106,7 @@ object ConsentScheduler extends MdcLoggable {
       expiredConsents.foreach { consent =>
         Try {
           val message = s"|---> Changed status from ${consent.status} to ${ConsentStatus.expired} for consent ID: ${consent.id}"
-          val newNote = s"$currentDate\n$message\n" + consent.note // Prepend to existing note if any
+          val newNote = s"$currentDate\n$message\n" + Option(consent.note).getOrElse("") // Prepend to existing note if any
           consent
             .mStatus(ConsentStatus.expired.toString)
             .mNote(newNote)
@@ -138,7 +138,7 @@ object ConsentScheduler extends MdcLoggable {
       expiredConsents.foreach { consent =>
         Try {
           val message = s"|---> Changed status from ${consent.status} to ${ConsentStatus.EXPIRED.toString} for consent ID: ${consent.id}"
-          val newNote = s"$currentDate\n$message\n" + consent.note // Prepend to existing note if any
+          val newNote = s"$currentDate\n$message\n" + Option(consent.note).getOrElse("") // Prepend to existing note if any
           consent
             .mStatus(ConsentStatus.EXPIRED.toString)
             .mNote(newNote)

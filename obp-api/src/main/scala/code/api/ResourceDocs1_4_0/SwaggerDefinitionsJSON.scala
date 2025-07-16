@@ -4270,7 +4270,9 @@ object SwaggerDefinitionsJSON {
     status = ConsentStatus.INITIATED.toString,
     api_standard = "Berlin Group",
     api_version = "v1.3",
-    jwt_payload = Some(consentJWT)
+    jwt_payload = Some(consentJWT),
+    note = """Tue, 15 Jul 2025 19:16:22
+             ||---> Changed status from received to rejected for consent ID: 398""".stripMargin
   )
   lazy val consentInfoJsonV510 = ConsentInfoJsonV510(
     consent_reference_id = consentReferenceIdExample.value,

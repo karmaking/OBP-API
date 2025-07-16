@@ -1140,7 +1140,7 @@ object Consent extends MdcLoggable {
         ).filterNot(_.consentId == consent.consentId) // Exclude current consent
         .map{ c => // Set to terminatedByTpp
           val message = s"|---> Changed status from ${c.status} to ${ConsentStatus.terminatedByTpp.toString} for consent ID: ${c.id}"
-          val newNote = s"$currentDate\n$message\n" + consent.note // Prepend to existing note if any
+          val newNote = s"$currentDate\n$message\n" + Option(consent.note).getOrElse("") // Prepend to existing note if any
           val changedStatus =
             c.mStatus(ConsentStatus.terminatedByTpp.toString)
               .mNote(newNote)
