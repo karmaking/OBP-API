@@ -236,14 +236,20 @@ object Consent extends MdcLoggable {
     }
   }
 
+  private def tppIsConsentHolder(consumerIdFromConsent: String, callContext: CallContext): Boolean = {
+    val consumerIdFromCurrentCall = callContext.consumer.map(_.consumerId.get).getOrElse("None")
+    consumerIdFromConsent == consumerIdFromCurrentCall
+  }
+
   private def checkConsent(consent: ConsentJWT, consentIdAsJwt: String, callContext: CallContext): Box[Boolean] = {
     logger.debug(s"code.api.util.Consent.checkConsent beginning: consent($consent), consentIdAsJwt($consentIdAsJwt)")
     val consentBox = Consents.consentProvider.vend.getConsentByConsentId(consent.jti)
     logger.debug(s"code.api.util.Consent.checkConsent.getConsentByConsentId: consentBox($consentBox)")
     val result = consentBox match {
       case Full(c) =>
-        // Always verify signature first
-        if (!verifyHmacSignedJwt(consentIdAsJwt, c)) {
+        if (!tppIsConsentHolder(c.mConsumerId.get, callContext)) { // Always check TPP first
+          ErrorUtil.apiFailureToBox(ErrorMessages.ConsentNotFound, 401)(Some(callContext))
+        } else if (!verifyHmacSignedJwt(consentIdAsJwt, c)) { // verify signature
           Failure(ErrorMessages.ConsentVerificationIssue)
         } else {
           // Then check time constraints
