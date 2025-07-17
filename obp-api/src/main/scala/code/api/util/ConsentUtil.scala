@@ -237,7 +237,7 @@ object Consent extends MdcLoggable {
   }
 
   private def tppIsConsentHolder(consumerIdFromConsent: String, callContext: CallContext): Boolean = {
-    val consumerIdFromCurrentCall = callContext.consumer.map(_.consumerId.get).getOrElse("None")
+    val consumerIdFromCurrentCall = callContext.consumer.map(_.consumerId.get).orNull
     consumerIdFromConsent == consumerIdFromCurrentCall
   }
 
