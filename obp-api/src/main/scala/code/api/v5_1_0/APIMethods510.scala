@@ -31,6 +31,7 @@ import code.api.v5_0_0.JSONFactory500
 import code.api.v5_1_0.JSONFactory510.{createConsentsInfoJsonV510, createConsentsJsonV510, createRegulatedEntitiesJson, createRegulatedEntityJson}
 import code.atmattribute.AtmAttribute
 import code.bankconnectors.Connector
+import code.bankconnectors.LocalMappedConnectorInternal._
 import code.consent.{ConsentRequests, ConsentStatus, Consents, MappedConsent}
 import code.consumer.Consumers
 import code.entitlement.Entitlement
@@ -5311,6 +5312,61 @@ trait APIMethods510 {
             }
           } yield (true, HttpCode.`204`(cc.callContext))
       }
+    }
+
+    staticResourceDocs += ResourceDoc(
+      createTransactionRequestCardano,
+      implementedInApiVersion,
+      nameOf(createTransactionRequestCardano),
+      "POST",
+      "/banks/cardano/accounts/ACCOUNT_ID/owner/transaction-request-types/CARDANO/transaction-requests",
+      "Create Transaction Request (CARDANO)",
+      s"""
+         |
+         |For sandbox mode, it will use the Cardano Preprod Network.
+         |The accountId can be the wallet_id for now, as it uses cardano-wallet in the backend.
+         |
+         |${transactionRequestGeneralText}
+         |
+       """.stripMargin,
+      transactionRequestBodyCardanoJsonV510,
+      transactionRequestWithChargeJSON400,
+      List(
+        $UserNotLoggedIn,
+        $BankNotFound,
+        $BankAccountNotFound,
+        InsufficientAuthorisationToCreateTransactionRequest,
+        InvalidTransactionRequestType,
+        InvalidJsonFormat,
+        NotPositiveAmount,
+        InvalidTransactionRequestCurrency,
+        TransactionDisabled,
+        UnknownError
+      ),
+      List(apiTagTransactionRequest, apiTagPSD2PIS, apiTagPsd2)
+    )
+    
+    lazy val createTransactionRequestCardano: OBPEndpoint = {
+      case "banks" :: "cardano" :: "accounts" :: AccountId(accountId) :: ViewId(viewId) :: "transaction-request-types" ::
+        "CARDANO" :: "transaction-requests" :: Nil JsonPost json -> _ =>
+        cc => implicit val ec = EndpointContext(Some(cc))
+
+          for {
+            (createdTransactionId, callContext) <- NewStyle.function.makePaymentv210(
+              null,
+              null,
+              null,
+              null,
+              null,
+              "", //BG no description so far
+              null,
+              "", // chargePolicy is not used in BG so far.,
+              cc.callContext
+            )
+          } yield (createdTransactionId, HttpCode.`201`(cc.callContext))
+          
+//          val transactionRequestType = TransactionRequestType("CARDANO")
+//          LocalMappedConnectorInternal.createTransactionRequest(BankId("cardano"), accountId, viewId , transactionRequestType, json)
     }
 
     

@@ -578,6 +578,18 @@ case class ConsentRequestToAccountJson(
   limit: PostCounterpartyLimitV510
 )
 
+case class CardanoPaymentJsonV510(
+  address: String,
+  amount: AmountOfMoneyJsonV121
+)
+
+case class TransactionRequestBodyCardanoJsonV510(
+  to: List[CardanoPaymentJsonV510],
+  passphrase: String
+//  value: AmountOfMoneyJsonV121,
+//  description: String,
+) //extends TransactionRequestCommonBodyJSON
+
 case class CreateViewPermissionJson(
   permission_name: String,
   extra_data: Option[List[String]]
