@@ -3542,11 +3542,11 @@ trait APIMethods310 {
                 }
               )
             }
-            (consumerId, applicationText) <- consentJson.consumer_id match {
+            (consumerId, applicationText, consumer) <- consentJson.consumer_id match {
               case Some(id) => NewStyle.function.checkConsumerByConsumerId(id, callContext) map {
-                c => (Some(c.consumerId.get), c.description)
+                c => (Some(c.consumerId.get), c.description, Some(c))
               }
-              case None => Future(None, "Any application")
+              case None => Future(None, "Any application", None)
             }
 
             
@@ -3554,7 +3554,7 @@ trait APIMethods310 {
               case Props.RunModes.Test => Consent.challengeAnswerAtTestEnvironment
               case _ => SecureRandomUtil.numeric()
             }
-            createdConsent <- Future(Consents.consentProvider.vend.createObpConsent(user, challengeAnswer, None)) map {
+            createdConsent <- Future(Consents.consentProvider.vend.createObpConsent(user, challengeAnswer, None, consumer)) map {
               i => connectorEmptyResponse(i, callContext)
             }
             consentJWT = 
