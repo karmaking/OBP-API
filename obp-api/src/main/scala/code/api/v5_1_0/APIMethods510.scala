@@ -2161,7 +2161,8 @@ trait APIMethods510 {
                 consentJson,
                 createdConsent.secret,
                 createdConsent.consentId,
-                consumerFromRequestBody.map(_.consumerId.get),
+                consumerFromRequestBody.map(_.consumerId.get)
+                  .orElse(cc.consumer.map(_.consumerId.get)), // Consumer from current call
                 consentJson.valid_from,
                 consentJson.time_to_live.getOrElse(3600),
                 None,
