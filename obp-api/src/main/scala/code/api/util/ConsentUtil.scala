@@ -416,7 +416,7 @@ object Consent extends MdcLoggable {
         } catch { // Possible exceptions
           case e: ParseException => Failure("ParseException: " + e.getMessage)
           case e: MappingException => Failure("MappingException: " + e.getMessage)
-          case e: Exception => Failure("parsing failed: " + e.getMessage)
+          case e: Exception => Failure(ErrorUtil.extractFailureMessage(e))
         }
       case failure@Failure(_, _, _) =>
         failure
@@ -473,7 +473,7 @@ object Consent extends MdcLoggable {
         } catch { // Possible exceptions
           case e: ParseException => Future(Failure("ParseException: " + e.getMessage), Some(callContext))
           case e: MappingException => Future(Failure("MappingException: " + e.getMessage), Some(callContext))
-          case e: Exception => Future(Failure("parsing failed: " + e.getMessage), Some(callContext))
+          case e: Exception => Future(Failure(ErrorUtil.extractFailureMessage(e)), Some(callContext))
         }
       case failure@Failure(_, _, _) =>
         Future(failure, Some(callContext))
