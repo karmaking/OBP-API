@@ -344,7 +344,7 @@ of the PSU at this ASPSP.
          cc =>
            for {
             (Full(u), callContext) <- authenticatedAccess(cc)
-            withBalanceParam <- NewStyle.function.tryons(s"$InvalidUrlParameters withBalance parameter can only take two values: TRUE or FALSE!", 500, callContext) {
+            withBalanceParam <- NewStyle.function.tryons(s"$InvalidUrlParameters withBalance parameter can only take two values: TRUE or FALSE!", 400, callContext) {
 
               val withBalance = APIUtil.getHttpRequestUrlParam(cc.url, "withBalance")
               
