@@ -185,7 +185,7 @@ class AccountInformationServiceAISApiTest extends BerlinGroupServerSetupV1_3 wit
         user1,
         PostViewJsonV400(view_id = Constant.SYSTEM_READ_TRANSACTIONS_BERLIN_GROUP_VIEW_ID, is_system = true)
       )
-      val requestGet = (V1_3_BG / "accounts" /testAccountId1.value/ "transactions").GET <@ (user1)
+      val requestGet = (V1_3_BG / "accounts" /testAccountId1.value/ "transactions").GET <@ (user1) <<? List(("bookingStatus", "both"))
       val response: APIResponse = makeGetRequest(requestGet)
 
       Then("We should get a 200 ")
@@ -214,7 +214,7 @@ class AccountInformationServiceAISApiTest extends BerlinGroupServerSetupV1_3 wit
         user1,
         PostViewJsonV400(view_id = Constant.SYSTEM_READ_TRANSACTIONS_BERLIN_GROUP_VIEW_ID, is_system = true)
       )
-      val requestGet = (V1_3_BG / "accounts" / testAccountId.value / "transactions").GET <@ (user1)
+      val requestGet = (V1_3_BG / "accounts" / testAccountId.value / "transactions").GET <@ (user1) <<? List(("bookingStatus", "both"))
       val response: APIResponse = makeGetRequest(requestGet)
 
       Then("We should get a 200 ")
