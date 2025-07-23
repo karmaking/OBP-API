@@ -896,7 +896,7 @@ of the "Read Transaction List" call within the _links subfield.
        "/accounts/ACCOUNT_ID/transactions",
        "Read transaction list of an account",
        s"""${mockedDataText(false)}
-Read transaction reports or transaction lists of a given account dressed by "account-id",
+Read transaction reports or transaction lists of a given account addressed by "account-id",
 depending on the steering parameter "bookingStatus" together with balances.
 For a given account, additional parameters are e.g. the attributes "dateFrom" and "dateTo".
 The ASPSP might add balance information, if transaction lists without balances are not supported. """,
