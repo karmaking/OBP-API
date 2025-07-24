@@ -24,10 +24,11 @@ Berlin 13359, Germany
 */
 
 import code.api.util.APIUtil._
-import code.api.util.{CallContext, CustomJsonFormats}
+import code.api.util.{CallContext, ErrorMessages, NewStyle}
 import code.api.v5_1_0.TransactionRequestBodyCardanoJsonV510
 import code.bankconnectors._
 import code.util.AkkaHttpClient._
+import code.util.Helper
 import code.util.Helper.MdcLoggable
 import com.openbankproject.commons.model._
 import net.liftweb.common._
@@ -43,52 +44,10 @@ trait CardanoConnector_vJun2025 extends Connector with MdcLoggable {
   //this one import is for implicit convert, don't delete
 
   implicit override val nameOfConnector = CardanoConnector_vJun2025.toString
-
+  
   val messageFormat: String = "Jun2025"
 
   override val messageDocs = ArrayBuffer[MessageDoc]()
-
-//  case class Amount(quantity: Long, unit: String)
-//  case class Output(address: String, amount: Amount, assets: List[String])
-//  case class Input(address: String, amount: Amount, assets: List[String], id: String, index: Int)
-//  case class SlotTime(absolute_slot_number: Long, epoch_number: Int, slot_number: Long, time: String)
-//  case class PendingSince(
-//    absolute_slot_number: Long,
-//    epoch_number: Int,
-//    height: Amount,
-//    slot_number: Long,
-//    time: String
-//  )
-//  case class ValidityInterval(
-//    invalid_before: Amount,
-//    invalid_hereafter: Amount
-//  )
-//  case class TokenContainer(tokens: List[String]) // for mint, burn
-
-  case class TransactionCardano(
-//    amount: Amount,
-//    burn: TokenContainer,
-//    certificates: List[String],
-//    collateral: List[String],
-//    collateral_outputs: List[String],
-//    deposit_returned: Amount,
-//    deposit_taken: Amount,
-//    direction: String,
-//    expires_at: SlotTime,
-//    extra_signatures: List[String],
-//    fee: Amount,
-    id: String//,
-//    inputs: List[Input],
-//    mint: TokenContainer,
-//    outputs: List[Output],
-//    pending_since: PendingSince,
-//    script_validity: String,
-//    status: String,
-//    validity_interval: ValidityInterval,
-//    withdrawals: List[String]
-  )
-
-
 
   override def makePaymentv210(
     fromAccount: BankAccount,
@@ -100,38 +59,58 @@ trait CardanoConnector_vJun2025 extends Connector with MdcLoggable {
     transactionRequestType: TransactionRequestType,
     chargePolicy: String,
     callContext: Option[CallContext]): OBPReturnType[Box[TransactionId]] = {
-    
-      val walletId = fromAccount.accountId.value
-      val transactionRequestBodyCardanoJson = transactionRequestCommonBody.asInstanceOf[TransactionRequestBodyCardanoJsonV510]
-      val paramUrl = s"http://localhost:8090/v2/wallets/${walletId}/transactions"
-      val jsonToSend = s"""{
-                         |  "payments": [
-                         |    {
-                         |      "address": "addr_test1qpv3se9ghq87ud29l0a8asy8nlqwd765e5zt4rc2z4mktqulwagn832cuzcjknfyxwzxz2p2kumx6n58tskugny6mrqs7fd23z",
-                         |      "amount": {
-                         |        "quantity": "${transactionRequestCommonBody.value.amount}",
-                         |        "unit": "${transactionRequestCommonBody.value.currency}"
-                         |      }
-                         |    }
-                         |  ],
-                         |  "passphrase": "${transactionRequestBodyCardanoJson.passphrase}",
-                         |}""".stripMargin
-      val request = prepareHttpRequest(paramUrl,  _root_.akka.http.scaladsl.model.HttpMethods.POST, _root_.akka.http.scaladsl.model.HttpProtocol("HTTP/1.1"), jsonToSend) //.withHeaders(buildHeaders(paramUrl,jsonToSend,callContext))
-      logger.debug(s"CardanoConnector_vJun2025.makePaymentv210 request is : $request")
-      val responseFuture: Future[_root_.akka.http.scaladsl.model.HttpResponse] = makeHttpRequest(request)
+
+    for {
+      failMsg <- Future.successful(s"${ErrorMessages.InvalidJsonFormat} The transaction request body should be $TransactionRequestBodyCardanoJsonV510")
+      transactionRequestBodyCardano <- NewStyle.function.tryons(failMsg, 400, callContext) {
+        transactionRequestCommonBody.asInstanceOf[TransactionRequestBodyCardanoJsonV510]
+      }
+
+      walletId = fromAccount.accountId.value
+      paramUrl = s"http://localhost:8090/v2/wallets/${walletId}/transactions"
+      jsonToSend = s"""{
+                     |  "payments": [
+                     |    {
+                     |      "address": "addr_test1qpv3se9ghq87ud29l0a8asy8nlqwd765e5zt4rc2z4mktqulwagn832cuzcjknfyxwzxz2p2kumx6n58tskugny6mrqs7fd23z",
+                     |      "amount": {
+                     |        "quantity": ${transactionRequestCommonBody.value.amount},
+                     |        "unit": "${transactionRequestCommonBody.value.currency}"
+                     |      }
+                     |    }
+                     |  ],
+                     |  "passphrase": "${transactionRequestBodyCardano.passphrase}"
+                     |}""".stripMargin
+
+      request = prepareHttpRequest(paramUrl, _root_.akka.http.scaladsl.model.HttpMethods.POST, _root_.akka.http.scaladsl.model.HttpProtocol("HTTP/1.1"), jsonToSend)
+      _ = logger.debug(s"CardanoConnector_vJun2025.makePaymentv210 request is : $request")
+
+      response <- NewStyle.function.tryons(s"${ErrorMessages.UnknownError} Failed to make HTTP request to Cardano API", 500, callContext) {
+        makeHttpRequest(request)
+      }.flatten
+
+      responseBody <- NewStyle.function.tryons(s"${ErrorMessages.UnknownError} Failed to extract response body", 500, callContext) {
+        response.entity.dataBytes.runFold(_root_.akka.util.ByteString(""))(_ ++ _).map(_.utf8String)
+      }.flatten
       
-      val transactionIdFuture = responseFuture.flatMap { response =>
-        response.entity.dataBytes.runFold(_root_.akka.util.ByteString(""))(_ ++ _).map(_.utf8String).map { jsonString: String =>
-          logger.debug(s"CardanoConnector_vJun2025.makePaymentv210 response jsonString is : $jsonString")
-          val jValue: JValue = json.parse(jsonString)
-          (jValue \ "id").values.toString
+      _ <- Helper.booleanToFuture(s"${ErrorMessages.UnknownError} Cardano API returned error: ${response.status.value}", 500, callContext) {
+        logger.debug(s"CardanoConnector_vJun2025.makePaymentv210 response jsonString is : $responseBody")
+        response.status.isSuccess()
+      }
+
+      transactionId <- NewStyle.function.tryons(s"${ErrorMessages.InvalidJsonFormat} Failed to parse Cardano API response", 500, callContext) {
+        
+        val jValue: JValue = json.parse(responseBody)
+        val id = (jValue \ "id").values.toString
+        if (id.nonEmpty && id != "null") {
+          TransactionId(id)
+        } else {
+          throw new RuntimeException(s"${ErrorMessages.UnknownError} Transaction ID not found in response")
         }
       }
-  
-      transactionIdFuture.map { id =>
-        (Full(TransactionId(id)), callContext)
-      }
-    
+
+    } yield {
+      (Full(transactionId), callContext)
+    }
   }
 //  override def makePaymentv210(fromAccount: BankAccount,
 //    toAccount: BankAccount,
@@ -160,58 +139,3 @@ trait CardanoConnector_vJun2025 extends Connector with MdcLoggable {
 }
 
 object CardanoConnector_vJun2025 extends CardanoConnector_vJun2025
-
-object myApp extends App{
-
-  implicit val formats = CustomJsonFormats.nullTolerateFormats
-  
-  val aaa ="""{"amount":{"quantity":1168537,"unit":"lovelace"},"burn":{"tokens":[]},"certificates":[],"collateral":[],"collateral_outputs":[],"deposit_returned":{"quantity":0,"unit":"lovelace"},"deposit_taken":{"quantity":0,"unit":"lovelace"},"direction":"outgoing","expires_at":{"absolute_slot_number":97089863,"epoch_number":228,"slot_number":235463,"time":"2025-07-17T17:24:23Z"},"extra_signatures":[],"fee":{"quantity":168537,"unit":"lovelace"},"id":"7aa959f2408ac15b9831a78f6639737c6124610f8b6c9f010bd72f9da2db8aa4","inputs":[{"address":"addr_test1qzq9w0xx8qerljrm59vs02e89vkqxqpwljcra09lr8gmjch9ygp2lexx64xjddk6l3k5k60uelxz3q2dumx99etycq9qnev3j8","amount":{"quantity":4988973201,"unit":"lovelace"},"assets":[],"id":"d8127d7e242d10c0f496fe808989826807806ff5d8ceeb8e3b4c0f31704a6e08","index":1}],"mint":{"tokens":[]},"outputs":[{"address":"addr_test1qpv3se9ghq87ud29l0a8asy8nlqwd765e5zt4rc2z4mktqulwagn832cuzcjknfyxwzxz2p2kumx6n58tskugny6mrqs7fd23z","amount":{"quantity":1000000,"unit":"lovelace"},"assets":[]},{"address":"addr_test1qzw70uzlms3ktewhqly4s45d9m0ks6tueajtjzvhy2y2ft89ygp2lexx64xjddk6l3k5k60uelxz3q2dumx99etycq9q4keup2","amount":{"quantity":4987804664,"unit":"lovelace"},"assets":[]}],"pending_since":{"absolute_slot_number":97082631,"epoch_number":228,"height":{"quantity":3684539,"unit":"block"},"slot_number":228231,"time":"2025-07-17T15:23:51Z"},"script_validity":"valid","status":"pending","validity_interval":{"invalid_before":{"quantity":0,"unit":"slot"},"invalid_hereafter":{"quantity":97089863,"unit":"slot"}},"withdrawals":[]}""".stripMargin
-
-  val aaa1 = """{"id":"123"}"""
-  println(aaa)
-
-
-  case class Amount(quantity: Long, unit: String)
-  case class Output(address: String, amount: Amount, assets: List[String])
-  case class Input(address: String, amount: Amount, assets: List[String], id: String, index: Int)
-  case class SlotTime(absolute_slot_number: Long, epoch_number: Int, slot_number: Long, time: String)
-  case class PendingSince(
-    absolute_slot_number: Long,
-    epoch_number: Int,
-    height: Amount,
-    slot_number: Long,
-    time: String
-  )
-  case class ValidityInterval(
-    invalid_before: Amount,
-    invalid_hereafter: Amount
-  )
-  case class TokenContainer(tokens: List[String]) // for mint, burn
-
-  case class TransactionCardano(
-        amount: Amount,
-        burn: TokenContainer,
-        certificates: List[String],
-        collateral: List[String],
-        collateral_outputs: List[String],
-        deposit_returned: Amount,
-        deposit_taken: Amount,
-        direction: String,
-        expires_at: SlotTime,
-        extra_signatures: List[String],
-        fee: Amount,
-        id: String,
-        inputs: List[Input],
-        mint: TokenContainer,
-        outputs: List[Output],
-        pending_since: PendingSince,
-        script_validity: String,
-        status: String,
-        validity_interval: ValidityInterval,
-        withdrawals: List[String]
-  )
-  private val jValue = json.parse(aaa)
-  println(jValue)
-  private val transaction: TransactionCardano = jValue.extract[TransactionCardano]
-  println(transaction)
-}
