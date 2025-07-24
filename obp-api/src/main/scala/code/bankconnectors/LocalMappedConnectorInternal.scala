@@ -13,6 +13,7 @@ import code.api.util.newstyle.ViewNewStyle
 import code.api.v1_4_0.JSONFactory1_4_0.TransactionRequestAccountJsonV140
 import code.api.v2_1_0._
 import code.api.v4_0_0._
+import code.api.v5_1_0.TransactionRequestBodyCardanoJsonV510
 import code.branches.MappedBranch
 import code.fx.fx
 import code.fx.fx.TTL
@@ -39,8 +40,8 @@ import net.liftweb.util.Helpers.{now, tryo}
 import net.liftweb.util.StringHelpers
 
 import java.time.{LocalDate, ZoneId}
-import java.util.{Calendar, Date}
 import java.util.UUID.randomUUID
+import java.util.{Calendar, Date}
 import scala.collection.immutable.{List, Nil}
 import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
@@ -754,6 +755,19 @@ object LocalMappedConnectorInternal extends MdcLoggable {
           } yield{
             (cardFromCbs.account, callContext)
           }
+//        case CARDANO =>
+//          for{
+//            transactionRequestBodyCardanoJson <- NewStyle.function.tryons(s"${InvalidJsonFormat}, it should be $CARD json format", 400, callContext) {
+//              json.extract[TransactionRequestBodyCardanoJsonV510]
+//            }
+//            (account, callContext) <- NewStyle.function.getBankAccountByRouting(
+//              None, //No need  for the bankId, only to address is enough
+//              "cardano_wallet_id", 
+//              transactionRequestBodyCardanoJson.to.address,
+//              callContext
+//            )
+//          } yield
+//            (account, callContext)
 
         case _ => NewStyle.function.getBankAccount(bankId,accountId, callContext)
       }
@@ -1342,31 +1356,53 @@ object LocalMappedConnectorInternal extends MdcLoggable {
           } yield
             (createdTransactionRequest, callContext)
         }
-//        case CARDANO => {
-//          for {
-//            transactionRequestBodyFreeForm <- NewStyle.function.tryons(s"${InvalidJsonFormat}, it should be $CARDANO json format", 400, callContext) {
-//              json.extract[TransactionRequestBodyCardanoJsonV510]
-//            }
-//            // Following lines: just transfer the details body, add Bank_Id and Account_Id in the Detail part. This is for persistence and 'answerTransactionRequestChallenge'
-//            transactionRequestAccountJSON = TransactionRequestAccountJsonV140(bankId.value, accountId.value)
-//            transDetailsSerialized <- NewStyle.function.tryons(UnknownError, 400, callContext) {
-//              write(transactionRequestBodyFreeForm)(Serialization.formats(NoTypeHints))
-//            }
-//            (createdTransactionRequest, callContext) <- NewStyle.function.createTransactionRequestv400(u,
-//              viewId,
-//              fromAccount,
-//              fromAccount,
-//              transactionRequestType,
-//              transactionRequestBodyFreeForm,
-//              transDetailsSerialized,
-//              sharedChargePolicy.toString,
-//              Some(OBP_TRANSACTION_REQUEST_CHALLENGE),
-//              getScaMethodAtInstance(transactionRequestType.value).toOption,
-//              None,
-//              callContext)
-//          } yield
-//            (createdTransactionRequest, callContext)
-//        }
+        case CARDANO => {
+          for {
+            //For CARDANO, we will create/get toCounterparty on site and set up the toAccount, fromAccount we need to prepare before .
+            transactionRequestBodyCardano <- NewStyle.function.tryons(s"${InvalidJsonFormat} It should be $TransactionRequestBodyCardanoJsonV510 json format", 400, callContext) {
+              json.extract[TransactionRequestBodyCardanoJsonV510]
+            }
+            (toCounterparty, callContext) <- NewStyle.function.getOrCreateCounterparty(
+              name = "cardano-"+transactionRequestBodyCardano.to.address.take(27),
+              description = transactionRequestBodyCardano.description,
+              currency = transactionRequestBodyCardano.value.currency,
+              createdByUserId = u.userId,
+              thisBankId = bankId.value,
+              thisAccountId = accountId.value,
+              thisViewId = viewId.value,
+              otherBankRoutingScheme = "",
+              otherBankRoutingAddress = "",
+              otherBranchRoutingScheme = "",
+              otherBranchRoutingAddress = "",
+              otherAccountRoutingScheme = "",
+              otherAccountRoutingAddress = "",
+              otherAccountSecondaryRoutingScheme = "cardano",
+              otherAccountSecondaryRoutingAddress = transactionRequestBodyCardano.to.address,
+              callContext: Option[CallContext],
+            )
+            (toAccount, callContext) <- NewStyle.function.getBankAccountFromCounterparty(toCounterparty, true, callContext)
+            // Check we can send money to it.
+            _ <- Helper.booleanToFuture(s"$CounterpartyBeneficiaryPermit", cc=callContext) {
+              toCounterparty.isBeneficiary
+            }
+            chargePolicy = sharedChargePolicy.toString
+            transDetailsSerialized <- NewStyle.function.tryons(UnknownError, 400, callContext) {
+              write(transactionRequestBodyCardano)(Serialization.formats(NoTypeHints))
+            }
+            (createdTransactionRequest, callContext) <- NewStyle.function.createTransactionRequestv400(u,
+              viewId,
+              fromAccount,
+              toAccount,
+              transactionRequestType,
+              transactionRequestBodyCardano,
+              transDetailsSerialized,
+              chargePolicy,
+              Some(OBP_TRANSACTION_REQUEST_CHALLENGE),
+              getScaMethodAtInstance(transactionRequestType.value).toOption,
+              None,
+              callContext)
+          } yield (createdTransactionRequest, callContext)
+        }
       }
       (challenges, callContext) <-  NewStyle.function.getChallengesByTransactionRequestId(createdTransactionRequest.id.value, callContext)
       (transactionRequestAttributes, callContext) <- NewStyle.function.getTransactionRequestAttributes(

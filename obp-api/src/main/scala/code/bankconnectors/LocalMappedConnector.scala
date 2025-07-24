@@ -164,6 +164,8 @@ object LocalMappedConnector extends Connector with MdcLoggable {
     val thresholdCurrency: String = APIUtil.getPropsValue("transactionRequests_challenge_currency", "EUR")
     logger.debug(s"thresholdCurrency is $thresholdCurrency")
     isValidCurrencyISOCode(thresholdCurrency) match {
+      case true if((currency.equals("lovelace")||(currency.equals("ada")))) =>
+        (Full(AmountOfMoney(currency, "10000000000000")), callContext)
       case true =>
         fx.exchangeRate(thresholdCurrency, currency, Some(bankId), callContext) match {
           case rate@Some(_) =>

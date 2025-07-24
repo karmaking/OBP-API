@@ -579,16 +579,15 @@ case class ConsentRequestToAccountJson(
 )
 
 case class CardanoPaymentJsonV510(
-  address: String,
-  amount: AmountOfMoneyJsonV121
+  address: String
 )
 
 case class TransactionRequestBodyCardanoJsonV510(
-  to: List[CardanoPaymentJsonV510],
-  passphrase: String
-//  value: AmountOfMoneyJsonV121,
-//  description: String,
-) //extends TransactionRequestCommonBodyJSON
+  to: CardanoPaymentJsonV510,
+  value: AmountOfMoneyJsonV121,
+  passphrase: String, 
+  description: String,
+) extends TransactionRequestCommonBodyJSON
 
 case class CreateViewPermissionJson(
   permission_name: String,

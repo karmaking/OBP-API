@@ -25,6 +25,7 @@ Berlin 13359, Germany
 
 import code.api.util.APIUtil._
 import code.api.util.{CallContext, CustomJsonFormats}
+import code.api.v5_1_0.TransactionRequestBodyCardanoJsonV510
 import code.bankconnectors._
 import code.util.AkkaHttpClient._
 import code.util.Helper.MdcLoggable
@@ -89,7 +90,8 @@ trait CardanoConnector_vJun2025 extends Connector with MdcLoggable {
 
 
 
-  override def makePaymentv210(fromAccount: BankAccount,
+  override def makePaymentv210(
+    fromAccount: BankAccount,
     toAccount: BankAccount,
     transactionRequestId: TransactionRequestId,
     transactionRequestCommonBody: TransactionRequestCommonBodyJSON,
@@ -98,42 +100,37 @@ trait CardanoConnector_vJun2025 extends Connector with MdcLoggable {
     transactionRequestType: TransactionRequestType,
     chargePolicy: String,
     callContext: Option[CallContext]): OBPReturnType[Box[TransactionId]] = {
-    implicit val formats = CustomJsonFormats.nullTolerateFormats
-
-    case class TransactionCardano2(
-      id: String
-    )
     
-    val paramUrl = "http://localhost:8090/v2/wallets/62b27359c25d4f2a5f97acee521ac1df7ac5a606/transactions"
-    val method = "POST"
-    val jsonToSend = """{
-                       |  "payments": [
-                       |    {
-                       |      "address": "addr_test1qpv3se9ghq87ud29l0a8asy8nlqwd765e5zt4rc2z4mktqulwagn832cuzcjknfyxwzxz2p2kumx6n58tskugny6mrqs7fd23z",
-                       |      "amount": {
-                       |        "quantity": 1000000,
-                       |        "unit": "lovelace"
-                       |      }
-                       |    }
-                       |  ],
-                       |  "passphrase": "StrongPassword123!"
-                       |}""".stripMargin
-    val request = prepareHttpRequest(paramUrl,  _root_.akka.http.scaladsl.model.HttpMethods.POST, _root_.akka.http.scaladsl.model.HttpProtocol("HTTP/1.1"), jsonToSend) //.withHeaders(buildHeaders(paramUrl,jsonToSend,callContext))
-    logger.debug(s"CardanoConnector_vJun2025.makePaymentv210 request is : $request")
-    val responseFuture: Future[_root_.akka.http.scaladsl.model.HttpResponse] = makeHttpRequest(request)
-    
-    val transactionFuture: Future[TransactionCardano2] = responseFuture.flatMap { response =>
-      response.entity.dataBytes.runFold(_root_.akka.util.ByteString(""))(_ ++ _).map(_.utf8String).map { jsonString: String =>
-        logger.debug(s"CardanoConnector_vJun2025.makePaymentv210 response jsonString is : $jsonString")
-        val jValue: JValue = json.parse(jsonString)
-        val id = (jValue \ "id").values.toString
-        TransactionCardano2(id)
+      val walletId = fromAccount.accountId.value
+      val transactionRequestBodyCardanoJson = transactionRequestCommonBody.asInstanceOf[TransactionRequestBodyCardanoJsonV510]
+      val paramUrl = s"http://localhost:8090/v2/wallets/${walletId}/transactions"
+      val jsonToSend = s"""{
+                         |  "payments": [
+                         |    {
+                         |      "address": "addr_test1qpv3se9ghq87ud29l0a8asy8nlqwd765e5zt4rc2z4mktqulwagn832cuzcjknfyxwzxz2p2kumx6n58tskugny6mrqs7fd23z",
+                         |      "amount": {
+                         |        "quantity": "${transactionRequestCommonBody.value.amount}",
+                         |        "unit": "${transactionRequestCommonBody.value.currency}"
+                         |      }
+                         |    }
+                         |  ],
+                         |  "passphrase": "${transactionRequestBodyCardanoJson.passphrase}",
+                         |}""".stripMargin
+      val request = prepareHttpRequest(paramUrl,  _root_.akka.http.scaladsl.model.HttpMethods.POST, _root_.akka.http.scaladsl.model.HttpProtocol("HTTP/1.1"), jsonToSend) //.withHeaders(buildHeaders(paramUrl,jsonToSend,callContext))
+      logger.debug(s"CardanoConnector_vJun2025.makePaymentv210 request is : $request")
+      val responseFuture: Future[_root_.akka.http.scaladsl.model.HttpResponse] = makeHttpRequest(request)
+      
+      val transactionIdFuture = responseFuture.flatMap { response =>
+        response.entity.dataBytes.runFold(_root_.akka.util.ByteString(""))(_ ++ _).map(_.utf8String).map { jsonString: String =>
+          logger.debug(s"CardanoConnector_vJun2025.makePaymentv210 response jsonString is : $jsonString")
+          val jValue: JValue = json.parse(jsonString)
+          (jValue \ "id").values.toString
+        }
       }
-    }
-
-    transactionFuture.map { tx =>
-      (Full(TransactionId(tx.id)), callContext)
-    }
+  
+      transactionIdFuture.map { id =>
+        (Full(TransactionId(id)), callContext)
+      }
     
   }
 //  override def makePaymentv210(fromAccount: BankAccount,

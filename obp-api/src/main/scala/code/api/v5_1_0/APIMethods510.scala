@@ -30,8 +30,8 @@ import code.api.v4_0_0._
 import code.api.v5_0_0.JSONFactory500
 import code.api.v5_1_0.JSONFactory510.{createConsentsInfoJsonV510, createConsentsJsonV510, createRegulatedEntitiesJson, createRegulatedEntityJson}
 import code.atmattribute.AtmAttribute
-import code.bankconnectors.Connector
 import code.bankconnectors.LocalMappedConnectorInternal._
+import code.bankconnectors.{Connector, LocalMappedConnectorInternal}
 import code.consent.{ConsentRequests, ConsentStatus, Consents, MappedConsent}
 import code.consumer.Consumers
 import code.entitlement.Entitlement
@@ -5350,23 +5350,22 @@ trait APIMethods510 {
       case "banks" :: "cardano" :: "accounts" :: AccountId(accountId) :: ViewId(viewId) :: "transaction-request-types" ::
         "CARDANO" :: "transaction-requests" :: Nil JsonPost json -> _ =>
         cc => implicit val ec = EndpointContext(Some(cc))
-
-          for {
-            (createdTransactionId, callContext) <- NewStyle.function.makePaymentv210(
-              null,
-              null,
-              null,
-              null,
-              null,
-              "", //BG no description so far
-              null,
-              "", // chargePolicy is not used in BG so far.,
-              cc.callContext
-            )
-          } yield (createdTransactionId, HttpCode.`201`(cc.callContext))
+//          for {
+//            (createdTransactionId, callContext) <- NewStyle.function.makePaymentv210(
+//              null,
+//              null,
+//              null,
+//              null,
+//              null,
+//              "", //BG no description so far
+//              null,
+//              "", // chargePolicy is not used in BG so far.,
+//              cc.callContext
+//            )
+//          } yield (createdTransactionId, HttpCode.`201`(cc.callContext))
           
-//          val transactionRequestType = TransactionRequestType("CARDANO")
-//          LocalMappedConnectorInternal.createTransactionRequest(BankId("cardano"), accountId, viewId , transactionRequestType, json)
+          val transactionRequestType = TransactionRequestType("CARDANO")
+          LocalMappedConnectorInternal.createTransactionRequest(BankId("cardano"), accountId, viewId , transactionRequestType, json)
     }
 
     

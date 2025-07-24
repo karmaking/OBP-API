@@ -208,7 +208,7 @@ object MapperCounterparties extends Counterparties with MdcLoggable {
                                  ): Box[CounterpartyTrait] = {
     tryo{
       val mappedCounterparty = MappedCounterparty.create
-        .mCounterPartyId(APIUtil.createExplicitCounterpartyId) //We create the Counterparty_Id here, it means, it will be create in each connector.
+        .mCounterPartyId(APIUtil.createExplicitCounterpartyId) //We create the Counterparty_Id here, it means, it will be created in each connector.
         .mName(name)
         .mCreatedByUserId(createdByUserId)
         .mThisBankId(thisBankId)

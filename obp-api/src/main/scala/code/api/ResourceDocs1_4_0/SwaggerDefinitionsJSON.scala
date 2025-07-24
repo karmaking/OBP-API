@@ -5699,12 +5699,13 @@ object SwaggerDefinitionsJSON {
 
   lazy val cardanoPaymentJsonV510 = CardanoPaymentJsonV510(
     address = "addr_test1qpv3se9ghq87ud29l0a8asy8nlqwd765e5zt4rc2z4mktqulwagn832cuzcjknfyxwzxz2p2kumx6n58tskugny6mrqs7fd12",
-    amount =  amountOfMoneyJsonV121
   )
 
   lazy val transactionRequestBodyCardanoJsonV510 = TransactionRequestBodyCardanoJsonV510(
-    to =  List(cardanoPaymentJsonV510),
-    passphrase = "password1234!"
+    to =  cardanoPaymentJsonV510,
+    value = amountOfMoneyJsonV121,
+    passphrase = "password1234!",
+    description = descriptionExample.value,
   )
   
   //The common error or success format.
