@@ -485,7 +485,7 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
 
     // Debtor
     val debtorName = if(out) transaction.bankAccount.map(_.label.getOrElse("")) else None
-    val debtorAccountIdIban = if(out) {
+    val debtorAccountIban = if(out) {
       val debtorIban  = transaction.bankAccount.map(_.accountRoutingAddress.getOrElse(""))
       Some(BgTransactionAccountJson(iban = debtorIban))
     } else None
@@ -495,7 +495,7 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
       creditorName = creditorName,
       creditorAccount = creditorAccountIban,
       debtorName = debtorName,
-      debtorAccount = debtorAccountIdIban,
+      debtorAccount = debtorAccountIban,
       transactionAmount = AmountOfMoneyV13(
         transaction.currency.getOrElse(""),
         if(bgRemoveSignOfAmounts)
