@@ -579,7 +579,24 @@ case class ConsentRequestToAccountJson(
 )
 
 case class CardanoPaymentJsonV510(
-  address: String
+  address: String,
+  amount: Option[CardanoAmountJsonV510] = None,
+  assets: Option[List[CardanoAssetJsonV510]] = None
+)
+
+case class CardanoAmountJsonV510(
+  quantity: Long,
+  unit: String // "lovelace"
+)
+
+case class CardanoAssetJsonV510(
+  policy_id: String,
+  asset_name: String,
+  quantity: Long
+)
+
+case class CardanoMetadataStringJsonV510(
+  string: String
 )
 
 case class TransactionRequestBodyCardanoJsonV510(
@@ -587,6 +604,7 @@ case class TransactionRequestBodyCardanoJsonV510(
   value: AmountOfMoneyJsonV121,
   passphrase: String, 
   description: String,
+  metadata: Option[Map[String, CardanoMetadataStringJsonV510]] = None
 ) extends TransactionRequestCommonBodyJSON
 
 case class CreateViewPermissionJson(

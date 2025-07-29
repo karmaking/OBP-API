@@ -1362,6 +1362,64 @@ object LocalMappedConnectorInternal extends MdcLoggable {
             transactionRequestBodyCardano <- NewStyle.function.tryons(s"${InvalidJsonFormat} It should be $TransactionRequestBodyCardanoJsonV510 json format", 400, callContext) {
               json.extract[TransactionRequestBodyCardanoJsonV510]
             }
+            
+            // Validate Cardano specific fields
+            _ <- Helper.booleanToFuture(s"$InvalidJsonValue Cardano payment address is required", cc=callContext) {
+              transactionRequestBodyCardano.to.address.nonEmpty
+            }
+            
+            // Validate Cardano address format (basic validation)
+            _ <- Helper.booleanToFuture(s"$InvalidJsonValue Cardano address format is invalid", cc=callContext) {
+              transactionRequestBodyCardano.to.address.startsWith("addr_") || 
+              transactionRequestBodyCardano.to.address.startsWith("addr_test") ||
+              transactionRequestBodyCardano.to.address.startsWith("addr_main")
+            }
+            
+            // Validate amount if provided (can be 0 for token-only transfers)
+            _ <- transactionRequestBodyCardano.to.amount match {
+              case Some(amount) => Helper.booleanToFuture(s"$InvalidJsonValue Cardano amount quantity must be non-negative", cc=callContext) {
+                amount.quantity >= 0
+              }
+              case None => Future.successful(true)
+            }
+            
+            // Validate amount unit if provided
+            _ <- transactionRequestBodyCardano.to.amount match {
+              case Some(amount) => Helper.booleanToFuture(s"$InvalidJsonValue Cardano amount unit must be 'lovelace'", cc=callContext) {
+                amount.unit == "lovelace"
+              }
+              case None => Future.successful(true)
+            }
+            
+            // Validate assets if provided
+            _ <- transactionRequestBodyCardano.to.assets match {
+              case Some(assets) => Helper.booleanToFuture(s"$InvalidJsonValue Cardano assets must have valid policy_id and asset_name", cc=callContext) {
+                assets.forall(asset => asset.policy_id.nonEmpty && asset.asset_name.nonEmpty && asset.quantity > 0)
+              }
+              case None => Future.successful(true)
+            }
+            
+            // Validate that if amount is 0, there must be assets (token-only transfer)
+            _ <- (transactionRequestBodyCardano.to.amount, transactionRequestBodyCardano.to.assets) match {
+              case (Some(amount), Some(assets)) if amount.quantity == 0 => Helper.booleanToFuture(s"$InvalidJsonValue Cardano token-only transfer must have assets", cc=callContext) {
+                assets.nonEmpty
+              }
+              case (Some(amount), None) if amount.quantity == 0 => Helper.booleanToFuture(s"$InvalidJsonValue Cardano transfer with zero amount must include assets", cc=callContext) {
+                false
+              }
+              case _ => Future.successful(true)
+            }
+            
+            // Validate metadata if provided
+            _ <- transactionRequestBodyCardano.metadata match {
+              case Some(metadata) => Helper.booleanToFuture(s"$InvalidJsonValue Cardano metadata must have valid structure", cc=callContext) {
+                metadata.forall { case (label, metadataObj) =>
+                  label.nonEmpty && metadataObj.string.nonEmpty
+                }
+              }
+              case None => Future.successful(true)
+            }
+            
             (toCounterparty, callContext) <- NewStyle.function.getOrCreateCounterparty(
               name = "cardano-"+transactionRequestBodyCardano.to.address.take(27),
               description = transactionRequestBodyCardano.description,
