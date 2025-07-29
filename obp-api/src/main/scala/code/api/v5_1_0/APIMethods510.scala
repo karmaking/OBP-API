@@ -5319,7 +5319,7 @@ trait APIMethods510 {
       implementedInApiVersion,
       nameOf(createTransactionRequestCardano),
       "POST",
-      "/banks/cardano/accounts/ACCOUNT_ID/owner/transaction-request-types/CARDANO/transaction-requests",
+      "/banks/BANK_ID/accounts/ACCOUNT_ID/owner/transaction-request-types/CARDANO/transaction-requests",
       "Create Transaction Request (CARDANO)",
       s"""
          |
@@ -5347,11 +5347,11 @@ trait APIMethods510 {
     )
     
     lazy val createTransactionRequestCardano: OBPEndpoint = {
-      case "banks" :: "cardano" :: "accounts" :: AccountId(accountId) :: ViewId(viewId) :: "transaction-request-types" ::
+      case "banks" :: BankId(bankId) :: "accounts" :: AccountId(accountId) :: ViewId(viewId) :: "transaction-request-types" ::
         "CARDANO" :: "transaction-requests" :: Nil JsonPost json -> _ =>
         cc => implicit val ec = EndpointContext(Some(cc))
           val transactionRequestType = TransactionRequestType("CARDANO")
-          LocalMappedConnectorInternal.createTransactionRequest(BankId("cardano"), accountId, viewId , transactionRequestType, json)
+          LocalMappedConnectorInternal.createTransactionRequest(bankId, accountId, viewId , transactionRequestType, json)
     }
 
     

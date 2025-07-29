@@ -1,24 +1,21 @@
 package code.transactionrequests
 
-import code.api.util.APIUtil.{DateWithMsFormat}
-import code.api.util.{APIUtil, CallContext, CustomJsonFormats}
+import code.api.util.APIUtil.DateWithMsFormat
 import code.api.util.ErrorMessages._
+import code.api.util.{APIUtil, CallContext, CustomJsonFormats}
 import code.api.v2_1_0.TransactionRequestBodyCounterpartyJSON
 import code.bankconnectors.LocalMappedConnectorInternal
 import code.consent.Consents
 import code.model._
 import code.util.{AccountIdString, UUIDString}
 import com.openbankproject.commons.model._
-import com.openbankproject.commons.model.enums.{AccountRoutingScheme, TransactionRequestStatus}
-import com.openbankproject.commons.model.enums.TransactionRequestTypes
 import com.openbankproject.commons.model.enums.TransactionRequestTypes.{COUNTERPARTY, SEPA}
+import com.openbankproject.commons.model.enums.{AccountRoutingScheme, TransactionRequestStatus, TransactionRequestTypes}
 import net.liftweb.common.{Box, Failure, Full, Logger}
 import net.liftweb.json
 import net.liftweb.json.JsonAST.{JField, JObject, JString}
 import net.liftweb.mapper._
 import net.liftweb.util.Helpers._
-
-import java.text.SimpleDateFormat
 
 object MappedTransactionRequestProvider extends TransactionRequestProvider {
 
@@ -237,24 +234,24 @@ class MappedTransactionRequest extends LongKeyedMapper[MappedTransactionRequest]
 
   //transaction request fields:
   object mTransactionRequestId extends UUIDString(this)
-  object mType extends MappedString(this, 32)
+  object mType extends MappedString(this, 2000)
 
   //transaction fields:
   object mTransactionIDs extends MappedString(this, 2000)
-  object mStatus extends MappedString(this, 32)
+  object mStatus extends MappedString(this, 2000)
   object mStartDate extends MappedDate(this)
   object mEndDate extends MappedDate(this)
-  object mChallenge_Id extends MappedString(this, 64)
+  object mChallenge_Id extends MappedString(this, 2000)
   object mChallenge_AllowedAttempts extends MappedInt(this)
-  object mChallenge_ChallengeType extends MappedString(this, 100)
-  object mCharge_Summary  extends MappedString(this, 64)
-  object mCharge_Amount  extends MappedString(this, 32)
-  object mCharge_Currency  extends MappedString(this, 3)
-  object mcharge_Policy  extends MappedString(this, 32)
+  object mChallenge_ChallengeType extends MappedString(this, 2000)
+  object mCharge_Summary  extends MappedString(this, 2000)
+  object mCharge_Amount  extends MappedString(this, 2000)
+  object mCharge_Currency  extends MappedString(this, 2000)
+  object mcharge_Policy  extends MappedString(this, 2000)
 
   //Body from http request: SANDBOX_TAN, FREE_FORM, SEPA and COUNTERPARTY should have the same following fields:
-  object mBody_Value_Currency extends MappedString(this, 3)
-  object mBody_Value_Amount extends MappedString(this, 32)
+  object mBody_Value_Currency extends MappedString(this, 2000)
+  object mBody_Value_Amount extends MappedString(this, 2000)
   object mBody_Description extends MappedString(this, 2000)
   // This is the details / body of the request (contains all fields in the body)
   // Note:this need to be a longer string, defaults is 2000, maybe not enough
@@ -271,28 +268,28 @@ class MappedTransactionRequest extends LongKeyedMapper[MappedTransactionRequest]
   object mTo_AccountId extends AccountIdString(this)
 
   //toCounterparty fields
-  object mName extends MappedString(this, 64)
+  object mName extends MappedString(this, 2000)
   object mThisBankId extends UUIDString(this)
   object mThisAccountId extends AccountIdString(this)
   object mThisViewId extends UUIDString(this)
   object mCounterpartyId extends UUIDString(this)
-  object mOtherAccountRoutingScheme extends MappedString(this, 32) // TODO Add class for Scheme and Address
-  object mOtherAccountRoutingAddress extends MappedString(this, 64)
-  object mOtherBankRoutingScheme extends MappedString(this, 32)
-  object mOtherBankRoutingAddress extends MappedString(this, 64)
+  object mOtherAccountRoutingScheme extends MappedString(this, 2000) // TODO Add class for Scheme and Address
+  object mOtherAccountRoutingAddress extends MappedString(this, 2000)
+  object mOtherBankRoutingScheme extends MappedString(this, 2000)
+  object mOtherBankRoutingAddress extends MappedString(this, 2000)
   object mIsBeneficiary extends MappedBoolean(this)
   
   //Here are for Berlin Group V1.3 
   object mPaymentStartDate extends MappedDate(this)           //BGv1.3 Open API Document example value: "startDate":"2024-08-12"
   object mPaymentEndDate	 extends MappedDate(this)           //BGv1.3 Open API Document example value: "startDate":"2025-08-01"
-  object mPaymentExecutionRule extends MappedString(this, 64) //BGv1.3 Open API Document example value: "executionRule":"preceding" 
-  object mPaymentFrequency extends MappedString(this, 64)     //BGv1.3 Open API Document example value: "frequency":"Monthly", 
-  object mPaymentDayOfExecution extends MappedString(this, 64)//BGv1.3 Open API Document example value: "dayOfExecution":"01" 
+  object mPaymentExecutionRule extends MappedString(this, 2000) //BGv1.3 Open API Document example value: "executionRule":"preceding" 
+  object mPaymentFrequency extends MappedString(this, 2000)     //BGv1.3 Open API Document example value: "frequency":"Monthly", 
+  object mPaymentDayOfExecution extends MappedString(this, 2000)//BGv1.3 Open API Document example value: "dayOfExecution":"01" 
   
-  object mConsentReferenceId extends MappedString(this, 64)
+  object mConsentReferenceId extends MappedString(this, 2000)
 
-  object mApiStandard extends MappedString(this, 50)
-  object mApiVersion extends MappedString(this, 50)
+  object mApiStandard extends MappedString(this, 2000)
+  object mApiVersion extends MappedString(this, 2000)
   
   def updateStatus(newStatus: String) = {
     mStatus.set(newStatus)
