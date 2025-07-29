@@ -5350,20 +5350,6 @@ trait APIMethods510 {
       case "banks" :: "cardano" :: "accounts" :: AccountId(accountId) :: ViewId(viewId) :: "transaction-request-types" ::
         "CARDANO" :: "transaction-requests" :: Nil JsonPost json -> _ =>
         cc => implicit val ec = EndpointContext(Some(cc))
-//          for {
-//            (createdTransactionId, callContext) <- NewStyle.function.makePaymentv210(
-//              null,
-//              null,
-//              null,
-//              null,
-//              null,
-//              "", //BG no description so far
-//              null,
-//              "", // chargePolicy is not used in BG so far.,
-//              cc.callContext
-//            )
-//          } yield (createdTransactionId, HttpCode.`201`(cc.callContext))
-          
           val transactionRequestType = TransactionRequestType("CARDANO")
           LocalMappedConnectorInternal.createTransactionRequest(BankId("cardano"), accountId, viewId , transactionRequestType, json)
     }

@@ -68,17 +68,19 @@ trait CardanoConnector_vJun2025 extends Connector with MdcLoggable {
 
       walletId = fromAccount.accountId.value
       paramUrl = s"http://localhost:8090/v2/wallets/${walletId}/transactions"
+      
+      // Build payments array based on the transaction request body
+      paymentsArray = buildPaymentsArray(transactionRequestBodyCardano)
+      
+      // Build metadata if present
+      metadataJson = buildMetadataJson(transactionRequestBodyCardano)
+      
       jsonToSend = s"""{
                      |  "payments": [
-                     |    {
-                     |      "address": "addr_test1qpv3se9ghq87ud29l0a8asy8nlqwd765e5zt4rc2z4mktqulwagn832cuzcjknfyxwzxz2p2kumx6n58tskugny6mrqs7fd23z",
-                     |      "amount": {
-                     |        "quantity": ${transactionRequestCommonBody.value.amount},
-                     |        "unit": "${transactionRequestCommonBody.value.currency}"
-                     |      }
-                     |    }
+                     |    $paymentsArray
                      |  ],
                      |  "passphrase": "${transactionRequestBodyCardano.passphrase}"
+                     |  $metadataJson
                      |}""".stripMargin
 
       request = prepareHttpRequest(paramUrl, _root_.akka.http.scaladsl.model.HttpMethods.POST, _root_.akka.http.scaladsl.model.HttpProtocol("HTTP/1.1"), jsonToSend)
@@ -110,6 +112,64 @@ trait CardanoConnector_vJun2025 extends Connector with MdcLoggable {
 
     } yield {
       (Full(transactionId), callContext)
+    }
+  }
+  
+  /**
+   * Build payments array for Cardano API
+   * Supports different payment types: ADA only, Token only, ADA + Token
+   */
+  private def buildPaymentsArray(transactionRequestBodyCardano: TransactionRequestBodyCardanoJsonV510): String = {
+    val address = transactionRequestBodyCardano.to.address
+    val amountJson = transactionRequestBodyCardano.to.amount match {
+      case Some(amount) => s"""
+        |      "amount": {
+        |        "quantity": ${amount.quantity},
+        |        "unit": "${amount.unit}"
+        |      }""".stripMargin
+      case None => ""
+    }
+    
+    val assetsJson = transactionRequestBodyCardano.to.assets match {
+      case Some(assets) if assets.nonEmpty => {
+        val assetsArray = assets.map { asset =>
+          s"""        {
+          |          "policy_id": "${asset.policy_id}",
+          |          "asset_name": "${asset.asset_name}",
+          |          "quantity": ${asset.quantity}
+          |        }""".stripMargin
+        }.mkString(",\n")
+        s""",
+        |      "assets": [
+        |$assetsArray
+        |      ]""".stripMargin
+      }
+      case _ => ""
+    }
+    
+    s"""    {
+      |      "address": "$address",$amountJson$assetsJson
+      |    }""".stripMargin
+  }
+  
+  /**
+   * Build metadata JSON for Cardano API
+   * Supports simple string metadata format
+   */
+  private def buildMetadataJson(transactionRequestBodyCardano: TransactionRequestBodyCardanoJsonV510): String = {
+    transactionRequestBodyCardano.metadata match {
+      case Some(metadata) if metadata.nonEmpty => {
+        val metadataEntries = metadata.map { case (label, metadataObj) =>
+          s"""    "$label": {
+            |      "string": "${metadataObj.string}"
+            |    }""".stripMargin
+        }.mkString(",\n")
+        s""",
+        |  "metadata": {
+        |$metadataEntries
+        |  }""".stripMargin
+      }
+      case _ => ""
     }
   }
 //  override def makePaymentv210(fromAccount: BankAccount,
