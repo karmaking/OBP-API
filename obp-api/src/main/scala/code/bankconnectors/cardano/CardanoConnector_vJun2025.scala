@@ -117,18 +117,20 @@ trait CardanoConnector_vJun2025 extends Connector with MdcLoggable {
   
   /**
    * Build payments array for Cardano API
+   * Amount is always required in Cardano transactions
    * Supports different payment types: ADA only, Token only, ADA + Token
    */
   private def buildPaymentsArray(transactionRequestBodyCardano: TransactionRequestBodyCardanoJsonV510): String = {
     val address = transactionRequestBodyCardano.to.address
-    val amountJson = transactionRequestBodyCardano.to.amount match {
-      case Some(amount) => s"""
-        |      "amount": {
-        |        "quantity": ${amount.quantity},
-        |        "unit": "${amount.unit}"
-        |      }""".stripMargin
-      case None => ""
-    }
+    
+    // Amount is always required in Cardano
+    val amount = transactionRequestBodyCardano.to.amount
+    
+    val amountJson = s"""
+      |      "amount": {
+      |        "quantity": ${amount.quantity},
+      |        "unit": "${amount.unit}"
+      |      }""".stripMargin
     
     val assetsJson = transactionRequestBodyCardano.to.assets match {
       case Some(assets) if assets.nonEmpty => {
@@ -147,8 +149,15 @@ trait CardanoConnector_vJun2025 extends Connector with MdcLoggable {
       case _ => ""
     }
     
+    // Always include amount, optionally include assets
+    val jsonContent = if (assetsJson.isEmpty) {
+      s"""      "address": "$address",$amountJson"""
+    } else {
+      s"""      "address": "$address",$amountJson$assetsJson"""
+    }
+    
     s"""    {
-      |      "address": "$address",$amountJson$assetsJson
+      |$jsonContent
       |    }""".stripMargin
   }
   

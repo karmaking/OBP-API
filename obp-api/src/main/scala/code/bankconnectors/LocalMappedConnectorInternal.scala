@@ -1375,20 +1375,16 @@ object LocalMappedConnectorInternal extends MdcLoggable {
               transactionRequestBodyCardano.to.address.startsWith("addr_main")
             }
             
-            // Validate amount if provided (can be 0 for token-only transfers)
-            _ <- transactionRequestBodyCardano.to.amount match {
-              case Some(amount) => Helper.booleanToFuture(s"$InvalidJsonValue Cardano amount quantity must be non-negative", cc=callContext) {
-                amount.quantity >= 0
-              }
-              case None => Future.successful(true)
+           
+            
+            // Validate amount quantity is non-negative
+            _ <- Helper.booleanToFuture(s"$InvalidJsonValue Cardano amount quantity must be non-negative", cc=callContext) {
+              transactionRequestBodyCardano.to.amount.quantity >= 0
             }
             
-            // Validate amount unit if provided
-            _ <- transactionRequestBodyCardano.to.amount match {
-              case Some(amount) => Helper.booleanToFuture(s"$InvalidJsonValue Cardano amount unit must be 'lovelace'", cc=callContext) {
-                amount.unit == "lovelace"
-              }
-              case None => Future.successful(true)
+            // Validate amount unit must be 'lovelace'
+            _ <- Helper.booleanToFuture(s"$InvalidJsonValue Cardano amount unit must be 'lovelace'", cc=callContext) {
+              transactionRequestBodyCardano.to.amount.unit == "lovelace"
             }
             
             // Validate assets if provided
@@ -1401,10 +1397,10 @@ object LocalMappedConnectorInternal extends MdcLoggable {
             
             // Validate that if amount is 0, there must be assets (token-only transfer)
             _ <- (transactionRequestBodyCardano.to.amount, transactionRequestBodyCardano.to.assets) match {
-              case (Some(amount), Some(assets)) if amount.quantity == 0 => Helper.booleanToFuture(s"$InvalidJsonValue Cardano token-only transfer must have assets", cc=callContext) {
+              case (amount, Some(assets)) if amount.quantity == 0 => Helper.booleanToFuture(s"$InvalidJsonValue Cardano token-only transfer must have assets", cc=callContext) {
                 assets.nonEmpty
               }
-              case (Some(amount), None) if amount.quantity == 0 => Helper.booleanToFuture(s"$InvalidJsonValue Cardano transfer with zero amount must include assets", cc=callContext) {
+              case (amount, None) if amount.quantity == 0 => Helper.booleanToFuture(s"$InvalidJsonValue Cardano transfer with zero amount must include assets", cc=callContext) {
                 false
               }
               case _ => Future.successful(true)

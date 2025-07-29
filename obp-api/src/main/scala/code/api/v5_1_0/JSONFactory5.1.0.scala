@@ -580,7 +580,7 @@ case class ConsentRequestToAccountJson(
 
 case class CardanoPaymentJsonV510(
   address: String,
-  amount: Option[CardanoAmountJsonV510] = None,
+  amount: CardanoAmountJsonV510,
   assets: Option[List[CardanoAssetJsonV510]] = None
 )
 

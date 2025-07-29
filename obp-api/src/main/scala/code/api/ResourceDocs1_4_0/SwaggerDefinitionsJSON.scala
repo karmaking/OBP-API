@@ -5699,10 +5699,10 @@ object SwaggerDefinitionsJSON {
 
   lazy val cardanoPaymentJsonV510 = CardanoPaymentJsonV510(
     address = "addr_test1qpv3se9ghq87ud29l0a8asy8nlqwd765e5zt4rc2z4mktqulwagn832cuzcjknfyxwzxz2p2kumx6n58tskugny6mrqs7fd12",
-    amount = Some(CardanoAmountJsonV510(
+    amount = CardanoAmountJsonV510(
       quantity = 1000000,
       unit = "lovelace"
-    )),
+    ),
     assets = Some(List(CardanoAssetJsonV510(
       policy_id = "policy1234567890abcdef",
       asset_name = "4f47435241",
@@ -5713,10 +5713,10 @@ object SwaggerDefinitionsJSON {
   // Example for Send ADA with Token only (no ADA amount)
   lazy val cardanoPaymentTokenOnlyJsonV510 = CardanoPaymentJsonV510(
     address = "addr_test1qpv3se9ghq87ud29l0a8asy8nlqwd765e5zt4rc2z4mktqulwagn832cuzcjknfyxwzxz2p2kumx6n58tskugny6mrqs7fd12",
-    amount = Some(CardanoAmountJsonV510(
+    amount = CardanoAmountJsonV510(
       quantity = 0,
       unit = "lovelace"
-    )),
+    ),
     assets = Some(List(CardanoAssetJsonV510(
       policy_id = "policy1234567890abcdef",
       asset_name = "4f47435241",
