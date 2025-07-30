@@ -497,6 +497,13 @@
       <version>1.20.3</version>
       <scope>test</scope>
     </dependency>
+
+    <!-- https://mvnrepository.com/artifact/com.nulab-inc/zxcvbn -->
+    <dependency>
+      <groupId>com.nulab-inc</groupId>
+      <artifactId>zxcvbn</artifactId>
+      <version>1.9.0</version>
+    </dependency>
   </dependencies>
 
   <build>
