@@ -497,6 +497,13 @@
       <version>1.20.3</version>
       <scope>test</scope>
     </dependency>
+
+    <dependency>
+      <groupId>com.sun.activation</groupId>
+      <artifactId>jakarta.activation</artifactId>
+      <version>1.2.2</version>
+    </dependency>
+    
   </dependencies>
 
   <build>
