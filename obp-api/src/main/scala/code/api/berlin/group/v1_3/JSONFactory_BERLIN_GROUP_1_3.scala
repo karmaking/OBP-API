@@ -476,17 +476,18 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
     val out: Boolean = transaction.amount.get.toString().startsWith("-")
     val in: Boolean = !out
 
+    val isIban = transaction.bankAccount.flatMap(_.accountRoutingScheme.map(_.toUpperCase == "IBAN")).getOrElse(false)
     // Creditor
     val creditorName = if(in) transaction.otherBankAccount.map(_.label.display) else None
     val creditorAccountIban = if(in) {
-      val creditorIban: Option[String] = transaction.otherBankAccount.map(_.iban.getOrElse(""))
+      val creditorIban = if(isIban) transaction.otherBankAccount.map(_.iban.getOrElse("")) else Some("")
       Some(BgTransactionAccountJson(iban = creditorIban))
     } else None
 
     // Debtor
     val debtorName = if(out) transaction.bankAccount.map(_.label.getOrElse("")) else None
     val debtorAccountIban = if(out) {
-      val debtorIban  = transaction.bankAccount.map(_.accountRoutingAddress.getOrElse(""))
+      val debtorIban  = if(isIban) transaction.bankAccount.map(_.accountRoutingAddress.getOrElse("")) else Some("")
       Some(BgTransactionAccountJson(iban = debtorIban))
     } else None
     
