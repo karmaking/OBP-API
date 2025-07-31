@@ -856,8 +856,7 @@ featured_apis=elasticSearchWarehouseV300
 # use_consumer_limits=false
 # In case isn't defined default value is 60
 # user_consumer_limit_anonymous_access=100
-# redis_address=127.0.0.1
-# redis_port=6379
+# For the Rate Limiting feature we use Redis cache instance
 # In case isn't defined default value is root
 # rate_limiting.exclude_endpoints=root
 ## Default rate limiting for a new consumer

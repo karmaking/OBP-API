@@ -3974,7 +3974,8 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
           tpp <- BerlinGroupSigning.getTppByCertificate(certificate, cc)
         } yield {
           if (tpp.nonEmpty) {
-            val hasRole = tpp.exists(_.services.contains(serviceProvider))
+            val berlinGroupRole = PemCertificateRole.toBerlinGroup(serviceProvider)
+            val hasRole = tpp.exists(_.services.contains(berlinGroupRole))
             if (hasRole) {
               Full(true)
             } else {

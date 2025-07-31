@@ -192,7 +192,25 @@ class AccountInformationServiceAISApiTest extends BerlinGroupServerSetupV1_3 wit
       response.code should equal(200)
       response.body.extract[TransactionsJsonV13].account.iban should not be ("")
 //      response.body.extract[TransactionsJsonV13].transactions.booked.head.length >0 should be (true)
-      response.body.extract[TransactionsJsonV13].transactions.pending.head.length >0 should be (true)
+      response.body.extract[TransactionsJsonV13].transactions.pending.head.nonEmpty should be (true)
+      response.body.extract[TransactionsJsonV13].transactions.booked.nonEmpty should be (true)
+
+
+      val requestGet2 = (V1_3_BG / "accounts" / testAccountId1.value / "transactions").GET <@ (user1) <<? List(("bookingStatus", "booked"))
+      val response2: APIResponse = makeGetRequest(requestGet2)
+      Then("We should get a 200 ")
+      response2.code should equal(200)
+      response2.body.extract[TransactionsJsonV13].account.iban should not be ("")
+      response2.body.extract[TransactionsJsonV13].transactions.pending.isEmpty should be(true)
+      response2.body.extract[TransactionsJsonV13].transactions.booked.nonEmpty should be(true)
+
+      val requestGet3 = (V1_3_BG / "accounts" / testAccountId1.value / "transactions").GET <@ (user1) <<? List(("bookingStatus", "pending"))
+      val response3: APIResponse = makeGetRequest(requestGet3)
+      Then("We should get a 200 ")
+      response3.code should equal(200)
+      response3.body.extract[TransactionsJsonV13].account.iban should not be ("")
+      response3.body.extract[TransactionsJsonV13].transactions.pending.nonEmpty should be(true)
+      response3.body.extract[TransactionsJsonV13].transactions.booked.isEmpty should be(true)
     }
   }
 
@@ -220,7 +238,7 @@ class AccountInformationServiceAISApiTest extends BerlinGroupServerSetupV1_3 wit
       Then("We should get a 200 ")
       response.code should equal(200)
       response.body.extract[TransactionsJsonV13].account.iban should not be ("")
-      response.body.extract[TransactionsJsonV13].transactions.pending.head.length > 0 should be (true)
+      response.body.extract[TransactionsJsonV13].transactions.pending.head.nonEmpty should be (true)
 //      response.body.extract[TransactionsJsonV13].transactions.pending.length > 0 should be (true)
       val transactionId = response.body.extract[TransactionsJsonV13].transactions.pending.head.head.transactionId
 
