@@ -473,27 +473,30 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
     val bookingDate = transaction.startDate.orNull
     val valueDate = if(transaction.finishDate.isDefined) Some(BgSpecValidation.formatToISODate(transaction.finishDate.orNull)) else None
     
-    val creditorName = transaction.otherBankAccount.map(_.label.display).getOrElse("")
-    val creditorAccountIban = stringOrNone(transaction.otherBankAccount.map(_.iban.getOrElse("")).getOrElse(""))
-    
-    val debtorName = stringOrNone(transaction.bankAccount.map(_.label.getOrElse("")).getOrElse(""))
-    val debtorIban  = transaction.bankAccount.map(_.accountRoutingAddress.getOrElse("")).getOrElse("")
-    val debtorAccountIdIban = stringOrNone(debtorIban)
+    val out: Boolean = transaction.amount.get.toString().startsWith("-")
+    val in: Boolean = !out
+
+    val isIban = transaction.bankAccount.flatMap(_.accountRoutingScheme.map(_.toUpperCase == "IBAN")).getOrElse(false)
+    // Creditor
+    val creditorName = if(in) transaction.otherBankAccount.map(_.label.display) else None
+    val creditorAccountIban = if(in) {
+      val creditorIban = if(isIban) transaction.otherBankAccount.map(_.iban.getOrElse("")) else Some("")
+      Some(BgTransactionAccountJson(iban = creditorIban))
+    } else None
+
+    // Debtor
+    val debtorName = if(out) transaction.bankAccount.map(_.label.getOrElse("")) else None
+    val debtorAccountIban = if(out) {
+      val debtorIban  = if(isIban) transaction.bankAccount.map(_.accountRoutingAddress.getOrElse("")) else Some("")
+      Some(BgTransactionAccountJson(iban = debtorIban))
+    } else None
     
     TransactionJsonV13(
       transactionId = transaction.id.value,
-      creditorName = stringOrNone(creditorName),
-      creditorAccount = 
-        if(creditorAccountIban.isEmpty) 
-          None 
-        else 
-          Some(BgTransactionAccountJson(iban=creditorAccountIban)),
+      creditorName = creditorName,
+      creditorAccount = creditorAccountIban,
       debtorName = debtorName,
-      debtorAccount =
-        if(debtorAccountIdIban.isEmpty) 
-          None
-        else 
-          Some(BgTransactionAccountJson(iban = debtorAccountIdIban)),
+      debtorAccount = debtorAccountIban,
       transactionAmount = AmountOfMoneyV13(
         transaction.currency.getOrElse(""),
         if(bgRemoveSignOfAmounts)
