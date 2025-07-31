@@ -498,6 +498,12 @@
       <scope>test</scope>
     </dependency>
 
+    <dependency>
+      <groupId>com.sun.activation</groupId>
+      <artifactId>jakarta.activation</artifactId>
+      <version>1.2.2</version>
+    </dependency>
+
     <!-- https://mvnrepository.com/artifact/com.nulab-inc/zxcvbn -->
     <dependency>
       <groupId>com.nulab-inc</groupId>
