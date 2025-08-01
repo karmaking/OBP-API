@@ -46,6 +46,7 @@ import code.api.util.APIUtil.ResourceDoc.{findPathVariableNames, isPathVariable}
 import code.api.util.ApiRole._
 import code.api.util.ApiTag.{ResourceDocTag, apiTagBank}
 import code.api.util.BerlinGroupSigning.getCertificateFromTppSignatureCertificate
+import code.api.util.Consent.getConsumerKey
 import code.api.util.FutureUtil.{EndpointContext, EndpointTimeout}
 import code.api.util.Glossary.GlossaryItem
 import code.api.util.newstyle.ViewNewStyle
@@ -3019,6 +3020,13 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
 
     // Identify consumer via certificate
     val consumerByCertificate = Consent.getCurrentConsumerViaTppSignatureCertOrMtls(callContext = cc)
+    val method = APIUtil.getPropsValue(nameOfProperty = "consumer_validation_method_for_consent", defaultValue = "CONSUMER_CERTIFICATE")
+    val consumerByConsumerKey = getConsumerKey(reqHeaders) match {
+      case Some(consumerKey) if method == "CONSUMER_KEY_VALUE" =>
+        Consumers.consumers.vend.getConsumerByConsumerKey(consumerKey)
+      case None =>
+        Empty
+    }
 
     val res =
       if (authHeadersWithEmptyValues.nonEmpty) { // Check Authorization Headers Empty Values
@@ -3043,12 +3051,12 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
               // Note: At this point we are getting the Consumer from the Consumer in the Consent.
               // This may later be cross checked via the value in consumer_validation_method_for_consent.
               // Get the source of truth for Consumer (e.g. CONSUMER_CERTIFICATE) as early as possible.
-              cc.copy(consumer = consumerByCertificate)
+              cc.copy(consumer = consumerByCertificate.orElse(consumerByConsumerKey))
             )
           case _ =>
             JwtUtil.checkIfStringIsJWTValue(consentValue.getOrElse("")).isDefined match {
               case true => // It's JWT obtained via "Consent-JWT" request header
-                Consent.applyRules(APIUtil.getConsentJWT(reqHeaders), cc.copy(consumer = consumerByCertificate))
+                Consent.applyRules(APIUtil.getConsentJWT(reqHeaders), cc.copy(consumer = consumerByCertificate.orElse(consumerByConsumerKey)))
               case false => // Unrecognised consent value
                 Future { (Failure(ErrorMessages.ConsentHeaderValueInvalid), None) }
             }
@@ -3966,7 +3974,8 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
           tpp <- BerlinGroupSigning.getTppByCertificate(certificate, cc)
         } yield {
           if (tpp.nonEmpty) {
-            val hasRole = tpp.exists(_.services.contains(serviceProvider))
+            val berlinGroupRole = PemCertificateRole.toBerlinGroup(serviceProvider)
+            val hasRole = tpp.exists(_.services.contains(berlinGroupRole))
             if (hasRole) {
               Full(true)
             } else {

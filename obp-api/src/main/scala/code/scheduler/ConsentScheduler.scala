@@ -66,9 +66,10 @@ object ConsentScheduler extends MdcLoggable {
       outdatedConsents.foreach { consent =>
         Try {
           val message = s"|---> Changed status from ${consent.status} to ${ConsentStatus.rejected} for consent ID: ${consent.id}"
+          val newNote = s"$currentDate\n$message\n" + Option(consent.note).getOrElse("") // Prepend to existing note if any
           consent
             .mStatus(ConsentStatus.rejected.toString)
-            .mNote(s"$currentDate\n$message")
+            .mNote(newNote)
             .mStatusUpdateDateTime(new Date())
             .save
           logger.warn(message)
@@ -86,20 +87,29 @@ object ConsentScheduler extends MdcLoggable {
     Try {
       logger.debug("|---> Checking for expired Berlin Group consents...")
 
-      val expiredConsents = MappedConsent.findAll(
+      val expiredConsentsLowerCase: List[MappedConsent] = MappedConsent.findAll(
         By(MappedConsent.mStatus, ConsentStatus.valid.toString),
         By(MappedConsent.mApiStandard, ConstantsBG.berlinGroupVersion1.apiStandard),
         By_<(MappedConsent.mValidUntil, new Date())
       )
+
+      val expiredConsentsUpperCase: List[MappedConsent] = MappedConsent.findAll(
+        By(MappedConsent.mStatus, ConsentStatus.valid.toString.toUpperCase()), // Handle uppercase as well; should appear only during the transition period
+        By(MappedConsent.mApiStandard, ConstantsBG.berlinGroupVersion1.apiStandard),
+        By_<(MappedConsent.mValidUntil, new Date())
+      )
+
+      val expiredConsents = expiredConsentsLowerCase ::: expiredConsentsUpperCase
 
       logger.debug(s"|---> Found ${expiredConsents.size} expired consents")
 
       expiredConsents.foreach { consent =>
         Try {
           val message = s"|---> Changed status from ${consent.status} to ${ConsentStatus.expired} for consent ID: ${consent.id}"
+          val newNote = s"$currentDate\n$message\n" + Option(consent.note).getOrElse("") // Prepend to existing note if any
           consent
             .mStatus(ConsentStatus.expired.toString)
-            .mNote(s"$currentDate\n$message")
+            .mNote(newNote)
             .mStatusUpdateDateTime(new Date())
             .save
           logger.warn(message)
@@ -128,9 +138,10 @@ object ConsentScheduler extends MdcLoggable {
       expiredConsents.foreach { consent =>
         Try {
           val message = s"|---> Changed status from ${consent.status} to ${ConsentStatus.EXPIRED.toString} for consent ID: ${consent.id}"
+          val newNote = s"$currentDate\n$message\n" + Option(consent.note).getOrElse("") // Prepend to existing note if any
           consent
             .mStatus(ConsentStatus.EXPIRED.toString)
-            .mNote(s"$currentDate\n$message")
+            .mNote(newNote)
             .mStatusUpdateDateTime(new Date())
             .save
           logger.warn(message)
