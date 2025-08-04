@@ -91,7 +91,7 @@ class JSONFactory_BERLIN_GROUP_1_3Test extends FeatureSpec with Matchers with Gi
           startDate = Some(new java.util.Date()),
           finishDate = Some(new java.util.Date()),
           balance = "900.00",
-          status = "booked"
+          status = Some("booked")
         )
       }
       
