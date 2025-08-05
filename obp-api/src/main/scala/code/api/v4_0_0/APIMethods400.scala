@@ -83,8 +83,8 @@ import net.liftweb.json.JsonDSL._
 import net.liftweb.json.Serialization.write
 import net.liftweb.json._
 import net.liftweb.util.Helpers.{now, tryo}
-import net.liftweb.util.Mailer.{From, PlainMailBodyType, Subject, To, XHTMLMailBodyType}
-import net.liftweb.util.{Helpers, Mailer, StringHelpers}
+import net.liftweb.util.{Helpers, StringHelpers}
+import code.api.util.CommonsEmailWrapper._
 import org.apache.commons.lang3.StringUtils
 
 import java.net.URLEncoder
@@ -3368,7 +3368,30 @@ trait APIMethods400 extends MdcLoggable {
                 .replace(WebUIPlaceholder.activateYourAccount, link)
               logger.debug(s"customHtmlText: ${customHtmlText}")
               logger.debug(s"Before send user invitation by email. Purpose: ${UserInvitationPurpose.DEVELOPER}")
-              Mailer.sendMail(From(from), Subject(subject), To(invitation.email), PlainMailBodyType(customText), XHTMLMailBodyType(XML.loadString(customHtmlText)))
+              
+              // Use Apache Commons Email wrapper instead of Lift Mailer
+              val emailConfig = EmailConfig(
+                smtpHost = APIUtil.getPropsValue("mail.smtp.host", "localhost"),
+                smtpPort = APIUtil.getPropsValue("mail.smtp.port", "1025").toInt,
+                username = APIUtil.getPropsValue("mail.smtp.user", ""),
+                password = APIUtil.getPropsValue("mail.smtp.password", ""),
+                useTLS = APIUtil.getPropsValue("mail.smtp.starttls.enable", "false").toBoolean,
+                debug = APIUtil.getPropsValue("mail.debug", "false").toBoolean
+              )
+              
+              val emailContent = EmailContent(
+                from = from,
+                to = List(invitation.email),
+                subject = subject,
+                textContent = Some(customText),
+                htmlContent = Some(customHtmlText)
+              )
+              
+              sendHtmlEmail(emailConfig, emailContent) match {
+                case Full(messageId) => logger.debug(s"Email sent successfully with Message-ID: $messageId")
+                case Empty => logger.error("Failed to send user invitation email")
+              }
+              
               logger.debug(s"After send user invitation by email. Purpose: ${UserInvitationPurpose.DEVELOPER}")
             } else {
               val subject = getWebUiPropsValue("webui_customer_user_invitation_email_subject", "Welcome to the API Playground")
@@ -3380,7 +3403,30 @@ trait APIMethods400 extends MdcLoggable {
                 .replace(WebUIPlaceholder.activateYourAccount, link)
               logger.debug(s"customHtmlText: ${customHtmlText}")
               logger.debug(s"Before send user invitation by email.")
-              Mailer.sendMail(From(from), Subject(subject), To(invitation.email), PlainMailBodyType(customText), XHTMLMailBodyType(XML.loadString(customHtmlText)))
+              
+              // Use Apache Commons Email wrapper instead of Lift Mailer
+              val emailConfig = EmailConfig(
+                smtpHost = APIUtil.getPropsValue("mail.smtp.host", "localhost"),
+                smtpPort = APIUtil.getPropsValue("mail.smtp.port", "1025").toInt,
+                username = APIUtil.getPropsValue("mail.smtp.user", ""),
+                password = APIUtil.getPropsValue("mail.smtp.password", ""),
+                useTLS = APIUtil.getPropsValue("mail.smtp.starttls.enable", "false").toBoolean,
+                debug = APIUtil.getPropsValue("mail.debug", "false").toBoolean
+              )
+              
+              val emailContent = EmailContent(
+                from = from,
+                to = List(invitation.email),
+                subject = subject,
+                textContent = Some(customText),
+                htmlContent = Some(customHtmlText)
+              )
+              
+              sendHtmlEmail(emailConfig, emailContent) match {
+                case Full(messageId) => logger.debug(s"Email sent successfully with Message-ID: $messageId")
+                case Empty => logger.error("Failed to send user invitation email")
+              }
+              
               logger.debug(s"After send user invitation by email.")
             }
             (JSONFactory400.createUserInvitationJson(invitation), HttpCode.`201`(callContext))
