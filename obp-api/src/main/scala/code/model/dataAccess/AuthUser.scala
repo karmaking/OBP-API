@@ -33,6 +33,7 @@ import code.api.cache.Caching
 import code.api.dynamic.endpoint.helper.DynamicEndpointHelper
 import code.api.util.APIUtil._
 import code.api.util.CommonFunctions.validUri
+import code.api.util.CommonsEmailWrapper._
 import code.api.util.ErrorMessages._
 import code.api.util._
 import code.bankconnectors.Connector
@@ -55,7 +56,6 @@ import net.liftweb.http.S.fmapFunc
 import net.liftweb.http._
 import net.liftweb.mapper._
 import net.liftweb.sitemap.Loc.{If, LocParam, Template}
-import net.liftweb.util.Mailer.{BCC, From, Subject, To}
 import net.liftweb.util._
 import org.apache.commons.lang3.StringUtils
 import sh.ory.hydra.api.AdminApi
@@ -597,7 +597,7 @@ import net.liftweb.util.Helpers._
         val resetPasswordLinkProps = Constant.HostName
         val resetPasswordLink = APIUtil.getPropsValue("portal_hostname", resetPasswordLinkProps)+
           passwordResetPath.mkString("/", "/", "/")+urlEncode(u.getUniqueId())
-        logger.error("2222222222222222222222222222222222222223333:"+classOf[javax.activation.DataSource].getProtectionDomain.getCodeSource)
+        logger.error("222222222222222222222222222222222222222444:"+classOf[javax.activation.DataSource].getProtectionDomain.getCodeSource)
         // Use Apache Commons Email wrapper instead of Lift Mailer
         val emailBodies = generateResetEmailBodies(u, resetPasswordLink)
         
@@ -615,11 +615,14 @@ import net.liftweb.util.Helpers._
           textContent = textContent,
           htmlContent = htmlContent
         )
-        
         sendHtmlEmail(emailContent) match {
           case Full(messageId) => logger.debug(s"Password reset email sent successfully with Message-ID: $messageId")
           case Empty => logger.error("Failed to send password reset email")
         }
+//        Mailer.sendMail(From(emailFrom),Subject(passwordResetEmailSubject + " - " + u.username),
+//          To(u.getEmail) ::
+//            generateResetEmailBodies(u, resetPasswordLink) :::
+//            (bccEmail.toList.map(BCC(_))) :_*)
       case u =>
         sendValidationEmail(u)
     }

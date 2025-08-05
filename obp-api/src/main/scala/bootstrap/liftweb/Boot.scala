@@ -151,7 +151,6 @@ import org.apache.commons.io.FileUtils
 import java.io.{File, FileInputStream}
 import java.util.stream.Collectors
 import java.util.{Locale, TimeZone}
-import javax.mail.internet.MimeMessage
 import scala.concurrent.ExecutionContext
 
 /**
@@ -693,9 +692,9 @@ class Boot extends MdcLoggable {
       case e: ExceptionInInitializerError => logger.warn(s"BankAccountCreationListener Exception: $e")
     }
 
-    Mailer.devModeSend.default.set( (m : MimeMessage) => {
-      logger.info("Would have sent email if not in dev mode: " + m.getContent)
-    })
+//    Mailer.devModeSend.default.set( (m : MimeMessage) => {
+//      logger.info("Would have sent email if not in dev mode: " + m.getContent)
+//    })
     
     LiftRules.exceptionHandler.prepend{
       case(_, r, e) if e.isInstanceOf[NullPointerException] && e.getMessage.contains("Looking for Connection Identifier") => {

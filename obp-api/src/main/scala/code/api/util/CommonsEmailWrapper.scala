@@ -23,7 +23,8 @@ object CommonsEmailWrapper extends MdcLoggable {
     password: String,
     useTLS: Boolean = true,
     useSSL: Boolean = false,
-    debug: Boolean = false
+    debug: Boolean = false,
+    tlsProtocols: String = "TLSv1.2"  // TLS protocols to use
   )
 
   /**
@@ -51,7 +52,8 @@ object CommonsEmailWrapper extends MdcLoggable {
       password = APIUtil.getPropsValue("mail.smtp.password", ""),
       useTLS = APIUtil.getPropsValue("mail.smtp.starttls.enable", "false").toBoolean,
       useSSL = APIUtil.getPropsValue("mail.smtp.ssl.enable", "false").toBoolean,
-      debug = APIUtil.getPropsValue("mail.debug", "false").toBoolean
+      debug = APIUtil.getPropsValue("mail.debug", "false").toBoolean,
+      tlsProtocols = APIUtil.getPropsValue("mail.smtp.ssl.protocols", "TLSv1.2")
     )
   }
 
@@ -168,6 +170,7 @@ object CommonsEmailWrapper extends MdcLoggable {
     email.setSSLOnConnect(config.useSSL)
     email.setStartTLSEnabled(config.useTLS)
     email.setDebug(config.debug)
+    email.getMailSession.getProperties.setProperty("mail.smtp.ssl.protocols", config.tlsProtocols)
     
     // Set charset
     email.setCharset("UTF-8")
