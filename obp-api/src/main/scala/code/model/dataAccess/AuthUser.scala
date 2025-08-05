@@ -597,10 +597,29 @@ import net.liftweb.util.Helpers._
         val resetPasswordLinkProps = Constant.HostName
         val resetPasswordLink = APIUtil.getPropsValue("portal_hostname", resetPasswordLinkProps)+
           passwordResetPath.mkString("/", "/", "/")+urlEncode(u.getUniqueId())
-        Mailer.sendMail(From(emailFrom),Subject(passwordResetEmailSubject + " - " + u.username),
-          To(u.getEmail) ::
-            generateResetEmailBodies(u, resetPasswordLink) :::
-            (bccEmail.toList.map(BCC(_))) :_*)
+        logger.error("2222222222222222222222222222222222222223333:"+classOf[javax.activation.DataSource].getProtectionDomain.getCodeSource)
+        // Use Apache Commons Email wrapper instead of Lift Mailer
+        val emailBodies = generateResetEmailBodies(u, resetPasswordLink)
+        
+        // Extract text and HTML content from email bodies
+        val textContent = emailBodies.find(_.isInstanceOf[net.liftweb.util.Mailer.PlainMailBodyType])
+          .map(_.asInstanceOf[net.liftweb.util.Mailer.PlainMailBodyType].toString.replace("PlainMailBodyType(", "").replace(")", ""))
+        val htmlContent = emailBodies.find(_.isInstanceOf[net.liftweb.util.Mailer.XHTMLMailBodyType])
+          .map(_.asInstanceOf[net.liftweb.util.Mailer.XHTMLMailBodyType].toString.replace("XHTMLMailBodyType(", "").replace(")", ""))
+        
+        val emailContent = EmailContent(
+          from = emailFrom,
+          to = List(u.getEmail),
+          bcc = bccEmail.toList,
+          subject = passwordResetEmailSubject + " - " + u.username,
+          textContent = textContent,
+          htmlContent = htmlContent
+        )
+        
+        sendHtmlEmail(emailContent) match {
+          case Full(messageId) => logger.debug(s"Password reset email sent successfully with Message-ID: $messageId")
+          case Empty => logger.error("Failed to send password reset email")
+        }
       case u =>
         sendValidationEmail(u)
     }
@@ -645,10 +664,28 @@ import net.liftweb.util.Helpers._
 
     val msgXml = signupMailBody(user, resetLink)
 
-    Mailer.sendMail(From(emailFrom),Subject(signupMailSubject),
-      To(user.getEmail) ::
-        generateValidationEmailBodies(user, resetLink) :::
-        (bccEmail.toList.map(BCC(_))) :_* )
+    // Use Apache Commons Email wrapper instead of Lift Mailer
+    val emailBodies: List[Mailer.MailBodyType] = generateValidationEmailBodies(user, resetLink)
+    
+    // Extract text and HTML content from email bodies
+    val textContent = emailBodies.find(_.isInstanceOf[net.liftweb.util.Mailer.PlainMailBodyType])
+      .map(_.asInstanceOf[net.liftweb.util.Mailer.PlainMailBodyType].toString.replace("PlainMailBodyType(", "").replace(")", ""))
+    val htmlContent = emailBodies.find(_.isInstanceOf[net.liftweb.util.Mailer.XHTMLMailBodyType])
+      .map(_.asInstanceOf[net.liftweb.util.Mailer.XHTMLMailBodyType].toString.replace("XHTMLMailBodyType(", "").replace(")", ""))
+    
+    val emailContent = EmailContent(
+      from = emailFrom,
+      to = List(user.getEmail),
+      bcc = bccEmail.toList,
+      subject = signupMailSubject,
+      textContent = textContent,
+      htmlContent = htmlContent
+    )
+    
+    sendHtmlEmail(emailContent) match {
+      case Full(messageId) => logger.debug(s"Validation email sent successfully with Message-ID: $messageId")
+      case Empty => logger.error("Failed to send validation email")
+    }
   }
 
    def grantDefaultEntitlementsToAuthUser(user: TheUserType) = {
