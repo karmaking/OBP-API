@@ -1,11 +1,10 @@
 package code.api.util
 
-import org.apache.commons.mail.{Email, SimpleEmail, HtmlEmail, MultiPartEmail, EmailAttachment, DefaultAuthenticator}
-import java.io.File
-import java.net.URL
 import code.util.Helper.MdcLoggable
 import net.liftweb.common.{Box, Empty, Full}
-import net.liftweb.util.Helpers.now
+import org.apache.commons.mail._
+
+import java.net.URL
 
 /**
  * Apache Commons Email Wrapper for OBP-API
@@ -40,6 +39,42 @@ object CommonsEmailWrapper extends MdcLoggable {
     htmlContent: Option[String] = None,
     attachments: List[EmailAttachment] = List.empty
   )
+
+  /**
+   * Get default email configuration from OBP-API properties
+   */
+  def getDefaultEmailConfig(): EmailConfig = {
+    EmailConfig(
+      smtpHost = APIUtil.getPropsValue("mail.smtp.host", "localhost"),
+      smtpPort = APIUtil.getPropsValue("mail.smtp.port", "1025").toInt,
+      username = APIUtil.getPropsValue("mail.smtp.user", ""),
+      password = APIUtil.getPropsValue("mail.smtp.password", ""),
+      useTLS = APIUtil.getPropsValue("mail.smtp.starttls.enable", "false").toBoolean,
+      useSSL = APIUtil.getPropsValue("mail.smtp.ssl.enable", "false").toBoolean,
+      debug = APIUtil.getPropsValue("mail.debug", "false").toBoolean
+    )
+  }
+
+  /**
+   * Send simple text email with default configuration
+   */
+  def sendTextEmail(content: EmailContent): Box[String] = {
+    sendTextEmail(getDefaultEmailConfig(), content)
+  }
+
+  /**
+   * Send HTML email with default configuration
+   */
+  def sendHtmlEmail(content: EmailContent): Box[String] = {
+    sendHtmlEmail(getDefaultEmailConfig(), content)
+  }
+
+  /**
+   * Send email with attachments using default configuration
+   */
+  def sendEmailWithAttachments(content: EmailContent): Box[String] = {
+    sendEmailWithAttachments(getDefaultEmailConfig(), content)
+  }
 
   /**
    * Send simple text email
@@ -170,9 +205,43 @@ object CommonsEmailWrapper extends MdcLoggable {
     attachment.setName(name)
     attachment
   }
-  
+
   /**
-   * Test MailHog configuration, this for testing 
+   * Test Gmail configuration
+   */
+  def testGmailConfig(): Unit = {
+    val config = EmailConfig(
+      smtpHost = "smtp.gmail.com",
+      smtpPort = 587,
+      username = "zhw55wyl@gmail.com",
+      password = "yqmadztqynmasrpm",
+      useTLS = true,
+      debug = true
+    )
+
+    val content = EmailContent(
+      from = "zhw55wyl@gmail.com",
+      to = List("zhw110@hotmail.com"),
+      subject = "Test Apache Commons Email Wrapper",
+      textContent = Some("This is a test email sent using Apache Commons Email wrapper."),
+      htmlContent = Some("<html><body><h1>Test Email</h1><p>This is a test email sent using Apache Commons Email wrapper.</p></body></html>")
+    )
+
+    logger.info("Testing Gmail configuration with Apache Commons Email...")
+    
+    sendTextEmail(config, content) match {
+      case Full(messageId) => logger.info(s"Text email sent successfully: $messageId")
+      case Empty => logger.error("Failed to send text email")
+    }
+
+    sendHtmlEmail(config, content) match {
+      case Full(messageId) => logger.info(s"HTML email sent successfully: $messageId")
+      case Empty => logger.error("Failed to send HTML email")
+    }
+  }
+
+  /**
+   * Test MailHog configuration
    */
   def testMailHogConfig(): Unit = {
     val config = EmailConfig(

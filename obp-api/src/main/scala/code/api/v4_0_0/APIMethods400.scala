@@ -12,6 +12,7 @@ import code.api.dynamic.entity.helper.DynamicEntityInfo
 import code.api.util.APIUtil.{fullBoxOrException, _}
 import code.api.util.ApiRole._
 import code.api.util.ApiTag._
+import code.api.util.CommonsEmailWrapper._
 import code.api.util.DynamicUtil.Validation
 import code.api.util.ErrorMessages.{BankNotFound, _}
 import code.api.util.ExampleValue._
@@ -84,7 +85,6 @@ import net.liftweb.json.Serialization.write
 import net.liftweb.json._
 import net.liftweb.util.Helpers.{now, tryo}
 import net.liftweb.util.{Helpers, StringHelpers}
-import code.api.util.CommonsEmailWrapper._
 import org.apache.commons.lang3.StringUtils
 
 import java.net.URLEncoder
@@ -96,7 +96,6 @@ import scala.collection.immutable.{List, Nil}
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters.collectionAsScalaIterableConverter
-import scala.xml.XML
 
 trait APIMethods400 extends MdcLoggable {
   self: RestHelper =>
@@ -3370,15 +3369,6 @@ trait APIMethods400 extends MdcLoggable {
               logger.debug(s"Before send user invitation by email. Purpose: ${UserInvitationPurpose.DEVELOPER}")
               
               // Use Apache Commons Email wrapper instead of Lift Mailer
-              val emailConfig = EmailConfig(
-                smtpHost = APIUtil.getPropsValue("mail.smtp.host", "localhost"),
-                smtpPort = APIUtil.getPropsValue("mail.smtp.port", "1025").toInt,
-                username = APIUtil.getPropsValue("mail.smtp.user", ""),
-                password = APIUtil.getPropsValue("mail.smtp.password", ""),
-                useTLS = APIUtil.getPropsValue("mail.smtp.starttls.enable", "false").toBoolean,
-                debug = APIUtil.getPropsValue("mail.debug", "false").toBoolean
-              )
-              
               val emailContent = EmailContent(
                 from = from,
                 to = List(invitation.email),
@@ -3387,7 +3377,7 @@ trait APIMethods400 extends MdcLoggable {
                 htmlContent = Some(customHtmlText)
               )
               
-              sendHtmlEmail(emailConfig, emailContent) match {
+              sendHtmlEmail(emailContent) match {
                 case Full(messageId) => logger.debug(s"Email sent successfully with Message-ID: $messageId")
                 case Empty => logger.error("Failed to send user invitation email")
               }
@@ -3405,15 +3395,6 @@ trait APIMethods400 extends MdcLoggable {
               logger.debug(s"Before send user invitation by email.")
               
               // Use Apache Commons Email wrapper instead of Lift Mailer
-              val emailConfig = EmailConfig(
-                smtpHost = APIUtil.getPropsValue("mail.smtp.host", "localhost"),
-                smtpPort = APIUtil.getPropsValue("mail.smtp.port", "1025").toInt,
-                username = APIUtil.getPropsValue("mail.smtp.user", ""),
-                password = APIUtil.getPropsValue("mail.smtp.password", ""),
-                useTLS = APIUtil.getPropsValue("mail.smtp.starttls.enable", "false").toBoolean,
-                debug = APIUtil.getPropsValue("mail.debug", "false").toBoolean
-              )
-              
               val emailContent = EmailContent(
                 from = from,
                 to = List(invitation.email),
@@ -3422,7 +3403,7 @@ trait APIMethods400 extends MdcLoggable {
                 htmlContent = Some(customHtmlText)
               )
               
-              sendHtmlEmail(emailConfig, emailContent) match {
+              sendHtmlEmail(emailContent) match {
                 case Full(messageId) => logger.debug(s"Email sent successfully with Message-ID: $messageId")
                 case Empty => logger.error("Failed to send user invitation email")
               }
