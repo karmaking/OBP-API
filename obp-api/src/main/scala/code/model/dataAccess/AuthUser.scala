@@ -616,19 +616,20 @@ import net.liftweb.util.Helpers._
           htmlContent = htmlContent
         )
         sendHtmlEmail(emailContent) match {
-          case Full(messageId) => logger.debug(s"Password reset email sent successfully with Message-ID: $messageId")
-          case Empty => logger.error("Failed to send password reset email")
+          case Full(messageId) => 
+            logger.debug(s"Password reset email sent successfully with Message-ID: $messageId")
+            S.notice("Password reset email sent successfully. Please check your email.")
+            S.redirectTo(homePage)
+          case Empty => 
+            logger.error("Failed to send password reset email")
+            S.error("Failed to send password reset email. Please try again.")
+            S.redirectTo(homePage)
         }
-//        Mailer.sendMail(From(emailFrom),Subject(passwordResetEmailSubject + " - " + u.username),
-//          To(u.getEmail) ::
-//            generateResetEmailBodies(u, resetPasswordLink) :::
-//            (bccEmail.toList.map(BCC(_))) :_*)
       case u =>
         sendValidationEmail(u)
     }
     // In order to prevent any leakage of information we use the same message for all cases
-    S.notice(userNameNotFoundString)
-    S.redirectTo(homePage)
+    // Note: Individual success/error messages are now handled in the email sending logic above
   }
 
   override def lostPasswordXhtml = {
@@ -686,8 +687,12 @@ import net.liftweb.util.Helpers._
     )
     
     sendHtmlEmail(emailContent) match {
-      case Full(messageId) => logger.debug(s"Validation email sent successfully with Message-ID: $messageId")
-      case Empty => logger.error("Failed to send validation email")
+      case Full(messageId) => 
+        logger.debug(s"Validation email sent successfully with Message-ID: $messageId")
+        S.notice("Validation email sent successfully. Please check your email.")
+      case Empty => 
+        logger.error("Failed to send validation email")
+        S.error("Failed to send validation email. Please try again.")
     }
   }
 
