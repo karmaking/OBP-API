@@ -410,10 +410,21 @@ object OAuth2Login extends RestHelper with MdcLoggable {
       validateAccessToken(token) match {
         case Full(_) =>
           val user = getOrCreateResourceUser(token)
-          val consumer = getOrCreateConsumer(token, user.map(_.userId), Some("OAuth 2.0"))
-          LoginAttempt.userIsLocked(user.map(_.provider).getOrElse(""), user.map(_.name).getOrElse("")) match {
-            case true => ((Failure(UsernameHasBeenLocked), Some(cc.copy(consumer = consumer))))
-            case false => (user, Some(cc.copy(consumer = consumer)))
+          val consumer: Box[Consumer] = getOrCreateConsumer(token, user.map(_.userId), Some("OAuth 2.0"))
+          consumer match {
+            case Full(_) =>
+              LoginAttempt.userIsLocked(user.map(_.provider).getOrElse(""), user.map(_.name).getOrElse("")) match {
+                case true => ((Failure(UsernameHasBeenLocked), Some(cc.copy(consumer = consumer))))
+                case false => (user, Some(cc.copy(consumer = consumer)))
+              }
+            case ParamFailure(msg, exception, chain, apiFailure: APIFailure) =>
+              logger.debug(s"ParamFailure - message: $msg, param: $apiFailure, exception: ${exception.map(_.getMessage).openOr("none")}, chain: ${chain.map(_.msg).openOr("none")}")
+              (ParamFailure(msg, exception, chain, apiFailure: APIFailure), Some(cc))
+            case Failure(msg, exception, c) =>
+              logger.error(s"Failure - message: $msg, exception: ${exception.map(_.getMessage).openOr("none")}")
+              (Failure(msg, exception, c), Some(cc))
+            case _ =>
+              (Failure(CreateConsumerError), Some(cc))
           }
         case ParamFailure(a, b, c, apiFailure: APIFailure) =>
           (ParamFailure(a, b, c, apiFailure: APIFailure), Some(cc))
