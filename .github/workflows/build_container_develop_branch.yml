@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - develop
+      - *
 
 env:
   ## Sets environment variable
