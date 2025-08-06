@@ -101,6 +101,12 @@
       <artifactId>commons-text</artifactId>
       <version>1.10.0</version>
     </dependency>
+    <!-- https://mvnrepository.com/artifact/org.apache.commons/commons-email -->
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-email</artifactId>
+      <version>1.5</version>
+    </dependency>
     <dependency>
       <groupId>org.postgresql</groupId>
       <artifactId>postgresql</artifactId>
@@ -177,6 +183,11 @@
       <groupId>org.apache.httpcomponents</groupId>
       <artifactId>httpclient</artifactId>
       <version>4.5.13</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-pool2</artifactId>
+      <version>2.11.1</version>
     </dependency>
     <dependency>
       <groupId>org.eclipse.jetty</groupId>
@@ -661,24 +672,25 @@
           <release>${java.version}</release>
         </configuration>
       </plugin>
-      <plugin>
-        <groupId>org.scalaxb</groupId>
-        <artifactId>scalaxb-maven-plugin</artifactId>
-        <version>1.7.5</version>
-        <configuration>
-          <packageName>code.adapter.soap</packageName>
-          <wsdlDirectory>src/main/resources/custom_webapp/wsdl</wsdlDirectory>
-          <xsdDirectory>src/main/resources/custom_webapp/xsd</xsdDirectory>
-        </configuration>
-        <executions>
-          <execution>
-            <id>scalaxb</id>
-            <goals>
-              <goal>generate</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
+      <!--soap related plugin begin-->
+<!--      <plugin>-->
+<!--        <groupId>org.scalaxb</groupId>-->
+<!--        <artifactId>scalaxb-maven-plugin</artifactId>-->
+<!--        <version>1.7.5</version>-->
+<!--        <configuration>-->
+<!--          <packageName>code.adapter.soap</packageName>-->
+<!--          <wsdlDirectory>src/main/resources/custom_webapp/wsdl</wsdlDirectory>-->
+<!--          <xsdDirectory>src/main/resources/custom_webapp/xsd</xsdDirectory>-->
+<!--        </configuration>-->
+<!--        <executions>-->
+<!--          <execution>-->
+<!--            <id>scalaxb</id>-->
+<!--            <goals>-->
+<!--              <goal>generate</goal>-->
+<!--            </goals>-->
+<!--          </execution>-->
+<!--        </executions>-->
+<!--      </plugin>-->
       <!--grpc related plugin begin-->
       <!-- currently not need, enable this plugin when need generate new grpc code.
       <plugin>
