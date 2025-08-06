@@ -209,31 +209,4 @@ object CommonsEmailWrapper extends MdcLoggable {
     attachment
   }
 
-  /**
-   * Test MailHog configuration
-   */
-  def testMailHogConfig(): Unit = {
-    val config = EmailConfig(
-      smtpHost = "localhost",
-      smtpPort = 1025,
-      username = "",
-      password = "",
-      useTLS = false,
-      debug = true
-    )
-
-    val content = EmailContent(
-      from = "test@localhost",
-      to = List("receive@mailhog.local"),
-      subject = "Test MailHog with Apache Commons Email",
-      textContent = Some("This is a test email sent to MailHog using Apache Commons Email wrapper.")
-    )
-
-    logger.info("Testing MailHog configuration with Apache Commons Email...")
-    
-    sendTextEmail(config, content) match {
-      case Full(messageId) => logger.info(s"MailHog email sent successfully: $messageId")
-      case Empty => logger.error("Failed to send MailHog email")
-    }
-  }
 } 
