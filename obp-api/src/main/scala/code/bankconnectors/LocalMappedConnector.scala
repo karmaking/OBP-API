@@ -381,7 +381,7 @@ object LocalMappedConnector extends Connector with MdcLoggable {
         APIUtil.getEmailsByUserId(userId) map {
           pair =>
             val emailContent = CommonsEmailWrapper.EmailContent(
-              from = "challenge@tesobe.com",
+              from = mailUsersUserinfoSenderAddress,
               to = List(pair._2),
               subject = "Challenge",
               textContent = Some(s"Your OTP challenge : ${challengeAnswer}")
@@ -5188,7 +5188,7 @@ object LocalMappedConnector extends Connector with MdcLoggable {
         scaMethod match {
           case v if v == StrongCustomerAuthentication.EMAIL.toString => // Send the email
             val emailContent = CommonsEmailWrapper.EmailContent(
-              from = "challenge@tesobe.com",
+              from = mailUsersUserinfoSenderAddress,
               to = List(customer.email),
               subject = "Challenge request",
               textContent = Some(userAuthContextUpdate.challenge)
@@ -5215,7 +5215,7 @@ object LocalMappedConnector extends Connector with MdcLoggable {
   ): OBPReturnType[Box[String]] = {
     if (scaMethod == StrongCustomerAuthentication.EMAIL){ // Send the email
       val emailContent = CommonsEmailWrapper.EmailContent(
-        from = "challenge@tesobe.com",
+        from = mailUsersUserinfoSenderAddress,
         to = List(recipient),
         subject = "OBP Consent Challenge",
         textContent = Some(message)
