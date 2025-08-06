@@ -210,40 +210,6 @@ object CommonsEmailWrapper extends MdcLoggable {
   }
 
   /**
-   * Test Gmail configuration
-   */
-  def testGmailConfig(): Unit = {
-    val config = EmailConfig(
-      smtpHost = "smtp.gmail.com",
-      smtpPort = 587,
-      username = "zhw55wyl@gmail.com",
-      password = "yqmadztqynmasrpm",
-      useTLS = true,
-      debug = true
-    )
-
-    val content = EmailContent(
-      from = "zhw55wyl@gmail.com",
-      to = List("zhw110@hotmail.com"),
-      subject = "Test Apache Commons Email Wrapper",
-      textContent = Some("This is a test email sent using Apache Commons Email wrapper."),
-      htmlContent = Some("<html><body><h1>Test Email</h1><p>This is a test email sent using Apache Commons Email wrapper.</p></body></html>")
-    )
-
-    logger.info("Testing Gmail configuration with Apache Commons Email...")
-    
-    sendTextEmail(config, content) match {
-      case Full(messageId) => logger.info(s"Text email sent successfully: $messageId")
-      case Empty => logger.error("Failed to send text email")
-    }
-
-    sendHtmlEmail(config, content) match {
-      case Full(messageId) => logger.info(s"HTML email sent successfully: $messageId")
-      case Empty => logger.error("Failed to send HTML email")
-    }
-  }
-
-  /**
    * Test MailHog configuration
    */
   def testMailHogConfig(): Unit = {
