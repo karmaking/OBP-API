@@ -324,17 +324,6 @@ mail.exception.sender.address=no-reply@example.com
 ## Recipient addresses for exception notifications (comma-separated)
 mail.exception.registered.notification.addresses=notify@example.com,notify2@example.com,notify3@example.com
 
-## Tesobe Mail Server:
-## mail.smtp.host=mail.tesobe.com
-## mail.smtp.port=25
-## mail.smtp.auth=true
-## mail.smtp.user=your-email@tesobe.com
-## mail.smtp.password=your-password
-## mail.smtp.starttls.enable=true
-## mail.smtp.ssl.enable=false
-## mail.smtp.ssl.protocols=TLSv1.2
-
-
 ## Oauth token timeout
 token_expiration_weeks=4
 
