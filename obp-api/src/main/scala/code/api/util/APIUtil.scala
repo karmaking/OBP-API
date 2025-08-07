@@ -71,7 +71,7 @@ import code.util.{Helper, JsonSchemaUtil}
 import code.views.system.AccountAccess
 import code.views.{MapperViews, Views}
 import code.webuiprops.MappedWebUiPropsProvider.getWebUiPropsValue
-import com.alibaba.ttl.internal.javassist.CannotCompileException
+import javassist.CannotCompileException
 import com.github.dwickern.macros.NameOf.{nameOf, nameOfType}
 import com.openbankproject.commons.ExecutionContext.Implicits.global
 import com.openbankproject.commons.model._
