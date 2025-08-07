@@ -101,7 +101,6 @@
       <artifactId>commons-text</artifactId>
       <version>1.10.0</version>
     </dependency>
-    <!-- https://mvnrepository.com/artifact/org.apache.commons/commons-email -->
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-email</artifactId>
@@ -408,6 +407,12 @@
       <groupId>org.asynchttpclient</groupId>
       <artifactId>async-http-client</artifactId>
       <version>2.10.4</version>
+        <exclusions>
+            <exclusion>
+                <artifactId>javax.activation</artifactId>
+                <groupId>com.sun.activation</groupId>
+            </exclusion>
+        </exclusions>
     </dependency>
     <!-- grpc related end-->
 
@@ -416,6 +421,16 @@
       <groupId>org.scalikejdbc</groupId>
       <artifactId>scalikejdbc_${scala.version}</artifactId>
       <version>3.4.0</version>
+      <exclusions>
+        <exclusion>
+          <groupId>com.sun.activation</groupId>
+          <artifactId>javax.activation</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>javax.activation</groupId>
+          <artifactId>activation</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>com.microsoft.sqlserver</groupId>

@@ -597,7 +597,6 @@ import net.liftweb.util.Helpers._
         val resetPasswordLinkProps = Constant.HostName
         val resetPasswordLink = APIUtil.getPropsValue("portal_hostname", resetPasswordLinkProps)+
           passwordResetPath.mkString("/", "/", "/")+urlEncode(u.getUniqueId())
-        logger.error("222222222222222222222222222222222222222444:"+classOf[javax.activation.DataSource].getProtectionDomain.getCodeSource)
         // Use Apache Commons Email wrapper instead of Lift Mailer
         val emailBodies = generateResetEmailBodies(u, resetPasswordLink)
         
