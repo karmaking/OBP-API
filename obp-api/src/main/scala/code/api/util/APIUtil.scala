@@ -3020,6 +3020,7 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
 
     // Identify consumer via certificate
     val consumerByCertificate = Consent.getCurrentConsumerViaTppSignatureCertOrMtls(callContext = cc)
+    logger.debug(s"consumerByCertificate: $consumerByCertificate")
     val method = APIUtil.getPropsValue(nameOfProperty = "consumer_validation_method_for_consent", defaultValue = "CONSUMER_CERTIFICATE")
     val consumerByConsumerKey = getConsumerKey(reqHeaders) match {
       case Some(consumerKey) if method == "CONSUMER_KEY_VALUE" =>
@@ -3027,6 +3028,7 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
       case None =>
         Empty
     }
+    logger.debug(s"consumerByConsumerKey: $consumerByConsumerKey")
 
     val res =
       if (authHeadersWithEmptyValues.nonEmpty) { // Check Authorization Headers Empty Values
