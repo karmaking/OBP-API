@@ -79,11 +79,11 @@ object CommonsEmailWrapper extends MdcLoggable {
   }
 
   /**
-   * Send simple text email
+   * Send a simple text email
    */
   def sendTextEmail(config: EmailConfig, content: EmailContent): Box[String] = {
     try {
-      logger.info(s"Sending text email from ${content.from} to ${content.to.mkString(", ")}")
+      logger.debug(s"Sending text email from ${content.from} to ${content.to.mkString(", ")}")
       
       val email = new SimpleEmail()
       configureEmail(email, config, content)
@@ -95,7 +95,7 @@ object CommonsEmailWrapper extends MdcLoggable {
       }
       
       val messageId = email.send()
-      logger.info(s"Email sent successfully with Message-ID: $messageId")
+      logger.debug(s"Email sent successfully with Message-ID: $messageId")
       Full(messageId)
     } catch {
       case e: Exception =>
@@ -109,7 +109,7 @@ object CommonsEmailWrapper extends MdcLoggable {
    */
   def sendHtmlEmail(config: EmailConfig, content: EmailContent): Box[String] = {
     try {
-      logger.info(s"Sending HTML email from ${content.from} to ${content.to.mkString(", ")}")
+      logger.debug(s"Sending HTML email from ${content.from} to ${content.to.mkString(", ")}")
       
       val email = new HtmlEmail()
       configureEmail(email, config, content)
@@ -124,7 +124,7 @@ object CommonsEmailWrapper extends MdcLoggable {
       content.textContent.foreach(email.setTextMsg)
       
       val messageId = email.send()
-      logger.info(s"HTML email sent successfully with Message-ID: $messageId")
+      logger.debug(s"HTML email sent successfully with Message-ID: $messageId")
       Full(messageId)
     } catch {
       case e: Exception =>
@@ -138,7 +138,7 @@ object CommonsEmailWrapper extends MdcLoggable {
    */
   def sendEmailWithAttachments(config: EmailConfig, content: EmailContent): Box[String] = {
     try {
-      logger.info(s"Sending email with attachments from ${content.from} to ${content.to.mkString(", ")}")
+      logger.debug(s"Sending email with attachments from ${content.from} to ${content.to.mkString(", ")}")
       
       val email = new MultiPartEmail()
       configureEmail(email, config, content)
@@ -150,7 +150,7 @@ object CommonsEmailWrapper extends MdcLoggable {
       content.attachments.foreach(email.attach)
       
       val messageId = email.send()
-      logger.info(s"Email with attachments sent successfully with Message-ID: $messageId")
+      logger.debug(s"Email with attachments sent successfully with Message-ID: $messageId")
       Full(messageId)
     } catch {
       case e: Exception =>
