@@ -1,21 +1,21 @@
 package code.api.util
 
 import code.util.Helper.MdcLoggable
+import jakarta.activation.{DataHandler, FileDataSource, URLDataSource}
+import jakarta.mail._
+import jakarta.mail.internet._
 import net.liftweb.common.{Box, Empty, Full}
-import org.apache.commons.mail._
 
+import java.io.File
 import java.net.URL
+import java.util.Properties
 
 /**
- * Apache Commons Email Wrapper for OBP-API
- * This wrapper provides a simple interface to send emails using Apache Commons Email
- * instead of Lift Web's Mailer
+ * Jakarta Mail Wrapper for OBP-API
+ * This wrapper provides a simple interface to send emails using Jakarta Mail
  */
 object CommonsEmailWrapper extends MdcLoggable {
 
-  /**
-   * Email configuration case class
-   */
   case class EmailConfig(
     smtpHost: String,
     smtpPort: Int,
@@ -24,12 +24,9 @@ object CommonsEmailWrapper extends MdcLoggable {
     useTLS: Boolean = true,
     useSSL: Boolean = false,
     debug: Boolean = false,
-    tlsProtocols: String = "TLSv1.2"  // TLS protocols to use
+    tlsProtocols: String = "TLSv1.2"
   )
 
-  /**
-   * Email content case class
-   */
   case class EmailContent(
     from: String,
     to: List[String],
@@ -41,9 +38,12 @@ object CommonsEmailWrapper extends MdcLoggable {
     attachments: List[EmailAttachment] = List.empty
   )
 
-  /**
-   * Get default email configuration from OBP-API properties
-   */
+  case class EmailAttachment(
+    filePath: Option[String] = None,
+    url: Option[String] = None,
+    name: Option[String] = None
+  )
+
   def getDefaultEmailConfig(): EmailConfig = {
     EmailConfig(
       smtpHost = APIUtil.getPropsValue("mail.smtp.host", "localhost"),
@@ -57,46 +57,27 @@ object CommonsEmailWrapper extends MdcLoggable {
     )
   }
 
-  /**
-   * Send simple text email with default configuration
-   */
   def sendTextEmail(content: EmailContent): Box[String] = {
     sendTextEmail(getDefaultEmailConfig(), content)
   }
 
-  /**
-   * Send HTML email with default configuration
-   */
   def sendHtmlEmail(content: EmailContent): Box[String] = {
     sendHtmlEmail(getDefaultEmailConfig(), content)
   }
 
-  /**
-   * Send email with attachments using default configuration
-   */
   def sendEmailWithAttachments(content: EmailContent): Box[String] = {
     sendEmailWithAttachments(getDefaultEmailConfig(), content)
   }
 
-  /**
-   * Send simple text email
-   */
   def sendTextEmail(config: EmailConfig, content: EmailContent): Box[String] = {
     try {
-      logger.info(s"Sending text email from ${content.from} to ${content.to.mkString(", ")}")
-      
-      val email = new SimpleEmail()
-      configureEmail(email, config, content)
-      
-      // Set text content
-      content.textContent match {
-        case Some(text) => email.setMsg(text)
-        case None => email.setMsg("")
-      }
-      
-      val messageId = email.send()
-      logger.info(s"Email sent successfully with Message-ID: $messageId")
-      Full(messageId)
+      logger.debug(s"Sending text email from ${content.from} to ${content.to.mkString(", ")}")
+      val session = createSession(config)
+      val message = new MimeMessage(session)
+      setCommonHeaders(message, content)
+      message.setText(content.textContent.getOrElse(""), "UTF-8")
+      Transport.send(message)
+      Full(message.getMessageID)
     } catch {
       case e: Exception =>
         logger.error(s"Failed to send text email: ${e.getMessage}", e)
@@ -104,28 +85,28 @@ object CommonsEmailWrapper extends MdcLoggable {
     }
   }
 
-  /**
-   * Send HTML email
-   */
   def sendHtmlEmail(config: EmailConfig, content: EmailContent): Box[String] = {
     try {
-      logger.info(s"Sending HTML email from ${content.from} to ${content.to.mkString(", ")}")
-      
-      val email = new HtmlEmail()
-      configureEmail(email, config, content)
-      
-      // Set HTML content
-      content.htmlContent match {
-        case Some(html) => email.setHtmlMsg(html)
-        case None => email.setHtmlMsg("<html><body>No content</body></html>")
+      logger.debug(s"Sending HTML email from ${content.from} to ${content.to.mkString(", ")}")
+      val session = createSession(config)
+      val message = new MimeMessage(session)
+      setCommonHeaders(message, content)
+      val multipart = {
+        new MimeMultipart("alternative")
       }
-      
-      // Set text content as fallback
-      content.textContent.foreach(email.setTextMsg)
-      
-      val messageId = email.send()
-      logger.info(s"HTML email sent successfully with Message-ID: $messageId")
-      Full(messageId)
+      content.textContent.foreach { text =>
+        val textPart = new MimeBodyPart()
+        textPart.setText(text, "UTF-8")
+        multipart.addBodyPart(textPart)
+      }
+      content.htmlContent.foreach { html =>
+        val htmlPart = new MimeBodyPart()
+        htmlPart.setContent(html, "text/html; charset=UTF-8")
+        multipart.addBodyPart(htmlPart)
+      }
+      message.setContent(multipart)
+      Transport.send(message)
+      Full(message.getMessageID)
     } catch {
       case e: Exception =>
         logger.error(s"Failed to send HTML email: ${e.getMessage}", e)
@@ -133,25 +114,45 @@ object CommonsEmailWrapper extends MdcLoggable {
     }
   }
 
-  /**
-   * Send email with attachments
-   */
   def sendEmailWithAttachments(config: EmailConfig, content: EmailContent): Box[String] = {
     try {
-      logger.info(s"Sending email with attachments from ${content.from} to ${content.to.mkString(", ")}")
-      
-      val email = new MultiPartEmail()
-      configureEmail(email, config, content)
-      
-      // Set text content
-      content.textContent.foreach(email.setMsg)
-      
+      logger.debug(s"Sending email with attachments from ${content.from} to ${content.to.mkString(", ")}")
+      val session = createSession(config)
+      val message = new MimeMessage(session)
+      setCommonHeaders(message, content)
+      val multipart = new MimeMultipart()
+      // Add text or HTML part
+      (content.htmlContent, content.textContent) match {
+        case (Some(html), _) =>
+          val htmlPart = new MimeBodyPart()
+          htmlPart.setContent(html, "text/html; charset=UTF-8")
+          multipart.addBodyPart(htmlPart)
+        case (None, Some(text)) =>
+          val textPart = new MimeBodyPart()
+          textPart.setText(text, "UTF-8")
+          multipart.addBodyPart(textPart)
+        case _ =>
+          val textPart = new MimeBodyPart()
+          textPart.setText("", "UTF-8")
+          multipart.addBodyPart(textPart)
+      }
       // Add attachments
-      content.attachments.foreach(email.attach)
-      
-      val messageId = email.send()
-      logger.info(s"Email with attachments sent successfully with Message-ID: $messageId")
-      Full(messageId)
+      content.attachments.foreach { att =>
+        val attachPart = new MimeBodyPart()
+        if (att.filePath.isDefined) {
+          val fds = new FileDataSource(new File(att.filePath.get))
+          attachPart.setDataHandler(new DataHandler(fds))
+          attachPart.setFileName(att.name.getOrElse(new File(att.filePath.get).getName))
+        } else if (att.url.isDefined) {
+          val uds = new URLDataSource(new URL(att.url.get))
+          attachPart.setDataHandler(new DataHandler(uds))
+          attachPart.setFileName(att.name.getOrElse(att.url.get.split('/').last))
+        }
+        multipart.addBodyPart(attachPart)
+      }
+      message.setContent(multipart)
+      Transport.send(message)
+      Full(message.getMessageID)
     } catch {
       case e: Exception =>
         logger.error(s"Failed to send email with attachments: ${e.getMessage}", e)
@@ -159,54 +160,34 @@ object CommonsEmailWrapper extends MdcLoggable {
     }
   }
 
-  /**
-   * Configure email with common settings
-   */
-  private def configureEmail(email: Email, config: EmailConfig, content: EmailContent): Unit = {
-    // SMTP Configuration
-    email.setHostName(config.smtpHost)
-    email.setSmtpPort(config.smtpPort)
-    email.setAuthenticator(new DefaultAuthenticator(config.username, config.password))
-    email.setSSLOnConnect(config.useSSL)
-    email.setStartTLSEnabled(config.useTLS)
-    email.setDebug(config.debug)
-    email.getMailSession.getProperties.setProperty("mail.smtp.ssl.protocols", config.tlsProtocols)
-    
-    // Set charset
-    email.setCharset("UTF-8")
-    
-    // Set sender
-    email.setFrom(content.from)
-    
-    // Set recipients
-    content.to.foreach(email.addTo)
-    content.cc.foreach(email.addCc)
-    content.bcc.foreach(email.addBcc)
-    
-    // Set subject
-    email.setSubject(content.subject)
+  private def createSession(config: EmailConfig): Session = {
+    val props = new Properties()
+    props.put("mail.smtp.host", config.smtpHost)
+    props.put("mail.smtp.port", config.smtpPort.toString)
+    props.put("mail.smtp.auth", "true")
+    props.put("mail.smtp.starttls.enable", config.useTLS.toString)
+    props.put("mail.smtp.ssl.enable", config.useSSL.toString)
+    props.put("mail.debug", config.debug.toString)
+    props.put("mail.smtp.ssl.protocols", config.tlsProtocols)
+    val authenticator = new Authenticator() {
+      override def getPasswordAuthentication: PasswordAuthentication =
+        new PasswordAuthentication(config.username, config.password)
+    }
+    Session.getInstance(props, authenticator)
   }
 
-  /**
-   * Create email attachment from file
-   */
-  def createFileAttachment(filePath: String, name: Option[String] = None): EmailAttachment = {
-    val attachment = new EmailAttachment()
-    attachment.setPath(filePath)
-    attachment.setDisposition(EmailAttachment.ATTACHMENT)
-    name.foreach(attachment.setName)
-    attachment
+  private def setCommonHeaders(message: MimeMessage, content: EmailContent): Unit = {
+    message.setFrom(new InternetAddress(content.from))
+    content.to.foreach(addr => message.addRecipient(Message.RecipientType.TO, new InternetAddress(addr)))
+    content.cc.foreach(addr => message.addRecipient(Message.RecipientType.CC, new InternetAddress(addr)))
+    content.bcc.foreach(addr => message.addRecipient(Message.RecipientType.BCC, new InternetAddress(addr)))
+    message.setSubject(content.subject, "UTF-8")
   }
 
-  /**
-   * Create email attachment from URL
-   */
-  def createUrlAttachment(url: String, name: String): EmailAttachment = {
-    val attachment = new EmailAttachment()
-    attachment.setURL(new URL(url))
-    attachment.setDisposition(EmailAttachment.ATTACHMENT)
-    attachment.setName(name)
-    attachment
-  }
+  def createFileAttachment(filePath: String, name: Option[String] = None): EmailAttachment =
+    EmailAttachment(filePath = Some(filePath), url = None, name = name)
+
+  def createUrlAttachment(url: String, name: String): EmailAttachment =
+    EmailAttachment(filePath = None, url = Some(url), name = Some(name))
 
 } 
