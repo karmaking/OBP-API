@@ -589,24 +589,14 @@ import net.liftweb.util.Helpers._
    */
   override def sendPasswordReset(name: String) {
     findAuthUserByUsernameLocallyLegacy(name).toList ::: findUsersByEmailLocally(name) map {
-      // reason of case parameter name is "u" instead of "user": trait AuthUser have constant mumber name is "user"
-      // So if the follow case paramter name is "user" will cause compile warnings
       case u if u.validated_? =>
         u.resetUniqueId().save
-        //NOTE: here, if server_mode = portal, so we need modify the resetLink to portal_hostname, then developer can get proper response..
         val resetPasswordLinkProps = Constant.HostName
         val resetPasswordLink = APIUtil.getPropsValue("portal_hostname", resetPasswordLinkProps)+
           passwordResetPath.mkString("/", "/", "/")+urlEncode(u.getUniqueId())
-        logger.error("222222222222222222222222222222222222222444:"+classOf[javax.activation.DataSource].getProtectionDomain.getCodeSource)
-        // Use Apache Commons Email wrapper instead of Lift Mailer
-        val emailBodies = generateResetEmailBodies(u, resetPasswordLink)
-        
-        // Extract text and HTML content from email bodies
-        val textContent = emailBodies.find(_.isInstanceOf[net.liftweb.util.Mailer.PlainMailBodyType])
-          .map(_.asInstanceOf[net.liftweb.util.Mailer.PlainMailBodyType].toString.replace("PlainMailBodyType(", "").replace(")", ""))
-        val htmlContent = emailBodies.find(_.isInstanceOf[net.liftweb.util.Mailer.XHTMLMailBodyType])
-          .map(_.asInstanceOf[net.liftweb.util.Mailer.XHTMLMailBodyType].toString.replace("XHTMLMailBodyType(", "").replace(")", ""))
-        
+        // Directly generate content using JakartaMail/CommonsEmailWrapper
+        val textContent = Some(s"Please use the following link to reset your password: $resetPasswordLink")
+        val htmlContent = Some(s"<p>Please use the following link to reset your password:</p><p><a href='$resetPasswordLink'>$resetPasswordLink</a></p>")
         val emailContent = EmailContent(
           from = emailFrom,
           to = List(u.getEmail),
@@ -628,8 +618,6 @@ import net.liftweb.util.Helpers._
       case u =>
         sendValidationEmail(u)
     }
-    // In order to prevent any leakage of information we use the same message for all cases
-    // Note: Individual success/error messages are now handled in the email sending logic above
   }
 
   override def lostPasswordXhtml = {
@@ -661,22 +649,10 @@ import net.liftweb.util.Helpers._
    * Overridden to use the hostname set in the props file
    */
   override def sendValidationEmail(user: TheUserType) {
-    val resetLink = Constant.HostName+"/"+validateUserPath.mkString("/")+
-      "/"+urlEncode(user.getUniqueId())
-
+    val resetLink = Constant.HostName+"/"+validateUserPath.mkString("/")+"/"+urlEncode(user.getUniqueId())
     val email: String = user.getEmail
-
-    val msgXml = signupMailBody(user, resetLink)
-
-    // Use Apache Commons Email wrapper instead of Lift Mailer
-    val emailBodies: List[Mailer.MailBodyType] = generateValidationEmailBodies(user, resetLink)
-    
-    // Extract text and HTML content from email bodies
-    val textContent = emailBodies.find(_.isInstanceOf[net.liftweb.util.Mailer.PlainMailBodyType])
-      .map(_.asInstanceOf[net.liftweb.util.Mailer.PlainMailBodyType].toString.replace("PlainMailBodyType(", "").replace(")", ""))
-    val htmlContent = emailBodies.find(_.isInstanceOf[net.liftweb.util.Mailer.XHTMLMailBodyType])
-      .map(_.asInstanceOf[net.liftweb.util.Mailer.XHTMLMailBodyType].toString.replace("XHTMLMailBodyType(", "").replace(")", ""))
-    
+    val textContent = Some(s"Welcome! Please validate your account by clicking the following link: $resetLink")
+    val htmlContent = Some(s"<p>Welcome! Please validate your account by clicking the following link:</p><p><a href='$resetLink'>$resetLink</a></p>")
     val emailContent = EmailContent(
       from = emailFrom,
       to = List(user.getEmail),
@@ -685,7 +661,6 @@ import net.liftweb.util.Helpers._
       textContent = textContent,
       htmlContent = htmlContent
     )
-    
     sendHtmlEmail(emailContent) match {
       case Full(messageId) => 
         logger.debug(s"Validation email sent successfully with Message-ID: $messageId")
