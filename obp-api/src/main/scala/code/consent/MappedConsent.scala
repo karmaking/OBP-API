@@ -1,9 +1,10 @@
 package code.consent
 
 import java.util.Date
-import code.api.util.{APIUtil, Consent, ErrorMessages, OBPBankId, OBPConsentId, OBPConsumerId, OBPLimit, OBPOffset, OBPQueryParam, OBPSortBy, OBPStatus, OBPUserId, SecureRandomUtil}
+import code.api.util.{APIUtil, CBSUserId, Consent, ErrorMessages, OBPBankId, OBPConsentId, OBPConsumerId, OBPLimit, OBPOffset, OBPQueryParam, OBPSortBy, OBPStatus, OBPUserId, SecureRandomUtil}
 import code.consent.ConsentStatus.ConsentStatus
 import code.model.Consumer
+import code.model.dataAccess.ResourceUser
 import code.util.MappedUUID
 import com.openbankproject.commons.model.User
 import com.openbankproject.commons.util.ApiStandards
@@ -71,6 +72,18 @@ object MappedConsentProvider extends ConsentProvider {
     // The optional variables:
     val consumerId = queryParams.collectFirst { case OBPConsumerId(value) => By(MappedConsent.mConsumerId, value) }
     val consentId = queryParams.collectFirst { case OBPConsentId(value) => By(MappedConsent.mConsentId, value) }
+    val cbsUserId: Option[Cmp[MappedConsent, String]] = queryParams.collectFirst {
+      case CBSUserId(value) =>
+        ResourceUser.findAll(By(ResourceUser.providerId, value)) match {
+          case Nil =>
+            Some(By(MappedConsent.mUserId, "-1")) // no result
+          case x :: Nil => // exactly one
+            Some(By(MappedConsent.mUserId, x.userId))
+          case moreThanOneRow => // more than one
+            None
+        }
+    }.flatten
+
     val userId = queryParams.collectFirst { case OBPUserId(value) => By(MappedConsent.mUserId, value) }
     val status = queryParams.collectFirst {
       case OBPStatus(value) =>
@@ -96,7 +109,7 @@ object MappedConsentProvider extends ConsentProvider {
       offset.toSeq,
       limit.toSeq,
       status.toSeq,
-      userId.toSeq,
+      userId.orElse(cbsUserId).toSeq,
       consentId.toSeq,
       consumerId.toSeq
     ).flatten

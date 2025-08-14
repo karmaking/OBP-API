@@ -1147,6 +1147,7 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
         case "iss" => Full(OBPIss(values.head))
         case "consent_id" => Full(OBPConsentId(values.head))
         case "user_id" => Full(OBPUserId(values.head))
+        case "cbs_user_id" => Full(CBSUserId(values.head))
         case "bank_id" => Full(OBPBankId(values.head))
         case "account_id" => Full(OBPAccountId(values.head))
         case "url" => Full(OBPUrl(values.head))
@@ -1198,6 +1199,7 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
       iss <- getHttpParamValuesByName(httpParams,"iss")
       consentId <- getHttpParamValuesByName(httpParams,"consent_id")
       userId <- getHttpParamValuesByName(httpParams, "user_id")
+      cbsUserId <- getHttpParamValuesByName(httpParams, "cbs_user_id")
       bankId <- getHttpParamValuesByName(httpParams, "bank_id")
       accountId <- getHttpParamValuesByName(httpParams, "account_id")
       url <- getHttpParamValuesByName(httpParams, "url")
@@ -1233,7 +1235,7 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
       val ordering = OBPOrdering(None, sortDirection)
       //This guarantee the order 
       List(limit, offset, ordering, sortBy, fromDate, toDate,
-        anon, status, consumerId, azp, iss, consentId, userId, url, appName, implementedByPartialFunction, implementedInVersion,
+        anon, status, consumerId, azp, iss, consentId, userId, cbsUserId, url, appName, implementedByPartialFunction, implementedInVersion,
         verb, correlationId, duration, excludeAppNames, excludeUrlPattern, excludeImplementedByPartialfunctions,
         includeAppNames, includeUrlPattern, includeImplementedByPartialfunctions, 
         connectorName,functionName, bankId, accountId, customerId, lockedStatus, deletedStatus
@@ -1276,6 +1278,7 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
     val azp =  getHttpRequestUrlParam(httpRequestUrl,"azp")
     val consentId =  getHttpRequestUrlParam(httpRequestUrl,"consent_id")
     val userId =  getHttpRequestUrlParam(httpRequestUrl, "user_id")
+    val cbsUserId =  getHttpRequestUrlParam(httpRequestUrl, "cbs_user_id")
     val bankId =  getHttpRequestUrlParam(httpRequestUrl, "bank_id")
     val accountId =  getHttpRequestUrlParam(httpRequestUrl, "account_id")
     val url =  getHttpRequestUrlParam(httpRequestUrl, "url")
@@ -1305,7 +1308,7 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
 
     Full(List(
       HTTPParam("sort_by",sortBy), HTTPParam("sort_direction",sortDirection), HTTPParam("from_date",fromDate), HTTPParam("to_date", toDate), HTTPParam("limit",limit), HTTPParam("offset",offset),
-      HTTPParam("anon", anon), HTTPParam("status", status), HTTPParam("consumer_id", consumerId), HTTPParam("azp", azp), HTTPParam("iss", iss), HTTPParam("consent_id", consentId), HTTPParam("user_id", userId), HTTPParam("url", url), HTTPParam("app_name", appName),
+      HTTPParam("anon", anon), HTTPParam("status", status), HTTPParam("consumer_id", consumerId), HTTPParam("azp", azp), HTTPParam("iss", iss), HTTPParam("consent_id", consentId), HTTPParam("user_id", userId), HTTPParam("cbs_user_id", cbsUserId), HTTPParam("url", url), HTTPParam("app_name", appName),
       HTTPParam("implemented_by_partial_function",implementedByPartialFunction), HTTPParam("implemented_in_version",implementedInVersion), HTTPParam("verb", verb),
       HTTPParam("correlation_id", correlationId), HTTPParam("duration", duration), HTTPParam("exclude_app_names", excludeAppNames),
       HTTPParam("exclude_url_patterns", excludeUrlPattern),HTTPParam("exclude_implemented_by_partial_functions", excludeImplementedByPartialfunctions), 
