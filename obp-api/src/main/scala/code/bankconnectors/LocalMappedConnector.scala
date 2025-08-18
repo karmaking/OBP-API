@@ -1026,12 +1026,12 @@ object LocalMappedConnector extends Connector with MdcLoggable {
         else
           s"$AccountNumberNotUniqueError, current BankId is ${bankId.head.value}, AccountNumber is $accountNumber"
           
-      if(bankAccounts.length > 1){
+      if(bankAccounts.length > 1){ // If the account number is not unique, return the error message
         (Failure(errorMessage), callContext)
-      }else if (bankAccounts.length == 1){
+      }else if (bankAccounts.length == 1){  // If the account number is unique, return the account
         (Full(bankAccounts.head), callContext)
-      }else{
-        (Failure(errorMessage), callContext)
+      }else{ // If the account number is not found, return the error message
+        (Failure(s"$InvalidAccountNumber, current AccountNumber is $accountNumber"), callContext)
       }
     }
 
