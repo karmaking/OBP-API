@@ -79,8 +79,7 @@ import net.liftweb.json
 import net.liftweb.json.{JArray, JBool, JObject, JValue}
 import net.liftweb.mapper._
 import net.liftweb.util.Helpers.{hours, now, time, tryo}
-import net.liftweb.util.Mailer.{From, PlainMailBodyType, Subject, To}
-import net.liftweb.util.{Helpers, Mailer}
+import net.liftweb.util.Helpers
 import org.mindrot.jbcrypt.BCrypt
 import scalikejdbc.DB.CPContext
 import scalikejdbc.{ConnectionPool, ConnectionPoolSettings, MultipleConnectionPoolContext, DB => scalikeDB, _}
@@ -383,8 +382,13 @@ object LocalMappedConnector extends Connector with MdcLoggable {
         val hashedPassword = createHashedPassword(challengeAnswer)
         APIUtil.getEmailsByUserId(userId) map {
           pair =>
-            val params = PlainMailBodyType(s"Your OTP challenge : ${challengeAnswer}") :: List(To(pair._2))
-            Mailer.sendMail(From("challenge@tesobe.com"), Subject("Challenge"), params: _*)
+            val emailContent = CommonsEmailWrapper.EmailContent(
+              from = mailUsersUserinfoSenderAddress,
+              to = List(pair._2),
+              subject = "Challenge",
+              textContent = Some(s"Your OTP challenge : ${challengeAnswer}")
+            )
+            CommonsEmailWrapper.sendTextEmail(emailContent)
         }
         hashedPassword
       case Some(StrongCustomerAuthentication.SMS) | Some(StrongCustomerAuthentication.SMS_OTP) =>
@@ -5185,12 +5189,13 @@ object LocalMappedConnector extends Connector with MdcLoggable {
       _ <- Future{
         scaMethod match {
           case v if v == StrongCustomerAuthentication.EMAIL.toString => // Send the email
-            val params = PlainMailBodyType(userAuthContextUpdate.challenge) :: List(To(customer.email))
-            Mailer.sendMail(
-            From("challenge@tesobe.com"),
-            Subject("Challenge request"),
-            params :_*
+            val emailContent = CommonsEmailWrapper.EmailContent(
+              from = mailUsersUserinfoSenderAddress,
+              to = List(customer.email),
+              subject = "Challenge request",
+              textContent = Some(userAuthContextUpdate.challenge)
             )
+            CommonsEmailWrapper.sendTextEmail(emailContent)
           case v if v == StrongCustomerAuthentication.SMS.toString => // Not implemented
           case _ => // Not handled
         }
@@ -5211,8 +5216,13 @@ object LocalMappedConnector extends Connector with MdcLoggable {
     callContext: Option[CallContext]
   ): OBPReturnType[Box[String]] = {
     if (scaMethod == StrongCustomerAuthentication.EMAIL){ // Send the email
-      val params = PlainMailBodyType(message) :: List(To(recipient))
-      Mailer.sendMail(From("challenge@tesobe.com"), Subject("OBP Consent Challenge"), params :_*)
+      val emailContent = CommonsEmailWrapper.EmailContent(
+        from = mailUsersUserinfoSenderAddress,
+        to = List(recipient),
+        subject = "OBP Consent Challenge",
+        textContent = Some(message)
+      )
+      CommonsEmailWrapper.sendTextEmail(emailContent)
       Future{(Full("Success"), callContext)}
     } else if (scaMethod == StrongCustomerAuthentication.SMS){ // Send the SMS
       for {

@@ -178,7 +178,7 @@ case class ViewExtended(val view: View) {
 
       val transactionStatus =
         if (viewPermissions.exists(_ == CAN_SEE_TRANSACTION_STATUS)) transaction.status
-        else ""
+        else None
 
       new ModeratedTransaction(
         UUID = transactionUUID,
