@@ -450,7 +450,8 @@ object NewStyle extends MdcLoggable{
         (unboxFullOrFail(i._1, callContext, s"$BankAccountNotFound Current BankId is $bankId and Current AccountNumber is $accountNumber", 404), i._2)
       }
 
-    // this is for the bankAccount from external, maybe can not get any account, so we will create a in-memory account for payments.
+    // This method handles external bank accounts that may not exist in our database.
+    // If the account is not found, we create an in-memory account using counterparty information for payment processing.
     def getOtherBankAccountByNumber(bankId : Option[BankId], accountNumber : String, counterparty: Option[CounterpartyTrait], callContext: Option[CallContext]) : OBPReturnType[(BankAccount)] = {
       Connector.connector.vend.getOtherBankAccountByNumber(bankId, accountNumber, counterparty, callContext) } map { i =>
         (unboxFullOrFail(i._1, callContext, s"$BankAccountNotFound Current BankId is $bankId and Current AccountNumber is $accountNumber", 404), i._2)

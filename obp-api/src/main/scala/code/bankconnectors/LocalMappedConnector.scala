@@ -1035,61 +1035,66 @@ object LocalMappedConnector extends Connector with MdcLoggable {
       }
     }
 
-  // this is for the bankAccount from external, maybe can not get any account, so we will create a in-memory account for payments.
-  override def getOtherBankAccountByNumber(bankId : Option[BankId], accountNumber : String, counterparty: Option[CounterpartyTrait], callContext: Option[CallContext]) : OBPReturnType[Box[(BankAccount)]] = 
-    Future {
-      // First try to get the account using existing method
-      val existingAccount = getBankAccountByNumber(bankId, accountNumber, callContext)
-      
-      Await.result(existingAccount, 5.seconds)._1 match {
+  // This method handles external bank accounts that may not exist in our database.
+  // If the account is not found, we create an in-memory account using counterparty information for payment processing.
+  override def getOtherBankAccountByNumber(bankId : Option[BankId], accountNumber : String, counterparty: Option[CounterpartyTrait], callContext: Option[CallContext]) : OBPReturnType[Box[(BankAccount)]] = {
+    
+    for {
+      (existingAccountBox, updatedCallContext) <- getBankAccountByNumber(bankId, accountNumber, callContext)
+      (finalAccountBox, finalCallContext) <- existingAccountBox match {
         case Full(account) => 
-          // If account found, return it
-          (Full(account), callContext)
+          // If account found in database, return it
+          Future.successful((Full(account), updatedCallContext))
         case _ => 
-          // If account not found, create in-memory account from counterparty if available
+          // If account not found, check if we can create in-memory account
           counterparty match {
             case Some(cp) =>
-              // Create in-memory account similar to BankingData.getBankAccountFromCounterparty
-              val accountRouting1 =
-                if (cp.otherAccountRoutingScheme.isEmpty) Nil
-                else List(AccountRouting(cp.otherAccountRoutingScheme, cp.otherAccountRoutingAddress))
-              val accountRouting2 =
-                if (cp.otherAccountSecondaryRoutingScheme.isEmpty) Nil
-                else List(AccountRouting(cp.otherAccountSecondaryRoutingScheme, cp.otherAccountSecondaryRoutingAddress))
+              // Create in-memory account using counterparty information
+              Future {
+                val accountRouting1 =
+                  if (cp.otherAccountRoutingScheme.isEmpty) Nil
+                  else List(AccountRouting(cp.otherAccountRoutingScheme, cp.otherAccountRoutingAddress))
+                val accountRouting2 =
+                  if (cp.otherAccountSecondaryRoutingScheme.isEmpty) Nil
+                  else List(AccountRouting(cp.otherAccountSecondaryRoutingScheme, cp.otherAccountSecondaryRoutingAddress))
 
-              // Due to the new field in the database, old counterparty have void currency, so by default, we set it to EUR
-              val counterpartyCurrency = if (cp.currency.nonEmpty) cp.currency else "EUR"
+                // Due to the new field in the database, old counterparty have void currency, so by default, we set it to EUR
+                val counterpartyCurrency = if (cp.currency.nonEmpty) cp.currency else "EUR"
 
-              val inMemoryAccount = BankAccountCommons(
-                AccountId(if (cp.otherAccountSecondaryRoutingAddress.nonEmpty) cp.otherAccountSecondaryRoutingAddress else accountNumber), 
-                "", 0,
-                currency = counterpartyCurrency,
-                name = cp.name,
-                "", accountNumber, 
-                BankId(cp.otherBankRoutingAddress), 
-                new Date(), "",
-                accountRoutings = accountRouting1 ++ accountRouting2,
-                List.empty, 
-                accountHolder = cp.name,
-                Some(List(Attribute(
-                  name = "BANK_ROUTING_SCHEME",
-                  `type` = "STRING",
-                  value = cp.otherBankRoutingScheme
-                ),
-                  Attribute(
-                    name = "BANK_ROUTING_ADDRESS",
+                val inMemoryAccount = BankAccountCommons(
+                  AccountId(if (cp.otherAccountSecondaryRoutingAddress.nonEmpty) cp.otherAccountSecondaryRoutingAddress else accountNumber), 
+                  "", 0,
+                  currency = counterpartyCurrency,
+                  name = cp.name,
+                  "", accountNumber, 
+                  BankId(cp.otherBankRoutingAddress), 
+                  new Date(), "",
+                  accountRoutings = accountRouting1 ++ accountRouting2,
+                  List.empty, 
+                  accountHolder = cp.name,
+                  Some(List(Attribute(
+                    name = "BANK_ROUTING_SCHEME",
                     `type` = "STRING",
-                    value = cp.otherBankRoutingAddress
+                    value = cp.otherBankRoutingScheme
                   ),
-                ))
-              )
-              (Full(inMemoryAccount), callContext)
+                    Attribute(
+                      name = "BANK_ROUTING_ADDRESS",
+                      `type` = "STRING",
+                      value = cp.otherBankRoutingAddress
+                    ),
+                  ))
+                )
+                (Full(inMemoryAccount), updatedCallContext)
+              }
             case None =>
               // No counterparty provided, return failure
-              (Failure(s"$InvalidAccountNumber, current AccountNumber is $accountNumber and no counterparty provided for creating in-memory account"), callContext)
+              Future.successful((Failure(s"$InvalidAccountNumber, current AccountNumber is $accountNumber and no counterparty provided for creating in-memory account"), updatedCallContext))
           }
       }
+    } yield {
+      (finalAccountBox, finalCallContext)
     }
+  }
 
   override def getBankAccountByRoutings(
     bankAccountRoutings: BankAccountRoutings,
