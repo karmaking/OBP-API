@@ -802,11 +802,9 @@ object NewStyle extends MdcLoggable{
             Failure(s"$failMsg. Details: ${e.getMessage}", Full(e), Empty)
         }
       } map {
-        // Convert `Box[T]` to `Future[T]` using `unboxFullOrFail`
         x => unboxFullOrFail(x, callContext, failMsg, failCode)
       }
     }
-
 
     def extractHttpParamsFromUrl(url: String): Future[List[HTTPParam]] = {
       createHttpParamsByUrlFuture(url) map { unboxFull(_) }
