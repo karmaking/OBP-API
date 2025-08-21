@@ -77,12 +77,12 @@ ALTER USER :OIDC_USER CONNECTION LIMIT 10;
 \echo 'Creating read-only view for OIDC access to authuser...'
 
 -- Drop the view if it already exists
-DROP VIEW IF EXISTS v_authuser_oidc CASCADE;
+DROP VIEW IF EXISTS v_oidc_users CASCADE;
 
 -- Create a read-only view exposing only necessary authuser fields for OIDC
 -- TODO: Consider excluding locked users by joining with mappedbadloginattempt table
 --       and checking mbadattemptssinceresetorsuccess against max.bad.login.attempts prop
-CREATE VIEW v_authuser_oidc AS
+CREATE VIEW v_oidc_users AS
 SELECT
     id,
     username,
@@ -101,9 +101,38 @@ WHERE validated = true  -- Only expose validated users to OIDC service
 ORDER BY username;
 
 -- Add comment to the view for documentation
-COMMENT ON VIEW v_authuser_oidc IS 'Read-only view of authuser table for OIDC service access. Only includes validated users. WARNING: Includes password hash and salt for OIDC credential verification - ensure secure access.';
+COMMENT ON VIEW v_oidc_users IS 'Read-only view of authuser table for OIDC service access. Only includes validated users and excludes sensitive fields like password hashes. WARNING: Includes password hash and salt for OIDC credential verification - ensure secure access.';
 
-\echo 'OIDC authuser view created successfully.'
+\echo 'OIDC users view created successfully.'
+
+-- =============================================================================
+-- 3b. Create read-only view for consumer table (OIDC clients)
+-- =============================================================================
+\echo 'Creating read-only view for OIDC access to consumers...'
+
+-- Drop the view if it already exists
+DROP VIEW IF EXISTS v_oidc_clients CASCADE;
+
+-- Create a read-only view exposing necessary consumer fields for OIDC
+-- Note: Some OIDC-specific fields like grant_types and scopes may not exist in current schema
+-- TODO: Add grant_types and scopes fields to consumer table if needed for full OIDC compliance
+CREATE VIEW v_oidc_clients AS
+SELECT
+    COALESCE(consumerid, id::varchar) as client_id,  -- Use consumerId if available, otherwise id
+    secret as client_secret,
+    redirecturl as redirect_uris,
+    'authorization_code,refresh_token' as grant_types,  -- Default OIDC grant types
+    'openid,profile,email' as scopes,                   -- Default OIDC scopes
+    name as client_name,
+    createdat as created_at
+FROM consumer
+WHERE isactive = true  -- Only expose active consumers to OIDC service
+ORDER BY client_name;
+
+-- Add comment to the view for documentation
+COMMENT ON VIEW v_oidc_clients IS 'Read-only view of consumer table for OIDC service access. Only includes active consumers. Note: grant_types and scopes are hardcoded defaults - consider adding these fields to consumer table for full OIDC compliance.';
+
+\echo 'OIDC clients view created successfully.'
 
 -- =============================================================================
 -- 4. Grant appropriate permissions to OIDC user
@@ -116,16 +145,18 @@ GRANT CONNECT ON DATABASE :DB_NAME TO :OIDC_USER;
 -- Grant USAGE on the public schema (or specific schema where authuser exists)
 GRANT USAGE ON SCHEMA public TO :OIDC_USER;
 
--- Grant SELECT permission on the OIDC view only
-GRANT SELECT ON v_authuser_oidc TO :OIDC_USER;
+-- Grant SELECT permission on the OIDC views
+GRANT SELECT ON v_oidc_users TO :OIDC_USER;
+GRANT SELECT ON v_oidc_clients TO :OIDC_USER;
 
 -- Explicitly revoke any other permissions to ensure read-only access
 REVOKE ALL PRIVILEGES ON ALL TABLES IN SCHEMA public FROM :OIDC_USER;
 REVOKE ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public FROM :OIDC_USER;
 REVOKE ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA public FROM :OIDC_USER;
 
--- Grant SELECT on the view again (in case it was revoked above)
-GRANT SELECT ON v_authuser_oidc TO :OIDC_USER;
+-- Grant SELECT on the views again (in case they were revoked above)
+GRANT SELECT ON v_oidc_users TO :OIDC_USER;
+GRANT SELECT ON v_oidc_clients TO :OIDC_USER;
 
 \echo 'Permissions granted successfully.'
 
@@ -153,15 +184,23 @@ SELECT 'User exists: ' || CASE WHEN EXISTS (
     SELECT 1 FROM pg_user WHERE usename = :'OIDC_USER'
 ) THEN 'YES' ELSE 'NO' END AS user_check;
 
--- Check if view exists and has data
-SELECT 'View exists and accessible: ' || CASE WHEN EXISTS (
+-- Check if views exist and have data
+SELECT 'Users view exists: ' || CASE WHEN EXISTS (
     SELECT 1 FROM information_schema.views
-    WHERE table_name = 'v_authuser_oidc' AND table_schema = 'public'
-) THEN 'YES' ELSE 'NO' END AS view_check;
+    WHERE table_name = 'v_oidc_users' AND table_schema = 'public'
+) THEN 'YES' ELSE 'NO' END AS users_view_check;
 
--- Show row count in the view (if accessible)
+SELECT 'Clients view exists: ' || CASE WHEN EXISTS (
+    SELECT 1 FROM information_schema.views
+    WHERE table_name = 'v_oidc_clients' AND table_schema = 'public'
+) THEN 'YES' ELSE 'NO' END AS clients_view_check;
+
+-- Show row counts in the views (if accessible)
 SELECT 'Validated users count: ' || COUNT(*) AS user_count
-FROM v_authuser_oidc;
+FROM v_oidc_users;
+
+SELECT 'Active clients count: ' || COUNT(*) AS client_count
+FROM v_oidc_clients;
 
 -- Display the permissions granted to OIDC user
 SELECT
@@ -188,11 +227,12 @@ ORDER BY table_schema, table_name;
 \echo 'Username: ' :OIDC_USER
 \echo 'Password: [REDACTED - check script variables]'
 \echo ''
-\echo 'Available view: v_authuser_oidc'
+\echo 'Available views: v_oidc_users, v_oidc_clients'
 \echo 'Permissions: SELECT only (read-only access)'
 \echo ''
-\echo 'Test connection command:'
-\echo 'psql -h ' :DB_HOST ' -p ' :DB_PORT ' -d ' :DB_NAME ' -U ' :OIDC_USER ' -c "SELECT COUNT(*) FROM v_authuser_oidc;"'
+\echo 'Test connection commands:'
+\echo 'psql -h ' :DB_HOST ' -p ' :DB_PORT ' -d ' :DB_NAME ' -U ' :OIDC_USER ' -c "SELECT COUNT(*) FROM v_oidc_users;"'
+\echo 'psql -h ' :DB_HOST ' -p ' :DB_PORT ' -d ' :DB_NAME ' -U ' :OIDC_USER ' -c "SELECT COUNT(*) FROM v_oidc_clients;"'
 \echo ''
 \echo '====================================================================='
 \echo '⚠️  CRITICAL SECURITY WARNINGS ⚠️'
@@ -228,7 +268,9 @@ ORDER BY table_schema, table_name;
 \echo ''
 \echo 'BASIC INFO:'
 \echo '- The OIDC user has read-only access to validated authuser records only'
+\echo '- The OIDC user has read-only access to active client records only'
 \echo '- Connection limit is set to 10 concurrent connections'
+\echo '- Client view uses hardcoded grant_types and scopes (consider adding to schema)'
 
 \echo ''
 \echo '====================================================================='
