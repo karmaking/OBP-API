@@ -27,36 +27,32 @@ TESOBE (http://www.tesobe.com/)
 
 package code.api
 
-import java.net.URLDecoder
 import code.api.Constant._
 import code.api.OAuthHandshake._
-import code.api.builder.AccountInformationServiceAISApi.APIMethods_AccountInformationServiceAISApi
-import code.api.util.APIUtil.{getClass, _}
+import code.api.util.APIUtil._
 import code.api.util.ErrorMessages.{InvalidDAuthHeaderToken, UserIsDeleted, UsernameHasBeenLocked, attemptedToOpenAnEmptyBox}
 import code.api.util._
-import code.api.v3_0_0.APIMethods300
-import code.api.v3_1_0.APIMethods310
-import code.api.v4_0_0.{APIMethods400, OBPAPI4_0_0}
+import code.api.v4_0_0.OBPAPI4_0_0
 import code.api.v5_0_0.OBPAPI5_0_0
 import code.api.v5_1_0.OBPAPI5_1_0
+import code.api.v6_0_0.OBPAPI6_0_0
 import code.loginattempts.LoginAttempt
 import code.model.dataAccess.AuthUser
 import code.util.Helper.{MdcLoggable, ObpS}
 import com.alibaba.ttl.TransmittableThreadLocal
 import com.openbankproject.commons.model.ErrorMessage
 import com.openbankproject.commons.util.{ApiVersion, ReflectUtils, ScannedApiVersion}
-import net.liftweb.common.{Box, Full, _}
+import net.liftweb.common._
 import net.liftweb.http.rest.RestHelper
 import net.liftweb.http.{JsonResponse, LiftResponse, LiftRules, Req, S, TransientRequestMemoize}
 import net.liftweb.json.Extraction
 import net.liftweb.json.JsonAST.JValue
-import net.liftweb.util.{Helpers, NamedPF, Props, ThreadGlobal}
 import net.liftweb.util.Helpers.tryo
+import net.liftweb.util.{Helpers, NamedPF, Props, ThreadGlobal}
 
+import java.net.URLDecoder
 import java.util.{Locale, ResourceBundle}
-import scala.collection.immutable.List
 import scala.collection.mutable.ArrayBuffer
-import scala.math.Ordering
 import scala.util.control.NoStackTrace
 import scala.xml.{Node, NodeSeq}
 
@@ -648,7 +644,7 @@ trait OBPRestHelper extends RestHelper with MdcLoggable {
                                autoValidateAll: Boolean = false): Unit = {
 
     def isAutoValidate(doc: ResourceDoc): Boolean = {                         //note: only support v5.1.0,  v5.0.0 and v4.0.0 at the moment.
-      doc.isValidateEnabled || (autoValidateAll && !doc.isValidateDisabled && List(OBPAPI5_1_0.version,OBPAPI5_0_0.version,OBPAPI4_0_0.version).contains(doc.implementedInApiVersion))
+      doc.isValidateEnabled || (autoValidateAll && !doc.isValidateDisabled && List(OBPAPI6_0_0.version,OBPAPI5_1_0.version,OBPAPI5_0_0.version,OBPAPI4_0_0.version).contains(doc.implementedInApiVersion))
     }
 
     for(route <- routes) {

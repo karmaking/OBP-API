@@ -71,7 +71,6 @@ import code.util.{Helper, JsonSchemaUtil}
 import code.views.system.AccountAccess
 import code.views.{MapperViews, Views}
 import code.webuiprops.MappedWebUiPropsProvider.getWebUiPropsValue
-import javassist.CannotCompileException
 import com.github.dwickern.macros.NameOf.{nameOf, nameOfType}
 import com.openbankproject.commons.ExecutionContext.Implicits.global
 import com.openbankproject.commons.model._
@@ -81,7 +80,7 @@ import com.openbankproject.commons.util.Functions.Implicits._
 import com.openbankproject.commons.util._
 import dispatch.url
 import javassist.expr.{ExprEditor, MethodCall}
-import javassist.{ClassPool, LoaderClassPath}
+import javassist.{CannotCompileException, ClassPool, LoaderClassPath}
 import net.liftweb.actor.LAFuture
 import net.liftweb.common._
 import net.liftweb.http._
@@ -2747,6 +2746,7 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
         case ApiVersion.v4_0_0 => LiftRules.statelessDispatch.append(v4_0_0.OBPAPI4_0_0)
         case ApiVersion.v5_0_0 => LiftRules.statelessDispatch.append(v5_0_0.OBPAPI5_0_0)
         case ApiVersion.v5_1_0 => LiftRules.statelessDispatch.append(v5_1_0.OBPAPI5_1_0)
+        case ApiVersion.v6_0_0 => LiftRules.statelessDispatch.append(v6_0_0.OBPAPI6_0_0)
         case ApiVersion.`dynamic-endpoint` => LiftRules.statelessDispatch.append(OBPAPIDynamicEndpoint)
         case ApiVersion.`dynamic-entity` => LiftRules.statelessDispatch.append(OBPAPIDynamicEntity)
         case version: ScannedApiVersion => LiftRules.statelessDispatch.append(ScannedApis.versionMapScannedApis(version))

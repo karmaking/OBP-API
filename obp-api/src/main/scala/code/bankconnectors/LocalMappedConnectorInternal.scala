@@ -1382,9 +1382,9 @@ object LocalMappedConnectorInternal extends MdcLoggable {
               transactionRequestBodyCardano.to.amount.quantity >= 0
             }
             
-            // Validate amount unit must be 'lovelace'
+            // Validate amount unit must be 'lovelace' (case insensitive)
             _ <- Helper.booleanToFuture(s"$InvalidJsonValue Cardano amount unit must be 'lovelace'", cc=callContext) {
-              transactionRequestBodyCardano.to.amount.unit == "lovelace"
+              transactionRequestBodyCardano.to.amount.unit.toLowerCase == "lovelace"
             }
             
             // Validate assets if provided
