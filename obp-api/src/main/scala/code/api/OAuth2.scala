@@ -366,8 +366,9 @@ object OAuth2Login extends RestHelper with MdcLoggable {
       val sub = getClaim(name = "sub", idToken = idToken)
       val email = getClaim(name = "email", idToken = idToken)
       val name = getClaim(name = "name", idToken = idToken).orElse(description)
+      val consumerId = if(APIUtil.checkIfStringIsUUID(azp.getOrElse(""))) azp else Some(s"{$azp}_${APIUtil.generateUUID()}")
       Consumers.consumers.vend.getOrCreateConsumer(
-        consumerId = None,
+        consumerId = consumerId, // Use azp as consumer id if it is uuid value
         key = Some(Helpers.randomString(40).toLowerCase),
         secret = Some(Helpers.randomString(40).toLowerCase),
         aud = aud,
