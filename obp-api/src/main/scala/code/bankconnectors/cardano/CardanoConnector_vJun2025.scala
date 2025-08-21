@@ -135,9 +135,15 @@ trait CardanoConnector_vJun2025 extends Connector with MdcLoggable {
     val assetsJson = transactionRequestBodyCardano.to.assets match {
       case Some(assets) if assets.nonEmpty => {
         val assetsArray = assets.map { asset =>
+          // Convert asset_name to hex format
+          // "4f47435241" -> "OGCRA"
+          // "4f47435242" -> "OGCRB" 
+          // "4f47435243" -> "OGCRC"
+          // "4f47435244" -> "OGCRD"
+          val hexAssetName = asset.asset_name.getBytes("UTF-8").map("%02x".format(_)).mkString
           s"""        {
           |          "policy_id": "${asset.policy_id}",
-          |          "asset_name": "${asset.asset_name}",
+          |          "asset_name": "$hexAssetName",
           |          "quantity": ${asset.quantity}
           |        }""".stripMargin
         }.mkString(",\n")
