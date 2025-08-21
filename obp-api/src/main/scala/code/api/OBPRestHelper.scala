@@ -638,33 +638,32 @@ trait OBPRestHelper extends RestHelper with MdcLoggable {
     result
   }
 
+  def isAutoValidate(doc: ResourceDoc, autoValidateAll: Boolean): Boolean = { //note: auto support v4.0.0 and later versions
+    doc.isValidateEnabled || (autoValidateAll && !doc.isValidateDisabled && {
+      // Auto support v4.0.0 and all later versions
+      val docVersion = doc.implementedInApiVersion
+      // Check if the version is v4.0.0 or later by comparing the version string
+      docVersion match {
+        case v: ScannedApiVersion =>
+          // Extract version numbers and compare
+          val versionStr = v.apiShortVersion.replace("v", "")
+          val parts = versionStr.split("\\.")
+          if (parts.length >= 2) {
+            val major = parts(0).toInt
+            val minor = parts(1).toInt
+            major > 4 || (major == 4 && minor >= 0)
+          } else {
+            false
+          }
+        case _ => false
+      }
+    })
+  }
+
   protected def registerRoutes(routes: List[OBPEndpoint],
                                allResourceDocs: ArrayBuffer[ResourceDoc],
                                apiPrefix:OBPEndpoint => OBPEndpoint,
                                autoValidateAll: Boolean = false): Unit = {
-
-    def isAutoValidate(doc: ResourceDoc): Boolean = {                         //note: auto support v4.0.0 and later versions
-      doc.isValidateEnabled || (autoValidateAll && !doc.isValidateDisabled && {
-        // Auto support v4.0.0 and all later versions
-        val docVersion = doc.implementedInApiVersion
-        // Check if the version is v4.0.0 or later by comparing the version string
-        docVersion match {
-          case v: ScannedApiVersion => 
-            // Extract version numbers and compare
-            val versionStr = v.apiShortVersion.replace("v", "")
-            val parts = versionStr.split("\\.")
-            if (parts.length >= 2) {
-              val major = parts(0).toInt
-              val minor = parts(1).toInt
-              major > 4 || (major == 4 && minor >= 0)
-            } else {
-              false
-            }
-          case _ => false
-        }
-      })
-    }
-
     for(route <- routes) {
       // one endpoint can have multiple ResourceDocs, so here use filter instead of find, e.g APIMethods400.Implementations400.createTransactionRequest
       val resourceDocs = allResourceDocs.filter(_.partialFunction == route)
@@ -672,7 +671,7 @@ trait OBPRestHelper extends RestHelper with MdcLoggable {
       if(resourceDocs.isEmpty) {
         oauthServe(apiPrefix(route), None)
       } else {
-        val (autoValidateDocs, other) = resourceDocs.partition(isAutoValidate)
+        val (autoValidateDocs, other) = resourceDocs.partition(isAutoValidate(_, autoValidateAll))
         // autoValidateAll or doc isAutoValidate, just wrapped to auth check endpoint
         autoValidateDocs.foreach { doc =>
           val wrappedEndpoint = doc.wrappedWithAuthCheck(route)
