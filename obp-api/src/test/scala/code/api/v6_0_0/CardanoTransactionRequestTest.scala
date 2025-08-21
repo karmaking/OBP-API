@@ -23,7 +23,7 @@ Berlin 13359, Germany
 This product includes software developed at
 TESOBE (http://www.tesobe.com/)
 */
-package code.api.v5_1_0
+package code.api.v6_0_0
 
 import code.api.Constant
 import code.api.ResourceDocs1_4_0.SwaggerDefinitionsJSON
@@ -32,7 +32,7 @@ import code.api.util.ApiRole
 import code.api.util.ApiRole._
 import code.api.util.ErrorMessages._
 import code.api.v4_0_0.TransactionRequestWithChargeJSON400
-import code.api.v5_1_0.OBPAPI5_1_0.Implementations5_1_0
+import code.api.v6_0_0.OBPAPI6_0_0.Implementations6_0_0
 import code.entitlement.Entitlement
 import code.methodrouting.MethodRoutingCommons
 import com.github.dwickern.macros.NameOf.nameOf
@@ -42,7 +42,7 @@ import net.liftweb.json.Serialization.write
 import org.scalatest.Tag
 
 
-class CardanoTransactionRequestTest extends V510ServerSetup {
+class CardanoTransactionRequestTest extends V600ServerSetup {
 
   /**
     * Test tags
@@ -52,7 +52,7 @@ class CardanoTransactionRequestTest extends V510ServerSetup {
     *  This is made possible by the scalatest maven plugin
     */
   object VersionOfApi extends Tag(ApiVersion.v5_1_0.toString)
-  object CreateTransactionRequestCardano extends Tag(nameOf(Implementations5_1_0.createTransactionRequestCardano))
+  object CreateTransactionRequestCardano extends Tag(nameOf(Implementations6_0_0.createTransactionRequestCardano))
 
 
   val testBankId = testBankId1.value
@@ -72,11 +72,11 @@ class CardanoTransactionRequestTest extends V510ServerSetup {
    
     scenario("We will create Cardano transaction request - user is NOT logged in", CreateTransactionRequestCardano, VersionOfApi) {
       When("We make a request v5.1.0")
-      val request510 = (v5_1_0_Request / "banks" / testBankId / "accounts" / testAccountId / Constant.SYSTEM_OWNER_VIEW_ID / "transaction-request-types" / "CARDANO" / "transaction-requests").POST
-      val cardanoTransactionRequestBody = TransactionRequestBodyCardanoJsonV510(
-        to = CardanoPaymentJsonV510(
+      val request510 = (v6_0_0_Request / "banks" / testBankId / "accounts" / testAccountId / Constant.SYSTEM_OWNER_VIEW_ID / "transaction-request-types" / "CARDANO" / "transaction-requests").POST
+      val cardanoTransactionRequestBody = TransactionRequestBodyCardanoJsonV600(
+        to = CardanoPaymentJsonV600(
           address = "addr_test1qpv3se9ghq87ud29l0a8asy8nlqwd765e5zt4rc2z4mktqulwagn832cuzcjknfyxwzxz2p2kumx6n58tskugny6mrqs7fd23z",
-          amount = CardanoAmountJsonV510(
+          amount = CardanoAmountJsonV600(
             quantity = 1000000,
             unit = "lovelace"
           )
@@ -113,11 +113,11 @@ class CardanoTransactionRequestTest extends V510ServerSetup {
       response310.code should equal(201)
       
       When("We make a request v5.1.0")
-      val request510 = (v5_1_0_Request / "banks" / testBankId / "accounts" / testAccountId / Constant.SYSTEM_OWNER_VIEW_ID / "transaction-request-types" / "CARDANO" / "transaction-requests").POST <@(user1)
-      val cardanoTransactionRequestBody = TransactionRequestBodyCardanoJsonV510(
-        to = CardanoPaymentJsonV510(
+      val request510 = (v6_0_0_Request / "banks" / testBankId / "accounts" / testAccountId / Constant.SYSTEM_OWNER_VIEW_ID / "transaction-request-types" / "CARDANO" / "transaction-requests").POST <@(user1)
+      val cardanoTransactionRequestBody = TransactionRequestBodyCardanoJsonV600(
+        to = CardanoPaymentJsonV600(
           address = "addr_test1qpv3se9ghq87ud29l0a8asy8nlqwd765e5zt4rc2z4mktqulwagn832cuzcjknfyxwzxz2p2kumx6n58tskugny6mrqs7fd23z",
-          amount = CardanoAmountJsonV510(
+          amount = CardanoAmountJsonV600(
             quantity = 1000000,
             unit = "lovelace"
           )
@@ -155,11 +155,11 @@ class CardanoTransactionRequestTest extends V510ServerSetup {
       response310.code should equal(201)
       
       When("We make a request v5.1.0 with metadata")
-      val request510 = (v5_1_0_Request / "banks" / testBankId / "accounts" / testAccountId / Constant.SYSTEM_OWNER_VIEW_ID / "transaction-request-types" / "CARDANO" / "transaction-requests").POST <@(user1)
-      val cardanoTransactionRequestBody = TransactionRequestBodyCardanoJsonV510(
-        to = CardanoPaymentJsonV510(
+      val request510 = (v6_0_0_Request / "banks" / testBankId / "accounts" / testAccountId / Constant.SYSTEM_OWNER_VIEW_ID / "transaction-request-types" / "CARDANO" / "transaction-requests").POST <@(user1)
+      val cardanoTransactionRequestBody = TransactionRequestBodyCardanoJsonV600(
+        to = CardanoPaymentJsonV600(
           address = "addr_test1qpv3se9ghq87ud29l0a8asy8nlqwd765e5zt4rc2z4mktqulwagn832cuzcjknfyxwzxz2p2kumx6n58tskugny6mrqs7fd23z",
-          amount = CardanoAmountJsonV510(
+          amount = CardanoAmountJsonV600(
             quantity = 1000000,
             unit = "lovelace"
           )
@@ -167,7 +167,7 @@ class CardanoTransactionRequestTest extends V510ServerSetup {
         value = AmountOfMoneyJsonV121("lovelace", "1000000"),
         passphrase = passphrase,
         description = "ADA transfer with metadata",
-        metadata = Some(Map("202507022319" -> CardanoMetadataStringJsonV510("Hello Cardano")))
+        metadata = Some(Map("202507022319" -> CardanoMetadataStringJsonV600("Hello Cardano")))
       )
       val response510 = makePostRequest(request510, write(cardanoTransactionRequestBody))
       Then("We should get a 201")
@@ -198,15 +198,15 @@ class CardanoTransactionRequestTest extends V510ServerSetup {
       response310.code should equal(201)
       
       When("We make a request v5.1.0 with token")
-      val request510 = (v5_1_0_Request / "banks" / testBankId / "accounts" / testAccountId / Constant.SYSTEM_OWNER_VIEW_ID / "transaction-request-types" / "CARDANO" / "transaction-requests").POST <@(user1)
-      val cardanoTransactionRequestBody = TransactionRequestBodyCardanoJsonV510(
-        to = CardanoPaymentJsonV510(
+      val request510 = (v6_0_0_Request / "banks" / testBankId / "accounts" / testAccountId / Constant.SYSTEM_OWNER_VIEW_ID / "transaction-request-types" / "CARDANO" / "transaction-requests").POST <@(user1)
+      val cardanoTransactionRequestBody = TransactionRequestBodyCardanoJsonV600(
+        to = CardanoPaymentJsonV600(
           address = "addr_test1qpv3se9ghq87ud29l0a8asy8nlqwd765e5zt4rc2z4mktqulwagn832cuzcjknfyxwzxz2p2kumx6n58tskugny6mrqs7fd23z",
-          amount = CardanoAmountJsonV510(
+          amount = CardanoAmountJsonV600(
             quantity = 1000000,
             unit = "lovelace"
           ),
-          assets = Some(List(CardanoAssetJsonV510(
+          assets = Some(List(CardanoAssetJsonV600(
             policy_id = "policy1234567890abcdef",
             asset_name = "4f47435241",
             quantity = 10
@@ -226,15 +226,15 @@ class CardanoTransactionRequestTest extends V510ServerSetup {
 
     scenario("We will create Cardano transaction request with token and metadata - user is logged in", CreateTransactionRequestCardano, VersionOfApi) {
       When("We make a request v5.1.0 with token and metadata")
-      val request510 = (v5_1_0_Request / "banks" / testBankId / "accounts" / testAccountId / Constant.SYSTEM_OWNER_VIEW_ID / "transaction-request-types" / "CARDANO" / "transaction-requests").POST <@(user1)
-      val cardanoTransactionRequestBody = TransactionRequestBodyCardanoJsonV510(
-        to = CardanoPaymentJsonV510(
+      val request510 = (v6_0_0_Request / "banks" / testBankId / "accounts" / testAccountId / Constant.SYSTEM_OWNER_VIEW_ID / "transaction-request-types" / "CARDANO" / "transaction-requests").POST <@(user1)
+      val cardanoTransactionRequestBody = TransactionRequestBodyCardanoJsonV600(
+        to = CardanoPaymentJsonV600(
           address = "addr_test1qpv3se9ghq87ud29l0a8asy8nlqwd765e5zt4rc2z4mktqulwagn832cuzcjknfyxwzxz2p2kumx6n58tskugny6mrqs7fd23z",
-          amount = CardanoAmountJsonV510(
+          amount = CardanoAmountJsonV600(
             quantity = 5000000,
             unit = "lovelace"
           ),
-          assets = Some(List(CardanoAssetJsonV510(
+          assets = Some(List(CardanoAssetJsonV600(
             policy_id = "policy1234567890abcdef",
             asset_name = "4f47435241",
             quantity = 10
@@ -243,7 +243,7 @@ class CardanoTransactionRequestTest extends V510ServerSetup {
         value = AmountOfMoneyJsonV121("lovelace", "1000000"),
         passphrase = passphrase,
         description = "ADA transfer with token and metadata",
-        metadata = Some(Map("202507022319" -> CardanoMetadataStringJsonV510("Hello Cardano with Token")))
+        metadata = Some(Map("202507022319" -> CardanoMetadataStringJsonV600("Hello Cardano with Token")))
       )
       val response510 = makePostRequest(request510, write(cardanoTransactionRequestBody))
       Then("We should get a 201")
@@ -255,11 +255,11 @@ class CardanoTransactionRequestTest extends V510ServerSetup {
 
     scenario("We will try to create Cardano transaction request for someone else account - user is logged in", CreateTransactionRequestCardano, VersionOfApi) {
       When("We make a request v5.1.0")
-      val request510 = (v5_1_0_Request / "banks" / testBankId / "accounts" / testAccountId / Constant.SYSTEM_OWNER_VIEW_ID / "transaction-request-types" / "CARDANO" / "transaction-requests").POST <@(user2)
-      val cardanoTransactionRequestBody = TransactionRequestBodyCardanoJsonV510(
-        to = CardanoPaymentJsonV510(
+      val request510 = (v6_0_0_Request / "banks" / testBankId / "accounts" / testAccountId / Constant.SYSTEM_OWNER_VIEW_ID / "transaction-request-types" / "CARDANO" / "transaction-requests").POST <@(user2)
+      val cardanoTransactionRequestBody = TransactionRequestBodyCardanoJsonV600(
+        to = CardanoPaymentJsonV600(
           address = "addr_test1qpv3se9ghq87ud29l0a8asy8nlqwd765e5zt4rc2z4mktqulwagn832cuzcjknfyxwzxz2p2kumx6n58tskugny6mrqs7fd23z",
-          amount = CardanoAmountJsonV510(
+          amount = CardanoAmountJsonV600(
             quantity = 1000000,
             unit = "lovelace"
           )
@@ -277,11 +277,11 @@ class CardanoTransactionRequestTest extends V510ServerSetup {
 
     scenario("We will try to create Cardano transaction request with invalid address format", CreateTransactionRequestCardano, VersionOfApi) {
       When("We make a request v5.1.0 with invalid address")
-      val request510 = (v5_1_0_Request / "banks" / testBankId / "accounts" / testAccountId / Constant.SYSTEM_OWNER_VIEW_ID / "transaction-request-types" / "CARDANO" / "transaction-requests").POST <@(user1)
-      val cardanoTransactionRequestBody = TransactionRequestBodyCardanoJsonV510(
-        to = CardanoPaymentJsonV510(
+      val request510 = (v6_0_0_Request / "banks" / testBankId / "accounts" / testAccountId / Constant.SYSTEM_OWNER_VIEW_ID / "transaction-request-types" / "CARDANO" / "transaction-requests").POST <@(user1)
+      val cardanoTransactionRequestBody = TransactionRequestBodyCardanoJsonV600(
+        to = CardanoPaymentJsonV600(
           address = "invalid_address_format",
-          amount = CardanoAmountJsonV510(
+          amount = CardanoAmountJsonV600(
             quantity = 1000000,
             unit = "lovelace"
           )
@@ -299,7 +299,7 @@ class CardanoTransactionRequestTest extends V510ServerSetup {
 
     scenario("We will try to create Cardano transaction request with missing amount", CreateTransactionRequestCardano, VersionOfApi) {
       When("We make a request v5.1.0 with missing amount")
-      val request510 = (v5_1_0_Request / "banks" / testBankId / "accounts" / testAccountId / Constant.SYSTEM_OWNER_VIEW_ID / "transaction-request-types" / "CARDANO" / "transaction-requests").POST <@(user1)
+      val request510 = (v6_0_0_Request / "banks" / testBankId / "accounts" / testAccountId / Constant.SYSTEM_OWNER_VIEW_ID / "transaction-request-types" / "CARDANO" / "transaction-requests").POST <@(user1)
       val invalidJson = """
         {
           "to": {
@@ -322,11 +322,11 @@ class CardanoTransactionRequestTest extends V510ServerSetup {
 
     scenario("We will try to create Cardano transaction request with negative amount", CreateTransactionRequestCardano, VersionOfApi) {
       When("We make a request v5.1.0 with negative amount")
-      val request510 = (v5_1_0_Request / "banks" / testBankId / "accounts" / testAccountId / Constant.SYSTEM_OWNER_VIEW_ID / "transaction-request-types" / "CARDANO" / "transaction-requests").POST <@(user1)
-      val cardanoTransactionRequestBody = TransactionRequestBodyCardanoJsonV510(
-        to = CardanoPaymentJsonV510(
+      val request510 = (v6_0_0_Request / "banks" / testBankId / "accounts" / testAccountId / Constant.SYSTEM_OWNER_VIEW_ID / "transaction-request-types" / "CARDANO" / "transaction-requests").POST <@(user1)
+      val cardanoTransactionRequestBody = TransactionRequestBodyCardanoJsonV600(
+        to = CardanoPaymentJsonV600(
           address = "addr_test1qpv3se9ghq87ud29l0a8asy8nlqwd765e5zt4rc2z4mktqulwagn832cuzcjknfyxwzxz2p2kumx6n58tskugny6mrqs7fd23z",
-          amount = CardanoAmountJsonV510(
+          amount = CardanoAmountJsonV600(
             quantity = -1000000,
             unit = "lovelace"
           )
@@ -344,11 +344,11 @@ class CardanoTransactionRequestTest extends V510ServerSetup {
 
     scenario("We will try to create Cardano transaction request with invalid amount unit", CreateTransactionRequestCardano, VersionOfApi) {
       When("We make a request v5.1.0 with invalid amount unit")
-      val request510 = (v5_1_0_Request / "banks" / testBankId / "accounts" / testAccountId / Constant.SYSTEM_OWNER_VIEW_ID / "transaction-request-types" / "CARDANO" / "transaction-requests").POST <@(user1)
-      val cardanoTransactionRequestBody = TransactionRequestBodyCardanoJsonV510(
-        to = CardanoPaymentJsonV510(
+      val request510 = (v6_0_0_Request / "banks" / testBankId / "accounts" / testAccountId / Constant.SYSTEM_OWNER_VIEW_ID / "transaction-request-types" / "CARDANO" / "transaction-requests").POST <@(user1)
+      val cardanoTransactionRequestBody = TransactionRequestBodyCardanoJsonV600(
+        to = CardanoPaymentJsonV600(
           address = "addr_test1qpv3se9ghq87ud29l0a8asy8nlqwd765e5zt4rc2z4mktqulwagn832cuzcjknfyxwzxz2p2kumx6n58tskugny6mrqs7fd23z",
-          amount = CardanoAmountJsonV510(
+          amount = CardanoAmountJsonV600(
             quantity = 1000000,
             unit = "abc" // Invalid unit, should be "lovelace"
           )
@@ -366,11 +366,11 @@ class CardanoTransactionRequestTest extends V510ServerSetup {
 
     scenario("We will try to create Cardano transaction request with zero amount but no assets", CreateTransactionRequestCardano, VersionOfApi) {
       When("We make a request v5.1.0 with zero amount but no assets")
-      val request510 = (v5_1_0_Request / "banks" / testBankId / "accounts" / testAccountId / Constant.SYSTEM_OWNER_VIEW_ID / "transaction-request-types" / "CARDANO" / "transaction-requests").POST <@(user1)
-      val cardanoTransactionRequestBody = TransactionRequestBodyCardanoJsonV510(
-        to = CardanoPaymentJsonV510(
+      val request510 = (v6_0_0_Request / "banks" / testBankId / "accounts" / testAccountId / Constant.SYSTEM_OWNER_VIEW_ID / "transaction-request-types" / "CARDANO" / "transaction-requests").POST <@(user1)
+      val cardanoTransactionRequestBody = TransactionRequestBodyCardanoJsonV600(
+        to = CardanoPaymentJsonV600(
           address = "addr_test1qpv3se9ghq87ud29l0a8asy8nlqwd765e5zt4rc2z4mktqulwagn832cuzcjknfyxwzxz2p2kumx6n58tskugny6mrqs7fd23z",
-          amount = CardanoAmountJsonV510(
+          amount = CardanoAmountJsonV600(
             quantity = 0,
             unit = "lovelace"
           )
@@ -388,15 +388,15 @@ class CardanoTransactionRequestTest extends V510ServerSetup {
 
     scenario("We will try to create Cardano transaction request with invalid assets", CreateTransactionRequestCardano, VersionOfApi) {
       When("We make a request v5.1.0 with invalid assets")
-      val request510 = (v5_1_0_Request / "banks" / testBankId / "accounts" / testAccountId / Constant.SYSTEM_OWNER_VIEW_ID / "transaction-request-types" / "CARDANO" / "transaction-requests").POST <@(user1)
-      val cardanoTransactionRequestBody = TransactionRequestBodyCardanoJsonV510(
-        to = CardanoPaymentJsonV510(
+      val request510 = (v6_0_0_Request / "banks" / testBankId / "accounts" / testAccountId / Constant.SYSTEM_OWNER_VIEW_ID / "transaction-request-types" / "CARDANO" / "transaction-requests").POST <@(user1)
+      val cardanoTransactionRequestBody = TransactionRequestBodyCardanoJsonV600(
+        to = CardanoPaymentJsonV600(
           address = "addr_test1qpv3se9ghq87ud29l0a8asy8nlqwd765e5zt4rc2z4mktqulwagn832cuzcjknfyxwzxz2p2kumx6n58tskugny6mrqs7fd23z",
-          amount = CardanoAmountJsonV510(
+          amount = CardanoAmountJsonV600(
             quantity = 0,
             unit = "lovelace"
           ),
-          assets = Some(List(CardanoAssetJsonV510(
+          assets = Some(List(CardanoAssetJsonV600(
             policy_id = "",
             asset_name = "",
             quantity = 0
@@ -415,11 +415,11 @@ class CardanoTransactionRequestTest extends V510ServerSetup {
 
     scenario("We will try to create Cardano transaction request with invalid metadata", CreateTransactionRequestCardano, VersionOfApi) {
       When("We make a request v5.1.0 with invalid metadata")
-      val request510 = (v5_1_0_Request / "banks" / testBankId / "accounts" / testAccountId / Constant.SYSTEM_OWNER_VIEW_ID / "transaction-request-types" / "CARDANO" / "transaction-requests").POST <@(user1)
-      val cardanoTransactionRequestBody = TransactionRequestBodyCardanoJsonV510(
-        to = CardanoPaymentJsonV510(
+      val request510 = (v6_0_0_Request / "banks" / testBankId / "accounts" / testAccountId / Constant.SYSTEM_OWNER_VIEW_ID / "transaction-request-types" / "CARDANO" / "transaction-requests").POST <@(user1)
+      val cardanoTransactionRequestBody = TransactionRequestBodyCardanoJsonV600(
+        to = CardanoPaymentJsonV600(
           address = "addr_test1qpv3se9ghq87ud29l0a8asy8nlqwd765e5zt4rc2z4mktqulwagn832cuzcjknfyxwzxz2p2kumx6n58tskugny6mrqs7fd23z",
-          amount = CardanoAmountJsonV510(
+          amount = CardanoAmountJsonV600(
             quantity = 1000000,
             unit = "lovelace"
           )
@@ -427,7 +427,7 @@ class CardanoTransactionRequestTest extends V510ServerSetup {
         value = AmountOfMoneyJsonV121("lovelace", "1000000"),
         passphrase = passphrase,
         description = "ADA transfer with invalid metadata",
-        metadata = Some(Map("" -> CardanoMetadataStringJsonV510("")))
+        metadata = Some(Map("" -> CardanoMetadataStringJsonV600("")))
       )
       val response510 = makePostRequest(request510, write(cardanoTransactionRequestBody))
       Then("We should get a 400")

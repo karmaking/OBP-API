@@ -25,7 +25,7 @@ Berlin 13359, Germany
 
 import code.api.util.APIUtil._
 import code.api.util.{CallContext, ErrorMessages, NewStyle}
-import code.api.v5_1_0.TransactionRequestBodyCardanoJsonV510
+import code.api.v6_0_0.TransactionRequestBodyCardanoJsonV600
 import code.bankconnectors._
 import code.util.AkkaHttpClient._
 import code.util.Helper
@@ -61,9 +61,9 @@ trait CardanoConnector_vJun2025 extends Connector with MdcLoggable {
     callContext: Option[CallContext]): OBPReturnType[Box[TransactionId]] = {
 
     for {
-      failMsg <- Future.successful(s"${ErrorMessages.InvalidJsonFormat} The transaction request body should be $TransactionRequestBodyCardanoJsonV510")
+      failMsg <- Future.successful(s"${ErrorMessages.InvalidJsonFormat} The transaction request body should be $TransactionRequestBodyCardanoJsonV600")
       transactionRequestBodyCardano <- NewStyle.function.tryons(failMsg, 400, callContext) {
-        transactionRequestCommonBody.asInstanceOf[TransactionRequestBodyCardanoJsonV510]
+        transactionRequestCommonBody.asInstanceOf[TransactionRequestBodyCardanoJsonV600]
       }
 
       walletId = fromAccount.accountId.value
@@ -120,7 +120,7 @@ trait CardanoConnector_vJun2025 extends Connector with MdcLoggable {
    * Amount is always required in Cardano transactions
    * Supports different payment types: ADA only, Token only, ADA + Token
    */
-  private def buildPaymentsArray(transactionRequestBodyCardano: TransactionRequestBodyCardanoJsonV510): String = {
+  private def buildPaymentsArray(transactionRequestBodyCardano: TransactionRequestBodyCardanoJsonV600): String = {
     val address = transactionRequestBodyCardano.to.address
     
     // Amount is always required in Cardano
@@ -171,7 +171,7 @@ trait CardanoConnector_vJun2025 extends Connector with MdcLoggable {
    * Build metadata JSON for Cardano API
    * Supports simple string metadata format
    */
-  private def buildMetadataJson(transactionRequestBodyCardano: TransactionRequestBodyCardanoJsonV510): String = {
+  private def buildMetadataJson(transactionRequestBodyCardano: TransactionRequestBodyCardanoJsonV600): String = {
     transactionRequestBodyCardano.metadata match {
       case Some(metadata) if metadata.nonEmpty => {
         val metadataEntries = metadata.map { case (label, metadataObj) =>

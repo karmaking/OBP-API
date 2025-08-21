@@ -16,6 +16,7 @@ import code.api.v3_1_0._
 import code.api.v4_0_0._
 import code.api.v5_0_0._
 import code.api.v5_1_0._
+import code.api.v6_0_0._
 import code.branches.Branches.{Branch, DriveUpString, LobbyString}
 import code.connectormethod.{JsonConnectorMethod, JsonConnectorMethodMethodBody}
 import code.consent.ConsentStatus
@@ -5699,13 +5700,13 @@ object SwaggerDefinitionsJSON {
   )
 
 
-  lazy val cardanoPaymentJsonV510 = CardanoPaymentJsonV510(
+  lazy val cardanoPaymentJsonV600 = CardanoPaymentJsonV600(
     address = "addr_test1qpv3se9ghq87ud29l0a8asy8nlqwd765e5zt4rc2z4mktqulwagn832cuzcjknfyxwzxz2p2kumx6n58tskugny6mrqs7fd12",
-    amount = CardanoAmountJsonV510(
+    amount = CardanoAmountJsonV600(
       quantity = 1000000,
       unit = "lovelace"
     ),
-    assets = Some(List(CardanoAssetJsonV510(
+    assets = Some(List(CardanoAssetJsonV600(
       policy_id = "policy1234567890abcdef",
       asset_name = "4f47435241",
       quantity = 10
@@ -5713,29 +5714,29 @@ object SwaggerDefinitionsJSON {
   )
 
   // Example for Send ADA with Token only (no ADA amount)
-  lazy val cardanoPaymentTokenOnlyJsonV510 = CardanoPaymentJsonV510(
+  lazy val cardanoPaymentTokenOnlyJsonV510 = CardanoPaymentJsonV600(
     address = "addr_test1qpv3se9ghq87ud29l0a8asy8nlqwd765e5zt4rc2z4mktqulwagn832cuzcjknfyxwzxz2p2kumx6n58tskugny6mrqs7fd12",
-    amount = CardanoAmountJsonV510(
+    amount = CardanoAmountJsonV600(
       quantity = 0,
       unit = "lovelace"
     ),
-    assets = Some(List(CardanoAssetJsonV510(
+    assets = Some(List(CardanoAssetJsonV600(
       policy_id = "policy1234567890abcdef",
       asset_name = "4f47435241",
       quantity = 10
     )))
   )
 
-  lazy val cardanoMetadataStringJsonV510 = CardanoMetadataStringJsonV510(
+  lazy val cardanoMetadataStringJsonV600 = CardanoMetadataStringJsonV600(
     string = "Hello Cardano"
   )
 
-  lazy val transactionRequestBodyCardanoJsonV510 = TransactionRequestBodyCardanoJsonV510(
-    to =  cardanoPaymentJsonV510,
+  lazy val transactionRequestBodyCardanoJsonV600 = TransactionRequestBodyCardanoJsonV600(
+    to =  cardanoPaymentJsonV600,
     value = amountOfMoneyJsonV121,
     passphrase = "password1234!",
     description = descriptionExample.value,
-    metadata = Some(Map("202507022319" -> cardanoMetadataStringJsonV510))
+    metadata = Some(Map("202507022319" -> cardanoMetadataStringJsonV600))
   )
   
   //The common error or success format.

@@ -52,7 +52,7 @@ import com.openbankproject.commons.model._
 import com.openbankproject.commons.util.ApiVersion
 import net.liftweb.common.{Box, Full}
 import net.liftweb.json
-import net.liftweb.json.{JString, JValue, MappingException, parse, parseOpt}
+import net.liftweb.json.{Meta, _}
 
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -579,35 +579,6 @@ case class ConsentRequestToAccountJson(
   branch_routing: BranchRoutingJsonV141,
   limit: PostCounterpartyLimitV510
 )
-
-case class CardanoPaymentJsonV510(
-  address: String,
-  amount: CardanoAmountJsonV510,
-  assets: Option[List[CardanoAssetJsonV510]] = None
-)
-
-case class CardanoAmountJsonV510(
-  quantity: Long,
-  unit: String // "lovelace"
-)
-
-case class CardanoAssetJsonV510(
-  policy_id: String,
-  asset_name: String,
-  quantity: Long
-)
-
-case class CardanoMetadataStringJsonV510(
-  string: String
-)
-
-case class TransactionRequestBodyCardanoJsonV510(
-  to: CardanoPaymentJsonV510,
-  value: AmountOfMoneyJsonV121,
-  passphrase: String, 
-  description: String,
-  metadata: Option[Map[String, CardanoMetadataStringJsonV510]] = None
-) extends TransactionRequestCommonBodyJSON
 
 case class CreateViewPermissionJson(
   permission_name: String,

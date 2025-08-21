@@ -13,7 +13,7 @@ import code.api.util.newstyle.ViewNewStyle
 import code.api.v1_4_0.JSONFactory1_4_0.TransactionRequestAccountJsonV140
 import code.api.v2_1_0._
 import code.api.v4_0_0._
-import code.api.v5_1_0.TransactionRequestBodyCardanoJsonV510
+import code.api.v6_0_0.TransactionRequestBodyCardanoJsonV600
 import code.branches.MappedBranch
 import code.fx.fx
 import code.fx.fx.TTL
@@ -758,7 +758,7 @@ object LocalMappedConnectorInternal extends MdcLoggable {
 //        case CARDANO =>
 //          for{
 //            transactionRequestBodyCardanoJson <- NewStyle.function.tryons(s"${InvalidJsonFormat}, it should be $CARD json format", 400, callContext) {
-//              json.extract[TransactionRequestBodyCardanoJsonV510]
+//              json.extract[TransactionRequestBodyCardanoJsonV600]
 //            }
 //            (account, callContext) <- NewStyle.function.getBankAccountByRouting(
 //              None, //No need  for the bankId, only to address is enough
@@ -1359,8 +1359,8 @@ object LocalMappedConnectorInternal extends MdcLoggable {
         case CARDANO => {
           for {
             //For CARDANO, we will create/get toCounterparty on site and set up the toAccount, fromAccount we need to prepare before .
-            transactionRequestBodyCardano <- NewStyle.function.tryons(s"${InvalidJsonFormat} It should be $TransactionRequestBodyCardanoJsonV510 json format", 400, callContext) {
-              json.extract[TransactionRequestBodyCardanoJsonV510]
+            transactionRequestBodyCardano <- NewStyle.function.tryons(s"${InvalidJsonFormat} It should be $TransactionRequestBodyCardanoJsonV600 json format", 400, callContext) {
+              json.extract[TransactionRequestBodyCardanoJsonV600]
             }
             
             // Validate Cardano specific fields
