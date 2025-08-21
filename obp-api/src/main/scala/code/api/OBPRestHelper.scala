@@ -643,8 +643,26 @@ trait OBPRestHelper extends RestHelper with MdcLoggable {
                                apiPrefix:OBPEndpoint => OBPEndpoint,
                                autoValidateAll: Boolean = false): Unit = {
 
-    def isAutoValidate(doc: ResourceDoc): Boolean = {                         //note: only support v5.1.0,  v5.0.0 and v4.0.0 at the moment.
-      doc.isValidateEnabled || (autoValidateAll && !doc.isValidateDisabled && List(OBPAPI6_0_0.version,OBPAPI5_1_0.version,OBPAPI5_0_0.version,OBPAPI4_0_0.version).contains(doc.implementedInApiVersion))
+    def isAutoValidate(doc: ResourceDoc): Boolean = {                         //note: auto support v4.0.0 and later versions
+      doc.isValidateEnabled || (autoValidateAll && !doc.isValidateDisabled && {
+        // Auto support v4.0.0 and all later versions
+        val docVersion = doc.implementedInApiVersion
+        // Check if the version is v4.0.0 or later by comparing the version string
+        docVersion match {
+          case v: ScannedApiVersion => 
+            // Extract version numbers and compare
+            val versionStr = v.apiShortVersion.replace("v", "")
+            val parts = versionStr.split("\\.")
+            if (parts.length >= 2) {
+              val major = parts(0).toInt
+              val minor = parts(1).toInt
+              major > 4 || (major == 4 && minor >= 0)
+            } else {
+              false
+            }
+          case _ => false
+        }
+      })
     }
 
     for(route <- routes) {
