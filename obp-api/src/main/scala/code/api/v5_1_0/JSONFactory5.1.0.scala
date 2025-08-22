@@ -181,7 +181,7 @@ case class AllConsentJsonV510(consent_reference_id: String,
                               api_version: String,
                               note: String,
                              )
-case class ConsentsJsonV510(consents: List[AllConsentJsonV510])
+case class ConsentsJsonV510(total_pages: Int, consents: List[AllConsentJsonV510])
 
 
 case class CurrencyJsonV510(alphanumeric_code: String)
@@ -978,9 +978,10 @@ object JSONFactory510 extends CustomJsonFormats with MdcLoggable {
       }
     )
   }
-  def createConsentsJsonV510(consents: List[MappedConsent]): ConsentsJsonV510 = {
+  def createConsentsJsonV510(consents: List[MappedConsent], totalPages: Int): ConsentsJsonV510 = {
     ConsentsJsonV510(
-      consents.map { c =>
+      total_pages = totalPages,
+      consents = consents.map { c =>
         val jwtPayload = JwtUtil
           .getSignedPayloadAsJson(c.jsonWebToken)
           .flatMap { payload =>

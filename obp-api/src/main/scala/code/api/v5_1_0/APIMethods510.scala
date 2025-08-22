@@ -1670,12 +1670,12 @@ trait APIMethods510 {
           for {
             httpParams <- NewStyle.function.extractHttpParamsFromUrl(cc.url)
             (obpQueryParams, callContext) <- createQueriesByHttpParamsFuture(httpParams, cc.callContext)
-            consents <- Future {
+            (consents, totalPages) <- Future {
               Consents.consentProvider.vend.getConsents(obpQueryParams)
             }
           } yield {
             val consentsOfBank = Consent.filterByBankId(consents, bankId)
-            (createConsentsJsonV510(consentsOfBank), HttpCode.`200`(callContext))
+            (createConsentsJsonV510(consentsOfBank, totalPages), HttpCode.`200`(callContext))
           }
       }
     }
@@ -1732,11 +1732,11 @@ trait APIMethods510 {
           for {
             httpParams <- NewStyle.function.extractHttpParamsFromUrl(cc.url)
             (obpQueryParams, callContext) <- createQueriesByHttpParamsFuture(httpParams, cc.callContext)
-            consents <- Future {
+            (consents, totalPages) <- Future {
               Consents.consentProvider.vend.getConsents(obpQueryParams)
             }
           } yield {
-            (createConsentsJsonV510(consents), HttpCode.`200`(callContext))
+            (createConsentsJsonV510(consents, totalPages), HttpCode.`200`(callContext))
           }
       }
     }
