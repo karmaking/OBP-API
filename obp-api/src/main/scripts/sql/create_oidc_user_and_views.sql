@@ -88,12 +88,12 @@
 -- OIDC user credentials
 -- ⚠️  SECURITY: Change this to a strong password (20+ chars, mixed case, numbers, symbols)
 \set OIDC_USER 'oidc_user'
-\set OIDC_PASSWORD 'CHANGE_THIS_TO_A_VERY_STRONG_PASSWORD_2024!'
+\set OIDC_PASSWORD 'lakij8777fagg'
 
 -- OIDC admin user credentials (for client administration)
 -- ⚠️  SECURITY: Change this to a strong password (20+ chars, mixed case, numbers, symbols)
 \set OIDC_ADMIN_USER 'oidc_admin'
-\set OIDC_ADMIN_PASSWORD 'CHANGE_THIS_TO_A_VERY_STRONG_ADMIN_PASSWORD_2025!'
+\set OIDC_ADMIN_PASSWORD 'fhka77uefassEE'
 
 -- =============================================================================
 -- 1. Connect to the OBP database
@@ -107,8 +107,16 @@
 \echo 'Creating OIDC user role...'
 
 -- Drop the users if they already exist (for re-running the script)
+
 DROP USER IF EXISTS :OIDC_USER;
 DROP USER IF EXISTS :OIDC_ADMIN_USER;
+
+-- NOTE above will NOT drop if the users own other objects (which they will)
+-- so to make sure we change the password use:
+
+ALTER ROLE :OIDC_USER WITH PASSWORD :OIDC_PASSWORD;
+ALTER ROLE :OIDC_ADMIN_USER WITH PASSWORD :OIDC_ADMIN_PASSWORD;
+
 
 -- Create the OIDC user with limited privileges
 CREATE USER :OIDC_USER WITH
