@@ -1,3 +1,49 @@
+-- HOW TO RUN THIS SCRIPT
+
+-- For those of us that don't use postgres every day:
+
+-- 1) You will need to have access to a postgres user that can create roles and views etc.
+-- 2) You will probably want that postgres user to have easy access to your file system so you can run this script and tweak it if need be.
+
+--That means.
+
+--1) You probably want to have a postgres user with the same name as your linux or mac username.
+
+--So:
+
+
+--sudo -u postgres psql
+
+--CREATE ROLE <YOURLINUXUSERNAME> WITH LOGIN SUPERUSER CREATEDB CREATEROLE;
+
+
+--this step is not required but
+
+--CREATE DATABASE <YOURLINUXUSERNAME> OWNER <YOURLINUXUSERNAME>;
+
+--now quit with \q
+
+--now psql
+
+--now you will be logged in and have access to your normal home directory.
+
+--now connect to the OBP database you want e.g.:
+
+--\c sandbox
+
+--now run the script from within the psql shell:
+
+--\i ~/Documents/workspace_2024/OBP-API-C/OBP-API/obp-api/src/main/scripts/sql/create_oidc_user_and_views.sql
+
+
+--or run it from the linux terminal specifying the database
+
+--psql -d sandbox -f ~/Documents/workspace_2024/OBP-API-C/OBP-API/obp-api/src/main/scripts/sql/create_oidc_user_and_views.sql
+
+--either way, check the output of the script carefully.
+
+--you might want to login as the oidc_user and try the two views you have access to.
+
 -- =============================================================================
 -- OBP-API OIDC User Setup Script
 -- =============================================================================
@@ -25,9 +71,12 @@
 
 -- e.g.
 
--- psql -h localhost -p 5432 -d sandbox -U obp -f OBP-API/obp-api/src/main/scripts/sql/create_oidc_user_and_views.sql
+-- psql -h localhost -p 5432 -d sandbox -U obp -f ~/Documents/workspace_2024/OBP-API-C/OBP-API/obp-api/src/main/scripts/sql/create_oidc_user_and_views.sql
 
 
+--psql -d sandbox -f ~/Documents/workspace_2024/OBP-API-C/OBP-API/obp-api/src/main/scripts/sql/create_oidc_user_and_views.sql
+
+-- If any difficulties see the TOP OF THIS FILE for step by step instructions.
 -- =============================================================================
 
 -- Database connection parameters (update these to match your OBP configuration)
