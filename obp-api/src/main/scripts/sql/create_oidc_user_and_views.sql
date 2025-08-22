@@ -173,6 +173,8 @@ SELECT
     'authorization_code,refresh_token' as grant_types,  -- Default OIDC grant types
     'openid,profile,email' as scopes,                   -- Default OIDC scopes
     name as client_name,
+    'code' as response_types,
+    'client_secret_post' as token_endpoint_auth_method,
     createdat as created_at
 FROM consumer
 WHERE isactive = true  -- Only expose active consumers to OIDC service
