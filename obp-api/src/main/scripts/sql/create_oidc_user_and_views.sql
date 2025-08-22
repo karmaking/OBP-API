@@ -90,6 +90,11 @@
 \set OIDC_USER 'oidc_user'
 \set OIDC_PASSWORD 'CHANGE_THIS_TO_A_VERY_STRONG_PASSWORD_2024!'
 
+-- OIDC admin user credentials (for client administration)
+-- ⚠️  SECURITY: Change this to a strong password (20+ chars, mixed case, numbers, symbols)
+\set OIDC_ADMIN_USER 'oidc_admin'
+\set OIDC_ADMIN_PASSWORD 'CHANGE_THIS_TO_A_VERY_STRONG_ADMIN_PASSWORD_2025!'
+
 -- =============================================================================
 -- 1. Connect to the OBP database
 -- =============================================================================
@@ -101,8 +106,9 @@
 -- =============================================================================
 \echo 'Creating OIDC user role...'
 
--- Drop the user if it already exists (for re-running the script)
+-- Drop the users if they already exist (for re-running the script)
 DROP USER IF EXISTS :OIDC_USER;
+DROP USER IF EXISTS :OIDC_ADMIN_USER;
 
 -- Create the OIDC user with limited privileges
 CREATE USER :OIDC_USER WITH
@@ -118,7 +124,21 @@ CREATE USER :OIDC_USER WITH
 -- Set connection limit for the OIDC user
 ALTER USER :OIDC_USER CONNECTION LIMIT 10;
 
-\echo 'OIDC user created successfully.'
+-- Create the OIDC admin user with limited privileges
+CREATE USER :OIDC_ADMIN_USER WITH
+    PASSWORD :'OIDC_ADMIN_PASSWORD'
+    NOSUPERUSER
+    NOCREATEDB
+    NOCREATEROLE
+    NOINHERIT
+    LOGIN
+    NOREPLICATION
+    NOBYPASSRLS;
+
+-- Set connection limit for the OIDC admin user
+ALTER USER :OIDC_ADMIN_USER CONNECTION LIMIT 5;
+
+\echo 'OIDC users created successfully.'
 
 -- =============================================================================
 -- 3. Create read-only view for authuser table
@@ -186,28 +206,89 @@ COMMENT ON VIEW v_oidc_clients IS 'Read-only view of consumer table for OIDC ser
 \echo 'OIDC clients view created successfully.'
 
 -- =============================================================================
+-- 3c. Create read-write view for consumer table administration (OIDC clients admin)
+-- =============================================================================
+\echo 'Creating admin view for OIDC client management...'
+
+-- Drop the view if it already exists
+DROP VIEW IF EXISTS v_oidc_admin_clients CASCADE;
+
+-- Create a view that exposes all consumer fields for full CRUD operations
+CREATE VIEW v_oidc_admin_clients AS
+SELECT
+    id,
+    COALESCE(consumerid, id::varchar) as consumer_id,
+    key,
+    secret,
+    azp,
+    aud,
+    iss,
+    sub,
+    isactive,
+    name,
+    apptype,
+    description,
+    developeremail,
+    redirecturl,
+    logourl,
+    userauthenticationurl,
+    createdbyuserid,
+    persecondcalllimit,
+    perminutecalllimit,
+    perhourcalllimit,
+    perdaycalllimit,
+    perweekcalllimit,
+    permonthcalllimit,
+    clientcertificate,
+    company,
+    createdat,
+    updatedat
+FROM consumer
+ORDER BY name;
+
+-- Add comment to the view for documentation
+COMMENT ON VIEW v_oidc_admin_clients IS 'Full admin view of consumer table for OIDC service administration. Provides complete CRUD access to all consumer fields for client management operations.';
+
+\echo 'OIDC admin clients view created successfully.'
+
+-- =============================================================================
 -- 4. Grant appropriate permissions to OIDC user
 -- =============================================================================
 \echo 'Granting permissions to OIDC user...'
 
 -- Grant CONNECT privilege on the database
 GRANT CONNECT ON DATABASE :DB_NAME TO :OIDC_USER;
+GRANT CONNECT ON DATABASE :DB_NAME TO :OIDC_ADMIN_USER;
 
 -- Grant USAGE on the public schema (or specific schema where authuser exists)
 GRANT USAGE ON SCHEMA public TO :OIDC_USER;
+GRANT USAGE ON SCHEMA public TO :OIDC_ADMIN_USER;
 
--- Grant SELECT permission on the OIDC views
+-- Grant SELECT permission on the OIDC views (oidc_user - read-only access)
 GRANT SELECT ON v_oidc_users TO :OIDC_USER;
 GRANT SELECT ON v_oidc_clients TO :OIDC_USER;
 
--- Explicitly revoke any other permissions to ensure read-only access
+-- Grant full CRUD permissions on the admin view and underlying consumer table (oidc_admin_user only)
+GRANT SELECT, INSERT, UPDATE, DELETE ON consumer TO :OIDC_ADMIN_USER;
+GRANT SELECT, INSERT, UPDATE, DELETE ON v_oidc_admin_clients TO :OIDC_ADMIN_USER;
+
+-- Explicitly revoke any other permissions to ensure proper access control
 REVOKE ALL PRIVILEGES ON ALL TABLES IN SCHEMA public FROM :OIDC_USER;
 REVOKE ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public FROM :OIDC_USER;
 REVOKE ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA public FROM :OIDC_USER;
 
--- Grant SELECT on the views again (in case they were revoked above)
+REVOKE ALL PRIVILEGES ON ALL TABLES IN SCHEMA public FROM :OIDC_ADMIN_USER;
+REVOKE ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public FROM :OIDC_ADMIN_USER;
+REVOKE ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA public FROM :OIDC_ADMIN_USER;
+
+-- Grant permissions on the views again (in case they were revoked above)
+-- OIDC_USER: Read-only access to users and active clients
 GRANT SELECT ON v_oidc_users TO :OIDC_USER;
 GRANT SELECT ON v_oidc_clients TO :OIDC_USER;
+
+-- OIDC_ADMIN_USER: Full CRUD access to client administration
+GRANT SELECT, INSERT, UPDATE, DELETE ON consumer TO :OIDC_ADMIN_USER;
+GRANT SELECT, INSERT, UPDATE, DELETE ON v_oidc_admin_clients TO :OIDC_ADMIN_USER;
 
 \echo 'Permissions granted successfully.'
 
@@ -221,6 +302,10 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE ALL ON TABLES FROM :OIDC_USER;
 ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE ALL ON SEQUENCES FROM :OIDC_USER;
 ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE ALL ON FUNCTIONS FROM :OIDC_USER;
 
+ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE ALL ON TABLES FROM :OIDC_ADMIN_USER;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE ALL ON SEQUENCES FROM :OIDC_ADMIN_USER;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE ALL ON FUNCTIONS FROM :OIDC_ADMIN_USER;
+
 
 
 \echo 'Security measures implemented successfully.'
@@ -230,10 +315,14 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE ALL ON FUNCTIONS FROM :OIDC_USE
 -- =============================================================================
 \echo 'Verifying OIDC setup...'
 
--- Check if user exists
-SELECT 'User exists: ' || CASE WHEN EXISTS (
+-- Check if users exist
+SELECT 'OIDC User exists: ' || CASE WHEN EXISTS (
     SELECT 1 FROM pg_user WHERE usename = :'OIDC_USER'
-) THEN 'YES' ELSE 'NO' END AS user_check;
+) THEN 'YES' ELSE 'NO' END AS oidc_user_check;
+
+SELECT 'OIDC Admin User exists: ' || CASE WHEN EXISTS (
+    SELECT 1 FROM pg_user WHERE usename = :'OIDC_ADMIN_USER'
+) THEN 'YES' ELSE 'NO' END AS oidc_admin_user_check;
 
 -- Check if views exist and have data
 SELECT 'Users view exists: ' || CASE WHEN EXISTS (
@@ -246,6 +335,11 @@ SELECT 'Clients view exists: ' || CASE WHEN EXISTS (
     WHERE table_name = 'v_oidc_clients' AND table_schema = 'public'
 ) THEN 'YES' ELSE 'NO' END AS clients_view_check;
 
+SELECT 'Admin clients view exists: ' || CASE WHEN EXISTS (
+    SELECT 1 FROM information_schema.views
+    WHERE table_name = 'v_oidc_admin_clients' AND table_schema = 'public'
+) THEN 'YES' ELSE 'NO' END AS admin_clients_view_check;
+
 -- Show row counts in the views (if accessible)
 SELECT 'Validated users count: ' || COUNT(*) AS user_count
 FROM v_oidc_users;
@@ -253,7 +347,11 @@ FROM v_oidc_users;
 SELECT 'Active clients count: ' || COUNT(*) AS client_count
 FROM v_oidc_clients;
 
--- Display the permissions granted to OIDC user
+SELECT 'Total clients count (admin view): ' || COUNT(*) AS total_client_count
+FROM v_oidc_admin_clients;
+
+-- Display the permissions granted to OIDC users
+SELECT 'OIDC_USER permissions:' AS permission_info;
 SELECT
     table_schema,
     table_name,
@@ -261,6 +359,16 @@ SELECT
     is_grantable
 FROM information_schema.role_table_grants
 WHERE grantee = :'OIDC_USER'
+ORDER BY table_schema, table_name;
+
+SELECT 'OIDC_ADMIN_USER permissions:' AS permission_info;
+SELECT
+    table_schema,
+    table_name,
+    privilege_type,
+    is_grantable
+FROM information_schema.role_table_grants
+WHERE grantee = :'OIDC_ADMIN_USER'
 ORDER BY table_schema, table_name;
 
 -- =============================================================================
@@ -275,15 +383,25 @@ ORDER BY table_schema, table_name;
 \echo 'Database Host: ' :DB_HOST
 \echo 'Database Port: ' :DB_PORT
 \echo 'Database Name: ' :DB_NAME
+\echo ''
+\echo 'OIDC User (read-only):'
 \echo 'Username: ' :OIDC_USER
 \echo 'Password: [REDACTED - check script variables]'
-\echo ''
 \echo 'Available views: v_oidc_users, v_oidc_clients'
 \echo 'Permissions: SELECT only (read-only access)'
 \echo ''
+\echo 'OIDC Admin User (full CRUD for client management):'
+\echo 'Username: ' :OIDC_ADMIN_USER
+\echo 'Password: [REDACTED - check script variables]'
+\echo 'Available views: v_oidc_admin_clients'
+\echo 'Permissions: SELECT, INSERT, UPDATE, DELETE (full CRUD access)'
+\echo ''
 \echo 'Test connection commands:'
+\echo '# OIDC User (read-only):'
 \echo 'psql -h ' :DB_HOST ' -p ' :DB_PORT ' -d ' :DB_NAME ' -U ' :OIDC_USER ' -c "SELECT COUNT(*) FROM v_oidc_users;"'
 \echo 'psql -h ' :DB_HOST ' -p ' :DB_PORT ' -d ' :DB_NAME ' -U ' :OIDC_USER ' -c "SELECT COUNT(*) FROM v_oidc_clients;"'
+\echo '# OIDC Admin User (full CRUD):'
+\echo 'psql -h ' :DB_HOST ' -p ' :DB_PORT ' -d ' :DB_NAME ' -U ' :OIDC_ADMIN_USER ' -c "SELECT COUNT(*) FROM v_oidc_admin_clients;"'
 \echo ''
 \echo '====================================================================='
 \echo '⚠️  CRITICAL SECURITY WARNINGS ⚠️'
@@ -318,9 +436,10 @@ ORDER BY table_schema, table_name;
 \echo '   - Regular security audits of database access'
 \echo ''
 \echo 'BASIC INFO:'
-\echo '- The OIDC user has read-only access to validated authuser records only'
-\echo '- The OIDC user has read-only access to active client records only'
-\echo '- Connection limit is set to 10 concurrent connections'
+\echo '- OIDC_USER: Read-only access to validated authuser records and active clients'
+\echo '- OIDC_ADMIN_USER: Full CRUD access to all client records for administration'
+\echo '- OIDC_USER connection limit: 10 concurrent connections'
+\echo '- OIDC_ADMIN_USER connection limit: 5 concurrent connections'
 \echo '- Client view uses hardcoded grant_types and scopes (consider adding to schema)'
 
 \echo ''
