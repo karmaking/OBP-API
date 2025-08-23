@@ -143,6 +143,9 @@ CREATE USER :OIDC_ADMIN_USER WITH
     NOREPLICATION
     NOBYPASSRLS;
 
+    -- need this so the admin can create rows
+    GRANT USAGE, SELECT ON SEQUENCE consumer_id_seq TO :OIDC_ADMIN_USER;
+
 -- Set connection limit for the OIDC admin user
 ALTER USER :OIDC_ADMIN_USER CONNECTION LIMIT 5;
 
@@ -195,7 +198,7 @@ DROP VIEW IF EXISTS v_oidc_clients CASCADE;
 -- TODO: Add grant_types and scopes fields to consumer table if needed for full OIDC compliance
 CREATE VIEW v_oidc_clients AS
 SELECT
-    COALESCE(consumerid, id::varchar) as client_id,  -- Use consumerId if available, otherwise id
+    key_c as client_id,
     secret as client_secret,
     redirecturl as redirect_uris,
     'authorization_code,refresh_token' as grant_types,  -- Default OIDC grant types
