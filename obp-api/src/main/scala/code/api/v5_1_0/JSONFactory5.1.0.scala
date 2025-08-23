@@ -171,6 +171,8 @@ case class PutConsentPayloadJsonV510(access: ConsentAccessJson)
 case class AllConsentJsonV510(consent_reference_id: String,
                               consumer_id: String,
                               created_by_user_id: String,
+                              provider: Box[String],
+                              provider_id: Box[String],
                               status: String,
                               last_action_date: String,
                               last_usage_date: String,
@@ -959,17 +961,22 @@ object JSONFactory510 extends CustomJsonFormats with MdcLoggable {
   }
 
   def createConsentsInfoJsonV510(consents: List[MappedConsent]): ConsentsInfoJsonV510 = {
+
     ConsentsInfoJsonV510(
       consents.map { c =>
-        val jwtPayload: Box[ConsentJWT] = JwtUtil.getSignedPayloadAsJson(c.jsonWebToken).map(parse(_).extract[ConsentJWT])
+        val jwtPayload: Box[ConsentJWT] =
+          JwtUtil.getSignedPayloadAsJson(c.jsonWebToken).map(parse(_).extract[ConsentJWT])
+
         ConsentInfoJsonV510(
           consent_reference_id = c.consentReferenceId,
           consent_id = c.consentId,
           consumer_id = c.consumerId,
           created_by_user_id = c.userId,
           status = c.status,
-          last_action_date = if (c.lastActionDate != null) new SimpleDateFormat(DateWithDay).format(c.lastActionDate) else null,
-          last_usage_date = if (c.usesSoFarTodayCounterUpdatedAt != null) new SimpleDateFormat(DateWithSeconds).format(c.usesSoFarTodayCounterUpdatedAt) else null,
+          last_action_date =
+            if (c.lastActionDate != null) new SimpleDateFormat(DateWithDay).format(c.lastActionDate) else null,
+          last_usage_date =
+            if (c.usesSoFarTodayCounterUpdatedAt != null) new SimpleDateFormat(DateWithSeconds).format(c.usesSoFarTodayCounterUpdatedAt) else null,
           jwt = c.jsonWebToken,
           jwt_payload = jwtPayload,
           api_standard = c.apiStandard,
@@ -978,7 +985,15 @@ object JSONFactory510 extends CustomJsonFormats with MdcLoggable {
       }
     )
   }
+
   def createConsentsJsonV510(consents: List[MappedConsent], totalPages: Int): ConsentsJsonV510 = {
+    // Temporary cache (cleared after function ends)
+    val cache = scala.collection.mutable.HashMap.empty[String, Box[User]]
+
+    // Cached lookup
+    def getUserCached(userId: String): Box[User] = {
+      cache.getOrElseUpdate(userId, Users.users.vend.getUserByUserId(userId))
+    }
     ConsentsJsonV510(
       total_pages = totalPages,
       consents = consents.map { c =>
@@ -996,6 +1011,8 @@ object JSONFactory510 extends CustomJsonFormats with MdcLoggable {
           consent_reference_id = c.consentReferenceId,
           consumer_id = c.consumerId,
           created_by_user_id = c.userId,
+          provider = getUserCached(c.userId).map(_.provider), // cached version
+          provider_id = getUserCached(c.userId).map(_.idGivenByProvider), // cached version
           status = c.status,
           last_action_date = if (c.lastActionDate != null) new SimpleDateFormat(DateWithDay).format(c.lastActionDate) else null,
           last_usage_date = if (c.usesSoFarTodayCounterUpdatedAt != null) new SimpleDateFormat(DateWithSeconds).format(c.usesSoFarTodayCounterUpdatedAt) else null,
