@@ -224,33 +224,25 @@ DROP VIEW IF EXISTS v_oidc_admin_clients CASCADE;
 -- Create a view that exposes all consumer fields for full CRUD operations
 CREATE VIEW v_oidc_admin_clients AS
 SELECT
-    id,
-    COALESCE(consumerid, id::varchar) as consumer_id,
-    key,
-    secret,
-    azp,
-    aud,
-    iss,
-    sub,
-    isactive,
-    name,
-    apptype,
-    description,
-    developeremail,
-    redirecturl,
-    logourl,
-    userauthenticationurl,
-    createdbyuserid,
-    persecondcalllimit,
-    perminutecalllimit,
-    perhourcalllimit,
-    perdaycalllimit,
-    perweekcalllimit,
-    permonthcalllimit,
-    clientcertificate,
-    company,
-    createdat,
-    updatedat
+name
+,apptype
+,description
+,developeremail
+,sub
+,consumerid
+,createdat
+,updatedat
+,secret
+,azp
+,aud
+,iss
+,redirecturl
+,logourl
+,userauthenticationurl
+,clientcertificate
+,company
+,key_c
+,isactive
 FROM consumer
 ORDER BY name;
 
