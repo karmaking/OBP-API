@@ -315,18 +315,26 @@ object OAuth2Login extends RestHelper with MdcLoggable {
     def getOrCreateResourceUser(idToken: String): Box[User] = {
       val uniqueIdGivenByProvider = JwtUtil.getSubject(idToken).getOrElse("")
       val provider = resolveProvider(idToken)
-      Users.users.vend.getUserByProviderId(provider = provider, idGivenByProvider = uniqueIdGivenByProvider).or { // Find a user
-        Users.users.vend.createResourceUser( // Otherwise create a new one
-          provider = provider,
-          providerId = Some(uniqueIdGivenByProvider),
-          None,
-          name = getClaim(name = "given_name", idToken = idToken).orElse(Some(uniqueIdGivenByProvider)),
-          email = getClaim(name = "email", idToken = idToken),
-          userId = None,
-          createdByUserInvitationId = None,
-          company = None,
-          lastMarketingAgreementSignedDate = None
-        )
+      KeycloakFederatedUserReference.parse(uniqueIdGivenByProvider) match {
+        case Right(fedRef) => // Users log on via Keycloak, which uses User Federation to access the external OBP database.
+          logger.debug(s"External ID = ${fedRef.externalId}")
+          logger.debug(s"Storage Provider ID = ${fedRef.storageProviderId}")
+          Users.users.vend.getUserByResourceUserId(fedRef.externalId)
+        case Left(error) =>
+          logger.debug(s"Parse error: $error")
+          Users.users.vend.getUserByProviderId(provider = provider, idGivenByProvider = uniqueIdGivenByProvider).or { // Find a user
+            Users.users.vend.createResourceUser( // Otherwise create a new one
+              provider = provider,
+              providerId = Some(uniqueIdGivenByProvider),
+              None,
+              name = getClaim(name = "given_name", idToken = idToken).orElse(Some(uniqueIdGivenByProvider)),
+              email = getClaim(name = "email", idToken = idToken),
+              userId = None,
+              createdByUserInvitationId = None,
+              company = None,
+              lastMarketingAgreementSignedDate = None
+            )
+          }
       }
     }
 
@@ -507,7 +515,7 @@ object OAuth2Login extends RestHelper with MdcLoggable {
       */
     override def wellKnownOpenidConfiguration: URI =
       new URI(
-        APIUtil.getPropsValue(nameOfProperty = "oauth2.keycloak.well_known", "http://localhost:7070/realms/master/.well-known/openid-configuration")
+        APIUtil.getPropsValue(nameOfProperty = "oauth2.keycloak.well_known", "http://localhost:8000/realms/master/.well-known/openid-configuration")
       )
     override def urlOfJwkSets: Box[String] = checkUrlOfJwkSets(identityProvider = keycloakHost)
     def isIssuer(jwt: String): Boolean = isIssuer(jwtToken=jwt, identityProvider = keycloakHost)
