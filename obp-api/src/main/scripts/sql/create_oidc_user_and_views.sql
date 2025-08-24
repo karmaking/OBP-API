@@ -146,6 +146,9 @@ CREATE USER :OIDC_ADMIN_USER WITH
     -- need this so the admin can create rows
     GRANT USAGE, SELECT ON SEQUENCE consumer_id_seq TO :OIDC_ADMIN_USER;
 
+    -- double check this
+    GRANT USAGE, SELECT ON SEQUENCE consumer_id_seq TO oidc_admin;
+
 -- Set connection limit for the OIDC admin user
 ALTER USER :OIDC_ADMIN_USER CONNECTION LIMIT 5;
 

@@ -106,6 +106,8 @@ object OAuth2Login extends RestHelper with MdcLoggable {
           Yahoo.applyIdTokenRulesFuture(value, cc)
         } else if (Azure.isIssuer(value)) {
           Azure.applyIdTokenRulesFuture(value, cc)
+        } else if (OBPOIDC.isIssuer(value)) {
+          OBPOIDC.applyIdTokenRulesFuture(value, cc)
         } else if (Keycloak.isIssuer(value)) {
           Keycloak.applyRulesFuture(value, cc)
         } else if (UnknownProvider.isIssuer(value)) {
@@ -562,6 +564,22 @@ object OAuth2Login extends RestHelper with MdcLoggable {
     def applyRulesFuture(value: String, cc: CallContext): Future[(Box[User], Some[CallContext])] = Future {
       applyRules(value, cc)
     }
+  }
+
+  object OBPOIDC extends OAuth2Util {
+    val obpOidcHost = APIUtil.getPropsValue(nameOfProperty = "oauth2.obp_oidc.host", "http://localhost:9000")
+    val obpOidcIssuer = "obp-oidc"
+    /**
+      * OBP-OIDC (Open Bank Project OIDC Provider)
+      * OBP-OIDC exposes OpenID Connect discovery documents at /.well-known/openid-configuration
+      * This is the native OIDC provider for OBP ecosystem
+      */
+    override def wellKnownOpenidConfiguration: URI =
+      new URI(
+        APIUtil.getPropsValue(nameOfProperty = "oauth2.obp_oidc.well_known", s"$obpOidcHost/.well-known/openid-configuration")
+      )
+    override def urlOfJwkSets: Box[String] = checkUrlOfJwkSets(identityProvider = obpOidcIssuer)
+    def isIssuer(jwt: String): Boolean = isIssuer(jwtToken=jwt, identityProvider = obpOidcIssuer)
   }
 
 }

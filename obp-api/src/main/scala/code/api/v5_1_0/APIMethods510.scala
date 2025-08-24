@@ -3,7 +3,7 @@ package code.api.v5_1_0
 
 import code.api.Constant
 import code.api.Constant._
-import code.api.OAuth2Login.Keycloak
+import code.api.OAuth2Login.{Keycloak, OBPOIDC}
 import code.api.ResourceDocs1_4_0.SwaggerDefinitionsJSON._
 import code.api.berlin.group.v1_3.JSONFactory_BERLIN_GROUP_1_3.{ConsentAccessAccountsJson, ConsentAccessJson}
 import code.api.util.APIUtil._
@@ -75,7 +75,7 @@ trait APIMethods510 {
     val implementedInApiVersion: ScannedApiVersion = ApiVersion.v5_1_0
 
     private val staticResourceDocs = ArrayBuffer[ResourceDoc]()
-    def resourceDocs = staticResourceDocs 
+    def resourceDocs = staticResourceDocs
 
     val apiRelations = ArrayBuffer[ApiRelation]()
     val codeContext = CodeContext(staticResourceDocs, apiRelations)
@@ -163,8 +163,15 @@ trait APIMethods510 {
           for {
             (_, callContext) <- anonymousAccess(cc)
           } yield {
-            val keycloak: WellKnownUriJsonV510 = WellKnownUriJsonV510("keycloak", Keycloak.wellKnownOpenidConfiguration.toURL.toString)
-            (WellKnownUrisJsonV510(List(keycloak)), HttpCode.`200`(callContext))
+            // Advertise the configured OIDC provider for this OBP-API instance
+            // Check if OBP-OIDC is configured, otherwise default to Keycloak
+            val oidcProvider = APIUtil.getPropsValue("oauth2.oidc_provider", "keycloak").toLowerCase match {
+              case "obp-oidc" | "obpoidc" =>
+                WellKnownUriJsonV510("obp-oidc", OBPOIDC.wellKnownOpenidConfiguration.toURL.toString)
+              case _ =>
+                WellKnownUriJsonV510("keycloak", Keycloak.wellKnownOpenidConfiguration.toURL.toString)
+            }
+            (WellKnownUrisJsonV510(List(oidcProvider)), HttpCode.`200`(callContext))
           }
       }
     }
@@ -315,7 +322,7 @@ trait APIMethods510 {
       }
     }
 
-    
+
     staticResourceDocs += ResourceDoc(
       waitingForGodot,
       implementedInApiVersion,
@@ -348,7 +355,7 @@ trait APIMethods510 {
           }
       }
     }
-    
+
     staticResourceDocs += ResourceDoc(
       getAllApiCollections,
       implementedInApiVersion,
@@ -403,7 +410,7 @@ trait APIMethods510 {
       ),
       List(apiTagCustomer, apiTagPerson)
     )
-    
+
     lazy val createAgent : OBPEndpoint = {
       case "banks" :: BankId(bankId) :: "agents" :: Nil JsonPost json -> _ => {
         cc => implicit val ec = EndpointContext(Some(cc))
@@ -433,7 +440,7 @@ trait APIMethods510 {
               callContext
             )
             (_, callContext) <- NewStyle.function.createAgentAccountLink(agent.agentId, bankAccount.bankId.value, bankAccount.accountId.value, callContext)
-            
+
           } yield {
             (JSONFactory510.createAgentJson(agent, bankAccount), HttpCode.`201`(callContext))
           }
@@ -463,7 +470,7 @@ trait APIMethods510 {
       List(apiTagCustomer, apiTagPerson),
       Some(canUpdateAgentStatusAtAnyBank :: canUpdateAgentStatusAtOneBank :: Nil)
     )
-    
+
     lazy val updateAgentStatus : OBPEndpoint = {
       case "banks" :: BankId(bankId) :: "agents"  :: agentId  :: Nil JsonPut json -> _ => {
         cc => implicit val ec = EndpointContext(Some(cc))
@@ -487,7 +494,7 @@ trait APIMethods510 {
           }
       }
     }
-    
+
     staticResourceDocs += ResourceDoc(
       getAgent,
       implementedInApiVersion,
@@ -526,7 +533,7 @@ trait APIMethods510 {
           }
       }
     }
-    
+
     staticResourceDocs += ResourceDoc(
       createNonPersonalUserAttribute,
       implementedInApiVersion,
@@ -581,7 +588,7 @@ trait APIMethods510 {
           }
       }
     }
-    
+
     resourceDocs += ResourceDoc(
       deleteNonPersonalUserAttribute,
       implementedInApiVersion,
@@ -621,7 +628,7 @@ trait APIMethods510 {
           }
       }
     }
-    
+
     resourceDocs += ResourceDoc(
       getNonPersonalUserAttributes,
       implementedInApiVersion,
@@ -653,7 +660,7 @@ trait APIMethods510 {
             (userAttributes,callContext) <- NewStyle.function.getNonPersonalUserAttributes(
               user.userId,
               callContext,
-            ) 
+            )
           } yield {
             (JSONFactory510.createUserAttributesJson(userAttributes), HttpCode.`200`(callContext))
           }
@@ -813,8 +820,8 @@ trait APIMethods510 {
       userJsonV300,
       List(
         $UserNotLoggedIn,
-        UserNotFoundByUserId, 
-        UserHasMissingRoles, 
+        UserNotFoundByUserId,
+        UserHasMissingRoles,
         UnknownError),
       List(apiTagRole, apiTagEntitlement, apiTagUser),
       Some(List(canGetEntitlementsForAnyUserAtAnyBank)))
@@ -832,8 +839,8 @@ trait APIMethods510 {
           }
       }
     }
-    
-    
+
+
     staticResourceDocs += ResourceDoc(
       customViewNamesCheck,
       implementedInApiVersion,
@@ -869,7 +876,7 @@ trait APIMethods510 {
             (JSONFactory510.getCustomViewNamesCheck(incorrectViews), HttpCode.`200`(cc.callContext))
           }
       }
-    }    
+    }
     staticResourceDocs += ResourceDoc(
       systemViewNamesCheck,
       implementedInApiVersion,
@@ -906,7 +913,7 @@ trait APIMethods510 {
           }
       }
     }
-    
+
     staticResourceDocs += ResourceDoc(
       accountAccessUniqueIndexCheck,
       implementedInApiVersion,
@@ -934,7 +941,7 @@ trait APIMethods510 {
         cc => implicit val ec = EndpointContext(Some(cc))
           for {
             groupedRows: Map[String, List[AccountAccess]] <- Future {
-              AccountAccess.findAll().groupBy { a => 
+              AccountAccess.findAll().groupBy { a =>
                 s"${a.bank_id.get}-${a.account_id.get}-${a.view_id.get}-${a.user_fk.get}-${a.consumer_id.get}"
               }.filter(_._2.size > 1) // Extract only duplicated rows
             }
@@ -942,7 +949,7 @@ trait APIMethods510 {
             (JSONFactory510.getAccountAccessUniqueIndexCheck(groupedRows), HttpCode.`200`(cc.callContext))
           }
       }
-    }    
+    }
     staticResourceDocs += ResourceDoc(
       accountCurrencyCheck,
       implementedInApiVersion,
@@ -1235,7 +1242,7 @@ trait APIMethods510 {
       "PUT",
       "/banks/BANK_ID/atms/ATM_ID/attributes/ATM_ATTRIBUTE_ID",
       "Update ATM Attribute",
-      s""" Update ATM Attribute. 
+      s""" Update ATM Attribute.
          |
          |Update an ATM Attribute by its id.
          |
@@ -1816,7 +1823,7 @@ trait APIMethods510 {
           }
       }
     }
-    
+
     staticResourceDocs += ResourceDoc(
       revokeConsentAtBank,
       implementedInApiVersion,
@@ -1845,7 +1852,7 @@ trait APIMethods510 {
         BankNotFound,
         UnknownError
       ),
-      List(apiTagConsent, apiTagPSD2AIS, apiTagPsd2), 
+      List(apiTagConsent, apiTagPSD2AIS, apiTagPsd2),
       Some(List(canRevokeConsentAtBank))
     )
 
@@ -1869,7 +1876,7 @@ trait APIMethods510 {
           }
       }
     }
-    
+
    staticResourceDocs += ResourceDoc(
      selfRevokeConsent,
       implementedInApiVersion,
@@ -2177,12 +2184,12 @@ trait APIMethods510 {
             _ <- Future(Consents.consentProvider.vend.setValidUntil(createdConsent.consentId, validUntil)) map {
               i => connectorEmptyResponse(i, callContext)
             }
-            //we need to check `skip_consent_sca_for_consumer_id_pairs` props, to see if we really need the SCA flow. 
+            //we need to check `skip_consent_sca_for_consumer_id_pairs` props, to see if we really need the SCA flow.
             //this is from callContext
             grantorConsumerId = callContext.map(_.consumer.toOption.map(_.consumerId.get)).flatten.getOrElse("Unknown")
             //this is from json body
             granteeConsumerId = consentJson.consumer_id.getOrElse("Unknown")
-            
+
             shouldSkipConsentScaForConsumerIdPair = APIUtil.skipConsentScaForConsumerIdPairs.contains(
               APIUtil.ConsumerIdPair(
                 grantorConsumerId,
@@ -2269,7 +2276,7 @@ trait APIMethods510 {
       }
     }
 
-    
+
    staticResourceDocs += ResourceDoc(
      mtlsClientCertificateInfo,
       implementedInApiVersion,
@@ -2371,7 +2378,7 @@ trait APIMethods510 {
       List(apiTagUser),
       Some(List(canGetAnyUser))
     )
-    
+
     lazy val getUserByProviderAndUsername: OBPEndpoint = {
       case "users" :: "provider" :: provider :: "username" :: username :: Nil JsonGet _ => {
         cc => implicit val ec = EndpointContext(Some(cc))
@@ -2739,7 +2746,7 @@ trait APIMethods510 {
       ),
       List(apiTagCustomer, apiTagUser)
     )
-    
+
     lazy val getCustomersForUserIdsOnly : OBPEndpoint = {
       case "users" :: "current" :: "customers" :: "customer_ids" :: Nil JsonGet _ => {
         cc => {
@@ -2798,7 +2805,7 @@ trait APIMethods510 {
           }
       }
     }
-    
+
 
     staticResourceDocs += ResourceDoc(
       createAtm,
@@ -2940,7 +2947,7 @@ trait APIMethods510 {
                    (atm-> attributes)
                 }
               )))
-            
+
           } yield {
             (JSONFactory510.createAtmsJsonV510(atmAndAttributesTupleList), HttpCode.`200`(callContext))
           }
@@ -3014,7 +3021,7 @@ trait APIMethods510 {
           for {
             (atm, callContext) <- NewStyle.function.getAtm(bankId, atmId, cc.callContext)
             (deleted, callContext) <- NewStyle.function.deleteAtm(atm, callContext)
-            (atmAttributes, callContext) <- NewStyle.function.deleteAtmAttributesByAtmId(atmId, callContext) 
+            (atmAttributes, callContext) <- NewStyle.function.deleteAtmAttributesByAtmId(atmId, callContext)
           } yield {
             (Full(deleted && atmAttributes), HttpCode.`204`(callContext))
           }
@@ -3131,7 +3138,7 @@ trait APIMethods510 {
       List(apiTagConsumer),
       Some(List(canCreateConsumer))
     )
-    
+
     lazy val createConsumer: OBPEndpoint = {
       case "management" :: "consumers" :: Nil JsonPost json -> _ => {
         cc => implicit val ec = EndpointContext(Some(cc))
@@ -3213,8 +3220,8 @@ trait APIMethods510 {
           }
       }
     }
-    
-    
+
+
     staticResourceDocs += ResourceDoc(
       updateConsumerRedirectURL,
       implementedInApiVersion,
@@ -3272,8 +3279,8 @@ trait APIMethods510 {
             (json, HttpCode.`200`(callContext))
           }
       }
-    }   
-    
+    }
+
     staticResourceDocs += ResourceDoc(
       updateConsumerLogoURL,
       implementedInApiVersion,
@@ -3543,7 +3550,7 @@ trait APIMethods510 {
               case false => ViewNewStyle.customView(targetViewId, BankIdAccountId(bankId, accountId), callContext)
             }
             addedView <- JSONFactory400.grantAccountAccessToUser(bankId, accountId, user, view, callContext)
-            
+
           } yield {
             val viewJson = JSONFactory300.createViewJSON(addedView)
             (viewJson, HttpCode.`201`(callContext))
@@ -3595,9 +3602,9 @@ trait APIMethods510 {
               json.extract[PostAccountAccessJsonV510]
             }
             targetViewId = ViewId(postJson.view_id)
-          
+
             msg = getUserLacksRevokePermissionErrorMessage(viewId, targetViewId)
-            
+
             _ <- Helper.booleanToFuture(msg, 403, cc = cc.callContext) {
               APIUtil.canRevokeAccessToView(BankIdAccountIdViewId(bankId, accountId, viewId),targetViewId, u, callContext)
             }
@@ -3671,7 +3678,7 @@ trait APIMethods510 {
             }
             targetViewId = ViewId(postJson.view_id)
             msg = getUserLacksGrantPermissionErrorMessage(viewId, targetViewId)
-            
+
             _ <- Helper.booleanToFuture(msg, 403, cc = Some(cc)) {
               APIUtil.canGrantAccessToView(BankIdAccountIdViewId(bankId, accountId, viewId) ,targetViewId, u, callContext)
             }
@@ -3755,7 +3762,7 @@ trait APIMethods510 {
         |This endpoint provides the charge that would be applied if the Transaction Request proceeds - and a record of that charge there after.
         |The customer can proceed with the Transaction by answering the security challenge.
         |
-        |We support query transaction request by attribute 
+        |We support query transaction request by attribute
         |URL params example:/banks/BANK_ID/accounts/ACCOUNT_ID/VIEW_ID/transaction-requests?invoiceNumber=123&referenceNumber=456
         |
       """.stripMargin,
@@ -3789,17 +3796,17 @@ trait APIMethods510 {
             (transactionRequests, callContext) <- Future(Connector.connector.vend.getTransactionRequests210(u, fromAccount, callContext)) map {
               unboxFullOrFail(_, callContext, GetTransactionRequestsException)
             }
-            (transactionRequestAttributes, callContext) <- NewStyle.function.getByAttributeNameValues(bankId, req.params, true, callContext) 
-            transactionRequestIds = transactionRequestAttributes.map(_.transactionRequestId) 
-            
+            (transactionRequestAttributes, callContext) <- NewStyle.function.getByAttributeNameValues(bankId, req.params, true, callContext)
+            transactionRequestIds = transactionRequestAttributes.map(_.transactionRequestId)
+
             transactionRequestsFiltered = if(req.params.isEmpty)
               transactionRequests
             else
-              transactionRequests.filter(transactionRequest => transactionRequestIds.contains(transactionRequest.id)) 
-              
+              transactionRequests.filter(transactionRequest => transactionRequestIds.contains(transactionRequest.id))
+
           } yield {
             val json = JSONFactory510.createTransactionRequestJSONs(transactionRequestsFiltered, transactionRequestAttributes)
-            
+
             (json, HttpCode.`200`(callContext))
           }
       }
@@ -3848,7 +3855,7 @@ trait APIMethods510 {
       }
     }
 
-    
+
     staticResourceDocs += ResourceDoc(
       getAccountAccessByUserId,
       implementedInApiVersion,
@@ -3881,8 +3888,8 @@ trait APIMethods510 {
             (JSONFactory400.createAccountsMinimalJson400(accountAccess), HttpCode.`200`(callContext))
           }
     }
-    
-    
+
+
     staticResourceDocs += ResourceDoc(
       getApiTags,
       implementedInApiVersion,
@@ -4130,7 +4137,7 @@ trait APIMethods510 {
           }
       }
     }
-    
+
     staticResourceDocs += ResourceDoc(
       updateCounterpartyLimit,
       implementedInApiVersion,
@@ -4346,7 +4353,7 @@ trait APIMethods510 {
               defaultToDate: Date,
               callContext: Option[CallContext]
             )
-            
+
           } yield {
             (CounterpartyLimitStatusV510(
               counterparty_limit_id = counterpartyLimit.counterpartyLimitId: String,
@@ -4725,14 +4732,14 @@ trait APIMethods510 {
             fromAccountRoutingSchemeOBPFormat = if(fromAccountRoutingScheme.equalsIgnoreCase("AccountNo")) "ACCOUNT_NUMBER" else StringHelpers.snakify(fromAccountRoutingScheme).toUpperCase
             fromAccountRouting = postConsentRequestJsonV510.from_account.account_routing.copy(scheme =fromAccountRoutingSchemeOBPFormat)
             fromAccountTweaked = postConsentRequestJsonV510.from_account.copy(account_routing = fromAccountRouting)
-              
+
             toAccountRoutingScheme = postConsentRequestJsonV510.to_account.account_routing.scheme
             toAccountRoutingSchemeOBPFormat = if(toAccountRoutingScheme.equalsIgnoreCase("AccountNo")) "ACCOUNT_NUMBER" else StringHelpers.snakify(toAccountRoutingScheme).toUpperCase
             toAccountRouting = postConsentRequestJsonV510.to_account.account_routing.copy(scheme =toAccountRoutingSchemeOBPFormat)
             toAccountTweaked = postConsentRequestJsonV510.to_account.copy(account_routing = toAccountRouting)
 
-            
-            
+
+
             fromBankAccountRoutings = BankAccountRoutings(
               bank = BankRoutingJson(postConsentRequestJsonV510.from_account.bank_routing.scheme, postConsentRequestJsonV510.from_account.bank_routing.address),
               account = BranchRoutingJsonV141(fromAccountRoutingSchemeOBPFormat, postConsentRequestJsonV510.from_account.account_routing.address),
@@ -4745,7 +4752,7 @@ trait APIMethods510 {
             (_, callContext) <- NewStyle.function.getBankAccountByRoutings(fromBankAccountRoutings, callContext)
 
             postConsentRequestJsonTweaked = postConsentRequestJsonV510.copy(
-              from_account = fromAccountTweaked, 
+              from_account = fromAccountTweaked,
               to_account = toAccountTweaked
             )
             createdConsentRequest <- Future(ConsentRequests.consentRequestProvider.vend.createConsentRequest(
@@ -4795,7 +4802,7 @@ trait APIMethods510 {
             regulatedEntityAttributeType <- NewStyle.function.tryons(failMsg, 400,  cc.callContext) {
               RegulatedEntityAttributeType.withName(postedData.attribute_type)
             }
-            
+
             (attribute, callContext) <- RegulatedEntityAttributeNewStyle.createOrUpdateRegulatedEntityAttribute(
               regulatedEntityId = RegulatedEntityId(entityId),
               regulatedEntityAttributeId = None,
@@ -5195,11 +5202,11 @@ trait APIMethods510 {
          |
          |Get the all WebUiProps key values, those props key with "webui_" can be stored in DB, this endpoint get all from DB.
          |
-         |url query parameter: 
+         |url query parameter:
          |active: It must be a boolean string. and If active = true, it will show
          |          combination of explicit (inserted) + implicit (default)  method_routings.
          |
-         |eg:  
+         |eg:
          |${getObpApiRoot}/v5.1.0/webui-props
          |${getObpApiRoot}/v5.1.0/webui-props?active=true
          |
@@ -5266,7 +5273,7 @@ trait APIMethods510 {
       List(apiTagSystemView),
       Some(List(canCreateSystemViewPermission))
     )
-    
+
     lazy val addSystemViewPermission : OBPEndpoint = {
       case "system-views" :: ViewId(viewId) :: "permissions" :: Nil JsonPost json -> _ => {
         cc => implicit val ec = EndpointContext(Some(cc))
@@ -5289,7 +5296,7 @@ trait APIMethods510 {
       }
     }
 
-    
+
     resourceDocs += ResourceDoc(
       deleteSystemViewPermission,
       implementedInApiVersion,
@@ -5317,7 +5324,7 @@ trait APIMethods510 {
       }
     }
 
-    
+
   }
 }
 
@@ -5328,4 +5335,3 @@ object APIMethods510 extends RestHelper with APIMethods510 {
     rd => (rd.partialFunctionName, rd.implementedInApiVersion.toString())
   }.toList
 }
-
