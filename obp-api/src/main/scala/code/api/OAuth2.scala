@@ -578,7 +578,7 @@ object OAuth2Login extends RestHelper with MdcLoggable {
 
   object OBPOIDC extends OAuth2Util {
     val obpOidcHost = APIUtil.getPropsValue(nameOfProperty = "oauth2.obp_oidc.host", "http://localhost:9000")
-    val obpOidcIssuer = APIUtil.getPropsValue(nameOfProperty = "oauth2.obp_oidc.issuer", s"$obpOidcHost/obp-oidc")
+    val obpOidcIssuer = "obp-oidc"
     /**
       * OBP-OIDC (Open Bank Project OIDC Provider)
       * OBP-OIDC exposes OpenID Connect discovery documents at /.well-known/openid-configuration
