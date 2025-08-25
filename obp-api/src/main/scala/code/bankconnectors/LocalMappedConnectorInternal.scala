@@ -755,20 +755,6 @@ object LocalMappedConnectorInternal extends MdcLoggable {
           } yield{
             (cardFromCbs.account, callContext)
           }
-//        case CARDANO =>
-//          for{
-//            transactionRequestBodyCardanoJson <- NewStyle.function.tryons(s"${InvalidJsonFormat}, it should be $CARD json format", 400, callContext) {
-//              json.extract[TransactionRequestBodyCardanoJsonV600]
-//            }
-//            (account, callContext) <- NewStyle.function.getBankAccountByRouting(
-//              None, //No need  for the bankId, only to address is enough
-//              "cardano_wallet_id", 
-//              transactionRequestBodyCardanoJson.to.address,
-//              callContext
-//            )
-//          } yield
-//            (account, callContext)
-
         case _ => NewStyle.function.getBankAccount(bankId,accountId, callContext)
       }
       _ <- NewStyle.function.isEnabledTransactionRequests(callContext)
