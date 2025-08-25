@@ -11,7 +11,7 @@
 
 ### Base configuration
 
-## Which data connector to use, if config `star` as connector, please also check `starConnector_supported_types` 
+## Which data connector to use, if config `star` as connector, please also check `starConnector_supported_types`
 #connector=mapped
 #connector=mongodb
 #connector=akka_vDec2018
@@ -31,7 +31,7 @@ connector=star
 #hikari.keepaliveTime=
 #hikari.maxLifetime=
 
-## if connector = star, then need to set which connectors will be used. For now, obp support rest, akka. 
+## if connector = star, then need to set which connectors will be used. For now, obp support rest, akka.
 starConnector_supported_types=mapped,internal
 
 ## whether export LocalMappedConnector methods as endpoints, it is just for develop, default is false
@@ -61,7 +61,7 @@ starConnector_supported_types=mapped,internal
 #connector.cache.ttl.seconds.APIMethods121.getStatusOfCreditCardOrderFuture=0
 #connector.cache.ttl.seconds.APIMethods121.getStatusOfCheckbookOrdersFuture=0
 
-#this is special cache, it is used only in obp side, 
+#this is special cache, it is used only in obp side,
 #MapperCounterparties.cache.ttl.seconds.getOrCreateMetadata=0
 #this cache is used in api level, will cache whole endpoint : v121.getTransactionsForBankAccount
 #api.cache.ttl.seconds.APIMethods121.getTransactions=0
@@ -99,7 +99,7 @@ staticResourceDocsObp.cache.ttl.seconds=3600
 createLocalisedResourceDocJson.cache.ttl.seconds=3600
 
 ## This can change the behavior of  `Get Resource Docs`/`Get API Glossary`. If we set it to `true`, OBP will check the authentication and CanReadResourceDoc/CanReadGlossary Role
-# the default value is false, so the `Get Resource Docs`/`Get API Glossary` is anonymous as default. 
+# the default value is false, so the `Get Resource Docs`/`Get API Glossary` is anonymous as default.
 resource_docs_requires_role=false
 glossary_requires_role=false
 read_json_schema_validation_requires_role=false
@@ -135,7 +135,7 @@ jwt.use.ssl=false
 ## Enable SSL for rabbitmq, if set to true must set paths for the keystore locations
 #rabbitmq.use.ssl=false
 
-# Paths to the SSL keystore files - has to be jks    
+# Paths to the SSL keystore files - has to be jks
 #keystore.path=/path/to/api.keystore.jks
 #keystore password
 #keystore.password = redf1234
@@ -199,7 +199,7 @@ jwt.use.ssl=false
 
 ## Enable writing API metrics (which APIs are called) to RDBMS
 write_metrics=false
-## Enable writing connector metrics (which methods are called)to RDBMS 
+## Enable writing connector metrics (which methods are called)to RDBMS
 write_connector_metrics=false
 
 ## ElasticSearch
@@ -272,7 +272,7 @@ apiPathZero=obp
 
 ## Email Configuration (CommonsEmailWrapper)
 ## ===========================================
-## 
+##
 ## This section configures email sending using CommonsEmailWrapper instead of Lift Mailer.
 ## All email functionality (password reset, validation, notifications) now uses these settings.
 ##
@@ -541,7 +541,7 @@ webui_oauth_2_documentation_url =
 # Link to Privacy Policy on signup page
 #webui_signup_form_submit_button_value=
 #webui_signup_form_title_text=Sign Up
-#webui_signup_body_password_repeat_text=Repeat 
+#webui_signup_body_password_repeat_text=Repeat
 #allow_pre_filled_password=true
 #webui_agree_terms_html=<div id="signup-agree-terms" class="checkbox"><label><input type="checkbox" />I hereby agree to the <a href="$url" title="T &amp; C">Terms and Conditions</a></label></div>
 webui_agree_privacy_policy_url = https://openbankproject.com/privacy-policy
@@ -554,7 +554,7 @@ webui_main_partners=[\
 {"logoUrl":"http://www.example.com/images/logo.png", "homePageUrl":"http://www.example.com", "altText":"Example 2"}]
 
 # Prefix for all page titles (note the trailing space!)
-webui_page_title_prefix = Open Bank Project: 
+webui_page_title_prefix = Open Bank Project:
 
 # set the favicon icon
 #webui_favicon_link_url =/favicon.ico
@@ -623,12 +623,12 @@ webui_dummy_user_logins = Customer Logins\
 # when this value is set to true and webui_dummy_user_logins value not empty, the register consumer key success page will show dummy customers Direct Login tokens.
 webui_show_dummy_user_tokens=false
 
-# when developer register the consumer successfully, it will show this message to developer on the webpage or email. 
+# when developer register the consumer successfully, it will show this message to developer on the webpage or email.
 webui_register_consumer_success_message_webpage = Thanks for registering your consumer with the Open Bank Project API! Here is your developer information. Please save it in a secure location.
 webui_register_consumer_success_message_email = Thank you for registering to use the Open Bank Project API.
 
 #Log in page
-#webui_login_button_text = 
+#webui_login_button_text =
 ## End of webui_ section ########
 
 
@@ -680,7 +680,7 @@ super_admin_user_ids=USER_ID1,USER_ID2,
 # "UKv3.1" or "v3.1"
 #
 # Note: we recommend to use the fullyQualifiedVersion. The apiShortVersion is depreciated here.
-# 
+#
 # For a VERSION (the version in path e.g. /obp/v4.0.0) to be allowed, it must be:
 
 # 1) Absent from here (high priority):
@@ -709,7 +709,7 @@ super_admin_user_ids=USER_ID1,USER_ID2,
 ##########################
 
 
-## OpenId Connect can be used to retrieve User information from an
+## Open Id Connect (OIDC) can be used to retrieve User information from an
 ## external OpenID Connect server.
 ## To use an external OpenID Connect server,
 ## you will need to change these values.
@@ -717,7 +717,7 @@ super_admin_user_ids=USER_ID1,USER_ID2,
 ## CallbackURL 127.0.0.1:8080 should work in most cases.
 ## Note: The email address used for login must match one
 ## registered on OBP localy.
-# openid_connect.enabled=true
+# openid_connect.enabled=false
 # openid_connect.check_session_state=true
 # openid_connect.show_tokens=false
 # Response mode
@@ -837,6 +837,21 @@ display_internal_errors=false
 # oauth2.keycloak.resource_access_key_name_to_trust = open-bank-project
 # ------------------------------------------------------------------------ Keycloak OAuth 2 ------
 
+# -- OBP OIDC OAuth 2 / OIDC ---------------------------------------------------
+# To run OBP OIDC (for developer testing) see: https://github.com/OpenBankProject/OBP-OIDC
+# OAuth2 Provider Selection (for well-known endpoint and token validation)
+# Choose which OIDC provider to use: 'keycloak' or 'obp-oidc'
+#oauth2.oidc_provider=obp-oidc
+
+# OBP-OIDC OAuth2 Provider Settings
+#oauth2.obp_oidc.host=http://localhost:9000
+#oauth2.obp_oidc.well_known=http://localhost:9000/.well-known/openid-configuration
+
+# After setting the above and restarting the server curl -s http://localhost:8080/obp/v5.1.0/well-known
+# should advertise obp-oidc
+# -----------------------------------------------------------------------------------
+
+
 # -- PSU Authentication methods --------------------------------------------------------------
 # The EBA notes that there would appear to currently be three main ways or methods
 # of carrying out the authentication procedure of the PSU through a dedicated interface,
@@ -950,9 +965,9 @@ featured_apis=elasticSearchWarehouseV300
 # -- Rest connector --------------------------------------------
 # If Rest Connector do not get the response in the following seconds, it will throw the error message back.
 # This props can be omitted, the default value is 59. It should be less than Nginx timeout.
-# rest2019_connector_timeout = 59 
-# If set it to `true`, it will add the x-sign (SHA256WithRSA) into each the rest connector http calls, 
-# please add the name of the field for the UserAuthContext and/or link to other documentation.. 
+# rest2019_connector_timeout = 59
+# If set it to `true`, it will add the x-sign (SHA256WithRSA) into each the rest connector http calls,
+# please add the name of the field for the UserAuthContext and/or link to other documentation..
 #rest_connector_sends_x-sign_header=false
 
 # -- RabbitMQ connector --------------------------------------------
@@ -965,7 +980,7 @@ featured_apis=elasticSearchWarehouseV300
 #rabbitmq.adapter.enabled=false
 
 
- 
+
 # -- Scopes -----------------------------------------------------
 # Scopes can be used to limit the APIs a Consumer can call.
 
@@ -976,7 +991,7 @@ featured_apis=elasticSearchWarehouseV300
 # i.e. instead of asking every user to have a Role, you can give the Role(s) to a Consumer in the form of a Scope
 # allow_entitlements_or_scopes=false
 # ---------------------------------------------------------------
- 
+
 # -- Just in Time Entitlements -------------------------------
 create_just_in_time_entitlements=false
 # if create_just_in_time_entitlements=true then OBP does the following:
@@ -998,11 +1013,11 @@ database_messages_scheduler_interval=3600
 # -- Consents ---------------------------------------------
 # In case isn't defined default value is "false"
 # consents.allowed=true
-# 
+#
 # In order to pin a consent to a consumer we can use the property consumer_validation_method_for_consent
 # Possibile values are: CONSUMER_CERTIFICATE, CONSUMER_KEY_VALUE, NONE
 # consumer_validation_method_for_consent=CONSUMER_CERTIFICATE
-# 
+#
 # consents.max_time_to_live=3600
 # In case isn't defined default value is "false"
 # consents.sca.enabled=true
@@ -1013,7 +1028,7 @@ database_messages_scheduler_interval=3600
 # sca_phone_api_key = ACobpb72ab850501b5obp8dobp9dobp111
 # sca_phone_api_secret =7afobpdacobpd427obpff87a22obp222
 # sca_phone_api_id =MGcobp8575119887f10b62a2461obpb333
-# 
+#
 
 # -- PSD2 Certificates --------------------------
 # Possible cases: ONLINE, CERTIFICATE, NONE
@@ -1054,12 +1069,12 @@ database_messages_scheduler_interval=3600
 #energy_source.organisation=
 #energy_source.organisation_website=
 
-# GRPC 
+# GRPC
 # the default GRPC is disabled
 # grpc.server.enabled = false
-# If do not set this props, the grpc port will be set randomly when OBP starts. 
-# And you can call `Get API Configuration` endpoint to see the `grpc_port` there. 
-# When you set this props, need to make sure this port is available.  
+# If do not set this props, the grpc port will be set randomly when OBP starts.
+# And you can call `Get API Configuration` endpoint to see the `grpc_port` there.
+# When you set this props, need to make sure this port is available.
 # grpc.server.port = 50051
 
 # Create System Views At Boot -----------------------------------------------
@@ -1075,7 +1090,7 @@ database_messages_scheduler_interval=3600
                                                     ReadAccountsBerlinGroup, \
                                                     InitiatePaymentsBerlinGroup
 # -----------------------------------------------------------------------------
-                      
+
 
 
 
@@ -1099,7 +1114,7 @@ dynamic_entities_have_prefix=true
 dynamic_endpoints_url_prefix=
 
 # --- Locking a user due to consecutively failed login attempts ------
-# Defines consecutively failed login attempts before a user is locked 
+# Defines consecutively failed login attempts before a user is locked
 # In case is not defined default value is 5
 # max.bad.login.attempts=5
 # --------------------------------------------------------------------
@@ -1158,9 +1173,39 @@ outboundAdapterCallContext.generalContext
 # hydra_uses_obp_user_credentials=true
 # ------------------------------ Hydra oauth2 props end ------------------------------
 
+# ------------------------------ OBP-OIDC oauth2 props ------------------------------
+## OBP-OIDC Provider Configuration
+## Choose which OIDC provider to use: 'keycloak' or 'obp-oidc'
+#oauth2.oidc_provider=obp-oidc
+
+## OBP-OIDC OAuth2 Provider Settings
+#oauth2.obp_oidc.host=http://localhost:9000
+## The issuer URL that will be used in JWT tokens (URL-based format)
+#oauth2.obp_oidc.issuer=http://localhost:9000/obp-oidc
+## Well-known OpenID Connect configuration endpoint
+#oauth2.obp_oidc.well_known=http://localhost:9000/obp-oidc/.well-known/openid-configuration
+
+## OAuth2 JWKS URI configuration for token validation
+## This should include the JWKS URI for OBP-OIDC provider
+## Multiple JWKS URIs can be comma-separated
+#oauth2.jwk_set.url=http://localhost:9000/obp-oidc/jwks
+
+## OpenID Connect Client Configuration for OBP-OIDC
+#openid_connect_1.button_text=OBP-OIDC
+#openid_connect_1.client_id=obp-api-client
+#openid_connect_1.client_secret=your-client-secret-here
+#openid_connect_1.callback_url=http://localhost:8080/auth/openid-connect/callback
+#openid_connect_1.endpoint.discovery=http://localhost:9000/obp-oidc/.well-known/openid-configuration
+#openid_connect_1.endpoint.authorization=http://localhost:9000/obp-oidc/auth
+#openid_connect_1.endpoint.userinfo=http://localhost:9000/obp-oidc/userinfo
+#openid_connect_1.endpoint.token=http://localhost:9000/obp-oidc/token
+#openid_connect_1.endpoint.jwks_uri=http://localhost:9000/obp-oidc/jwks
+#openid_connect_1.access_type_offline=true
+# ------------------------------ OBP-OIDC oauth2 props end ------------------------------
+
 # ------------------------------ default entitlements ------------------------------
 ## the default entitlements list, you can added the roles here.
-#entitlement_list_1=[] 
+#entitlement_list_1=[]
 # when new User is validated, grant the following role list to that user.
 #new_user_entitlement_list=entitlement_list_1
 # ------------------------------ default entitlements end ------------------------------
@@ -1199,7 +1244,7 @@ default_auth_context_update_request_key=CUSTOMER_NUMBER
 ## This props is used for the featured api collection, eg: API_Explore will use the api collection to tweak the Home Page
 #featured_api_collection_ids=
 
-# the alias prefix path for BerlinGroupV1.3 (OBP built-in is berlin-group/v1.3), the format must be xxx/yyy, eg: 0.6/v1 
+# the alias prefix path for BerlinGroupV1.3 (OBP built-in is berlin-group/v1.3), the format must be xxx/yyy, eg: 0.6/v1
 #berlin_group_v1_3_alias_path=
 
 # Berlin Group URL version
@@ -1218,17 +1263,17 @@ default_auth_context_update_request_key=CUSTOMER_NUMBER
 ## Berlin Group Create Consent ASPSP-SCA-Approach response header value
 #berlin_group_aspsp_sca_approach = redirect
 
-# Support multiple brands on one instance. Note this needs checking on a clustered environment 
+# Support multiple brands on one instance. Note this needs checking on a clustered environment
 #brands_enabled=false
 
-# Support removing the app type checkbox during consumer registration 
+# Support removing the app type checkbox during consumer registration
 #consumer_registration.display_app_type=true
 
 # Default logo URL during of consumer
 #consumer_default_logo_url=
 
-# if set this props, we can automatically grant the Entitlements required to use all the Dynamic Endpoint roles belonging 
-# to the bank_ids (Spaces) the User has access to via their validated email domain. Entitlements are generated /refreshed 
+# if set this props, we can automatically grant the Entitlements required to use all the Dynamic Endpoint roles belonging
+# to the bank_ids (Spaces) the User has access to via their validated email domain. Entitlements are generated /refreshed
 # both following manual login and Direct Login token generation (POST).
 # the default value is empty
 #email_domain_to_space_mappings=
@@ -1322,8 +1367,8 @@ webui_developer_user_invitation_email_html_text=<!DOCTYPE html>\
 # the subscription button,default is empty, will not show it on the homepage.
 #webui_subscriptions_url=
 #webui_subscriptions_button_text=
-#webui_subscriptions_invitation_text= 
-                                                  
+#webui_subscriptions_invitation_text=
+
 # List of countries where consent is not required for the collection of personal data
 personal_data_collection_consent_country_waiver_list = Austria, Belgium, Bulgaria, Croatia, Republic of Cyprus, Czech Republic, Denmark, Estonia, Finland, France, Germany, Greece, Hungary, Ireland, Italy, Latvia, Lithuania, Luxembourg, Malta, Netherlands, Poland, Portugal, Romania, Slovakia, Slovenia, Spain, Sweden, England, Scotland, Wales, Northern Ireland
 
@@ -1359,7 +1404,7 @@ dynamic_code_sandbox_permissions=[\
 # enable dynamic code compile validation, default is false, if set it to true, it will validate all the dynamic method body when you create/update any
 # dynamic scala method. Note, it only check all the obp code dependents for all the method in OBP code.
 dynamic_code_compile_validate_enable=false
-# The default support dependencies if set dynamic_code_compile_validate_enable = true. it can be the class level or the method level, 
+# The default support dependencies if set dynamic_code_compile_validate_enable = true. it can be the class level or the method level,
 # you can add them in the following list. Better check search for comment code: val allowedCompilationMethods: Map[String, Set[String]] = Map( ...
 # need to prepare the correct OBP scala code.
 dynamic_code_compile_validate_dependencies=[\
@@ -1461,7 +1506,7 @@ regulated_entities = []
 # This feature can also be used in a "Break Glass" scenario.
 # If you want to use this feature, please set up all three values properly at the same time.
 # super_admin_username=TomWilliams
-# super_admin_inital_password=681aeeb9f681aeeb9f681aeeb9 
+# super_admin_inital_password=681aeeb9f681aeeb9f681aeeb9
 # super_admin_email=tom@tesobe.com
 
 

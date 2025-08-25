@@ -25,6 +25,10 @@ obp-api/src/main/scala/code/api/v3_0_0/custom/
 /obp-api2/
 /.java-version
 .scannerwork
+
+# Marketing diagram generation outputs
+marketing_diagram_generation/outputs/*
+
 .bloop
 .bsp
 .specstory
