@@ -183,7 +183,7 @@ case class AllConsentJsonV510(consent_reference_id: String,
                               api_version: String,
                               note: String,
                              )
-case class ConsentsJsonV510(total_pages: Int, consents: List[AllConsentJsonV510])
+case class ConsentsJsonV510(number_of_rows: Long, consents: List[AllConsentJsonV510])
 
 
 case class CurrencyJsonV510(alphanumeric_code: String)
@@ -986,7 +986,7 @@ object JSONFactory510 extends CustomJsonFormats with MdcLoggable {
     )
   }
 
-  def createConsentsJsonV510(consents: List[MappedConsent], totalPages: Int): ConsentsJsonV510 = {
+  def createConsentsJsonV510(consents: List[MappedConsent], totalPages: Long): ConsentsJsonV510 = {
     // Temporary cache (cleared after function ends)
     val cache = scala.collection.mutable.HashMap.empty[String, Box[User]]
 
@@ -995,7 +995,7 @@ object JSONFactory510 extends CustomJsonFormats with MdcLoggable {
       cache.getOrElseUpdate(userId, Users.users.vend.getUserByUserId(userId))
     }
     ConsentsJsonV510(
-      total_pages = totalPages,
+      number_of_rows = totalPages,
       consents = consents.map { c =>
         val jwtPayload = JwtUtil
           .getSignedPayloadAsJson(c.jsonWebToken)
@@ -1011,8 +1011,8 @@ object JSONFactory510 extends CustomJsonFormats with MdcLoggable {
           consent_reference_id = c.consentReferenceId,
           consumer_id = c.consumerId,
           created_by_user_id = c.userId,
-          provider = getUserCached(c.userId).map(_.provider), // cached version
-          provider_id = getUserCached(c.userId).map(_.idGivenByProvider), // cached version
+          provider = getUserCached(c.userId).map(_.provider).orElse(Some(null)), // cached version
+          provider_id = getUserCached(c.userId).map(_.idGivenByProvider).orElse(Some(null)), // cached version
           status = c.status,
           last_action_date = if (c.lastActionDate != null) new SimpleDateFormat(DateWithDay).format(c.lastActionDate) else null,
           last_usage_date = if (c.usesSoFarTodayCounterUpdatedAt != null) new SimpleDateFormat(DateWithSeconds).format(c.usesSoFarTodayCounterUpdatedAt) else null,

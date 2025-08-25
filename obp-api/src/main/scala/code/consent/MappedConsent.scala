@@ -69,7 +69,7 @@ object MappedConsentProvider extends ConsentProvider {
 
 
 
-  private def getPagedConsents(queryParams: List[OBPQueryParam]): (List[MappedConsent], Int) = {
+  private def getPagedConsents(queryParams: List[OBPQueryParam]): (List[MappedConsent], Long) = {
     // Extract pagination params
     val limitOpt = queryParams.collectFirst { case OBPLimit(value) => value }
     val offsetOpt = queryParams.collectFirst { case OBPOffset(value) => value }
@@ -122,7 +122,7 @@ object MappedConsentProvider extends ConsentProvider {
       case _ => 1
     }
 
-    (pageData, totalPages)
+    (pageData, totalCount)
   }
 
 
@@ -171,14 +171,14 @@ object MappedConsentProvider extends ConsentProvider {
   }
 
 
-  override def getConsents(queryParams: List[OBPQueryParam]): (List[MappedConsent], Int) = {
+  override def getConsents(queryParams: List[OBPQueryParam]): (List[MappedConsent], Long) = {
     val sortBy: Option[String] = queryParams.collectFirst { case OBPSortBy(value) => value }
-    val (consents, totalPages) = getPagedConsents(queryParams)
+    val (consents, totalCount) = getPagedConsents(queryParams)
     val bankId: Option[String] = queryParams.collectFirst { case OBPBankId(value) => value }
     if(bankId.isDefined) {
-      (Consent.filterStrictlyByBank(consents, bankId.get), totalPages)
+      (Consent.filterStrictlyByBank(consents, bankId.get), totalCount)
     } else {
-      (sortConsents(consents, sortBy.getOrElse("")), totalPages)
+      (sortConsents(consents, sortBy.getOrElse("")), totalCount)
     }
   }
 

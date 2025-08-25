@@ -4284,7 +4284,7 @@ object SwaggerDefinitionsJSON {
     consents =  List(consentInfoJsonV510)
   )
   
-  lazy val consentsJsonV510 = ConsentsJsonV510(total_pages = 1, List(allConsentJsonV510))
+  lazy val consentsJsonV510 = ConsentsJsonV510(number_of_rows = 1, List(allConsentJsonV510))
 
   lazy val revokedConsentJsonV310 = ConsentJsonV310(
     consent_id = "9d429899-24f5-42c8-8565-943ffa6a7945",
