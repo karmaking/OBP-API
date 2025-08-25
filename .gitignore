@@ -28,3 +28,10 @@ obp-api/src/main/scala/code/api/v3_0_0/custom/
 
 # Marketing diagram generation outputs
 marketing_diagram_generation/outputs/*
+
+.bloop
+.bsp
+.specstory
+project/project
+coursier
+*.code-workspace
