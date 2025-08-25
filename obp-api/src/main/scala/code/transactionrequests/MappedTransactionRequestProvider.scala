@@ -246,11 +246,11 @@ class MappedTransactionRequest extends LongKeyedMapper[MappedTransactionRequest]
   object mChallenge_ChallengeType extends MappedString(this, 100)
   object mCharge_Summary  extends MappedString(this, 64)
   object mCharge_Amount  extends MappedString(this, 32)
-  object mCharge_Currency  extends MappedString(this, 3)
+  object mCharge_Currency  extends MappedString(this, 16)
   object mcharge_Policy  extends MappedString(this, 32)
 
   //Body from http request: SANDBOX_TAN, FREE_FORM, SEPA and COUNTERPARTY should have the same following fields:
-  object mBody_Value_Currency extends MappedString(this, 3)
+  object mBody_Value_Currency extends MappedString(this, 16)
   object mBody_Value_Amount extends MappedString(this, 32)
   object mBody_Description extends MappedString(this, 2000)
   // This is the details / body of the request (contains all fields in the body)
@@ -265,7 +265,7 @@ class MappedTransactionRequest extends LongKeyedMapper[MappedTransactionRequest]
   @deprecated("use mOtherBankRoutingAddress instead","2017-12-25")
   object mTo_BankId extends UUIDString(this)
   @deprecated("use mOtherAccountRoutingAddress instead","2017-12-25")
-  object mTo_AccountId extends AccountIdString(this)
+  object mTo_AccountId extends MappedString(this, 128)
 
   //toCounterparty fields
   object mName extends MappedString(this, 64)
@@ -274,7 +274,7 @@ class MappedTransactionRequest extends LongKeyedMapper[MappedTransactionRequest]
   object mThisViewId extends UUIDString(this)
   object mCounterpartyId extends UUIDString(this)
   object mOtherAccountRoutingScheme extends MappedString(this, 32) // TODO Add class for Scheme and Address
-  object mOtherAccountRoutingAddress extends MappedString(this, 64)
+  object mOtherAccountRoutingAddress extends MappedString(this, 128)
   object mOtherBankRoutingScheme extends MappedString(this, 32)
   object mOtherBankRoutingAddress extends MappedString(this, 64)
   object mIsBeneficiary extends MappedBoolean(this)
