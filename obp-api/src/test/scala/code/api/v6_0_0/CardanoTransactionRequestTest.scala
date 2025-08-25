@@ -27,13 +27,22 @@ package code.api.v6_0_0
 
 import code.api.Constant
 import code.api.ResourceDocs1_4_0.SwaggerDefinitionsJSON
+import code.api.util.ApiRole
+import code.api.util.ApiRole._
 import code.api.util.ErrorMessages._
-import code.api.v6_0_0.OBPAPI6_0_0.Implementations6_0_0
+import code.api.v4_0_0.TransactionRequestWithChargeJSON400
+import code.entitlement.Entitlement
+import code.methodrouting.MethodRoutingCommons
 import com.github.dwickern.macros.NameOf.nameOf
 import com.openbankproject.commons.model.{AmountOfMoneyJsonV121, ErrorMessage}
 import com.openbankproject.commons.util.ApiVersion
 import net.liftweb.json.Serialization.write
 import org.scalatest.Tag
+import code.api.util.APIUtil.OAuth._
+import code.api.util.ApiRole
+import code.api.v6_0_0.OBPAPI6_0_0.Implementations6_0_0
+import code.entitlement.Entitlement
+
 
 
 class CardanoTransactionRequestTest extends V600ServerSetup {
@@ -105,7 +114,7 @@ class CardanoTransactionRequestTest extends V600ServerSetup {
 //      Entitlement.entitlement.vend.addEntitlement("", resourceUser1.userId, CanCreateMethodRouting.toString)
 //      val response310 = makePostRequest(request310, write(cardanoMethodRouting))
 //      response310.code should equal(201)
-//      
+//
 //      When("We make a request v6.0.0")
 //      val request600 = (v6_0_0_Request / "banks" / testBankId / "accounts" / testAccountId / Constant.SYSTEM_OWNER_VIEW_ID / "transaction-request-types" / "CARDANO" / "transaction-requests").POST <@(user1)
 //      val cardanoTransactionRequestBody = TransactionRequestBodyCardanoJsonV600(
