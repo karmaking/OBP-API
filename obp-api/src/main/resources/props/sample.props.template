@@ -1173,6 +1173,36 @@ outboundAdapterCallContext.generalContext
 # hydra_uses_obp_user_credentials=true
 # ------------------------------ Hydra oauth2 props end ------------------------------
 
+# ------------------------------ OBP-OIDC oauth2 props ------------------------------
+## OBP-OIDC Provider Configuration
+## Choose which OIDC provider to use: 'keycloak' or 'obp-oidc'
+#oauth2.oidc_provider=obp-oidc
+
+## OBP-OIDC OAuth2 Provider Settings
+#oauth2.obp_oidc.host=http://localhost:9000
+## The issuer URL that will be used in JWT tokens (URL-based format)
+#oauth2.obp_oidc.issuer=http://localhost:9000/obp-oidc
+## Well-known OpenID Connect configuration endpoint
+#oauth2.obp_oidc.well_known=http://localhost:9000/obp-oidc/.well-known/openid-configuration
+
+## OAuth2 JWKS URI configuration for token validation
+## This should include the JWKS URI for OBP-OIDC provider
+## Multiple JWKS URIs can be comma-separated
+#oauth2.jwk_set.url=http://localhost:9000/obp-oidc/jwks
+
+## OpenID Connect Client Configuration for OBP-OIDC
+#openid_connect_1.button_text=OBP-OIDC
+#openid_connect_1.client_id=obp-api-client
+#openid_connect_1.client_secret=your-client-secret-here
+#openid_connect_1.callback_url=http://localhost:8080/auth/openid-connect/callback
+#openid_connect_1.endpoint.discovery=http://localhost:9000/obp-oidc/.well-known/openid-configuration
+#openid_connect_1.endpoint.authorization=http://localhost:9000/obp-oidc/auth
+#openid_connect_1.endpoint.userinfo=http://localhost:9000/obp-oidc/userinfo
+#openid_connect_1.endpoint.token=http://localhost:9000/obp-oidc/token
+#openid_connect_1.endpoint.jwks_uri=http://localhost:9000/obp-oidc/jwks
+#openid_connect_1.access_type_offline=true
+# ------------------------------ OBP-OIDC oauth2 props end ------------------------------
+
 # ------------------------------ default entitlements ------------------------------
 ## the default entitlements list, you can added the roles here.
 #entitlement_list_1=[]

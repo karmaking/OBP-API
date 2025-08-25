@@ -230,7 +230,11 @@ object OAuth2Login extends RestHelper with MdcLoggable {
     def checkUrlOfJwkSets(identityProvider: String) = {
       val url: List[String] = Constant.oauth2JwkSetUrl.toList
       val jwksUris: List[String] = url.map(_.toLowerCase()).map(_.split(",").toList).flatten
-      val jwksUri = jwksUris.filter(_.contains(identityProvider))
+      
+      // Enhanced matching for both URL-based and semantic identifiers
+      val identityProviderLower = identityProvider.toLowerCase()
+      val jwksUri = jwksUris.filter(_.contains(identityProviderLower))
+      
       jwksUri match {
         case x :: _ => Full(x)
         case Nil => Failure(Oauth2CannotMatchIssuerAndJwksUriException)
@@ -245,7 +249,13 @@ object OAuth2Login extends RestHelper with MdcLoggable {
       }
     }
     def isIssuer(jwtToken: String, identityProvider: String): Boolean = {
-      JwtUtil.getIssuer(jwtToken).map(_.contains(identityProvider)).getOrElse(false)
+      JwtUtil.getIssuer(jwtToken).map { issuer =>
+        // Direct match or contains match for backward compatibility
+        issuer == identityProvider || issuer.contains(identityProvider) ||
+        // For URL-based issuers, also try exact match ignoring trailing slash
+        (issuer.endsWith("/") && issuer.dropRight(1) == identityProvider) ||
+        (identityProvider.endsWith("/") && identityProvider.dropRight(1) == issuer)
+      }.getOrElse(false)
     }
     def validateIdToken(idToken: String): Box[IDTokenClaimsSet] = {
       urlOfJwkSets match {
@@ -568,7 +578,7 @@ object OAuth2Login extends RestHelper with MdcLoggable {
 
   object OBPOIDC extends OAuth2Util {
     val obpOidcHost = APIUtil.getPropsValue(nameOfProperty = "oauth2.obp_oidc.host", "http://localhost:9000")
-    val obpOidcIssuer = "obp-oidc"
+    val obpOidcIssuer = APIUtil.getPropsValue(nameOfProperty = "oauth2.obp_oidc.issuer", s"$obpOidcHost/obp-oidc")
     /**
       * OBP-OIDC (Open Bank Project OIDC Provider)
       * OBP-OIDC exposes OpenID Connect discovery documents at /.well-known/openid-configuration
@@ -576,7 +586,7 @@ object OAuth2Login extends RestHelper with MdcLoggable {
       */
     override def wellKnownOpenidConfiguration: URI =
       new URI(
-        APIUtil.getPropsValue(nameOfProperty = "oauth2.obp_oidc.well_known", s"$obpOidcHost/.well-known/openid-configuration")
+        APIUtil.getPropsValue(nameOfProperty = "oauth2.obp_oidc.well_known", s"$obpOidcHost/obp-oidc/.well-known/openid-configuration")
       )
     override def urlOfJwkSets: Box[String] = checkUrlOfJwkSets(identityProvider = obpOidcIssuer)
     def isIssuer(jwt: String): Boolean = isIssuer(jwtToken=jwt, identityProvider = obpOidcIssuer)
