@@ -225,7 +225,7 @@ trait APIMethods510 {
       case "log-cache" :: logLevel :: Nil JsonGet _ =>
         cc => implicit val ec = EndpointContext(Some(cc))
           for {
-            logs <- Future(RedisLogger.tail(RedisLogger.LogLevel.valueOf(logLevel)))
+            logs <- Future(RedisLogger.getLogTail(RedisLogger.LogLevel.valueOf(logLevel)))
           } yield {
             (logs, HttpCode.`200`(cc.callContext))
           }
