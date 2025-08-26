@@ -1511,3 +1511,15 @@ regulated_entities = []
 
 
 # Note: For secure and http only settings for cookies see resources/web.xml which is mentioned in the README.md
+
+
+
+## SIX different FIFO redis queues. Each queue have a maximum of 1000 entries.
+## with 6 Props for the number of messages in each queue.
+## 0 is the default and we don't write to the redis cache
+# keep_n_trace_level_logs_in_cache = 0
+# keep_n_debug_level_logs_in_cache = 0
+# keep_n_info_level_logs_in_cache = 0
+# keep_n_warning_level_logs_in_cache = 0
+# keep_n_error_level_logs_in_cache = 0
+# keep_n_all_level_logs_in_cache = 0

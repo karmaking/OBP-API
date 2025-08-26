@@ -6,6 +6,7 @@ import code.api.Constant._
 import code.api.OAuth2Login.{Keycloak, OBPOIDC}
 import code.api.ResourceDocs1_4_0.SwaggerDefinitionsJSON._
 import code.api.berlin.group.v1_3.JSONFactory_BERLIN_GROUP_1_3.{ConsentAccessAccountsJson, ConsentAccessJson}
+import code.api.cache.RedisLogger
 import code.api.util.APIUtil._
 import code.api.util.ApiRole._
 import code.api.util.ApiTag._
@@ -200,6 +201,33 @@ trait APIMethods510 {
             (entities, callContext) <- getRegulatedEntitiesNewStyle(cc.callContext)
           } yield {
             (createRegulatedEntitiesJson(entities), HttpCode.`200`(callContext))
+          }
+    }
+
+    staticResourceDocs += ResourceDoc(
+      logCacheEndpoint,
+      implementedInApiVersion,
+      nameOf(logCacheEndpoint),
+      "GET",
+      "/log-cache/LOG_LEVEL",
+      "Get Log Cache",
+      """Returns information about:
+        |
+        |* Log Cache
+        """,
+      EmptyBody,
+      EmptyBody,
+      List($UserNotLoggedIn, UnknownError),
+      apiTagApi :: Nil,
+      Some(List(canGetAllLevelLogsAtAllBanks)))
+
+    lazy val logCacheEndpoint: OBPEndpoint = {
+      case "log-cache" :: logLevel :: Nil JsonGet _ =>
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            logs <- Future(RedisLogger.tail(RedisLogger.LogLevel.valueOf(logLevel)))
+          } yield {
+            (logs, HttpCode.`200`(cc.callContext))
           }
     }
 

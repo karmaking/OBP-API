@@ -128,6 +128,9 @@ case class RegulatedEntityPostJsonV510(
                                     )
 case class RegulatedEntitiesJsonV510(entities: List[RegulatedEntityJsonV510])
 
+case class LogCacheJsonV510(level: String, message: String)
+case class LogsCacheJsonV510(logs: List[String])
+
 case class WaitingForGodotJsonV510(sleep_in_milliseconds: Long)
 
 case class CertificateInfoJsonV510(

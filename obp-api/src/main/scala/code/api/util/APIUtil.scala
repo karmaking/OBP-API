@@ -2937,8 +2937,7 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
           val errorResponse = getFilteredOrFullErrorMessage(e)
           Full(reply.apply(errorResponse))
         case Failure(msg, e, _) =>
-          surroundErrorMessage(msg)
-          e.foreach(logger.debug("", _))
+          e.foreach(logger.error(msg, _))
           extractAPIFailureNewStyle(msg) match {
             case Some(af) =>
               val callContextLight = af.ccl.map(_.copy(httpCode = Some(af.failCode)))
@@ -3013,8 +3012,8 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
     val xRequestId: Option[String] =
       reqHeaders.find(_.name.toLowerCase() == RequestHeader.`X-Request-ID`.toLowerCase())
         .map(_.values.mkString(","))
-    val title = s"Request Headers for verb: $verb, URL: $url"
-    surroundDebugMessage(reqHeaders.map(h => h.name + ": " + h.values.mkString(",")).mkString, title)
+    logger.debug(s"Request Headers for verb: $verb, URL: $url")
+    logger.debug(reqHeaders.map(h => h.name + ": " + h.values.mkString(",")).mkString)
     val remoteIpAddress = getRemoteIpAddress()
 
     val authHeaders = AuthorisationUtil.getAuthorisationHeaders(reqHeaders)

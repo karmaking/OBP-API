@@ -1,5 +1,7 @@
 package code.util
 
+import code.api.cache.{Redis, RedisLogger}
+
 import java.net.{Socket, SocketException, URL}
 import java.util.UUID.randomUUID
 import java.util.{Date, GregorianCalendar}
@@ -171,36 +173,36 @@ object Helper extends Loggable {
 
 
   /**
-   * 
+   *
    * @param redirectUrl eg: http://localhost:8082/oauthcallback?oauth_token=G5AEA2U1WG404EGHTIGBHKRR4YJZAPPHWKOMNEEV&oauth_verifier=53018
    * @return http://localhost:8082/oauthcallback
    */
   def getStaticPortionOfRedirectURL(redirectUrl: String): Box[String] = {
     tryo(redirectUrl.split("\\?")(0)) //return everything before the "?"
   }
-  
+
   /**
-   * extract clean redirect url from input value, because input may have some parameters, such as the following examples  <br/> 
-   * eg1: http://localhost:8082/oauthcallback?....--> http://localhost:8082 <br/> 
+   * extract clean redirect url from input value, because input may have some parameters, such as the following examples  <br/>
+   * eg1: http://localhost:8082/oauthcallback?....--> http://localhost:8082 <br/>
    * eg2: http://localhost:8016?oautallback?=3NLMGV ...--> http://localhost:8016
    *
    * @param redirectUrl -> http://localhost:8082/oauthcallback?oauth_token=G5AEA2U1WG404EGHTIGBHKRR4YJZAPPHWKOMNEEV&oauth_verifier=53018
    * @return hostOnlyOfRedirectURL-> http://localhost:8082
    */
-  @deprecated("We can not only use hostname as the redirectUrl, now add new method `getStaticPortionOfRedirectURL` ","05.12.2023")  
+  @deprecated("We can not only use hostname as the redirectUrl, now add new method `getStaticPortionOfRedirectURL` ","05.12.2023")
   def getHostOnlyOfRedirectURL(redirectUrl: String): Box[String] = {
     val url = new URL(redirectUrl) //eg: http://localhost:8082/oauthcallback?oauth_token=G5AEA2U1WG404EGHTIGBHKRR4YJZAPPHWKOMNEEV&oauth_verifier=53018
     val protocol = url.getProtocol() // http
     val authority = url.getAuthority()// localhost:8082, this will contain the port.
-    tryo(s"$protocol://$authority") // http://localhost:8082 
+    tryo(s"$protocol://$authority") // http://localhost:8082
   }
-  
+
   /**
-    * extract Oauth Token String from input value, because input may have some parameters, such as the following examples  <br/> 
-    * http://localhost:8082/oauthcallback?oauth_token=DKR242MB3IRCUVG35UZ0QQOK3MBS1G2HL2ZIKK2O&oauth_verifier=64465 
+    * extract Oauth Token String from input value, because input may have some parameters, such as the following examples  <br/>
+    * http://localhost:8082/oauthcallback?oauth_token=DKR242MB3IRCUVG35UZ0QQOK3MBS1G2HL2ZIKK2O&oauth_verifier=64465
     *   -->  DKR242MB3IRCUVG35UZ0QQOK3MBS1G2HL2ZIKK2O
-    * 
-    * @param input a long url with parameters 
+    *
+    * @param input a long url with parameters
     * @return Oauth Token String
     */
   def extractOauthToken(input: String): Box[String] = {
@@ -236,7 +238,7 @@ object Helper extends Loggable {
     * Used for version extraction from props string
     */
   val matchAnyStoredProcedure = "stored_procedure.*|star".r
-  
+
   /**
     * change the TimeZone to the current TimeZOne
     * reference the following trait
@@ -246,25 +248,25 @@ object Helper extends Loggable {
     */
     //TODO need clean this format, we have set the TimeZone in boot.scala
   val DateFormatWithCurrentTimeZone = new Formats {
-  
+
     import java.text.{ParseException, SimpleDateFormat}
-  
+
     val dateFormat = new DateFormat {
       def parse(s: String) = try {
         Some(formatter.parse(s))
       } catch {
         case e: ParseException => None
       }
-    
+
       def format(d: Date) = formatter.format(d)
-    
+
       private def formatter = {
         val f = dateFormatter
         f.setTimeZone(new GregorianCalendar().getTimeZone)
         f
       }
     }
-  
+
     protected def dateFormatter = APIUtil.DateWithMsFormat
   }
 
@@ -316,31 +318,91 @@ object Helper extends Loggable {
   }
 
   trait MdcLoggable extends Loggable {
-    protected def initiate(): Unit = () // The type is Unit and the only value this type can take is the literal ()
-    protected def surroundWarnMessage(msg: String, title: String = ""): Unit = {
-      
-      logger.warn(s"+-${title}${StringUtils.repeat("-", msg.length - title.length)}-+")
-      logger.warn(s"| $msg |")
-      logger.warn(s"+-${StringUtils.repeat("-", msg.length)}-+")
+
+    override protected val logger: net.liftweb.common.Logger = {
+      val loggerName = this.getClass.getName
+
+      new net.liftweb.common.Logger {
+        private val underlyingLogger = net.liftweb.common.Logger(loggerName)
+
+        // INFO
+        override def info(msg: => AnyRef): Unit = {
+          val m = msg.toString
+          underlyingLogger.info(m)
+          RedisLogger.log(RedisLogger.LogLevel.INFO, m)
+        }
+
+        override def info(msg: => AnyRef, t: => Throwable): Unit = {
+          val m = msg.toString
+          underlyingLogger.info(m, t)
+          RedisLogger.log(RedisLogger.LogLevel.INFO, m)
+        }
+
+        // WARN
+        override def warn(msg: => AnyRef): Unit = {
+          val m = msg.toString
+          underlyingLogger.warn(m)
+          RedisLogger.log(RedisLogger.LogLevel.WARNING, m)
+        }
+
+        override def warn(msg: => AnyRef, t: Throwable): Unit = {
+          val m = msg.toString
+          underlyingLogger.warn(m, t)
+          RedisLogger.log(RedisLogger.LogLevel.WARNING, m)
+        }
+
+        // ERROR
+        override def error(msg: => AnyRef): Unit = {
+          val m = msg.toString
+          underlyingLogger.error(m)
+          RedisLogger.log(RedisLogger.LogLevel.ERROR, m)
+        }
+
+        override def error(msg: => AnyRef, t: Throwable): Unit = {
+          val m = msg.toString
+          underlyingLogger.error(m, t)
+          RedisLogger.log(RedisLogger.LogLevel.ERROR, m)
+        }
+
+        // DEBUG
+        override def debug(msg: => AnyRef): Unit = {
+          val m = msg.toString
+          underlyingLogger.debug(m)
+          RedisLogger.log(RedisLogger.LogLevel.DEBUG, m)
+        }
+
+        override def debug(msg: => AnyRef, t: Throwable): Unit = {
+          val m = msg.toString
+          underlyingLogger.debug(m, t)
+          RedisLogger.log(RedisLogger.LogLevel.DEBUG, m)
+        }
+
+        // TRACE
+        override def trace(msg: => AnyRef): Unit = {
+          val m = msg.toString
+          underlyingLogger.trace(m)
+          RedisLogger.log(RedisLogger.LogLevel.TRACE, m)
+        }
+
+        // Delegate enabled checks
+        override def isDebugEnabled: Boolean = underlyingLogger.isDebugEnabled
+
+        override def isErrorEnabled: Boolean = underlyingLogger.isErrorEnabled
+
+        override def isInfoEnabled: Boolean = underlyingLogger.isInfoEnabled
+
+        override def isTraceEnabled: Boolean = underlyingLogger.isTraceEnabled
+
+        override def isWarnEnabled: Boolean = underlyingLogger.isWarnEnabled
+      }
     }
-    protected def surroundInfoMessage(msg: String, title: String = ""): Unit = {
-      logger.info(s"+-${title}${StringUtils.repeat("-", msg.length - title.length)}-+")
-      logger.info(s"| $msg |")
-      logger.info(s"+-${StringUtils.repeat("-", msg.length)}-+")
-    }
-    protected def surroundErrorMessage(msg: String, title: String = ""): Unit = {
-      logger.error(s"+-${title}${StringUtils.repeat("-", msg.length - title.length)}-+")
-      logger.error(s"| $msg |")
-      logger.error(s"+-${StringUtils.repeat("-", msg.length)}-+")
-    }
-    protected def surroundDebugMessage(msg: String, title: String = ""): Unit = {
-      logger.debug(s"+-${title}${StringUtils.repeat("-", msg.length - title.length)}-+")
-      logger.debug(s"| $msg |")
-      logger.debug(s"+-${StringUtils.repeat("-", msg.length)}-+")
-    }
+
+    protected def initiate(): Unit = ()
+
     initiate()
     MDC.put("host" -> getHostname)
   }
+
 
   /*
   Return true for Y, YES and true etc.
@@ -393,7 +455,7 @@ object Helper extends Loggable {
           case _ => Nil
         }
         default.getOrElse(words.mkString(" ") + ".")
-      } else 
+      } else
         S.?(message)
     } else {
       logger.error(s"i18n(message($message), default${default}: Attempted to use resource bundles outside of an initialized S scope. " +
@@ -411,8 +473,8 @@ object Helper extends Loggable {
    * @return modified instance
    */
   private def convertId[T](
-    obj: T, 
-    customerIdConverter: String=> String, 
+    obj: T,
+    customerIdConverter: String=> String,
     accountIdConverter: String=> String,
     transactionIdConverter: String=> String
   ): T = {
@@ -433,7 +495,7 @@ object Helper extends Loggable {
         (ownerType <:< typeOf[AccountBalances] && fieldName.equalsIgnoreCase("id") && fieldType =:= typeOf[String])||
         (ownerType <:< typeOf[AccountHeld] && fieldName.equalsIgnoreCase("id") && fieldType =:= typeOf[String])
     }
-    
+
     def isTransactionId(fieldName: String, fieldType: Type, fieldValue: Any, ownerType: Type) = {
       ownerType <:< typeOf[TransactionId] ||
         (fieldName.equalsIgnoreCase("transactionId") && fieldType =:= typeOf[String])||
@@ -502,10 +564,10 @@ object Helper extends Loggable {
 
       lazy val result = method.invoke(net.liftweb.http.S, args: _*)
       val methodName = method.getName
-      
+
       if (methodName.equals("param")&&result.isInstanceOf[Box[String]]&&result.asInstanceOf[Box[String]].isDefined) {
         //we provide the basic check for all the parameters
-        val resultAfterChecked = 
+        val resultAfterChecked =
           if((args.length>0) && args.apply(0).toString.equalsIgnoreCase("username")) {
             result.asInstanceOf[Box[String]].filter(APIUtil.checkUsernameString(_)==SILENCE_IS_GOLDEN)
           }else if((args.length>0) && args.apply(0).toString.equalsIgnoreCase("password")){
@@ -517,7 +579,7 @@ object Helper extends Loggable {
           } else{
             result.asInstanceOf[Box[String]].filter(APIUtil.checkMediumString(_)==SILENCE_IS_GOLDEN)
           }
-        if(resultAfterChecked.isEmpty) { 
+        if(resultAfterChecked.isEmpty) {
           logger.debug(s"ObpS.${methodName} validation failed. (resultAfterChecked.isEmpty A) The input key is: ${if (args.length>0)args.apply(0) else ""}, value is:$result")
         }
         resultAfterChecked
@@ -532,7 +594,7 @@ object Helper extends Loggable {
       } else if (methodName.equals("uriAndQueryString") && result.isInstanceOf[Box[String]] && result.asInstanceOf[Box[String]].isDefined ||
         methodName.equals("queryString") && result.isInstanceOf[Box[String]]&&result.asInstanceOf[Box[String]].isDefined){
         val resultAfterChecked = result.asInstanceOf[Box[String]].filter(APIUtil.basicUriAndQueryStringValidation(_))
-        if(resultAfterChecked.isEmpty) { 
+        if(resultAfterChecked.isEmpty) {
           logger.debug(s"ObpS.${methodName} validation failed. (resultAfterChecked.isEmpty B) The value is:$result")
         }
         resultAfterChecked
@@ -540,7 +602,7 @@ object Helper extends Loggable {
         result
       }
     }
-    
+
     val enhancer: Enhancer = new Enhancer()
     enhancer.setSuperclass(classOf[S])
     enhancer.setCallback(intercept)
