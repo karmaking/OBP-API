@@ -35,7 +35,7 @@ import code.accountattribute.MappedAccountAttribute
 import code.accountholders.MapperAccountHolders
 import code.actorsystem.ObpActorSystem
 import code.api.Constant._
-import code.api.ResourceDocs1_4_0.ResourceDocs300.{ResourceDocs310, ResourceDocs400, ResourceDocs500, ResourceDocs510}
+import code.api.ResourceDocs1_4_0.ResourceDocs300.{ResourceDocs310, ResourceDocs400, ResourceDocs500, ResourceDocs510, ResourceDocs600}
 import code.api.ResourceDocs1_4_0._
 import code.api._
 import code.api.attributedefinition.AttributeDefinition
@@ -46,7 +46,6 @@ import code.api.util.ApiRole.CanCreateEntitlementAtAnyBank
 import code.api.util.ErrorMessages.MandatoryPropertyIsNotSet
 import code.api.util._
 import code.api.util.migration.Migration
-import code.api.util.CommonsEmailWrapper
 import code.api.util.migration.Migration.DbFunction
 import code.apicollection.ApiCollection
 import code.apicollectionendpoint.ApiCollectionEndpoint
@@ -467,6 +466,7 @@ class Boot extends MdcLoggable {
     enableVersionIfAllowed(ApiVersion.v4_0_0)
     enableVersionIfAllowed(ApiVersion.v5_0_0)
     enableVersionIfAllowed(ApiVersion.v5_1_0)
+    enableVersionIfAllowed(ApiVersion.v6_0_0)
     enableVersionIfAllowed(ApiVersion.`dynamic-endpoint`)
     enableVersionIfAllowed(ApiVersion.`dynamic-entity`)
 
@@ -525,6 +525,7 @@ class Boot extends MdcLoggable {
     LiftRules.statelessDispatch.append(ResourceDocs400)
     LiftRules.statelessDispatch.append(ResourceDocs500)
     LiftRules.statelessDispatch.append(ResourceDocs510)
+    LiftRules.statelessDispatch.append(ResourceDocs600)
     ////////////////////////////////////////////////////
 
 
