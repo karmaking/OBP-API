@@ -26,6 +26,7 @@ import net.liftweb.util.Helpers.tryo
 import net.sf.cglib.proxy.{Enhancer, MethodInterceptor, MethodProxy}
 
 import java.lang.reflect.Method
+import java.text.SimpleDateFormat
 import scala.concurrent.Future
 import scala.util.Random
 import scala.reflect.runtime.universe.Type
@@ -317,85 +318,87 @@ object Helper extends Loggable {
     candidatePort
   }
 
+
+
   trait MdcLoggable extends Loggable {
+
+    // Capture the class name of the component mixing in this trait
+    private val clazzName: String = this.getClass.getSimpleName.replaceAll("\\$", "")
 
     override protected val logger: net.liftweb.common.Logger = {
       val loggerName = this.getClass.getName
 
       new net.liftweb.common.Logger {
+
         private val underlyingLogger = net.liftweb.common.Logger(loggerName)
 
-        // INFO
-        override def info(msg: => AnyRef): Unit = {
-          val m = msg.toString
-          underlyingLogger.info(m)
-          RedisLogger.log(RedisLogger.LogLevel.INFO, m)
+        private val dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ssX")
+        dateFormat.setTimeZone(java.util.TimeZone.getDefault) // force local TZ
+
+        private def toRedisFormat(msg: AnyRef): String = {
+          val ts = dateFormat.format(new Date())
+          val thread = Thread.currentThread().getName
+          s"[$ts] [$thread] [$clazzName] ${msg.toString}"
         }
 
-        override def info(msg: => AnyRef, t: => Throwable): Unit = {
-          val m = msg.toString
-          underlyingLogger.info(m, t)
-          RedisLogger.log(RedisLogger.LogLevel.INFO, m)
-        }
-
-        // WARN
-        override def warn(msg: => AnyRef): Unit = {
-          val m = msg.toString
-          underlyingLogger.warn(m)
-          RedisLogger.log(RedisLogger.LogLevel.WARNING, m)
-        }
-
-        override def warn(msg: => AnyRef, t: Throwable): Unit = {
-          val m = msg.toString
-          underlyingLogger.warn(m, t)
-          RedisLogger.log(RedisLogger.LogLevel.WARNING, m)
-        }
-
-        // ERROR
-        override def error(msg: => AnyRef): Unit = {
-          val m = msg.toString
-          underlyingLogger.error(m)
-          RedisLogger.log(RedisLogger.LogLevel.ERROR, m)
-        }
-
-        override def error(msg: => AnyRef, t: Throwable): Unit = {
-          val m = msg.toString
-          underlyingLogger.error(m, t)
-          RedisLogger.log(RedisLogger.LogLevel.ERROR, m)
-        }
-
-        // DEBUG
-        override def debug(msg: => AnyRef): Unit = {
-          val m = msg.toString
-          underlyingLogger.debug(m)
-          RedisLogger.log(RedisLogger.LogLevel.DEBUG, m)
-        }
-
-        override def debug(msg: => AnyRef, t: Throwable): Unit = {
-          val m = msg.toString
-          underlyingLogger.debug(m, t)
-          RedisLogger.log(RedisLogger.LogLevel.DEBUG, m)
-        }
-
-        // TRACE
-        override def trace(msg: => AnyRef): Unit = {
-          val m = msg.toString
-          underlyingLogger.trace(m)
-          RedisLogger.log(RedisLogger.LogLevel.TRACE, m)
-        }
-
-        // Delegate enabled checks
-        override def isDebugEnabled: Boolean = underlyingLogger.isDebugEnabled
-
-        override def isErrorEnabled: Boolean = underlyingLogger.isErrorEnabled
-
-        override def isInfoEnabled: Boolean = underlyingLogger.isInfoEnabled
-
-        override def isTraceEnabled: Boolean = underlyingLogger.isTraceEnabled
-
-        override def isWarnEnabled: Boolean = underlyingLogger.isWarnEnabled
+      // INFO
+      override def info(msg: => AnyRef): Unit = {
+        underlyingLogger.info(msg)
+        RedisLogger.log(RedisLogger.LogLevel.INFO, toRedisFormat(msg))
       }
+
+      override def info(msg: => AnyRef, t: => Throwable): Unit = {
+        underlyingLogger.info(msg, t)
+        RedisLogger.log(RedisLogger.LogLevel.INFO, toRedisFormat(msg) + "\n" + t.toString)
+      }
+
+      // WARN
+      override def warn(msg: => AnyRef): Unit = {
+        underlyingLogger.warn(msg)
+        RedisLogger.log(RedisLogger.LogLevel.WARNING, toRedisFormat(msg))
+      }
+
+      override def warn(msg: => AnyRef, t: Throwable): Unit = {
+        underlyingLogger.warn(msg, t)
+        RedisLogger.log(RedisLogger.LogLevel.WARNING, toRedisFormat(msg) + "\n" + t.toString)
+      }
+
+      // ERROR
+      override def error(msg: => AnyRef): Unit = {
+        underlyingLogger.error(msg)
+        RedisLogger.log(RedisLogger.LogLevel.ERROR, toRedisFormat(msg))
+      }
+
+      override def error(msg: => AnyRef, t: Throwable): Unit = {
+        underlyingLogger.error(msg, t)
+        RedisLogger.log(RedisLogger.LogLevel.ERROR, toRedisFormat(msg) + "\n" + t.toString)
+      }
+
+      // DEBUG
+      override def debug(msg: => AnyRef): Unit = {
+        underlyingLogger.debug(msg)
+        RedisLogger.log(RedisLogger.LogLevel.DEBUG, toRedisFormat(msg))
+      }
+
+      override def debug(msg: => AnyRef, t: Throwable): Unit = {
+        underlyingLogger.debug(msg, t)
+        RedisLogger.log(RedisLogger.LogLevel.DEBUG, toRedisFormat(msg) + "\n" + t.toString)
+      }
+
+      // TRACE
+      override def trace(msg: => AnyRef): Unit = {
+        underlyingLogger.trace(msg)
+        RedisLogger.log(RedisLogger.LogLevel.TRACE, toRedisFormat(msg))
+      }
+
+      // Delegate enabled checks
+      override def isDebugEnabled: Boolean = underlyingLogger.isDebugEnabled
+      override def isErrorEnabled: Boolean = underlyingLogger.isErrorEnabled
+      override def isInfoEnabled: Boolean = underlyingLogger.isInfoEnabled
+      override def isTraceEnabled: Boolean = underlyingLogger.isTraceEnabled
+      override def isWarnEnabled: Boolean = underlyingLogger.isWarnEnabled
     }
+  }
 
     protected def initiate(): Unit = ()
 
