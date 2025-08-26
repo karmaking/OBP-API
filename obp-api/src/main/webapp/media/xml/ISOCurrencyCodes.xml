@@ -1947,7 +1947,7 @@
     </CcyNtry>
     <!-- Cardano (ADA)  -->
     <CcyNtry>
-      <CtryNm>ZZ12_Cardano</CtryNm>
+      <CtryNm>Cardano</CtryNm>
       <CcyNm>Cardano</CcyNm>
       <Ccy>ada</Ccy>
       <CcyNbr>null</CcyNbr>
@@ -1955,7 +1955,7 @@
     </CcyNtry>
     <!-- Lovelace (The smallest unit of ADA) -->
     <CcyNtry>
-      <CtryNm>ZZ12_Cardano_Lovelace</CtryNm>
+      <CtryNm>Cardano_Lovelace</CtryNm>
       <CcyNm>Lovelace</CcyNm>
       <Ccy>lovelace</Ccy>               
       <CcyNbr>null</CcyNbr>
