@@ -4,7 +4,9 @@ import code.api.util.APIUtil
 import redis.clients.jedis.Pipeline
 
 import scala.collection.JavaConverters._
-import scala.util.Try
+import scala.util.{Failure, Success, Try}
+import scala.concurrent.Future
+import com.openbankproject.commons.ExecutionContext.Implicits.global
 
 /**
  * Redis queue configuration per log level.
@@ -49,21 +51,35 @@ object RedisLogger {
   )
 
   /**
-   * Write a log line to Redis FIFO queue.
+   * Synchronous log (blocking until Redis writes are done).
    */
-  def log(level: LogLevel.LogLevel, message: String): Try[Unit] = Try {
+  def logSync(level: LogLevel.LogLevel, message: String): Try[Unit] = Try {
+    withPipeline { pipeline =>
+      // log to requested level
+      configs.get(level).foreach(cfg => pushLog(pipeline, cfg, message))
+      // also log to ALL
+      configs.get(LogLevel.ALL).foreach(cfg => pushLog(pipeline, cfg, s"[$level] $message"))
+      pipeline.sync()
+    }
+  }
+
+  /**
+   * Asynchronous log (fire-and-forget).
+   * Returns a Future[Unit], failures are logged but do not block caller.
+   */
+  def logAsync(level: LogLevel.LogLevel, message: String): Future[Unit] = Future {
+    logSync(level, message) match {
+      case Success(_) => // ok
+      case Failure(e) => println(s"RedisLogger.async failed: ${e.getMessage}")
+    }
+  }
+
+  private def withPipeline(block: Pipeline => Unit): Unit = {
     Option(Redis.jedisPool).foreach { pool =>
       val jedis = pool.getResource
       try {
         val pipeline: Pipeline = jedis.pipelined()
-
-        // log to requested level
-        configs.get(level).foreach(cfg => pushLog(pipeline, cfg, message))
-
-        // also log to ALL
-        configs.get(LogLevel.ALL).foreach(cfg => pushLog(pipeline, cfg, s"[$level] $message"))
-
-        pipeline.sync()
+        block(pipeline)
       } finally {
         jedis.close()
       }

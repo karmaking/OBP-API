@@ -344,51 +344,51 @@ object Helper extends Loggable {
       // INFO
       override def info(msg: => AnyRef): Unit = {
         underlyingLogger.info(msg)
-        RedisLogger.log(RedisLogger.LogLevel.INFO, toRedisFormat(msg))
+        RedisLogger.logAsync(RedisLogger.LogLevel.INFO, toRedisFormat(msg))
       }
 
       override def info(msg: => AnyRef, t: => Throwable): Unit = {
         underlyingLogger.info(msg, t)
-        RedisLogger.log(RedisLogger.LogLevel.INFO, toRedisFormat(msg) + "\n" + t.toString)
+        RedisLogger.logAsync(RedisLogger.LogLevel.INFO, toRedisFormat(msg) + "\n" + t.toString)
       }
 
       // WARN
       override def warn(msg: => AnyRef): Unit = {
         underlyingLogger.warn(msg)
-        RedisLogger.log(RedisLogger.LogLevel.WARNING, toRedisFormat(msg))
+        RedisLogger.logAsync(RedisLogger.LogLevel.WARNING, toRedisFormat(msg))
       }
 
       override def warn(msg: => AnyRef, t: Throwable): Unit = {
         underlyingLogger.warn(msg, t)
-        RedisLogger.log(RedisLogger.LogLevel.WARNING, toRedisFormat(msg) + "\n" + t.toString)
+        RedisLogger.logAsync(RedisLogger.LogLevel.WARNING, toRedisFormat(msg) + "\n" + t.toString)
       }
 
       // ERROR
       override def error(msg: => AnyRef): Unit = {
         underlyingLogger.error(msg)
-        RedisLogger.log(RedisLogger.LogLevel.ERROR, toRedisFormat(msg))
+        RedisLogger.logAsync(RedisLogger.LogLevel.ERROR, toRedisFormat(msg))
       }
 
       override def error(msg: => AnyRef, t: Throwable): Unit = {
         underlyingLogger.error(msg, t)
-        RedisLogger.log(RedisLogger.LogLevel.ERROR, toRedisFormat(msg) + "\n" + t.toString)
+        RedisLogger.logAsync(RedisLogger.LogLevel.ERROR, toRedisFormat(msg) + "\n" + t.toString)
       }
 
       // DEBUG
       override def debug(msg: => AnyRef): Unit = {
         underlyingLogger.debug(msg)
-        RedisLogger.log(RedisLogger.LogLevel.DEBUG, toRedisFormat(msg))
+        RedisLogger.logAsync(RedisLogger.LogLevel.DEBUG, toRedisFormat(msg))
       }
 
       override def debug(msg: => AnyRef, t: Throwable): Unit = {
         underlyingLogger.debug(msg, t)
-        RedisLogger.log(RedisLogger.LogLevel.DEBUG, toRedisFormat(msg) + "\n" + t.toString)
+        RedisLogger.logAsync(RedisLogger.LogLevel.DEBUG, toRedisFormat(msg) + "\n" + t.toString)
       }
 
       // TRACE
       override def trace(msg: => AnyRef): Unit = {
         underlyingLogger.trace(msg)
-        RedisLogger.log(RedisLogger.LogLevel.TRACE, toRedisFormat(msg))
+        RedisLogger.logAsync(RedisLogger.LogLevel.TRACE, toRedisFormat(msg))
       }
 
       // Delegate enabled checks
