@@ -52,7 +52,7 @@ import com.openbankproject.commons.model._
 import com.openbankproject.commons.util.ApiVersion
 import net.liftweb.common.{Box, Full}
 import net.liftweb.json
-import net.liftweb.json.{JString, JValue, MappingException, parse, parseOpt}
+import net.liftweb.json.{Meta, _}
 
 import java.text.SimpleDateFormat
 import java.util.Date
