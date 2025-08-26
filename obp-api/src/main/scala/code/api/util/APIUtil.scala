@@ -3021,14 +3021,38 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
     val authHeadersWithEmptyValues = RequestHeadersUtil.checkEmptyRequestHeaderValues(reqHeaders)
     val authHeadersWithEmptyNames = RequestHeadersUtil.checkEmptyRequestHeaderNames(reqHeaders)
 
-    // Identify consumer via certificate
+    // CONSUMER VALIDATION LOGIC
+    // OBP-API supports two methods for identifying/validating API consumers (applications):
+    // 1. CONSUMER_CERTIFICATE - Uses mTLS certificates or certificate headers (more secure, PSD2 compliant)
+    // 2. CONSUMER_KEY_VALUE - Uses traditional API keys in request headers (simpler for dev/test)
+    
+    // Step 1: Always attempt to identify consumer via certificate/mTLS
+    // This looks for TPP-Signature-Certificate or PSD2-CERT headers, or mTLS client certificates
     val consumerByCertificate = Consent.getCurrentConsumerViaTppSignatureCertOrMtls(callContext = cc)
     logger.debug(s"consumerByCertificate: $consumerByCertificate")
+    
+    // Step 2: Check which validation method is configured for consent requests
+    // Default is CONSUMER_CERTIFICATE (certificate-based validation)
+    // Alternative is CONSUMER_KEY_VALUE (consumer key-based validation)
     val method = APIUtil.getPropsValue(nameOfProperty = "consumer_validation_method_for_consent", defaultValue = "CONSUMER_CERTIFICATE")
+    
+    // Step 3: Conditionally attempt to identify consumer via consumer key (only if method allows it)
     val consumerByConsumerKey = getConsumerKey(reqHeaders) match {
       case Some(consumerKey) if method == "CONSUMER_KEY_VALUE" =>
+        // Consumer key found AND system is configured to use consumer key validation
+        // Look up the consumer by their API key
         Consumers.consumers.vend.getConsumerByConsumerKey(consumerKey)
+        
+      case Some(_) =>
+        // Consumer key found BUT system is configured for certificate validation
+        // Ignore the consumer key and return Empty (will rely on certificate validation instead)
+        // This prevents MatchError when consumer key is present but method != "CONSUMER_KEY_VALUE"
+        logger.warn(s"Consumer key provided in request but OBP is configured for certificate validation (method=$method). Ignoring consumer key and using certificate validation instead.")
+        Empty
+        
       case None =>
+        // No consumer key found in request headers
+        // This is normal for certificate-based validation or anonymous requests
         Empty
     }
     logger.debug(s"consumerByConsumerKey: $consumerByConsumerKey")
