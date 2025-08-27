@@ -2189,12 +2189,25 @@ trait APIMethods510 {
             grantorConsumerId = callContext.map(_.consumer.toOption.map(_.consumerId.get)).flatten.getOrElse("Unknown")
             //this is from json body
             granteeConsumerId = consentJson.consumer_id.getOrElse("Unknown")
+            
+            // Debug logging for consumer IDs
+            _ <- Future.successful {
+              println(s"DEBUG: Consent creation - grantorConsumerId: $grantorConsumerId")
+              println(s"DEBUG: Consent creation - granteeConsumerId: $granteeConsumerId")
+              println(s"DEBUG: Consent creation - skipConsentScaForConsumerIdPairs: ${APIUtil.skipConsentScaForConsumerIdPairs}")
+            }
 
             shouldSkipConsentScaForConsumerIdPair = APIUtil.skipConsentScaForConsumerIdPairs.contains(
               APIUtil.ConsumerIdPair(
                 grantorConsumerId,
                 granteeConsumerId
             ))
+            _ <- Future.successful {
+              println(s"DEBUG: Consent creation - shouldSkipConsentScaForConsumerIdPair: $shouldSkipConsentScaForConsumerIdPair")
+              if (!shouldSkipConsentScaForConsumerIdPair) {
+                println(s"DEBUG: Consent creation - Consumer pair not found in skip list: ConsumerIdPair(grantor_consumer_id='$grantorConsumerId', grantee_consumer_id='$granteeConsumerId')")
+              }
+            }
             mappedConsent <- if (shouldSkipConsentScaForConsumerIdPair) {
               Future{
                  MappedConsent.find(By(MappedConsent.mConsentId, createdConsent.consentId)).map(_.mStatus(ConsentStatus.ACCEPTED.toString).saveMe()).head
