@@ -1,12 +1,13 @@
 package code.api.cache
 
-import code.api.util.APIUtil
+import code.api.util.ApiRole._
+import code.api.util.{APIUtil, ApiRole}
+import com.openbankproject.commons.ExecutionContext.Implicits.global
 import redis.clients.jedis.Pipeline
 
 import scala.collection.JavaConverters._
-import scala.util.{Failure, Success, Try}
 import scala.concurrent.Future
-import com.openbankproject.commons.ExecutionContext.Implicits.global
+import scala.util.{Failure, Success, Try}
 
 /**
  * Redis queue configuration per log level.
@@ -28,7 +29,7 @@ object RedisLogger {
     type LogLevel = Value
     val TRACE, DEBUG, INFO, WARNING, ERROR, ALL = Value
 
-    /** Parse a string into LogLevel, defaulting to INFO if unknown */
+    /** Parse a string into LogLevel, throw if unknown */
     def valueOf(str: String): LogLevel = str.toUpperCase match {
       case "TRACE"   => TRACE
       case "DEBUG"   => DEBUG
@@ -36,9 +37,21 @@ object RedisLogger {
       case "WARN" | "WARNING" => WARNING
       case "ERROR"   => ERROR
       case "ALL"     => ALL
-      case _         => INFO
+      case other     => throw new IllegalArgumentException(s"Invalid log level: $other")
+    }
+
+    /** Map a LogLevel to its required entitlements */
+    def requiredRoles(level: LogLevel): List[ApiRole] = level match {
+      case TRACE   => List(canGetTraceLevelLogsAtAllBanks, canGetAllLevelLogsAtAllBanks)
+      case DEBUG   => List(canGetDebugLevelLogsAtAllBanks, canGetAllLevelLogsAtAllBanks)
+      case INFO    => List(canGetInfoLevelLogsAtAllBanks, canGetAllLevelLogsAtAllBanks)
+      case WARNING => List(canGetWarningLevelLogsAtAllBanks, canGetAllLevelLogsAtAllBanks)
+      case ERROR   => List(canGetErrorLevelLogsAtAllBanks, canGetAllLevelLogsAtAllBanks)
+      case ALL     => List(canGetAllLevelLogsAtAllBanks)
     }
   }
+
+
 
   // Define FIFO queues, sizes configurable via props
   val configs: Map[LogLevel.Value, RedisLogConfig] = Map(

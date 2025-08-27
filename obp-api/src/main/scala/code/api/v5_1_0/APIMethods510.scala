@@ -223,13 +223,27 @@ trait APIMethods510 {
 
     lazy val logCacheEndpoint: OBPEndpoint = {
       case "log-cache" :: logLevel :: Nil JsonGet _ =>
-        cc => implicit val ec = EndpointContext(Some(cc))
+        cc =>
+          implicit val ec = EndpointContext(Some(cc))
           for {
-            logs <- Future(RedisLogger.getLogTail(RedisLogger.LogLevel.valueOf(logLevel)))
+            // Parse and validate log level
+            level <- NewStyle.function.tryons(ErrorMessages.invalidLogLevel, 400, cc.callContext) {
+              RedisLogger.LogLevel.valueOf(logLevel)
+            }
+            // Check entitlements using helper
+            _ <- NewStyle.function.handleEntitlementsAndScopes(
+              bankId = "",
+              userId = cc.userId,
+              roles = RedisLogger.LogLevel.requiredRoles(level),
+              callContext = cc.callContext
+            )
+            // Fetch logs
+            logs <- Future(RedisLogger.getLogTail(level))
           } yield {
             (logs, HttpCode.`200`(cc.callContext))
           }
     }
+
 
     staticResourceDocs += ResourceDoc(
       getRegulatedEntityById,
