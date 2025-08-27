@@ -441,7 +441,7 @@ object Helper extends Loggable {
   def getRequiredFieldInfo(tpe: Type): RequiredInfo = {
     var cacheKey = (randomUUID().toString, randomUUID().toString, randomUUID().toString)
     CacheKeyFromArguments.buildCacheKey {
-      code.api.cache.Caching.memoizeSyncWithProvider (Some(cacheKey.toString())) (100000 days) {
+      code.api.cache.Caching.memoizeSyncWithImMemory (Some(cacheKey.toString())) (100000 days) {
 
         RequiredFieldValidation.getRequiredInfo(tpe)
 
