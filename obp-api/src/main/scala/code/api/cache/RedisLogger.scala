@@ -55,12 +55,12 @@ object RedisLogger {
 
   // Define FIFO queues, sizes configurable via props
   val configs: Map[LogLevel.Value, RedisLogConfig] = Map(
-    LogLevel.TRACE   -> RedisLogConfig("trace_logs",   APIUtil.getPropsAsIntValue("keep_n_trace_level_logs_in_cache",   0)),
-    LogLevel.DEBUG   -> RedisLogConfig("debug_logs",   APIUtil.getPropsAsIntValue("keep_n_debug_level_logs_in_cache",   0)),
-    LogLevel.INFO    -> RedisLogConfig("info_logs",    APIUtil.getPropsAsIntValue("keep_n_info_level_logs_in_cache",    0)),
-    LogLevel.WARNING -> RedisLogConfig("warning_logs", APIUtil.getPropsAsIntValue("keep_n_warning_level_logs_in_cache", 0)),
-    LogLevel.ERROR   -> RedisLogConfig("error_logs",   APIUtil.getPropsAsIntValue("keep_n_error_level_logs_in_cache",   0)),
-    LogLevel.ALL     -> RedisLogConfig("all_logs",     APIUtil.getPropsAsIntValue("keep_n_all_level_logs_in_cache",     0))
+    LogLevel.TRACE   -> RedisLogConfig("obp_trace_logs",   APIUtil.getPropsAsIntValue("keep_n_trace_level_logs_in_cache",   0)),
+    LogLevel.DEBUG   -> RedisLogConfig("obp_debug_logs",   APIUtil.getPropsAsIntValue("keep_n_debug_level_logs_in_cache",   0)),
+    LogLevel.INFO    -> RedisLogConfig("obp_info_logs",    APIUtil.getPropsAsIntValue("keep_n_info_level_logs_in_cache",    0)),
+    LogLevel.WARNING -> RedisLogConfig("obp_warning_logs", APIUtil.getPropsAsIntValue("keep_n_warning_level_logs_in_cache", 0)),
+    LogLevel.ERROR   -> RedisLogConfig("obp_error_logs",   APIUtil.getPropsAsIntValue("keep_n_error_level_logs_in_cache",   0)),
+    LogLevel.ALL     -> RedisLogConfig("obp_all_logs",     APIUtil.getPropsAsIntValue("keep_n_all_level_logs_in_cache",     0))
   )
 
   /**
