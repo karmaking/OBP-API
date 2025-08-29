@@ -100,7 +100,7 @@ trait LocalMappedConnectorTestSetup extends TestConnectorSetupWithStandardPermis
     Entitlement.entitlement.vend.addEntitlement(bankId, userId, roleName)
   }
 
-  override protected def createTransaction(account: BankAccount, startDate: Date, finishDate: Date) = {
+  override protected def createTransaction(account: BankAccount, startDate: Date, finishDate: Date, isCompleted: Boolean) = {
     //ugly
     val mappedBankAccount = account.asInstanceOf[MappedBankAccount]
 
@@ -109,6 +109,13 @@ trait LocalMappedConnectorTestSetup extends TestConnectorSetupWithStandardPermis
     val accountBalanceAfter = accountBalanceBefore + transactionAmount
 
     mappedBankAccount.accountBalance(accountBalanceAfter).save
+
+    // Determine transaction status based on isCompleted parameter
+    val transactionStatus = if (isCompleted) {
+      TransactionRequestStatus.COMPLETED.toString
+    } else {
+      TransactionRequestStatus.INITIATED.toString
+    }
 
     MappedTransaction.create
       .bank(account.bankId.value)
@@ -132,43 +139,9 @@ trait LocalMappedConnectorTestSetup extends TestConnectorSetupWithStandardPermis
       .CPOtherAccountSecondaryRoutingAddress(randomString(5))
       .CPOtherBankRoutingScheme(randomString(5))
       .CPOtherBankRoutingAddress(randomString(5))
-      .status(TransactionRequestStatus.COMPLETED.toString)  // 🆕 Add transaction status field
+      .status(transactionStatus)  // Use determined transaction status
       .saveMe
       .toTransaction.orNull
-    
-    {
-      val accountBalanceBefore = mappedBankAccount.accountBalance.get
-      val transactionAmount = Random.nextInt(1000).toLong
-      val accountBalanceAfter = accountBalanceBefore + transactionAmount
-
-      mappedBankAccount.accountBalance(accountBalanceAfter).save
-
-      MappedTransaction.create
-        .bank(account.bankId.value)
-        .account(account.accountId.value)
-        .transactionType(randomString(5))
-        .tStartDate(startDate)
-        .tFinishDate(finishDate)
-        .currency(account.currency)
-        .amount(transactionAmount)
-        .newAccountBalance(accountBalanceAfter)
-        .description(randomString(5))
-        .counterpartyAccountHolder(randomString(5))
-        .counterpartyAccountKind(randomString(5))
-        .counterpartyAccountNumber(randomString(5))
-        .counterpartyBankName(randomString(5))
-        .counterpartyIban(randomString(5))
-        .counterpartyNationalId(randomString(5))
-        .CPOtherAccountRoutingScheme(randomString(5))
-        .CPOtherAccountRoutingAddress(randomString(5))
-        .CPOtherAccountSecondaryRoutingScheme(randomString(5))
-        .CPOtherAccountSecondaryRoutingAddress(randomString(5))
-        .CPOtherBankRoutingScheme(randomString(5))
-        .CPOtherBankRoutingAddress(randomString(5))
-        .status(TransactionRequestStatus.INITIATED.toString)  // 🆕 Add transaction status field
-        .saveMe
-        .toTransaction.orNull
-    }
   }
 
   override protected def createTransactionRequest(account: BankAccount): List[MappedTransactionRequest] = {
