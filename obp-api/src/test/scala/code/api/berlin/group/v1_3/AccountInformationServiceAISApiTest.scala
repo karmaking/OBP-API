@@ -192,10 +192,8 @@ class AccountInformationServiceAISApiTest extends BerlinGroupServerSetupV1_3 wit
       Then("We should get a 200 ")
       response.code should equal(200)
       response.body.extract[TransactionsJsonV13].account.iban should not be ("")
-//      response.body.extract[TransactionsJsonV13].transactions.booked.head.length >0 should be (true)
-      response.body.extract[TransactionsJsonV13].transactions.pending.head.nonEmpty should be (true)
-      response.body.extract[TransactionsJsonV13].transactions.booked.nonEmpty should be (true)
-
+      response.body.extract[TransactionsJsonV13].transactions.booked.head.length >0 should be (true)
+      response.body.extract[TransactionsJsonV13].transactions.pending.head.length >0 should be (true)
 
       val requestGet2 = (V1_3_BG / "accounts" / testAccountId1.value / "transactions").GET <@ (user1) <<? List(("bookingStatus", "booked"))
       val response2: APIResponse = makeGetRequest(requestGet2)
@@ -391,8 +389,7 @@ class AccountInformationServiceAISApiTest extends BerlinGroupServerSetupV1_3 wit
       Then("We should get a 200 ")
       response.code should equal(200)
       response.body.extract[TransactionsJsonV13].account.iban should not be ("")
-      response.body.extract[TransactionsJsonV13].transactions.pending.head.nonEmpty should be (true)
-//      response.body.extract[TransactionsJsonV13].transactions.pending.length > 0 should be (true)
+      response.body.extract[TransactionsJsonV13].transactions.pending.head.length > 0 should be (true)
       val transactionId = response.body.extract[TransactionsJsonV13].transactions.pending.head.head.transactionId
 
       val requestGet2 = (V1_3_BG / "accounts" / testAccountId.value / "transactions" / transactionId).GET <@ (user1)

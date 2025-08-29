@@ -14,6 +14,7 @@ import code.transactionrequests.MappedTransactionRequest
 import code.util.Helper.MdcLoggable
 import com.openbankproject.commons.model._
 import com.openbankproject.commons.model.enums.AccountRoutingScheme
+import  com.openbankproject.commons.model.enums._
 import net.liftweb.common.Box
 import net.liftweb.mapper.{By, MetaMapper}
 import net.liftweb.util.Helpers._
@@ -131,8 +132,43 @@ trait LocalMappedConnectorTestSetup extends TestConnectorSetupWithStandardPermis
       .CPOtherAccountSecondaryRoutingAddress(randomString(5))
       .CPOtherBankRoutingScheme(randomString(5))
       .CPOtherBankRoutingAddress(randomString(5))
+      .status(TransactionRequestStatus.COMPLETED.toString)  // 🆕 Add transaction status field
       .saveMe
       .toTransaction.orNull
+    
+    {
+      val accountBalanceBefore = mappedBankAccount.accountBalance.get
+      val transactionAmount = Random.nextInt(1000).toLong
+      val accountBalanceAfter = accountBalanceBefore + transactionAmount
+
+      mappedBankAccount.accountBalance(accountBalanceAfter).save
+
+      MappedTransaction.create
+        .bank(account.bankId.value)
+        .account(account.accountId.value)
+        .transactionType(randomString(5))
+        .tStartDate(startDate)
+        .tFinishDate(finishDate)
+        .currency(account.currency)
+        .amount(transactionAmount)
+        .newAccountBalance(accountBalanceAfter)
+        .description(randomString(5))
+        .counterpartyAccountHolder(randomString(5))
+        .counterpartyAccountKind(randomString(5))
+        .counterpartyAccountNumber(randomString(5))
+        .counterpartyBankName(randomString(5))
+        .counterpartyIban(randomString(5))
+        .counterpartyNationalId(randomString(5))
+        .CPOtherAccountRoutingScheme(randomString(5))
+        .CPOtherAccountRoutingAddress(randomString(5))
+        .CPOtherAccountSecondaryRoutingScheme(randomString(5))
+        .CPOtherAccountSecondaryRoutingAddress(randomString(5))
+        .CPOtherBankRoutingScheme(randomString(5))
+        .CPOtherBankRoutingAddress(randomString(5))
+        .status(TransactionRequestStatus.INITIATED.toString)  // 🆕 Add transaction status field
+        .saveMe
+        .toTransaction.orNull
+    }
   }
 
   override protected def createTransactionRequest(account: BankAccount): List[MappedTransactionRequest] = {
