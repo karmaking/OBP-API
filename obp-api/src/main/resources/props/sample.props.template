@@ -1516,12 +1516,45 @@ regulated_entities = []
 
 
 
-## SIX different FIFO redis queues. Each queue have a maximum of 1000 entries.
-## with 6 Props for the number of messages in each queue.
-## 0 is the default and we don't write to the redis cache
-# keep_n_trace_level_logs_in_cache = 0
-# keep_n_debug_level_logs_in_cache = 0
-# keep_n_info_level_logs_in_cache = 0
-# keep_n_warning_level_logs_in_cache = 0
-# keep_n_error_level_logs_in_cache = 0
-# keep_n_all_level_logs_in_cache = 0
+##########################################################
+#                      Redis Logging                     #
+##########################################################
+## Enable Redis logging (true/false)
+redis_logging_enabled = false
+
+## Batch size for sending logs to Redis
+## Smaller batch size reduces latency for logging critical messages.
+redis_logging_batch_size = 50
+
+## Flush interval for batch logs in milliseconds
+## Flush every 500ms to keep Redis queues up-to-date without too much delay.
+redis_logging_flush_interval_ms = 500
+
+## Maximum number of retries for failed log writes
+## Ensures transient Redis errors are retried before failing.
+redis_logging_max_retries = 3
+
+## Number of consecutive failures before opening circuit breaker
+## Prevents hammering Redis when it is down.
+redis_logging_circuit_breaker_threshold = 10
+
+## Number of threads for asynchronous Redis operations
+## Keep small for lightweight logging; adjust if heavy logging is expected.
+redis_logging_thread_pool_size = 2
+
+## SIX different FIFO Redis queues. Each queue has a maximum number of entries.
+## These control how many messages are kept per log level.
+## 1000 is a reasonable default; adjust if you expect higher traffic.
+redis_logging_trace_queue_max_entries = 1000     # Max TRACE messages
+redis_logging_debug_queue_max_entries = 1000     # Max DEBUG messages
+redis_logging_info_queue_max_entries = 1000      # Max INFO messages
+redis_logging_warning_queue_max_entries = 1000   # Max WARNING messages
+redis_logging_error_queue_max_entries = 1000     # Max ERROR messages
+redis_logging_all_queue_max_entries = 1000       # Max ALL messages
+
+## Optional: Circuit breaker reset interval (ms)
+## How long before retrying after circuit breaker opens. Default 60s.
+redis_logging_circuit_breaker_reset_ms = 60000
+##########################################################
+#                      Redis Logging                     #
+##########################################################
