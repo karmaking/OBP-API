@@ -202,8 +202,8 @@ DROP VIEW IF EXISTS v_oidc_clients CASCADE;
 -- TODO: Add grant_types and scopes fields to consumer table if needed for full OIDC compliance
 CREATE VIEW v_oidc_clients AS
 SELECT
-    key_c as client_id,
-    key_c as consumer_id,
+    consumerid as client_id,
+    consumerid as consumer_id,
     secret as client_secret,
     redirecturl as redirect_uris,
     'authorization_code,refresh_token' as grant_types,  -- Default OIDC grant types
@@ -211,8 +211,7 @@ SELECT
     name as client_name,
     'code' as response_types,
     'client_secret_post' as token_endpoint_auth_method,
-    createdat as created_at,
-    consumerid
+    createdat as created_at
 FROM consumer
 WHERE isactive = true  -- Only expose active consumers to OIDC service
 ORDER BY client_name;
