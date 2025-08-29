@@ -87,13 +87,13 @@
 
 -- OIDC user credentials
 -- ⚠️  SECURITY: Change this to a strong password (20+ chars, mixed case, numbers, symbols)
-\set OIDC_USER 'oidc_user'
-\set OIDC_PASSWORD 'lakij8777fagg'
+\set OIDC_USER "oidc_user"
+\set OIDC_PASSWORD '''lakij8777fagg'''
 
 -- OIDC admin user credentials (for client administration)
 -- ⚠️  SECURITY: Change this to a strong password (20+ chars, mixed case, numbers, symbols)
-\set OIDC_ADMIN_USER 'oidc_admin'
-\set OIDC_ADMIN_PASSWORD 'fhka77uefassEE'
+\set OIDC_ADMIN_USER "oidc_admin"
+\set OIDC_ADMIN_PASSWORD '''fhka77uefassEE'''
 
 -- =============================================================================
 -- 1. Connect to the OBP database
@@ -120,7 +120,7 @@ ALTER ROLE :OIDC_ADMIN_USER WITH PASSWORD :OIDC_ADMIN_PASSWORD;
 
 -- Create the OIDC user with limited privileges
 CREATE USER :OIDC_USER WITH
-    PASSWORD :'OIDC_PASSWORD'
+    PASSWORD :OIDC_PASSWORD
     NOSUPERUSER
     NOCREATEDB
     NOCREATEROLE
@@ -134,7 +134,7 @@ ALTER USER :OIDC_USER CONNECTION LIMIT 10;
 
 -- Create the OIDC admin user with limited privileges
 CREATE USER :OIDC_ADMIN_USER WITH
-    PASSWORD :'OIDC_ADMIN_PASSWORD'
+    PASSWORD :OIDC_ADMIN_PASSWORD
     NOSUPERUSER
     NOCREATEDB
     NOCREATEROLE
@@ -143,11 +143,12 @@ CREATE USER :OIDC_ADMIN_USER WITH
     NOREPLICATION
     NOBYPASSRLS;
 
-    -- need this so the admin can create rows
-    GRANT USAGE, SELECT ON SEQUENCE consumer_id_seq TO :OIDC_ADMIN_USER;
+-- TODO: THIS IS NOT WORKING FOR SOME REASON, WE HAVE TO MANUALLY DO THIS LATER
+-- need this so the admin can create rows
+GRANT USAGE, SELECT ON SEQUENCE consumer_id_seq TO :OIDC_ADMIN_USER;
 
-    -- double check this
-    GRANT USAGE, SELECT ON SEQUENCE consumer_id_seq TO oidc_admin;
+-- double check this
+GRANT USAGE, SELECT ON SEQUENCE consumer_id_seq TO oidc_admin;
 
 -- Set connection limit for the OIDC admin user
 ALTER USER :OIDC_ADMIN_USER CONNECTION LIMIT 5;
@@ -202,6 +203,7 @@ DROP VIEW IF EXISTS v_oidc_clients CASCADE;
 CREATE VIEW v_oidc_clients AS
 SELECT
     key_c as client_id,
+    key_c as consumer_id,
     secret as client_secret,
     redirecturl as redirect_uris,
     'authorization_code,refresh_token' as grant_types,  -- Default OIDC grant types
@@ -209,7 +211,8 @@ SELECT
     name as client_name,
     'code' as response_types,
     'client_secret_post' as token_endpoint_auth_method,
-    createdat as created_at
+    createdat as created_at,
+    consumerid
 FROM consumer
 WHERE isactive = true  -- Only expose active consumers to OIDC service
 ORDER BY client_name;

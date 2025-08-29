@@ -2231,12 +2231,29 @@ trait APIMethods510 {
             grantorConsumerId = callContext.map(_.consumer.toOption.map(_.consumerId.get)).flatten.getOrElse("Unknown")
             //this is from json body
             granteeConsumerId = consentJson.consumer_id.getOrElse("Unknown")
+            
+            // Log consent SCA skip check to ai.log
+            _ <- Future.successful {
+              println(s"[skip_consent_sca_for_consumer_id_pairs] Checking SCA skip for consent creation")
+              println(s"[skip_consent_sca_for_consumer_id_pairs] grantorConsumerId (from callContext): $grantorConsumerId")
+              println(s"[skip_consent_sca_for_consumer_id_pairs] granteeConsumerId (from json body): $granteeConsumerId")
+              println(s"[skip_consent_sca_for_consumer_id_pairs] skipConsentScaForConsumerIdPairs config: ${APIUtil.skipConsentScaForConsumerIdPairs}")
+            }
 
             shouldSkipConsentScaForConsumerIdPair = APIUtil.skipConsentScaForConsumerIdPairs.contains(
               APIUtil.ConsumerIdPair(
                 grantorConsumerId,
                 granteeConsumerId
             ))
+            _ <- Future.successful {
+              println(s"[skip_consent_sca_for_consumer_id_pairs] shouldSkipConsentScaForConsumerIdPair: $shouldSkipConsentScaForConsumerIdPair")
+              if (!shouldSkipConsentScaForConsumerIdPair) {
+                println(s"[skip_consent_sca_for_consumer_id_pairs] Consumer pair NOT found in skip list. Looking for: ConsumerIdPair(grantor_consumer_id='$grantorConsumerId', grantee_consumer_id='$granteeConsumerId')")
+                println(s"[skip_consent_sca_for_consumer_id_pairs] Available pairs in config: ${APIUtil.skipConsentScaForConsumerIdPairs.map(pair => s"ConsumerIdPair(grantor_consumer_id='${pair.grantor_consumer_id}', grantee_consumer_id='${pair.grantee_consumer_id}')").mkString(", ")}")
+              } else {
+                println(s"[skip_consent_sca_for_consumer_id_pairs] Consumer pair FOUND in skip list - SCA will be skipped")
+              }
+            }
             mappedConsent <- if (shouldSkipConsentScaForConsumerIdPair) {
               Future{
                  MappedConsent.find(By(MappedConsent.mConsentId, createdConsent.consentId)).map(_.mStatus(ConsentStatus.ACCEPTED.toString).saveMe()).head
@@ -2282,30 +2299,39 @@ trait APIMethods510 {
                     createdConsent
                   }
                 case v if v == StrongCustomerAuthentication.IMPLICIT.toString =>
-                  for {
-                    (consentImplicitSCA, callContext) <- NewStyle.function.getConsentImplicitSCA(user, callContext)
-                    status <- consentImplicitSCA.scaMethod match {
-                      case v if v == StrongCustomerAuthentication.EMAIL => // Send the email
-                        NewStyle.function.sendCustomerNotification(
-                          StrongCustomerAuthentication.EMAIL,
-                          consentImplicitSCA.recipient,
-                          Some("OBP Consent Challenge"),
-                          challengeText,
-                          callContext
-                        )
-                      case v if v == StrongCustomerAuthentication.SMS =>
-                        NewStyle.function.sendCustomerNotification(
-                          StrongCustomerAuthentication.SMS,
-                          consentImplicitSCA.recipient,
-                          None,
-                          challengeText,
-                          callContext
-                        )
-                      case _ => Future {
-                        "Success"
-                      }
-                    }} yield {
-                    createdConsent
+                  // For IMPLICIT consents, check if SCA should be skipped first
+                  if (shouldSkipConsentScaForConsumerIdPair) {
+                    println(s"[skip_consent_sca_for_consumer_id_pairs] IMPLICIT consent auto-accepted due to skip_consent_sca_for_consumer_id_pairs config")
+                    Future {
+                      MappedConsent.find(By(MappedConsent.mConsentId, createdConsent.consentId)).map(_.mStatus(ConsentStatus.ACCEPTED.toString).saveMe()).head
+                    }
+                  } else {
+                    println(s"[skip_consent_sca_for_consumer_id_pairs] IMPLICIT consent requires SCA - proceeding with implicit SCA flow")
+                    for {
+                      (consentImplicitSCA, callContext) <- NewStyle.function.getConsentImplicitSCA(user, callContext)
+                      status <- consentImplicitSCA.scaMethod match {
+                        case v if v == StrongCustomerAuthentication.EMAIL => // Send the email
+                          NewStyle.function.sendCustomerNotification(
+                            StrongCustomerAuthentication.EMAIL,
+                            consentImplicitSCA.recipient,
+                            Some("OBP Consent Challenge"),
+                            challengeText,
+                            callContext
+                          )
+                        case v if v == StrongCustomerAuthentication.SMS =>
+                          NewStyle.function.sendCustomerNotification(
+                            StrongCustomerAuthentication.SMS,
+                            consentImplicitSCA.recipient,
+                            None,
+                            challengeText,
+                            callContext
+                          )
+                        case _ => Future {
+                          "Success"
+                        }
+                      }} yield {
+                      createdConsent
+                    }
                   }
                 case _ => Future {
                   createdConsent
