@@ -206,6 +206,22 @@ Once Postgres is installed (On macOS, use `brew`):
 
 1.  Grant all on database `obpdb` to `obp`; (So OBP-API can create tables etc.)
 
+#### For newer versions of postgres 16 and above, you need to follow the following instructions
+-- Connect to the sandbox database
+\c sandbox;
+
+-- Grant schema usage and creation privileges
+GRANT USAGE ON SCHEMA public TO obp;
+GRANT CREATE ON SCHEMA public TO obp;
+
+-- Grant all privileges on existing tables (if any)
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO obp;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO obp;
+
+-- Grant privileges on future tables and sequences
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO obp;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO obp;
+
 1.  Then, set the `db.url` in your Props:
 
     ```
