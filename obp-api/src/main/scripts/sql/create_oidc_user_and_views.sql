@@ -380,6 +380,18 @@ FROM information_schema.role_table_grants
 WHERE grantee = :'OIDC_ADMIN_USER'
 ORDER BY table_schema, table_name;
 
+
+\echo 'Here are the views:'
+
+
+\d v_oidc_users;
+
+\d v_oidc_clients;
+
+\d v_oidc_admin_clients;
+
+
+
 -- =============================================================================
 -- 7. Display connection information
 -- =============================================================================
