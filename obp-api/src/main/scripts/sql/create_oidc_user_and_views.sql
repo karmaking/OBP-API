@@ -202,17 +202,18 @@ DROP VIEW IF EXISTS v_oidc_clients CASCADE;
 -- TODO: Add grant_types and scopes fields to consumer table if needed for full OIDC compliance
 CREATE VIEW v_oidc_clients AS
 SELECT
-    key_c as client_id,
-    key_c as consumer_id,
-    secret as client_secret,
+    consumerid as consumer_id, -- This is really an identifier for management purposes. Its also used to link trusted consumers together.
+    key_c as key, -- The key is the OAuth1 identifier for the app.
+    key_c as client_id, -- The client_id is the OAuth2 identifier for the app.
+    secret, -- The OAuth1 secret
+    secret as client_secret, -- The OAuth2 secret
     redirecturl as redirect_uris,
     'authorization_code,refresh_token' as grant_types,  -- Default OIDC grant types
     'openid,profile,email' as scopes,                   -- Default OIDC scopes
     name as client_name,
     'code' as response_types,
     'client_secret_post' as token_endpoint_auth_method,
-    createdat as created_at,
-    consumerid
+    createdat as created_at
 FROM consumer
 WHERE isactive = true  -- Only expose active consumers to OIDC service
 ORDER BY client_name;
@@ -299,6 +300,13 @@ GRANT SELECT ON v_oidc_clients TO :OIDC_USER;
 GRANT SELECT, INSERT, UPDATE, DELETE ON consumer TO :OIDC_ADMIN_USER;
 GRANT SELECT, INSERT, UPDATE, DELETE ON v_oidc_admin_clients TO :OIDC_ADMIN_USER;
 
+GRANT USAGE, SELECT ON SEQUENCE consumer_id_seq TO :OIDC_ADMIN_USER;
+
+-- double check this
+--GRANT USAGE, SELECT ON SEQUENCE consumer_id_seq TO oidc_admin;
+
+
+
 \echo 'Permissions granted successfully.'
 
 -- =============================================================================
@@ -379,6 +387,18 @@ SELECT
 FROM information_schema.role_table_grants
 WHERE grantee = :'OIDC_ADMIN_USER'
 ORDER BY table_schema, table_name;
+
+
+\echo 'Here are the views:'
+
+
+\d v_oidc_users;
+
+\d v_oidc_clients;
+
+\d v_oidc_admin_clients;
+
+
 
 -- =============================================================================
 -- 7. Display connection information
