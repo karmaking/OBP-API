@@ -209,7 +209,7 @@ trait APIMethods510 {
       implementedInApiVersion,
       nameOf(logCacheEndpoint),
       "GET",
-      "/log-cache/LOG_LEVEL",
+      "/dev-ops/log-cache/LOG_LEVEL",
       "Get Log Cache",
       """Returns information about:
         |
@@ -222,7 +222,7 @@ trait APIMethods510 {
       Some(List(canGetAllLevelLogsAtAllBanks)))
 
     lazy val logCacheEndpoint: OBPEndpoint = {
-      case "log-cache" :: logLevel :: Nil JsonGet _ =>
+      case "dev-ops" :: "log-cache" :: logLevel :: Nil JsonGet _ =>
         cc =>
           implicit val ec = EndpointContext(Some(cc))
           for {
