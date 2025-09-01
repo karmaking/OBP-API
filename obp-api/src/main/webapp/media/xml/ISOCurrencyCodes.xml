@@ -1947,8 +1947,8 @@
     </CcyNtry>
     <!-- Cardano (ADA)  -->
     <CcyNtry>
-      <CtryNm>Cardano</CtryNm>
-      <CcyNm>Cardano</CcyNm>
+      <CtryNm>Cardano_ADA</CtryNm>
+      <CcyNm>ADA</CcyNm>
       <Ccy>ada</Ccy>
       <CcyNbr>null</CcyNbr>
       <CcyMnrUnts>6</CcyMnrUnts>  <!-- 1 ADA = 10^6 Lovelace -->
