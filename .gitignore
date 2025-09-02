@@ -31,6 +31,7 @@ obp-api/src/main/scala/code/api/v3_0_0/custom/
 marketing_diagram_generation/outputs/*
 
 .bloop
+!.bloop/*.json
 .bsp
 .specstory
 project/project

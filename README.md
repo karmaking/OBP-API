@@ -46,10 +46,21 @@ This project is dual licensed under the AGPL V3 (see NOTICE) and commercial lice
 The project uses Maven 3 as its build tool.
 
 To compile and run Jetty, install Maven 3, create your configuration in `obp-api/src/main/resources/props/default.props` and execute:
+To compile and run Jetty, install Maven 3, create your configuration in `obp-api/src/main/resources/props/`, copy `sample.props.template` to `default.props` and edit the latter. Then:
 
 ```sh
 mvn install -pl .,obp-commons && mvn jetty:run -pl obp-api
 ```
+
+### ZED IDE Setup
+
+For ZED IDE users, we provide a complete development environment with Scala language server support:
+
+```bash
+./zed/setup-zed-ide.sh
+```
+
+This sets up automated build tasks, code navigation, and real-time error checking. See [`zed/README.md`](zed/README.md) for complete documentation.
 
 In case the above command fails try the next one:
 
@@ -207,6 +218,7 @@ Once Postgres is installed (On macOS, use `brew`):
 1.  Grant all on database `obpdb` to `obp`; (So OBP-API can create tables etc.)
 
 #### For newer versions of postgres 16 and above, you need to follow the following instructions
+
 -- Connect to the sandbox database
 \c sandbox;
 
