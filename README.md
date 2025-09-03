@@ -43,6 +43,21 @@ This project is dual licensed under the AGPL V3 (see NOTICE) and commercial lice
 
 ## Setup
 
+### Installing JDK
+#### With sdkman
+
+A good way to manage JDK versions and install the correct version for OBP is [sdkman](https://sdkman.io/). If you have this installed then you can install the correct JDK easily using:
+```
+sdk env install
+```
+
+#### Manually
+
+- OracleJDK: 1.8, 13
+- OpenJdk: 11
+
+OpenJDK 11 is available for download here: [https://jdk.java.net/archive/](https://jdk.java.net/archive/).
+
 The project uses Maven 3 as its build tool.
 
 To compile and run Jetty, install Maven 3, create your configuration in `obp-api/src/main/resources/props/default.props` and execute:
@@ -752,13 +767,6 @@ The same as `Frozen APIs`, if a related unit test fails, make sure whether the m
   ](http://exploring.liftweb.net/master/index-9.html).
 
 - A good book on Lift: "Lift in Action" by Timothy Perrett published by Manning.
-
-## Supported JDK Versions
-
-- OracleJDK: 1.8, 13
-- OpenJdk: 11
-
-OpenJDK 11 is available for download here: [https://jdk.java.net/archive/](https://jdk.java.net/archive/).
 
 ## Endpoint Request and Response Example
 
