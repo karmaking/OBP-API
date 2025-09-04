@@ -6,6 +6,7 @@ import code.api.Constant._
 import code.api.OAuth2Login.{Keycloak, OBPOIDC}
 import code.api.ResourceDocs1_4_0.SwaggerDefinitionsJSON._
 import code.api.berlin.group.v1_3.JSONFactory_BERLIN_GROUP_1_3.{ConsentAccessAccountsJson, ConsentAccessJson}
+import code.api.cache.RedisLogger
 import code.api.util.APIUtil._
 import code.api.util.ApiRole._
 import code.api.util.ApiTag._
@@ -202,6 +203,47 @@ trait APIMethods510 {
             (createRegulatedEntitiesJson(entities), HttpCode.`200`(callContext))
           }
     }
+
+    staticResourceDocs += ResourceDoc(
+      logCacheEndpoint,
+      implementedInApiVersion,
+      nameOf(logCacheEndpoint),
+      "GET",
+      "/dev-ops/log-cache/LOG_LEVEL",
+      "Get Log Cache",
+      """Returns information about:
+        |
+        |* Log Cache
+        """,
+      EmptyBody,
+      EmptyBody,
+      List($UserNotLoggedIn, UnknownError),
+      apiTagApi :: Nil,
+      Some(List(canGetAllLevelLogsAtAllBanks)))
+
+    lazy val logCacheEndpoint: OBPEndpoint = {
+      case "dev-ops" :: "log-cache" :: logLevel :: Nil JsonGet _ =>
+        cc =>
+          implicit val ec = EndpointContext(Some(cc))
+          for {
+            // Parse and validate log level
+            level <- NewStyle.function.tryons(ErrorMessages.invalidLogLevel, 400, cc.callContext) {
+              RedisLogger.LogLevel.valueOf(logLevel)
+            }
+            // Check entitlements using helper
+            _ <- NewStyle.function.handleEntitlementsAndScopes(
+              bankId = "",
+              userId = cc.userId,
+              roles = RedisLogger.LogLevel.requiredRoles(level),
+              callContext = cc.callContext
+            )
+            // Fetch logs
+            logs <- Future(RedisLogger.getLogTail(level))
+          } yield {
+            (logs, HttpCode.`200`(cc.callContext))
+          }
+    }
+
 
     staticResourceDocs += ResourceDoc(
       getRegulatedEntityById,
@@ -1677,12 +1719,12 @@ trait APIMethods510 {
           for {
             httpParams <- NewStyle.function.extractHttpParamsFromUrl(cc.url)
             (obpQueryParams, callContext) <- createQueriesByHttpParamsFuture(httpParams, cc.callContext)
-            consents <- Future {
+            (consents, totalPages) <- Future {
               Consents.consentProvider.vend.getConsents(obpQueryParams)
             }
           } yield {
             val consentsOfBank = Consent.filterByBankId(consents, bankId)
-            (createConsentsJsonV510(consentsOfBank), HttpCode.`200`(callContext))
+            (createConsentsJsonV510(consentsOfBank, totalPages), HttpCode.`200`(callContext))
           }
       }
     }
@@ -1739,11 +1781,11 @@ trait APIMethods510 {
           for {
             httpParams <- NewStyle.function.extractHttpParamsFromUrl(cc.url)
             (obpQueryParams, callContext) <- createQueriesByHttpParamsFuture(httpParams, cc.callContext)
-            consents <- Future {
+            (consents, totalPages) <- Future {
               Consents.consentProvider.vend.getConsents(obpQueryParams)
             }
           } yield {
-            (createConsentsJsonV510(consents), HttpCode.`200`(callContext))
+            (createConsentsJsonV510(consents, totalPages), HttpCode.`200`(callContext))
           }
       }
     }
