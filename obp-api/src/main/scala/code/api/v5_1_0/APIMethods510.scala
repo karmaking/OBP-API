@@ -29,7 +29,7 @@ import code.api.v3_1_0._
 import code.api.v4_0_0.JSONFactory400.{createAccountBalancesJson, createBalancesJson, createNewCoreBankAccountJson}
 import code.api.v4_0_0._
 import code.api.v5_0_0.JSONFactory500
-import code.api.v5_1_0.JSONFactory510.{createConsentsInfoJsonV510, createConsentsJsonV510, createRegulatedEntitiesJson, createRegulatedEntityJson}
+import code.api.v5_1_0.JSONFactory510.{createCallLimitJson, createConsentsInfoJsonV510, createConsentsJsonV510, createRegulatedEntitiesJson, createRegulatedEntityJson}
 import code.atmattribute.AtmAttribute
 import code.bankconnectors.Connector
 import code.consent.{ConsentRequests, ConsentStatus, Consents, MappedConsent}
@@ -39,6 +39,7 @@ import code.loginattempts.LoginAttempt
 import code.metrics.APIMetrics
 import code.model.dataAccess.{AuthUser, MappedBankAccount}
 import code.model.{AppType, Consumer}
+import code.ratelimiting.{RateLimiting, RateLimitingDI}
 import code.regulatedentities.MappedRegulatedEntityProvider
 import code.userlocks.UserLocksProvider
 import code.users.Users
@@ -3285,6 +3286,50 @@ trait APIMethods510 {
             )
           } yield {
             (JSONFactory510.createConsumerJsonOnlyForPostResponseV510(consumer, None), HttpCode.`201`(callContext))
+          }
+      }
+    }
+
+
+    staticResourceDocs += ResourceDoc(
+      getCallsLimit,
+      implementedInApiVersion,
+      nameOf(getCallsLimit),
+      "GET",
+      "/management/consumers/CONSUMER_ID/consumer/call-limits",
+      "Get Call Limits for a Consumer",
+      s"""
+         |Get Calls limits per Consumer.
+         |${userAuthenticationMessage(true)}
+         |
+         |""".stripMargin,
+      EmptyBody,
+      callLimitJson,
+      List(
+        $UserNotLoggedIn,
+        InvalidJsonFormat,
+        InvalidConsumerId,
+        ConsumerNotFoundByConsumerId,
+        UserHasMissingRoles,
+        UpdateConsumerError,
+        UnknownError
+      ),
+      List(apiTagConsumer),
+      Some(List(canReadCallLimits)))
+
+
+    lazy val getCallsLimit: OBPEndpoint = {
+      case "management" :: "consumers" :: consumerId :: "consumer" :: "call-limits" :: Nil JsonGet _ => {
+        cc =>
+          implicit val ec = EndpointContext(Some(cc))
+          for {
+            // (Full(u), callContext) <- authenticatedAccess(cc)
+            // _ <- NewStyle.function.hasEntitlement("", cc.userId, canReadCallLimits, callContext)
+            consumer <- NewStyle.function.getConsumerByConsumerId(consumerId, cc.callContext)
+            rateLimiting: Option[RateLimiting] <- RateLimitingDI.rateLimiting.vend.findMostRecentRateLimit(consumerId, None, None, None)
+            rateLimit <- Future(RateLimitingUtil.consumerRateLimitState(consumer.consumerId.get).toList)
+          } yield {
+            (createCallLimitJson(consumer,  rateLimiting, rateLimit), HttpCode.`200`(cc.callContext))
           }
       }
     }
