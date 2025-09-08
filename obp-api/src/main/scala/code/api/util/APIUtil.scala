@@ -3999,17 +3999,22 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
         val consumerName = cc.flatMap(_.consumer.map(_.name.get)).getOrElse("")
         val certificate = getCertificateFromTppSignatureCertificate(requestHeaders)
         for {
-          tpp <- BerlinGroupSigning.getTppByCertificate(certificate, cc)
+          tpps <- BerlinGroupSigning.getRegulatedEntityByCertificate(certificate, cc)
         } yield {
-          if (tpp.nonEmpty) {
-            val hasRole = tpp.exists(_.services.contains(serviceProvider))
-            if (hasRole) {
-              Full(true)
-            } else {
-              Failure(X509ActionIsNotAllowed)
-            }
-          } else {
-            Failure("No valid Tpp")
+          tpps match {
+            case Nil =>
+              Failure(RegulatedEntityNotFoundByCertificate)
+            case single :: Nil =>
+              // Only one match, proceed to role check
+              if (single.services.contains(serviceProvider)) {
+                Full(true)
+              } else {
+                Failure(X509ActionIsNotAllowed)
+              }
+            case multiple =>
+              // Ambiguity detected: more than one TPP matches the certificate
+              val names = multiple.map(e => s"'${e.entityName}' (Code: ${e.entityCode})").mkString(", ")
+              Failure(s"$RegulatedEntityAmbiguityByCertificate: multiple TPPs found: $names")
           }
         }
       case value if value.toUpperCase == "CERTIFICATE" => Future {
