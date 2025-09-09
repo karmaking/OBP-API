@@ -35,3 +35,4 @@ marketing_diagram_generation/outputs/*
 project/project
 coursier
 *.code-workspace
+.cursor
