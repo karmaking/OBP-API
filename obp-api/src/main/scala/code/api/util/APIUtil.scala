@@ -3196,8 +3196,10 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
 
     // COMMON POST AUTHENTICATION CODE GOES BELOW
 
+    // Check is it Consumer disabled
+    val consumerIsDisabled: Future[(Box[User], Option[CallContext])] = AfterApiAuth.checkConsumerIsDisabled(res)
     // Check is it a user deleted or locked
-    val userIsLockedOrDeleted: Future[(Box[User], Option[CallContext])] = AfterApiAuth.checkUserIsDeletedOrLocked(res)
+    val userIsLockedOrDeleted: Future[(Box[User], Option[CallContext])] = AfterApiAuth.checkUserIsDeletedOrLocked(consumerIsDisabled)
     // Check Rate Limiting
     val resultWithRateLimiting: Future[(Box[User], Option[CallContext])] = AfterApiAuth.checkRateLimiting(userIsLockedOrDeleted)
     // User init actions
