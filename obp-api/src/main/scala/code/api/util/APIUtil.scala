@@ -911,6 +911,18 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
     }
   }
 
+  /** only  A-Z, a-z, 0-9, -, _, ., and max length <= 16, allows empty string  */
+  def checkOptionalShortString(value:String): String ={
+    val valueLength = value.length
+    val regex = """^([A-Za-z0-9\-._]*)$""".r
+    value match {
+      case regex(e) if(valueLength <= 16) => SILENCE_IS_GOLDEN
+      case regex(e) if(valueLength > 16) => ErrorMessages.InvalidValueLength
+      case _ => ErrorMessages.InvalidValueCharacters
+    }
+  }
+
+
 
   /** only  A-Z, a-z, 0-9, -, _, ., and max length <= 36
    * OBP APIUtil.generateUUID() length is 36 here.*/
