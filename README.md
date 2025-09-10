@@ -666,6 +666,59 @@ allow_oauth2_login=true
 oauth2.jwk_set.url=https://www.googleapis.com/oauth2/v3/certs
 ```
 
+### OAuth2 JWKS URI Configuration
+
+The `oauth2.jwk_set.url` property is critical for OAuth2 JWT token validation. OBP-API uses this to verify the authenticity of JWT tokens by fetching the JSON Web Key Set (JWKS) from the specified URI(s).
+
+#### Configuration Methods
+
+The `oauth2.jwk_set.url` property is resolved in the following order of priority:
+
+1. **Environment Variable**
+
+   ```bash
+   export OBP_OAUTH2_JWK_SET_URL="https://your-oidc-server.com/jwks"
+   ```
+
+2. **Properties Files** (located in `obp-api/src/main/resources/props/`)
+   - `production.default.props` (for production deployments)
+   - `default.props` (for development)
+   - `test.default.props` (for testing)
+
+#### Supported Formats
+
+- **Single URL**: `oauth2.jwk_set.url=http://localhost:9000/obp-oidc/jwks`
+- **Multiple URLs**: `oauth2.jwk_set.url=http://localhost:8080/jwk.json,https://www.googleapis.com/oauth2/v3/certs`
+
+#### Common OAuth2 Provider Examples
+
+- **Google**: `https://www.googleapis.com/oauth2/v3/certs`
+- **OBP-OIDC**: `http://localhost:9000/obp-oidc/jwks`
+- **Keycloak**: `http://localhost:7070/realms/master/protocol/openid-connect/certs`
+- **Azure AD**: `https://login.microsoftonline.com/common/discovery/v2.0/keys`
+
+#### Troubleshooting OBP-20208 Error
+
+If you encounter the error "OBP-20208: Cannot match the issuer and JWKS URI at this server instance", check the following:
+
+1. **Verify JWT Issuer Claim**: The JWT token's `iss` (issuer) claim must match one of the configured identity providers
+2. **Check JWKS URL Configuration**: Ensure `oauth2.jwk_set.url` contains URLs that correspond to your JWT issuer
+3. **Case-Insensitive Matching**: OBP-API performs case-insensitive substring matching between the issuer and JWKS URLs
+4. **URL Format Consistency**: Check for trailing slashes or URL formatting differences
+
+**Debug Logging**: Enable debug logging to see detailed information about the matching process:
+
+```properties
+# Add to your logging configuration
+logger.code.api.OAuth2=DEBUG
+```
+
+The debug logs will show:
+
+- Expected identity provider vs actual JWT issuer claim
+- Available JWKS URIs from configuration
+- Matching logic results
+
 ---
 
 ## Frozen APIs
