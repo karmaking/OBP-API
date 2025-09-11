@@ -3007,6 +3007,7 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
 
 
   /**
+   * TODO: Update this Doc string:
    * This function is planed to be used at an endpoint in order to get a User based on Authorization Header data
    * It has to do the same thing as function OBPRestHelper.failIfBadAuthorizationHeader does
    * The only difference is that this function use Akka's Future in non-blocking way i.e. without using Await.result
@@ -3040,7 +3041,7 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
     // Step 1: Always attempt to identify consumer via certificate/mTLS
     // This looks for TPP-Signature-Certificate or PSD2-CERT headers, or mTLS client certificates
     val consumerByCertificate = Consent.getCurrentConsumerViaTppSignatureCertOrMtls(callContext = cc)
-    logger.debug(s"consumerByCertificate: $consumerByCertificate")
+    logger.debug(s"getUserAndSessionContextFuture says consumerByCertificate is: $consumerByCertificate")
     
     // Step 2: Check which validation method is configured for consent requests
     // Default is CONSUMER_CERTIFICATE (certificate-based validation)
@@ -3066,7 +3067,7 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
         // This is normal for certificate-based validation or anonymous requests
         Empty
     }
-    logger.debug(s"consumerByConsumerKey: $consumerByConsumerKey")
+    logger.debug(s"getUserAndSessionContextFuture says consumerByConsumerKey is: $consumerByConsumerKey")
 
     val res =
       if (authHeadersWithEmptyValues.nonEmpty) { // Check Authorization Headers Empty Values
