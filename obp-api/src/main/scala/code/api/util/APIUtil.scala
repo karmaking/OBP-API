@@ -900,7 +900,7 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
     }
   }
 
-  /** only  A-Z, a-z, 0-9, -, _, ., and max length <= 16  */
+  /** only  A-Z, a-z, 0-9, -, _, ., and max length <= 16. NOTE: This function requires at least ONE character (+ in the regx). If you want to accept zero characters use checkOptionalShortString.  */
   def checkShortString(value:String): String ={
     val valueLength = value.length
     val regex = """^([A-Za-z0-9\-._]+)$""".r
