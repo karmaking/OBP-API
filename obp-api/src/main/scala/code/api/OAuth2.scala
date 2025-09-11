@@ -107,7 +107,7 @@ object OAuth2Login extends RestHelper with MdcLoggable {
         } else if (Azure.isIssuer(value)) {
           Azure.applyIdTokenRulesFuture(value, cc)
         } else if (OBPOIDC.isIssuer(value)) {
-          logger.debug("getUserFuture says: this is OBPOIDC")
+          logger.debug("getUserFuture says: I will call OBPOIDC.applyIdTokenRulesFuture")
           OBPOIDC.applyIdTokenRulesFuture(value, cc)
         } else if (Keycloak.isIssuer(value)) {
           Keycloak.applyRulesFuture(value, cc)
