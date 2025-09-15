@@ -31,6 +31,7 @@ import code.api.berlin.group.ConstantsBG
 import code.api.berlin.group.v1_3.JSONFactory_BERLIN_GROUP_1_3.ConsentAccessJson
 import code.api.util.APIUtil.{DateWithDay, DateWithSeconds, gitCommit, stringOrNull}
 import code.api.util.ErrorMessages.MandatoryPropertyIsNotSet
+import code.api.util.RateLimitingPeriod.LimitCallPeriod
 import code.api.util._
 import code.api.v1_2_1.BankRoutingJsonV121
 import code.api.v1_4_0.JSONFactory1_4_0.{ChallengeJsonV140, LocationJsonV140, MetaJsonV140, TransactionRequestAccountJsonV140, transformToLocationFromV140, transformToMetaFromV140}
@@ -38,6 +39,7 @@ import code.api.v2_0_0.TransactionRequestChargeJsonV200
 import code.api.v2_1_0.ResourceUserJSON
 import code.api.v3_0_0.JSONFactory300.{createLocationJson, createMetaJson, transformToAddressFromV300}
 import code.api.v3_0_0.{AddressJsonV300, OpeningTimesV300}
+import code.api.v3_1_0.{CallLimitJson, RateLimit, RedisCallLimitJson}
 import code.api.v4_0_0.{EnergySource400, HostedAt400, HostedBy400}
 import code.api.v5_0_0.PostConsentRequestJsonV500
 import code.atmattribute.AtmAttribute
@@ -45,6 +47,7 @@ import code.atms.Atms.Atm
 import code.consent.MappedConsent
 import code.metrics.APIMetric
 import code.model.Consumer
+import code.ratelimiting.RateLimiting
 import code.users.{UserAttribute, Users}
 import code.util.Helper.MdcLoggable
 import code.views.system.{AccountAccess, ViewDefinition, ViewPermission}
@@ -147,8 +150,8 @@ case class CheckSystemIntegrityJsonV510(
   debug_info: Option[String] = None
 )
 
-case class ConsentJsonV510(consent_id: String, 
-                           jwt: String, 
+case class ConsentJsonV510(consent_id: String,
+                           jwt: String,
                            status: String,
                            consent_request_id: Option[String],
                            scopes: Option[List[Role]],
@@ -466,7 +469,7 @@ case class ConsumerJsonV510(consumer_id: String,
                             certificate_info: Option[CertificateInfoJsonV510],
                             created_by_user: ResourceUserJSON,
                             enabled: Boolean,
-                            created: Date, 
+                            created: Date,
                             logo_url: Option[String]
                            )
 case class MyConsumerJsonV510(consumer_id: String,
@@ -482,7 +485,7 @@ case class MyConsumerJsonV510(consumer_id: String,
                             certificate_info: Option[CertificateInfoJsonV510],
                             created_by_user: ResourceUserJSON,
                             enabled: Boolean,
-                            created: Date, 
+                            created: Date,
                             logo_url: Option[String]
                            )
 case class ConsumerJsonOnlyForPostResponseV510(consumer_id: String,
@@ -682,6 +685,20 @@ case class ViewPermissionJson(
   extra_data: Option[List[String]]
 )
 
+case class CallLimitJson510(
+                             from_date: Date,
+                             to_date: Date,
+                             per_second_call_limit : String,
+                             per_minute_call_limit : String,
+                             per_hour_call_limit : String,
+                             per_day_call_limit : String,
+                             per_week_call_limit : String,
+                             per_month_call_limit : String,
+                             created_at : Date,
+                             updated_at : Date,
+                             current_state: Option[RedisCallLimitJson]
+                           )
+
 object JSONFactory510 extends CustomJsonFormats with MdcLoggable {
 
   def createTransactionRequestJson(tr : TransactionRequest, transactionRequestAttributes: List[TransactionRequestAttributeTrait] ) : TransactionRequestJsonV510 = {
@@ -718,7 +735,7 @@ object JSONFactory510 extends CustomJsonFormats with MdcLoggable {
   def createTransactionRequestJSONs(transactionRequests : List[TransactionRequest], transactionRequestAttributes: List[TransactionRequestAttributeTrait]) : TransactionRequestsJsonV510 = {
     TransactionRequestsJsonV510(
       transactionRequests.map(
-        transactionRequest => 
+        transactionRequest =>
           createTransactionRequestJson(transactionRequest, transactionRequestAttributes)
       ))
   }
@@ -1259,13 +1276,13 @@ object JSONFactory510 extends CustomJsonFormats with MdcLoggable {
       if(value == null || value.isEmpty) None else Some(value.split(",").toList)
     )
   }
-  
+
   def createMinimalAgentsJson(agents: List[Agent]): MinimalAgentsJsonV510 = {
     MinimalAgentsJsonV510(
       agents
         .filter(_.isConfirmedAgent == true)
         .map(agent => MinimalAgentJsonV510(
-          agent_id = agent.agentId, 
+          agent_id = agent.agentId,
           legal_name = agent.legalName,
           agent_number = agent.number
         )))
@@ -1304,6 +1321,50 @@ object JSONFactory510 extends CustomJsonFormats with MdcLoggable {
     BankAccountBalancesJsonV510(
       balances.map(createBankAccountBalanceJson)
     )
+  }
+
+  def createCallLimitJson(consumer: Consumer,  rateLimiting: Option[RateLimiting], rateLimits: List[((Option[Long], Option[Long]), LimitCallPeriod)]): CallLimitJson510 = {
+    val redisRateLimit = rateLimits match {
+      case Nil => None
+      case _ =>
+        def getInfo(period: RateLimitingPeriod.Value): Option[RateLimit] = {
+          rateLimits.filter(_._2 == period) match {
+            case x :: Nil =>
+              x._1 match {
+                case (Some(x), Some(y)) => Some(RateLimit(Some(x), Some(y)))
+                case _ => None
+
+              }
+            case _ => None
+          }
+        }
+
+        Some(
+          RedisCallLimitJson(
+            getInfo(RateLimitingPeriod.PER_SECOND),
+            getInfo(RateLimitingPeriod.PER_MINUTE),
+            getInfo(RateLimitingPeriod.PER_HOUR),
+            getInfo(RateLimitingPeriod.PER_DAY),
+            getInfo(RateLimitingPeriod.PER_WEEK),
+            getInfo(RateLimitingPeriod.PER_MONTH)
+          )
+        )
+    }
+
+    CallLimitJson510(
+      from_date = rateLimiting.map(_.fromDate).orNull,
+      to_date = rateLimiting.map(_.toDate).orNull,
+      per_second_call_limit = rateLimiting.map(_.perSecondCallLimit.toString).getOrElse("-1"),
+      per_minute_call_limit = rateLimiting.map(_.perMinuteCallLimit.toString).getOrElse("-1"),
+      per_hour_call_limit = rateLimiting.map(_.perHourCallLimit.toString).getOrElse("-1"),
+      per_day_call_limit = rateLimiting.map(_.perDayCallLimit.toString).getOrElse("-1"),
+      per_week_call_limit = rateLimiting.map(_.perWeekCallLimit.toString).getOrElse("-1"),
+      per_month_call_limit = rateLimiting.map(_.perMonthCallLimit.toString).getOrElse("-1"),
+      created_at = rateLimiting.map(_.createdAt.get).orNull,
+      updated_at = rateLimiting.map(_.updatedAt.get).orNull,
+      redisRateLimit
+    )
+
   }
 
 }
