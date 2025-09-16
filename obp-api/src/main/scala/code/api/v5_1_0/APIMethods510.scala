@@ -6,6 +6,7 @@ import code.api.Constant._
 import code.api.OAuth2Login.{Keycloak, OBPOIDC}
 import code.api.ResourceDocs1_4_0.SwaggerDefinitionsJSON._
 import code.api.berlin.group.v1_3.JSONFactory_BERLIN_GROUP_1_3.{ConsentAccessAccountsJson, ConsentAccessJson}
+import code.api.cache.RedisLogger
 import code.api.util.APIUtil._
 import code.api.util.ApiRole._
 import code.api.util.ApiTag._
@@ -28,7 +29,7 @@ import code.api.v3_1_0._
 import code.api.v4_0_0.JSONFactory400.{createAccountBalancesJson, createBalancesJson, createNewCoreBankAccountJson}
 import code.api.v4_0_0._
 import code.api.v5_0_0.JSONFactory500
-import code.api.v5_1_0.JSONFactory510.{createConsentsInfoJsonV510, createConsentsJsonV510, createRegulatedEntitiesJson, createRegulatedEntityJson}
+import code.api.v5_1_0.JSONFactory510.{createCallLimitJson, createConsentsInfoJsonV510, createConsentsJsonV510, createRegulatedEntitiesJson, createRegulatedEntityJson}
 import code.atmattribute.AtmAttribute
 import code.bankconnectors.Connector
 import code.consent.{ConsentRequests, ConsentStatus, Consents, MappedConsent}
@@ -38,6 +39,7 @@ import code.loginattempts.LoginAttempt
 import code.metrics.APIMetrics
 import code.model.dataAccess.{AuthUser, MappedBankAccount}
 import code.model.{AppType, Consumer}
+import code.ratelimiting.{RateLimiting, RateLimitingDI}
 import code.regulatedentities.MappedRegulatedEntityProvider
 import code.userlocks.UserLocksProvider
 import code.users.Users
@@ -202,6 +204,47 @@ trait APIMethods510 {
             (createRegulatedEntitiesJson(entities), HttpCode.`200`(callContext))
           }
     }
+
+    staticResourceDocs += ResourceDoc(
+      logCacheEndpoint,
+      implementedInApiVersion,
+      nameOf(logCacheEndpoint),
+      "GET",
+      "/dev-ops/log-cache/LOG_LEVEL",
+      "Get Log Cache",
+      """Returns information about:
+        |
+        |* Log Cache
+        """,
+      EmptyBody,
+      EmptyBody,
+      List($UserNotLoggedIn, UnknownError),
+      apiTagApi :: Nil,
+      Some(List(canGetAllLevelLogsAtAllBanks)))
+
+    lazy val logCacheEndpoint: OBPEndpoint = {
+      case "dev-ops" :: "log-cache" :: logLevel :: Nil JsonGet _ =>
+        cc =>
+          implicit val ec = EndpointContext(Some(cc))
+          for {
+            // Parse and validate log level
+            level <- NewStyle.function.tryons(ErrorMessages.invalidLogLevel, 400, cc.callContext) {
+              RedisLogger.LogLevel.valueOf(logLevel)
+            }
+            // Check entitlements using helper
+            _ <- NewStyle.function.handleEntitlementsAndScopes(
+              bankId = "",
+              userId = cc.userId,
+              roles = RedisLogger.LogLevel.requiredRoles(level),
+              callContext = cc.callContext
+            )
+            // Fetch logs
+            logs <- Future(RedisLogger.getLogTail(level))
+          } yield {
+            (logs, HttpCode.`200`(cc.callContext))
+          }
+    }
+
 
     staticResourceDocs += ResourceDoc(
       getRegulatedEntityById,
@@ -1677,12 +1720,12 @@ trait APIMethods510 {
           for {
             httpParams <- NewStyle.function.extractHttpParamsFromUrl(cc.url)
             (obpQueryParams, callContext) <- createQueriesByHttpParamsFuture(httpParams, cc.callContext)
-            consents <- Future {
+            (consents, totalPages) <- Future {
               Consents.consentProvider.vend.getConsents(obpQueryParams)
             }
           } yield {
             val consentsOfBank = Consent.filterByBankId(consents, bankId)
-            (createConsentsJsonV510(consentsOfBank), HttpCode.`200`(callContext))
+            (createConsentsJsonV510(consentsOfBank, totalPages), HttpCode.`200`(callContext))
           }
       }
     }
@@ -1739,11 +1782,11 @@ trait APIMethods510 {
           for {
             httpParams <- NewStyle.function.extractHttpParamsFromUrl(cc.url)
             (obpQueryParams, callContext) <- createQueriesByHttpParamsFuture(httpParams, cc.callContext)
-            consents <- Future {
+            (consents, totalPages) <- Future {
               Consents.consentProvider.vend.getConsents(obpQueryParams)
             }
           } yield {
-            (createConsentsJsonV510(consents), HttpCode.`200`(callContext))
+            (createConsentsJsonV510(consents, totalPages), HttpCode.`200`(callContext))
           }
       }
     }
@@ -2189,12 +2232,29 @@ trait APIMethods510 {
             grantorConsumerId = callContext.map(_.consumer.toOption.map(_.consumerId.get)).flatten.getOrElse("Unknown")
             //this is from json body
             granteeConsumerId = consentJson.consumer_id.getOrElse("Unknown")
+            
+            // Log consent SCA skip check to ai.log
+            _ <- Future.successful {
+              println(s"[skip_consent_sca_for_consumer_id_pairs] Checking SCA skip for consent creation")
+              println(s"[skip_consent_sca_for_consumer_id_pairs] grantorConsumerId (from callContext): $grantorConsumerId")
+              println(s"[skip_consent_sca_for_consumer_id_pairs] granteeConsumerId (from json body): $granteeConsumerId")
+              println(s"[skip_consent_sca_for_consumer_id_pairs] skipConsentScaForConsumerIdPairs config: ${APIUtil.skipConsentScaForConsumerIdPairs}")
+            }
 
             shouldSkipConsentScaForConsumerIdPair = APIUtil.skipConsentScaForConsumerIdPairs.contains(
               APIUtil.ConsumerIdPair(
                 grantorConsumerId,
                 granteeConsumerId
             ))
+            _ <- Future.successful {
+              println(s"[skip_consent_sca_for_consumer_id_pairs] shouldSkipConsentScaForConsumerIdPair: $shouldSkipConsentScaForConsumerIdPair")
+              if (!shouldSkipConsentScaForConsumerIdPair) {
+                println(s"[skip_consent_sca_for_consumer_id_pairs] Consumer pair NOT found in skip list. Looking for: ConsumerIdPair(grantor_consumer_id='$grantorConsumerId', grantee_consumer_id='$granteeConsumerId')")
+                println(s"[skip_consent_sca_for_consumer_id_pairs] Available pairs in config: ${APIUtil.skipConsentScaForConsumerIdPairs.map(pair => s"ConsumerIdPair(grantor_consumer_id='${pair.grantor_consumer_id}', grantee_consumer_id='${pair.grantee_consumer_id}')").mkString(", ")}")
+              } else {
+                println(s"[skip_consent_sca_for_consumer_id_pairs] Consumer pair FOUND in skip list - SCA will be skipped")
+              }
+            }
             mappedConsent <- if (shouldSkipConsentScaForConsumerIdPair) {
               Future{
                  MappedConsent.find(By(MappedConsent.mConsentId, createdConsent.consentId)).map(_.mStatus(ConsentStatus.ACCEPTED.toString).saveMe()).head
@@ -2240,30 +2300,39 @@ trait APIMethods510 {
                     createdConsent
                   }
                 case v if v == StrongCustomerAuthentication.IMPLICIT.toString =>
-                  for {
-                    (consentImplicitSCA, callContext) <- NewStyle.function.getConsentImplicitSCA(user, callContext)
-                    status <- consentImplicitSCA.scaMethod match {
-                      case v if v == StrongCustomerAuthentication.EMAIL => // Send the email
-                        NewStyle.function.sendCustomerNotification(
-                          StrongCustomerAuthentication.EMAIL,
-                          consentImplicitSCA.recipient,
-                          Some("OBP Consent Challenge"),
-                          challengeText,
-                          callContext
-                        )
-                      case v if v == StrongCustomerAuthentication.SMS =>
-                        NewStyle.function.sendCustomerNotification(
-                          StrongCustomerAuthentication.SMS,
-                          consentImplicitSCA.recipient,
-                          None,
-                          challengeText,
-                          callContext
-                        )
-                      case _ => Future {
-                        "Success"
-                      }
-                    }} yield {
-                    createdConsent
+                  // For IMPLICIT consents, check if SCA should be skipped first
+                  if (shouldSkipConsentScaForConsumerIdPair) {
+                    println(s"[skip_consent_sca_for_consumer_id_pairs] IMPLICIT consent auto-accepted due to skip_consent_sca_for_consumer_id_pairs config")
+                    Future {
+                      MappedConsent.find(By(MappedConsent.mConsentId, createdConsent.consentId)).map(_.mStatus(ConsentStatus.ACCEPTED.toString).saveMe()).head
+                    }
+                  } else {
+                    println(s"[skip_consent_sca_for_consumer_id_pairs] IMPLICIT consent requires SCA - proceeding with implicit SCA flow")
+                    for {
+                      (consentImplicitSCA, callContext) <- NewStyle.function.getConsentImplicitSCA(user, callContext)
+                      status <- consentImplicitSCA.scaMethod match {
+                        case v if v == StrongCustomerAuthentication.EMAIL => // Send the email
+                          NewStyle.function.sendCustomerNotification(
+                            StrongCustomerAuthentication.EMAIL,
+                            consentImplicitSCA.recipient,
+                            Some("OBP Consent Challenge"),
+                            challengeText,
+                            callContext
+                          )
+                        case v if v == StrongCustomerAuthentication.SMS =>
+                          NewStyle.function.sendCustomerNotification(
+                            StrongCustomerAuthentication.SMS,
+                            consentImplicitSCA.recipient,
+                            None,
+                            challengeText,
+                            callContext
+                          )
+                        case _ => Future {
+                          "Success"
+                        }
+                      }} yield {
+                      createdConsent
+                    }
                   }
                 case _ => Future {
                   createdConsent
@@ -3217,6 +3286,50 @@ trait APIMethods510 {
             )
           } yield {
             (JSONFactory510.createConsumerJsonOnlyForPostResponseV510(consumer, None), HttpCode.`201`(callContext))
+          }
+      }
+    }
+
+
+    staticResourceDocs += ResourceDoc(
+      getCallsLimit,
+      implementedInApiVersion,
+      nameOf(getCallsLimit),
+      "GET",
+      "/management/consumers/CONSUMER_ID/consumer/call-limits",
+      "Get Call Limits for a Consumer",
+      s"""
+         |Get Calls limits per Consumer.
+         |${userAuthenticationMessage(true)}
+         |
+         |""".stripMargin,
+      EmptyBody,
+      callLimitJson,
+      List(
+        $UserNotLoggedIn,
+        InvalidJsonFormat,
+        InvalidConsumerId,
+        ConsumerNotFoundByConsumerId,
+        UserHasMissingRoles,
+        UpdateConsumerError,
+        UnknownError
+      ),
+      List(apiTagConsumer),
+      Some(List(canReadCallLimits)))
+
+
+    lazy val getCallsLimit: OBPEndpoint = {
+      case "management" :: "consumers" :: consumerId :: "consumer" :: "call-limits" :: Nil JsonGet _ => {
+        cc =>
+          implicit val ec = EndpointContext(Some(cc))
+          for {
+            // (Full(u), callContext) <- authenticatedAccess(cc)
+            // _ <- NewStyle.function.hasEntitlement("", cc.userId, canReadCallLimits, callContext)
+            consumer <- NewStyle.function.getConsumerByConsumerId(consumerId, cc.callContext)
+            rateLimiting: Option[RateLimiting] <- RateLimitingDI.rateLimiting.vend.findMostRecentRateLimit(consumerId, None, None, None)
+            rateLimit <- Future(RateLimitingUtil.consumerRateLimitState(consumer.consumerId.get).toList)
+          } yield {
+            (createCallLimitJson(consumer,  rateLimiting, rateLimit), HttpCode.`200`(cc.callContext))
           }
       }
     }

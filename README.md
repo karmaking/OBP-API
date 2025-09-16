@@ -46,10 +46,21 @@ This project is dual licensed under the AGPL V3 (see NOTICE) and commercial lice
 The project uses Maven 3 as its build tool.
 
 To compile and run Jetty, install Maven 3, create your configuration in `obp-api/src/main/resources/props/default.props` and execute:
+To compile and run Jetty, install Maven 3, create your configuration in `obp-api/src/main/resources/props/`, copy `sample.props.template` to `default.props` and edit the latter. Then:
 
 ```sh
 mvn install -pl .,obp-commons && mvn jetty:run -pl obp-api
 ```
+
+### ZED IDE Setup
+
+For ZED IDE users, we provide a complete development environment with Scala language server support:
+
+```bash
+./zed/setup-zed-ide.sh
+```
+
+This sets up automated build tasks, code navigation, and real-time error checking. See [`zed/README.md`](zed/README.md) for complete documentation.
 
 In case the above command fails try the next one:
 
@@ -205,6 +216,23 @@ Once Postgres is installed (On macOS, use `brew`):
 1.  Alter user obp with password `daniel.says`; (put this password in the OBP-API Props).
 
 1.  Grant all on database `obpdb` to `obp`; (So OBP-API can create tables etc.)
+
+#### For newer versions of postgres 16 and above, you need to follow the following instructions
+
+-- Connect to the sandbox database
+\c sandbox;
+
+-- Grant schema usage and creation privileges
+GRANT USAGE ON SCHEMA public TO obp;
+GRANT CREATE ON SCHEMA public TO obp;
+
+-- Grant all privileges on existing tables (if any)
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO obp;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO obp;
+
+-- Grant privileges on future tables and sequences
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO obp;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO obp;
 
 1.  Then, set the `db.url` in your Props:
 
@@ -637,6 +665,59 @@ Tested Identity providers: Google, MITREId.
 allow_oauth2_login=true
 oauth2.jwk_set.url=https://www.googleapis.com/oauth2/v3/certs
 ```
+
+### OAuth2 JWKS URI Configuration
+
+The `oauth2.jwk_set.url` property is critical for OAuth2 JWT token validation. OBP-API uses this to verify the authenticity of JWT tokens by fetching the JSON Web Key Set (JWKS) from the specified URI(s).
+
+#### Configuration Methods
+
+The `oauth2.jwk_set.url` property is resolved in the following order of priority:
+
+1. **Environment Variable**
+
+   ```bash
+   export OBP_OAUTH2_JWK_SET_URL="https://your-oidc-server.com/jwks"
+   ```
+
+2. **Properties Files** (located in `obp-api/src/main/resources/props/`)
+   - `production.default.props` (for production deployments)
+   - `default.props` (for development)
+   - `test.default.props` (for testing)
+
+#### Supported Formats
+
+- **Single URL**: `oauth2.jwk_set.url=http://localhost:9000/obp-oidc/jwks`
+- **Multiple URLs**: `oauth2.jwk_set.url=http://localhost:8080/jwk.json,https://www.googleapis.com/oauth2/v3/certs`
+
+#### Common OAuth2 Provider Examples
+
+- **Google**: `https://www.googleapis.com/oauth2/v3/certs`
+- **OBP-OIDC**: `http://localhost:9000/obp-oidc/jwks`
+- **Keycloak**: `http://localhost:7070/realms/master/protocol/openid-connect/certs`
+- **Azure AD**: `https://login.microsoftonline.com/common/discovery/v2.0/keys`
+
+#### Troubleshooting OBP-20208 Error
+
+If you encounter the error "OBP-20208: Cannot match the issuer and JWKS URI at this server instance", check the following:
+
+1. **Verify JWT Issuer Claim**: The JWT token's `iss` (issuer) claim must match one of the configured identity providers
+2. **Check JWKS URL Configuration**: Ensure `oauth2.jwk_set.url` contains URLs that correspond to your JWT issuer
+3. **Case-Insensitive Matching**: OBP-API performs case-insensitive substring matching between the issuer and JWKS URLs
+4. **URL Format Consistency**: Check for trailing slashes or URL formatting differences
+
+**Debug Logging**: Enable debug logging to see detailed information about the matching process:
+
+```properties
+# Add to your logging configuration
+logger.code.api.OAuth2=DEBUG
+```
+
+The debug logs will show:
+
+- Expected identity provider vs actual JWT issuer claim
+- Available JWKS URIs from configuration
+- Matching logic results
 
 ---
 

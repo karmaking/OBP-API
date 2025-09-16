@@ -650,6 +650,7 @@ object LocalMappedConnectorInternal extends MdcLoggable {
         .CPOtherBankRoutingScheme(toAccount.bankRoutingScheme)
         .CPOtherBankRoutingAddress(toAccount.bankRoutingAddress)
         .chargePolicy(chargePolicy)
+        .status(com.openbankproject.commons.model.enums.TransactionRequestStatus.COMPLETED.toString)
         .saveMe) ?~! s"$CreateTransactionsException, exception happened when create new mappedTransaction"
     } yield {
       mappedTransaction.theTransactionId

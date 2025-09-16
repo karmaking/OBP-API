@@ -36,7 +36,8 @@ class BankAccountBalance extends BankAccountBalanceTrait with KeyedMapper[String
   override def balanceType: String = BalanceType.get
   override def balanceAmount: BigDecimal = Helper.smallestCurrencyUnitToBigDecimal(BalanceAmount.get, foreignMappedBankAccountCurrency)
   override def lastChangeDateTime: Option[Date] = Some(this.updatedAt.get)
-  override def referenceDate: Option[String] = Some(ReferenceDate.get.toString)
+  override def referenceDate: Option[String] = Option(ReferenceDate.get).map(_.toString)
+
 }
 
 object BankAccountBalance extends BankAccountBalance  with KeyedMetaMapper[String, BankAccountBalance] with CreatedUpdated {}

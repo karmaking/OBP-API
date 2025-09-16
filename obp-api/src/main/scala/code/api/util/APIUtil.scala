@@ -903,7 +903,7 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
     }
   }
 
-  /** only  A-Z, a-z, 0-9, -, _, ., and max length <= 16  */
+  /** only  A-Z, a-z, 0-9, -, _, ., and max length <= 16. NOTE: This function requires at least ONE character (+ in the regx). If you want to accept zero characters use checkOptionalShortString.  */
   def checkShortString(value:String): String ={
     val valueLength = value.length
     val regex = """^([A-Za-z0-9\-._]+)$""".r
@@ -913,6 +913,18 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
       case _ => ErrorMessages.InvalidValueCharacters
     }
   }
+
+  /** only  A-Z, a-z, 0-9, -, _, ., and max length <= 16, allows empty string  */
+  def checkOptionalShortString(value:String): String ={
+    val valueLength = value.length
+    val regex = """^([A-Za-z0-9\-._]*)$""".r
+    value match {
+      case regex(e) if(valueLength <= 16) => SILENCE_IS_GOLDEN
+      case regex(e) if(valueLength > 16) => ErrorMessages.InvalidValueLength
+      case _ => ErrorMessages.InvalidValueCharacters
+    }
+  }
+
 
 
   /** only  A-Z, a-z, 0-9, -, _, ., and max length <= 36
@@ -2940,8 +2952,7 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
           val errorResponse = getFilteredOrFullErrorMessage(e)
           Full(reply.apply(errorResponse))
         case Failure(msg, e, _) =>
-          surroundErrorMessage(msg)
-          e.foreach(logger.debug("", _))
+          e.foreach(logger.error(msg, _))
           extractAPIFailureNewStyle(msg) match {
             case Some(af) =>
               val callContextLight = af.ccl.map(_.copy(httpCode = Some(af.failCode)))
@@ -2999,6 +3010,7 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
 
 
   /**
+   * TODO: Update this Doc string:
    * This function is planed to be used at an endpoint in order to get a User based on Authorization Header data
    * It has to do the same thing as function OBPRestHelper.failIfBadAuthorizationHeader does
    * The only difference is that this function use Akka's Future in non-blocking way i.e. without using Await.result
@@ -3016,8 +3028,8 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
     val xRequestId: Option[String] =
       reqHeaders.find(_.name.toLowerCase() == RequestHeader.`X-Request-ID`.toLowerCase())
         .map(_.values.mkString(","))
-    val title = s"Request Headers for verb: $verb, URL: $url"
-    surroundDebugMessage(reqHeaders.map(h => h.name + ": " + h.values.mkString(",")).mkString, title)
+    logger.debug(s"Request Headers for verb: $verb, URL: $url")
+    logger.debug(reqHeaders.map(h => h.name + ": " + h.values.mkString(",")).mkString)
     val remoteIpAddress = getRemoteIpAddress()
 
     val authHeaders = AuthorisationUtil.getAuthorisationHeaders(reqHeaders)
@@ -3032,7 +3044,7 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
     // Step 1: Always attempt to identify consumer via certificate/mTLS
     // This looks for TPP-Signature-Certificate or PSD2-CERT headers, or mTLS client certificates
     val consumerByCertificate = Consent.getCurrentConsumerViaTppSignatureCertOrMtls(callContext = cc)
-    logger.debug(s"consumerByCertificate: $consumerByCertificate")
+    logger.debug(s"getUserAndSessionContextFuture says consumerByCertificate is: $consumerByCertificate")
     
     // Step 2: Check which validation method is configured for consent requests
     // Default is CONSUMER_CERTIFICATE (certificate-based validation)
@@ -3058,7 +3070,7 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
         // This is normal for certificate-based validation or anonymous requests
         Empty
     }
-    logger.debug(s"consumerByConsumerKey: $consumerByConsumerKey")
+    logger.debug(s"getUserAndSessionContextFuture says consumerByConsumerKey is: $consumerByConsumerKey")
 
     val res =
       if (authHeadersWithEmptyValues.nonEmpty) { // Check Authorization Headers Empty Values
@@ -3200,8 +3212,10 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
 
     // COMMON POST AUTHENTICATION CODE GOES BELOW
 
+    // Check is it Consumer disabled
+    val consumerIsDisabled: Future[(Box[User], Option[CallContext])] = AfterApiAuth.checkConsumerIsDisabled(res)
     // Check is it a user deleted or locked
-    val userIsLockedOrDeleted: Future[(Box[User], Option[CallContext])] = AfterApiAuth.checkUserIsDeletedOrLocked(res)
+    val userIsLockedOrDeleted: Future[(Box[User], Option[CallContext])] = AfterApiAuth.checkUserIsDeletedOrLocked(consumerIsDisabled)
     // Check Rate Limiting
     val resultWithRateLimiting: Future[(Box[User], Option[CallContext])] = AfterApiAuth.checkRateLimiting(userIsLockedOrDeleted)
     // User init actions
@@ -4003,18 +4017,22 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
         val consumerName = cc.flatMap(_.consumer.map(_.name.get)).getOrElse("")
         val certificate = getCertificateFromTppSignatureCertificate(requestHeaders)
         for {
-          tpp <- BerlinGroupSigning.getTppByCertificate(certificate, cc)
+          tpps <- BerlinGroupSigning.getRegulatedEntityByCertificate(certificate, cc)
         } yield {
-          if (tpp.nonEmpty) {
-            val berlinGroupRole = PemCertificateRole.toBerlinGroup(serviceProvider)
-            val hasRole = tpp.exists(_.services.contains(berlinGroupRole))
-            if (hasRole) {
-              Full(true)
-            } else {
-              Failure(X509ActionIsNotAllowed)
-            }
-          } else {
-            Failure("No valid Tpp")
+          tpps match {
+            case Nil =>
+              Failure(RegulatedEntityNotFoundByCertificate)
+            case single :: Nil =>
+              // Only one match, proceed to role check
+              if (single.services.contains(serviceProvider)) {
+                Full(true)
+              } else {
+                Failure(X509ActionIsNotAllowed)
+              }
+            case multiple =>
+              // Ambiguity detected: more than one TPP matches the certificate
+              val names = multiple.map(e => s"'${e.entityName}' (Code: ${e.entityCode})").mkString(", ")
+              Failure(s"$RegulatedEntityAmbiguityByCertificate: multiple TPPs found: $names")
           }
         }
       case value if value.toUpperCase == "CERTIFICATE" => Future {

@@ -127,6 +127,7 @@ object ErrorMessages {
   val ScaMethodNotDefined = "OBP-10030: Strong customer authentication method is not defined at this instance."
 
   val createFxCurrencyIssue = "OBP-10050: Cannot create FX currency. "
+  val invalidLogLevel = "OBP-10051: Invalid log level. "
 
 
 
@@ -579,6 +580,7 @@ object ErrorMessages {
   val RegulatedEntityNotFound = "OBP-34100: Regulated Entity not found. Please specify a valid value for REGULATED_ENTITY_ID."
   val RegulatedEntityNotDeleted = "OBP-34101: Regulated Entity cannot be deleted. Please specify a valid value for REGULATED_ENTITY_ID."
   val RegulatedEntityNotFoundByCertificate = "OBP-34102: Regulated Entity cannot be found by provided certificate."
+  val RegulatedEntityAmbiguityByCertificate = "OBP-34103: More than 1 Regulated Entity found by provided certificate."
   val PostJsonIsNotSigned = "OBP-34110: JWT at the post json cannot be verified."
 
   // Consents
