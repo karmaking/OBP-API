@@ -130,8 +130,11 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
   val DateWithMonthFormat = new SimpleDateFormat(DateWithMonth)
   val DateWithDayFormat = new SimpleDateFormat(DateWithDay)
   val DateWithSecondsFormat = new SimpleDateFormat(DateWithSeconds)
-  val DateWithMsFormat = new SimpleDateFormat(DateWithMs)
+  // If you need UTC Z format, please continue to use DateWithMsFormat. eg: 2025-01-01T01:01:01.000Z
+  val DateWithMsFormat = new SimpleDateFormat(DateWithMs) 
+  // If you need a format with timezone offset (+0000), please use DateWithMsRollbackFormat, eg: 2025-01-01T01:01:01.000+0000
   val DateWithMsRollbackFormat = new SimpleDateFormat(DateWithMsAndTimeZoneOffset)
+  
   val rfc7231Date = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z", Locale.ENGLISH)
 
   val DateWithYearExampleString: String = "1100"
