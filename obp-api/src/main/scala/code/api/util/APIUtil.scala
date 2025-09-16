@@ -955,7 +955,7 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
     if(date == null)
       None
     else
-      Some(APIUtil.DateWithMsAndTimeZoneOffset.format(date))
+      Some(APIUtil.DateWithMsRollbackFormat.format(date))
   
   def stringOrNull(text : String) =
     if(text == null || text.isEmpty)
