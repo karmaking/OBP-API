@@ -130,8 +130,11 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
   val DateWithMonthFormat = new SimpleDateFormat(DateWithMonth)
   val DateWithDayFormat = new SimpleDateFormat(DateWithDay)
   val DateWithSecondsFormat = new SimpleDateFormat(DateWithSeconds)
-  val DateWithMsFormat = new SimpleDateFormat(DateWithMs)
+  // If you need UTC Z format, please continue to use DateWithMsFormat. eg: 2025-01-01T01:01:01.000Z
+  val DateWithMsFormat = new SimpleDateFormat(DateWithMs) 
+  // If you need a format with timezone offset (+0000), please use DateWithMsRollbackFormat, eg: 2025-01-01T01:01:01.000+0000
   val DateWithMsRollbackFormat = new SimpleDateFormat(DateWithMsAndTimeZoneOffset)
+  
   val rfc7231Date = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z", Locale.ENGLISH)
 
   val DateWithYearExampleString: String = "1100"
@@ -967,7 +970,7 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
     if(date == null)
       None
     else
-      Some(APIUtil.DateWithMsAndTimeZoneOffset.format(date))
+      Some(APIUtil.DateWithMsRollbackFormat.format(date))
   
   def stringOrNull(text : String) =
     if(text == null || text.isEmpty)
@@ -3209,8 +3212,10 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
 
     // COMMON POST AUTHENTICATION CODE GOES BELOW
 
+    // Check is it Consumer disabled
+    val consumerIsDisabled: Future[(Box[User], Option[CallContext])] = AfterApiAuth.checkConsumerIsDisabled(res)
     // Check is it a user deleted or locked
-    val userIsLockedOrDeleted: Future[(Box[User], Option[CallContext])] = AfterApiAuth.checkUserIsDeletedOrLocked(res)
+    val userIsLockedOrDeleted: Future[(Box[User], Option[CallContext])] = AfterApiAuth.checkUserIsDeletedOrLocked(consumerIsDisabled)
     // Check Rate Limiting
     val resultWithRateLimiting: Future[(Box[User], Option[CallContext])] = AfterApiAuth.checkRateLimiting(userIsLockedOrDeleted)
     // User init actions
@@ -4012,17 +4017,22 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
         val consumerName = cc.flatMap(_.consumer.map(_.name.get)).getOrElse("")
         val certificate = getCertificateFromTppSignatureCertificate(requestHeaders)
         for {
-          tpp <- BerlinGroupSigning.getTppByCertificate(certificate, cc)
+          tpps <- BerlinGroupSigning.getRegulatedEntityByCertificate(certificate, cc)
         } yield {
-          if (tpp.nonEmpty) {
-            val hasRole = tpp.exists(_.services.contains(serviceProvider))
-            if (hasRole) {
-              Full(true)
-            } else {
-              Failure(X509ActionIsNotAllowed)
-            }
-          } else {
-            Failure("No valid Tpp")
+          tpps match {
+            case Nil =>
+              Failure(RegulatedEntityNotFoundByCertificate)
+            case single :: Nil =>
+              // Only one match, proceed to role check
+              if (single.services.contains(serviceProvider)) {
+                Full(true)
+              } else {
+                Failure(X509ActionIsNotAllowed)
+              }
+            case multiple =>
+              // Ambiguity detected: more than one TPP matches the certificate
+              val names = multiple.map(e => s"'${e.entityName}' (Code: ${e.entityCode})").mkString(", ")
+              Failure(s"$RegulatedEntityAmbiguityByCertificate: multiple TPPs found: $names")
           }
         }
       case value if value.toUpperCase == "CERTIFICATE" => Future {

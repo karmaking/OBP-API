@@ -26,7 +26,11 @@
   */
 package code.api.v6_0_0
 
+import code.api.util.APIUtil.stringOrNull
 import code.api.util._
+import code.api.v2_0_0.{EntitlementJSONs, JSONFactory200}
+import code.api.v3_0_0.{UserJsonV300, ViewJSON300, ViewsJSON300}
+import code.entitlement.Entitlement
 import code.util.Helper.MdcLoggable
 import com.openbankproject.commons.model._
 
@@ -59,6 +63,41 @@ case class TransactionRequestBodyCardanoJsonV600(
   metadata: Option[Map[String, CardanoMetadataStringJsonV600]] = None
 ) extends TransactionRequestCommonBodyJSON
 
+case class UserJsonV600(
+                         user_id: String,
+                         email : String,
+                         provider_id: String,
+                         provider : String,
+                         username : String,
+                         entitlements : EntitlementJSONs,
+                         views: Option[ViewsJSON300],
+                         on_behalf_of: Option[UserJsonV300]
+                       )
+
+case class UserV600(user: User, entitlements: List[Entitlement], views: Option[Permission])
+case class UsersJsonV600(current_user: UserV600, on_behalf_of_user: UserV600)
+
 object JSONFactory600 extends CustomJsonFormats with MdcLoggable{
-  
+  def createUserInfoJSON(current_user: UserV600, onBehalfOfUser: Option[UserV600]): UserJsonV600 = {
+    UserJsonV600(
+      user_id = current_user.user.userId,
+      email = current_user.user.emailAddress,
+      username = stringOrNull(current_user.user.name),
+      provider_id = current_user.user.idGivenByProvider,
+      provider = stringOrNull(current_user.user.provider),
+      entitlements = JSONFactory200.createEntitlementJSONs(current_user.entitlements),
+      views = current_user.views.map(y => ViewsJSON300(y.views.map((v => ViewJSON300(v.bankId.value, v.accountId.value, v.viewId.value))))),
+      on_behalf_of = onBehalfOfUser.map { obu =>
+        UserJsonV300(
+          user_id = obu.user.userId,
+          email = obu.user.emailAddress,
+          username = stringOrNull(obu.user.name),
+          provider_id = obu.user.idGivenByProvider,
+          provider = stringOrNull(obu.user.provider),
+          entitlements = JSONFactory200.createEntitlementJSONs(obu.entitlements),
+          views = obu.views.map(y => ViewsJSON300(y.views.map((v => ViewJSON300(v.bankId.value, v.accountId.value, v.viewId.value)))))
+        )
+      }
+    )
+  }
 }

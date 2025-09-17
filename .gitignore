@@ -8,7 +8,9 @@
 .settings
 .metals
 .vscode
+*.code-workspace
 .zed
+.cursor
 .classpath
 .project
 .cache
@@ -36,4 +38,3 @@ marketing_diagram_generation/outputs/*
 .specstory
 project/project
 coursier
-*.code-workspace

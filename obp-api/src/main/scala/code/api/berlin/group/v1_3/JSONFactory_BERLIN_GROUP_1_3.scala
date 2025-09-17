@@ -346,7 +346,7 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
           Some(balances.filter(_.accountId.equals(x.accountId)).flatMap(balance => (List(CoreAccountBalanceJson(
             balanceAmount = AmountOfMoneyV13(x.currency, balance.balanceAmount.toString()),
             balanceType = balance.balanceType,
-            lastChangeDateTime = balance.lastChangeDateTime.map(APIUtil.DateWithMsAndTimeZoneOffset.format(_))
+            lastChangeDateTime = balance.lastChangeDateTime.map(APIUtil.DateWithMsFormat.format(_))
           )))))
         }else{
           None
@@ -432,7 +432,7 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
       Some(balances.filter(_.accountId.equals(bankAccount.accountId)).flatMap(balance => (List(CoreAccountBalanceJson(
         balanceAmount = AmountOfMoneyV13(bankAccount.currency, balance.balanceAmount.toString()),
         balanceType = balance.balanceType,
-        lastChangeDateTime = balance.lastChangeDateTime.map(APIUtil.DateWithMsAndTimeZoneOffset.format(_))
+        lastChangeDateTime = balance.lastChangeDateTime.map(APIUtil.DateWithMsFormat.format(_))
       )))))
     } else {
       None
@@ -477,7 +477,7 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
       `balances` = accountBalances.map(accountBalance => AccountBalance(
         balanceAmount = AmountOfMoneyV13(bankAccount.currency, accountBalance.balanceAmount.toString()),
         balanceType = accountBalance.balanceType,
-        lastChangeDateTime = accountBalance.lastChangeDateTime.map(APIUtil.DateWithMsAndTimeZoneOffset.format(_)),
+        lastChangeDateTime = accountBalance.lastChangeDateTime.map(APIUtil.DateWithMsFormat.format(_)),
         referenceDate = accountBalance.referenceDate,
       ) 
     ))
@@ -614,8 +614,8 @@ object JSONFactory_BERLIN_GROUP_1_3 extends CustomJsonFormats with MdcLoggable{
             else
               transaction.amount.get.toString()
           ),
-          bookingDate = transaction.startDate.map(APIUtil.DateWithMsAndTimeZoneOffset.format(_)).getOrElse(""),
-          valueDate = transaction.finishDate.map(APIUtil.DateWithMsAndTimeZoneOffset.format(_)).getOrElse(""),
+          bookingDate = transaction.startDate.map(APIUtil.DateWithMsFormat.format(_)).getOrElse(""),
+          valueDate = transaction.finishDate.map(APIUtil.DateWithMsFormat.format(_)).getOrElse(""),
           remittanceInformationUnstructured = transaction.description.getOrElse(""),
           bankTransactionCode ="",
         )
