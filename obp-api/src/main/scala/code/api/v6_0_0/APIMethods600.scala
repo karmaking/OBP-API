@@ -65,9 +65,10 @@ trait APIMethods600 {
             val permissions: Option[Permission] = Views.views.vend.getPermissionForUser(u).toOption
             val currentUser = UserV600(u, entitlements, permissions)
             val onBehalfOfUser = if(cc.onBehalfOfUser.isDefined) {
-              val entitlements = Entitlement.entitlement.vend.getEntitlementsByUserId(cc.onBehalfOfUser.get.userId).headOption.toList.flatten
-              val permissions: Option[Permission] = Views.views.vend.getPermissionForUser(cc.onBehalfOfUser.get).toOption
-              Some(UserV600(cc.onBehalfOfUser.get, entitlements, permissions))
+              val user = cc.onBehalfOfUser.toOption.get
+              val entitlements = Entitlement.entitlement.vend.getEntitlementsByUserId(user.userId).headOption.toList.flatten
+              val permissions: Option[Permission] = Views.views.vend.getPermissionForUser(user).toOption
+              Some(UserV600(user, entitlements, permissions))
             } else {
               None
             }

@@ -435,8 +435,16 @@ object Consent extends MdcLoggable {
         val onBehalfOfUser = Users.users.vend.getUserByUserId(consent.createdByUserId)
         cc.copy(onBehalfOfUser = onBehalfOfUser.toOption)
       }
+      val maybeOnBehalfOfUser =
+        if(consent.createdByUserId.nonEmpty &&
+          APIUtil.getPropsAsBoolValue(nameOfProperty="on_bahalf_of_user_allowed", defaultValue=false))
+        {
+          Future(cc.onBehalfOfUser, true)
+        } else {
+          getOrCreateUser(consent.sub, consent.iss, Some(consent.jti), None, None)
+        }
       // 1. Get or Create a User
-      getOrCreateUser(consent.sub, consent.iss, Some(consent.jti), None, None) map {
+      maybeOnBehalfOfUser map {
         case (Full(user), newUser) =>
           // 2. Assign entitlements to the User
           addEntitlements(user, consent) match {
