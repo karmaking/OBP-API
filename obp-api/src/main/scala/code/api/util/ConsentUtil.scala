@@ -430,10 +430,13 @@ object Consent extends MdcLoggable {
     implicit val dateFormats = CustomJsonFormats.formats
 
     def applyConsentRules(consent: ConsentJWT): Future[(Box[User], Option[CallContext])] = {
-      val cc = callContext
-      if(consent.createdByUserId.nonEmpty) { // Populate on behalf of user in case of OBP Consent
+      val temp = callContext
+      // updated context if createdByUserId is present
+      val cc = if (consent.createdByUserId.nonEmpty) {
         val onBehalfOfUser = Users.users.vend.getUserByUserId(consent.createdByUserId)
-        cc.copy(onBehalfOfUser = onBehalfOfUser.toOption)
+        temp.copy(onBehalfOfUser = onBehalfOfUser.toOption)
+      } else {
+        temp
       }
       if (cc.onBehalfOfUser.nonEmpty &&
         APIUtil.getPropsAsBoolValue(nameOfProperty = "experimental_become_user_that_created_consent", defaultValue = false)) {
@@ -448,14 +451,14 @@ object Consent extends MdcLoggable {
           case (Full(user), newUser) =>
             // 2. Assign entitlements to the User
             addEntitlements(user, consent) match {
-              case (Full(user)) =>
+              case Full(user) =>
                 // 3. Copy Auth Context to the User
                 copyAuthContextOfConsentToUser(consent.jti, user.userId, newUser) match {
                   case Full(_) =>
                     // 4. Assign views to the User
                     (grantAccessToViews(user, consent), Some(cc))
                   case failure@Failure(_, _, _) => // Handled errors
-                    (failure, Some(callContext))
+                    (failure, Some(cc))
                   case _ =>
                     (Failure(ErrorMessages.UnknownError), Some(cc))
                 }
@@ -469,6 +472,7 @@ object Consent extends MdcLoggable {
         }
       }
     }
+
 
     JwtUtil.getSignedPayloadAsJson(consentAsJwt) match {
       case Full(jsonAsString) =>
