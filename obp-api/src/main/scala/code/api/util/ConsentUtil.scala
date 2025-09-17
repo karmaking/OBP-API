@@ -437,6 +437,8 @@ object Consent extends MdcLoggable {
       }
       if (cc.onBehalfOfUser.nonEmpty &&
         APIUtil.getPropsAsBoolValue(nameOfProperty = "experimental_become_user_that_created_consent", defaultValue = false)) {
+        logger.info("experimental_become_user_that_created_consent = true")
+        logger.info(s"${cc.onBehalfOfUser.map(_.userId).getOrElse("")} is logged on instead of Consent user")
         Future(cc.onBehalfOfUser, Some(cc)) // Just propagate on behalf of user back
       } else {
         // 1. Get or Create a User
