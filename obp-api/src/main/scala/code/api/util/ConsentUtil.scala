@@ -431,33 +431,38 @@ object Consent extends MdcLoggable {
 
     def applyConsentRules(consent: ConsentJWT): Future[(Box[User], Option[CallContext])] = {
       val cc = callContext
-      if(consent.createdByUserId.nonEmpty) {
+      if(consent.createdByUserId.nonEmpty) { // Populate on behalf of user in case of OBP Consent
         val onBehalfOfUser = Users.users.vend.getUserByUserId(consent.createdByUserId)
         cc.copy(onBehalfOfUser = onBehalfOfUser.toOption)
       }
-      // 1. Get or Create a User
-      getOrCreateUser(consent.sub, consent.iss, Some(consent.jti), None, None) map {
-        case (Full(user), newUser) =>
-          // 2. Assign entitlements to the User
-          addEntitlements(user, consent) match {
-            case (Full(user)) =>
-              // 3. Copy Auth Context to the User
-              copyAuthContextOfConsentToUser(consent.jti, user.userId, newUser) match {
-                case Full(_) =>
-                  // 4. Assign views to the User
-                  (grantAccessToViews(user, consent), Some(cc))
-                case failure@Failure(_, _, _) => // Handled errors
-                  (failure, Some(callContext))
-                case _ =>
-                  (Failure(ErrorMessages.UnknownError), Some(cc))
-              }
-            case failure@Failure(msg, exp, chain) => // Handled errors
-              (Failure(msg), Some(cc))
-            case _ =>
-              (Failure(CannotAddEntitlement + consentAsJwt), Some(cc))
-          }
-        case _ =>
-          (Failure(CannotGetOrCreateUser + consentAsJwt), Some(cc))
+      if (cc.onBehalfOfUser.nonEmpty &&
+        APIUtil.getPropsAsBoolValue(nameOfProperty = "experimental_become_user_that_created_consent", defaultValue = false)) {
+        Future(cc.onBehalfOfUser, Some(cc)) // Just propagate on behalf of user back
+      } else {
+        // 1. Get or Create a User
+        getOrCreateUser(consent.sub, consent.iss, Some(consent.jti), None, None) map {
+          case (Full(user), newUser) =>
+            // 2. Assign entitlements to the User
+            addEntitlements(user, consent) match {
+              case (Full(user)) =>
+                // 3. Copy Auth Context to the User
+                copyAuthContextOfConsentToUser(consent.jti, user.userId, newUser) match {
+                  case Full(_) =>
+                    // 4. Assign views to the User
+                    (grantAccessToViews(user, consent), Some(cc))
+                  case failure@Failure(_, _, _) => // Handled errors
+                    (failure, Some(callContext))
+                  case _ =>
+                    (Failure(ErrorMessages.UnknownError), Some(cc))
+                }
+              case failure@Failure(msg, exp, chain) => // Handled errors
+                (Failure(msg), Some(cc))
+              case _ =>
+                (Failure(CannotAddEntitlement + consentAsJwt), Some(cc))
+            }
+          case _ =>
+            (Failure(CannotGetOrCreateUser + consentAsJwt), Some(cc))
+        }
       }
     }
 
