@@ -441,6 +441,8 @@ object Consent extends MdcLoggable {
         logger.info(s"${cc.onBehalfOfUser.map(_.userId).getOrElse("")} is logged on instead of Consent user")
         Future(cc.onBehalfOfUser, Some(cc)) // Just propagate on behalf of user back
       } else {
+        logger.info("experimental_become_user_that_created_consent = false")
+        logger.info(s"Getting Consent user (consent.sub: ${consent.sub}, consent.iss: ${consent.iss})")
         // 1. Get or Create a User
         getOrCreateUser(consent.sub, consent.iss, Some(consent.jti), None, None) map {
           case (Full(user), newUser) =>
