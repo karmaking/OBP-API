@@ -13,7 +13,7 @@ import code.api.util.newstyle.ViewNewStyle
 import code.api.v1_4_0.JSONFactory1_4_0.TransactionRequestAccountJsonV140
 import code.api.v2_1_0._
 import code.api.v4_0_0._
-import code.api.v6_0_0.TransactionRequestBodyCardanoJsonV600
+import code.api.v6_0_0.{TransactionRequestBodyCardanoJsonV600, TransactionRequestBodyEthereumJsonV600}
 import code.branches.MappedBranch
 import code.fx.fx
 import code.fx.fx.TTL
@@ -785,9 +785,12 @@ object LocalMappedConnectorInternal extends MdcLoggable {
         transactionAmountNumber > BigDecimal("0")
       }
 
-      _ <- Helper.booleanToFuture(s"${InvalidISOCurrencyCode} Current input is: '${transDetailsJson.value.currency}'", cc=callContext) {
-        APIUtil.isValidCurrencyISOCode(transDetailsJson.value.currency)
-      }
+      _ <- (transactionRequestTypeValue match {
+        case ETHEREUM => Future.successful(true) // Allow ETH (non-ISO) for Ethereum requests
+        case _ => Helper.booleanToFuture(s"${InvalidISOCurrencyCode} Current input is: '${transDetailsJson.value.currency}'", cc=callContext) {
+          APIUtil.isValidCurrencyISOCode(transDetailsJson.value.currency)
+        }
+      })
 
       (createdTransactionRequest, callContext) <- transactionRequestTypeValue match {
         case REFUND => {
@@ -1419,7 +1422,7 @@ object LocalMappedConnectorInternal extends MdcLoggable {
               otherAccountRoutingAddress = "",
               otherAccountSecondaryRoutingScheme = "cardano",
               otherAccountSecondaryRoutingAddress = transactionRequestBodyCardano.to.address,
-              callContext: Option[CallContext],
+              callContext = callContext
             )
             (toAccount, callContext) <- NewStyle.function.getBankAccountFromCounterparty(toCounterparty, true, callContext)
             // Check we can send money to it.
@@ -1436,6 +1439,64 @@ object LocalMappedConnectorInternal extends MdcLoggable {
               toAccount,
               transactionRequestType,
               transactionRequestBodyCardano,
+              transDetailsSerialized,
+              chargePolicy,
+              Some(OBP_TRANSACTION_REQUEST_CHALLENGE),
+              getScaMethodAtInstance(transactionRequestType.value).toOption,
+              None,
+              callContext)
+          } yield (createdTransactionRequest, callContext)
+        }
+        case ETHEREUM => {
+          for {
+            transactionRequestBodyEthereum <- NewStyle.function.tryons(s"${InvalidJsonFormat} It should be $TransactionRequestBodyEthereumJsonV600 json format", 400, callContext) {
+              json.extract[TransactionRequestBodyEthereumJsonV600]
+            }
+            // Basic validations
+            _ <- Helper.booleanToFuture(s"$InvalidJsonValue Ethereum 'to' address is required", cc=callContext) {
+              Option(transactionRequestBodyEthereum.payment.to).exists(_.nonEmpty)
+            }
+            _ <- Helper.booleanToFuture(s"$InvalidJsonValue Ethereum 'to' address must start with 0x and be 42 chars", cc=callContext) {
+              val a = transactionRequestBodyEthereum.payment.to
+              a.startsWith("0x") && a.length == 42
+            }
+            _ <- Helper.booleanToFuture(s"$InvalidTransactionRequestCurrency Currency must be 'ETH'", cc=callContext) {
+              transactionRequestBodyEthereum.value.currency.equalsIgnoreCase("ETH")
+            }
+
+            // Create or get counterparty using the Ethereum address as secondary routing
+            (toCounterparty, callContext) <- NewStyle.function.getOrCreateCounterparty(
+              name = "ethereum-" + transactionRequestBodyEthereum.payment.to.take(10),
+              description = transactionRequestBodyEthereum.description,
+              currency = transactionRequestBodyEthereum.value.currency,
+              createdByUserId = u.userId,
+              thisBankId = bankId.value,
+              thisAccountId = accountId.value,
+              thisViewId = viewId.value,
+              otherBankRoutingScheme = "",
+              otherBankRoutingAddress = "",
+              otherBranchRoutingScheme = "",
+              otherBranchRoutingAddress = "",
+              otherAccountRoutingScheme = "",
+              otherAccountRoutingAddress = "",
+              otherAccountSecondaryRoutingScheme = "ethereum",
+              otherAccountSecondaryRoutingAddress = transactionRequestBodyEthereum.payment.to,
+              callContext = callContext
+            )
+
+            (toAccount, callContext) <- NewStyle.function.getBankAccountFromCounterparty(toCounterparty, true, callContext)
+            _ <- Helper.booleanToFuture(s"$CounterpartyBeneficiaryPermit", cc=callContext) { toCounterparty.isBeneficiary }
+
+            chargePolicy = sharedChargePolicy.toString
+            transDetailsSerialized <- NewStyle.function.tryons(UnknownError, 400, callContext) {
+              write(transactionRequestBodyEthereum)(Serialization.formats(NoTypeHints))
+            }
+            (createdTransactionRequest, callContext) <- NewStyle.function.createTransactionRequestv400(u,
+              viewId,
+              fromAccount,
+              toAccount,
+              transactionRequestType,
+              transactionRequestBodyEthereum,
               transDetailsSerialized,
               chargePolicy,
               Some(OBP_TRANSACTION_REQUEST_CHALLENGE),

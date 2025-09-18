@@ -63,6 +63,17 @@ case class TransactionRequestBodyCardanoJsonV600(
   metadata: Option[Map[String, CardanoMetadataStringJsonV600]] = None
 ) extends TransactionRequestCommonBodyJSON
 
+// ---------------- Ethereum models (V600) ----------------
+case class EthereumPaymentJsonV600(
+  to: String            // 0x address
+)
+
+case class TransactionRequestBodyEthereumJsonV600(
+  payment: EthereumPaymentJsonV600,
+  value: AmountOfMoneyJsonV121,   // currency should be "ETH"; amount string (decimal)
+  description: String
+) extends TransactionRequestCommonBodyJSON
+
 case class UserJsonV600(
                          user_id: String,
                          email : String,
