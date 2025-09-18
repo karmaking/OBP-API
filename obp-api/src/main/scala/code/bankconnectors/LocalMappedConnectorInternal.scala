@@ -128,7 +128,7 @@ object LocalMappedConnectorInternal extends MdcLoggable {
         user.name,
         callContext
       ) map { i =>
-        (unboxFullOrFail(i._1, callContext, s"$InvalidConnectorResponseForGetChallengeThreshold ", 400), i._2)
+        (unboxFullOrFail(i._1, callContext, s"$InvalidConnectorResponseForGetChallengeThreshold - ${nameOf(Connector.connector.vend.getChallengeThreshold _)}", 400), i._2)
       }
       challengeThresholdAmount <- NewStyle.function.tryons(s"$InvalidConnectorResponseForGetChallengeThreshold. challengeThreshold amount ${challengeThreshold.amount} not convertible to number", 400, callContext) {
         BigDecimal(challengeThreshold.amount)
@@ -1414,12 +1414,12 @@ object LocalMappedConnectorInternal extends MdcLoggable {
               thisBankId = bankId.value,
               thisAccountId = accountId.value,
               thisViewId = viewId.value,
-              otherBankRoutingScheme = "",
-              otherBankRoutingAddress = "",
-              otherBranchRoutingScheme = "",
-              otherBranchRoutingAddress = "",
-              otherAccountRoutingScheme = "",
-              otherAccountRoutingAddress = "",
+              otherBankRoutingScheme = CARDANO.toString,
+              otherBankRoutingAddress = transactionRequestBodyCardano.to.address,
+              otherBranchRoutingScheme = CARDANO.toString,
+              otherBranchRoutingAddress = transactionRequestBodyCardano.to.address,
+              otherAccountRoutingScheme = CARDANO.toString,
+              otherAccountRoutingAddress = transactionRequestBodyCardano.to.address,
               otherAccountSecondaryRoutingScheme = "cardano",
               otherAccountSecondaryRoutingAddress = transactionRequestBodyCardano.to.address,
               callContext = callContext
@@ -1457,8 +1457,8 @@ object LocalMappedConnectorInternal extends MdcLoggable {
               Option(transactionRequestBodyEthereum.payment.to).exists(_.nonEmpty)
             }
             _ <- Helper.booleanToFuture(s"$InvalidJsonValue Ethereum 'to' address must start with 0x and be 42 chars", cc=callContext) {
-              val a = transactionRequestBodyEthereum.payment.to
-              a.startsWith("0x") && a.length == 42
+              val toBody = transactionRequestBodyEthereum.payment.to
+              toBody.startsWith("0x") && toBody.length == 42
             }
             _ <- Helper.booleanToFuture(s"$InvalidTransactionRequestCurrency Currency must be 'ETH'", cc=callContext) {
               transactionRequestBodyEthereum.value.currency.equalsIgnoreCase("ETH")
@@ -1466,19 +1466,19 @@ object LocalMappedConnectorInternal extends MdcLoggable {
 
             // Create or get counterparty using the Ethereum address as secondary routing
             (toCounterparty, callContext) <- NewStyle.function.getOrCreateCounterparty(
-              name = "ethereum-" + transactionRequestBodyEthereum.payment.to.take(10),
+              name = "ethereum-" + transactionRequestBodyEthereum.payment.to.take(27),
               description = transactionRequestBodyEthereum.description,
               currency = transactionRequestBodyEthereum.value.currency,
               createdByUserId = u.userId,
               thisBankId = bankId.value,
               thisAccountId = accountId.value,
               thisViewId = viewId.value,
-              otherBankRoutingScheme = "",
-              otherBankRoutingAddress = "",
-              otherBranchRoutingScheme = "",
-              otherBranchRoutingAddress = "",
-              otherAccountRoutingScheme = "",
-              otherAccountRoutingAddress = "",
+              otherBankRoutingScheme = ETHEREUM.toString,
+              otherBankRoutingAddress = transactionRequestBodyEthereum.payment.to,
+              otherBranchRoutingScheme = ETHEREUM.toString,
+              otherBranchRoutingAddress = transactionRequestBodyEthereum.payment.to,
+              otherAccountRoutingScheme = ETHEREUM.toString,
+              otherAccountRoutingAddress = transactionRequestBodyEthereum.payment.to,
               otherAccountSecondaryRoutingScheme = "ethereum",
               otherAccountSecondaryRoutingAddress = transactionRequestBodyEthereum.payment.to,
               callContext = callContext

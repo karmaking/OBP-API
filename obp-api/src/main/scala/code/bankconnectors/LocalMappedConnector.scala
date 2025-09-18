@@ -60,6 +60,7 @@ import code.users.{UserAttribute, UserAttributeProvider, Users}
 import code.util.Helper
 import code.util.Helper._
 import code.views.Views
+import com.github.dwickern.macros.NameOf.nameOf
 import com.openbankproject.commons.ExecutionContext.Implicits.global
 import com.openbankproject.commons.dto.{CustomerAndAttribute, GetProductsParam, ProductCollectionItemsTree}
 import com.openbankproject.commons.model._
@@ -165,6 +166,10 @@ object LocalMappedConnector extends Connector with MdcLoggable {
     isValidCurrencyISOCode(thresholdCurrency) match {
       case true if((currency.toLowerCase.equals("lovelace")||(currency.toLowerCase.equals("ada")))) =>
         (Full(AmountOfMoney(currency, "10000000000000")), callContext)
+      case true if(currency.equalsIgnoreCase("ETH")) =>
+        // For ETH, skip FX conversion and return a large threshold in wei-equivalent semantic (string value).
+        // Here we use a high number to effectively avoid challenge for typical dev/testing amounts.
+        (Full(AmountOfMoney("ETH", "10000")), callContext)
       case true =>
         fx.exchangeRate(thresholdCurrency, currency, Some(bankId), callContext) match {
           case rate@Some(_) =>
@@ -4539,7 +4544,7 @@ object LocalMappedConnector extends Connector with MdcLoggable {
       
       // Get the threshold for a challenge. i.e. over what value do we require an out of Band security challenge to be sent?
       (challengeThreshold, callContext) <- Connector.connector.vend.getChallengeThreshold(fromAccount.bankId.value, fromAccount.accountId.value, viewId.value, transactionRequestType.value, transactionRequestCommonBody.value.currency, initiator.userId, initiator.name, callContext) map { i =>
-        (unboxFullOrFail(i._1, callContext, s"$InvalidConnectorResponseForGetChallengeThreshold ", 400), i._2)
+        (unboxFullOrFail(i._1, callContext, s"$InvalidConnectorResponseForGetChallengeThreshold - ${nameOf(getChallengeThreshold _)}", 400), i._2)
       }
       challengeThresholdAmount <- NewStyle.function.tryons(s"$InvalidConnectorResponseForGetChallengeThreshold. challengeThreshold amount ${challengeThreshold.amount} not convertible to number", 400, callContext) {
         BigDecimal(challengeThreshold.amount)
@@ -4680,7 +4685,7 @@ object LocalMappedConnector extends Connector with MdcLoggable {
       
       // Get the threshold for a challenge. i.e. over what value do we require an out of Band security challenge to be sent?
       (challengeThreshold, callContext) <- Connector.connector.vend.getChallengeThreshold(fromAccount.bankId.value, fromAccount.accountId.value, viewId.value, transactionRequestType.value, transactionRequestCommonBody.value.currency, initiator.userId, initiator.name, callContext) map { i =>
-        (unboxFullOrFail(i._1, callContext, s"$InvalidConnectorResponseForGetChallengeThreshold ", 400), i._2)
+        (unboxFullOrFail(i._1, callContext, s"$InvalidConnectorResponseForGetChallengeThreshold - ${nameOf(getChallengeThreshold _)}", 400), i._2)
       }
       challengeThresholdAmount <- NewStyle.function.tryons(s"$InvalidConnectorResponseForGetChallengeThreshold. challengeThreshold amount ${challengeThreshold.amount} not convertible to number", 400, callContext) {
         BigDecimal(challengeThreshold.amount)

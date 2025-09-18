@@ -90,13 +90,8 @@ trait EthereumConnector_vSept2025 extends Connector with MdcLoggable {
       txId <- NewStyle.function.tryons(ErrorMessages.InvalidJsonFormat + " Failed to parse Ethereum RPC response", 500, callContext) {
         implicit val formats = json.DefaultFormats
         val j: JValue = json.parse(body)
-        val rpcError = (j \\ "error").children.headOption
-        rpcError.foreach { e =>
-          val msg = (e \\ "message").values.toString
-          val code = (e \\ "code").values.toString
-          throw new RuntimeException(s"Ethereum RPC error(code=$code): $msg")
-        }
-        val maybe = (j \\ "result").extractOpt[String]
+        val maybe = (j \ "result").extractOpt[String]
+          .orElse((j \ "error" \ "message").extractOpt[String].map(msg => throw new RuntimeException(msg)))
         maybe match {
           case Some(hash) if hash.nonEmpty => TransactionId(hash)
           case _ => throw new RuntimeException("Empty transaction hash")
