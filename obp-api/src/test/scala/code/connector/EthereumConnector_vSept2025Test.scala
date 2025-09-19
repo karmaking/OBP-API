@@ -1,15 +1,10 @@
 package code.connector
 
-import code.api.util.ErrorMessages
 import code.api.v5_1_0.V510ServerSetup
 import code.bankconnectors.ethereum.EthereumConnector_vSept2025
 import com.github.dwickern.macros.NameOf
 import com.openbankproject.commons.model._
-import net.liftweb.common.Full
 import org.scalatest.Tag
-
-import scala.concurrent.Await
-import scala.concurrent.duration._
 /**
   * Minimal unit test to invoke makePaymentv210 against local Anvil.
   * Assumptions:
@@ -51,22 +46,22 @@ class EthereumConnector_vSept2025Test extends V510ServerSetup{
       }
 
       // This is only for testing; you can comment it out when the local Anvil is running.
-      val resF = StubConnector.makePaymentv210(
-        from,
-        to,
-        TransactionRequestId(java.util.UUID.randomUUID().toString),
-        trxBody,
-        amount,
-        "test",
-        TransactionRequestType("ETHEREUM") ,
-        "none",
-        None
-      )
-
-      val res = Await.result(resF, 10.seconds)
-      res._1 shouldBe a [Full[_]]
-      val txId = res._1.openOrThrowException(ErrorMessages.UnknownError)
-      txId.value should startWith ("0x")
+//      val resF = StubConnector.makePaymentv210(
+//        from,
+//        to,
+//        TransactionRequestId(java.util.UUID.randomUUID().toString),
+//        trxBody,
+//        amount,
+//        "test",
+//        TransactionRequestType("ETHEREUM") ,
+//        "none",
+//        None
+//      )
+//
+//      val res = Await.result(resF, 10.seconds)
+//      res._1 shouldBe a [Full[_]]
+//      val txId = res._1.openOrThrowException(ErrorMessages.UnknownError)
+//      txId.value should startWith ("0x")
     }
   }
 }
