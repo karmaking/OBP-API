@@ -2232,7 +2232,7 @@ trait APIMethods510 {
             grantorConsumerId = callContext.map(_.consumer.toOption.map(_.consumerId.get)).flatten.getOrElse("Unknown")
             //this is from json body
             granteeConsumerId = consentJson.consumer_id.getOrElse("Unknown")
-            
+
             // Log consent SCA skip check to ai.log
             _ <- Future.successful {
               println(s"[skip_consent_sca_for_consumer_id_pairs] Checking SCA skip for consent creation")
@@ -3618,9 +3618,37 @@ trait APIMethods510 {
       "POST",
       "/banks/BANK_ID/accounts/ACCOUNT_ID/views/VIEW_ID/account-access/grant",
       "Grant User access to View",
-      s"""Grants the User identified by USER_ID access to the view identified.
+      s"""Grants the User identified by USER_ID access to the view on a bank account identified by VIEW_ID.
          |
-         |${userAuthenticationMessage(true)} and the user needs to be account holder.
+         |${userAuthenticationMessage(true)} and the user needs to have appropriate permissions.
+         |
+         |**Permission Requirements:**
+         |The requesting user must have access to the source VIEW_ID and must possess specific grant permissions:
+         |
+         |**For System Views (e.g., owner, accountant, auditor, public etc.):**
+         |- The user's current view must have the target view listed in its `canGrantAccessToViews` field
+         |- Example: If granting access to "accountant" view, the user's view must include "accountant" in `canGrantAccessToViews`
+         |
+         |**For Custom Views (account-specific views):**
+         |- The user's current view must have the `can_grant_access_to_custom_views` permission in its `allowed_actions` field
+         |- This permission allows granting access to any custom view on the account
+         |
+         |**Security Checks Performed:**
+         |1. User authentication validation
+         |2. JSON format validation (USER_ID and VIEW_ID required)
+         |3. Permission authorization via `APIUtil.canGrantAccessToView()`
+         |4. Target user existence verification
+         |5. Target view existence and type validation (system vs custom)
+         |6. Final access grant operation in database
+         |
+         |**Final Database Operation:**
+         |The system creates an `AccountAccess` record linking the user to the view if one doesn't already exist.
+         |This operation includes:
+         |- Duplicate check: Prevents creating duplicate access records (idempotent operation)
+         |- Public view restriction: Blocks access to public views if disabled instance-wide
+         |- Database constraint validation: Ensures referential integrity
+         |
+         |**Note:** The permission model ensures users can only delegate access rights they themselves possess or are explicitly authorized to grant.
          |
          |""",
       postAccountAccessJsonV510,
