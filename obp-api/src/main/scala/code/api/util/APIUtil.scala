@@ -4023,8 +4023,10 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
             case Nil =>
               Failure(RegulatedEntityNotFoundByCertificate)
             case single :: Nil =>
+              logger.debug(s"Regulated entity by certificate: $single")
               // Only one match, proceed to role check
               if (single.services.contains(serviceProvider)) {
+                logger.debug(s"Regulated entity by certificate (single.services: ${single.services}, serviceProvider: $serviceProvider): ")
                 Full(true)
               } else {
                 Failure(X509ActionIsNotAllowed)
