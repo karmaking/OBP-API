@@ -3620,7 +3620,7 @@ trait APIMethods510 {
       "Grant User access to View",
       s"""Grants the User identified by USER_ID access to the view on a bank account identified by VIEW_ID.
          |
-         |${userAuthenticationMessage(true)} and the user needs to have appropriate permissions.
+         |${userAuthenticationMessage(true)}
          |
          |**Permission Requirements:**
          |The requesting user must have access to the source VIEW_ID and must possess specific grant permissions:
