@@ -3947,6 +3947,24 @@ object SwaggerDefinitionsJSON {
     Some(redisCallLimitJson)
   )
 
+  lazy val callLimitsJson510Example: CallLimitsJson510 = CallLimitsJson510(
+    limits = List(
+      CallLimitJson510(
+        rate_limiting_id = "80e1e0b2-d8bf-4f85-a579-e69ef36e3305",
+        from_date = DateWithDayExampleObject,
+        to_date = DateWithDayExampleObject,
+        per_second_call_limit = "100",
+        per_minute_call_limit = "100",
+        per_hour_call_limit = "-1",
+        per_day_call_limit = "-1",
+        per_week_call_limit = "-1",
+        per_month_call_limit = "-1",
+        created_at = DateWithDayExampleObject,
+        updated_at = DateWithDayExampleObject
+      )
+    )
+  )
+
   lazy val accountWebhookPostJson = AccountWebhookPostJson(
     account_id =accountIdExample.value,
     trigger_name = ApiTrigger.onBalanceChange.toString(),

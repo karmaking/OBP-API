@@ -3304,7 +3304,7 @@ trait APIMethods510 {
          |
          |""".stripMargin,
       EmptyBody,
-      callLimitJson,
+      callLimitsJson510Example,
       List(
         $UserNotLoggedIn,
         InvalidJsonFormat,
@@ -3319,19 +3319,15 @@ trait APIMethods510 {
 
 
     lazy val getCallsLimit: OBPEndpoint = {
-      case "management" :: "consumers" :: consumerId :: "consumer" :: "call-limits" :: Nil JsonGet _ => {
+      case "management" :: "consumers" :: consumerId :: "consumer" :: "call-limits" :: Nil JsonGet _ =>
         cc =>
           implicit val ec = EndpointContext(Some(cc))
           for {
-            // (Full(u), callContext) <- authenticatedAccess(cc)
-            // _ <- NewStyle.function.hasEntitlement("", cc.userId, canReadCallLimits, callContext)
-            consumer <- NewStyle.function.getConsumerByConsumerId(consumerId, cc.callContext)
-            rateLimiting: Option[RateLimiting] <- RateLimitingDI.rateLimiting.vend.findMostRecentRateLimit(consumerId, None, None, None)
-            rateLimit <- Future(RateLimitingUtil.consumerRateLimitState(consumer.consumerId.get).toList)
+            _ <- NewStyle.function.getConsumerByConsumerId(consumerId, cc.callContext)
+            rateLimiting <- RateLimitingDI.rateLimiting.vend.getAllByConsumerId(consumerId, None)
           } yield {
-            (createCallLimitJson(consumer,  rateLimiting, rateLimit), HttpCode.`200`(cc.callContext))
+            (createCallLimitJson(rateLimiting), HttpCode.`200`(cc.callContext))
           }
-      }
     }
 
 
