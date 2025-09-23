@@ -478,9 +478,9 @@
       <artifactId>java-scriptengine</artifactId>
       <version>2.0.0</version>
     </dependency>
-    <!-- 
+    <!--
     Java Client for ORY Hydra
-    https://github.com/ory/hydra-client-java 
+    https://github.com/ory/hydra-client-java
     -->
     <dependency>
       <groupId>sh.ory.hydra</groupId>
@@ -632,14 +632,28 @@
             </execution>
           </executions>
         </plugin>
-        <plugin>
-          <groupId>org.mortbay.jetty</groupId>
-          <artifactId>maven-jetty-plugin</artifactId>
-          <configuration>
-            <contextPath>/</contextPath>
-            <scanIntervalSeconds>5</scanIntervalSeconds>
-          </configuration>
-        </plugin>
+<plugin>
+  <groupId>org.eclipse.jetty</groupId>
+  <artifactId>jetty-maven-plugin</artifactId>
+  <version>${jetty.version}</version>
+  <configuration>
+    <contextPath>/</contextPath>
+    <scanIntervalSeconds>5</scanIntervalSeconds>
+    <httpConnector>
+      <port>8080</port>
+    </httpConnector>
+    <systemProperties>
+      <systemProperty>
+        <name>org.eclipse.jetty.server.HttpConfiguration.requestHeaderSize</name>
+        <value>32768</value>
+      </systemProperty>
+      <systemProperty>
+        <name>org.eclipse.jetty.server.HttpConfiguration.responseHeaderSize</name>
+        <value>32768</value>
+      </systemProperty>
+    </systemProperties>
+  </configuration>
+</plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-idea-plugin</artifactId>
