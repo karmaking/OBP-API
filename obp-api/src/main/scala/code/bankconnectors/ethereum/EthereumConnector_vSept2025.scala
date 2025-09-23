@@ -18,7 +18,9 @@ import scala.collection.mutable.ArrayBuffer
   * Minimal JSON-RPC based connector to send ETH between two addresses.
   *
   * Notes
-  *  - This version calls eth_sendTransaction (requires unlocked accounts, e.g. Anvil)
+  *  - Supports two modes:
+  *      1) If transactionRequestCommonBody.description is a 0x-hex string, use eth_sendRawTransaction
+  *      2) Otherwise fallback to eth_sendTransaction (requires unlocked accounts, e.g. Anvil)
   *  - For public RPC providers, prefer locally signed tx + eth_sendRawTransaction
   *  - BankAccount.accountId.value is expected to hold the 0x Ethereum address
   */
@@ -51,27 +53,40 @@ trait EthereumConnector_vSept2025 extends Connector with MdcLoggable {
     val to   = toAccount.accountId.value
     val valueHex = ethToWeiHex(amount)
 
+    val maybeRawTx: Option[String] = Option(transactionRequestCommonBody).map(_.description).map(_.trim).filter(s => s.startsWith("0x") && s.length > 2)
+
     val safeFrom = if (from.length > 10) from.take(10) + "..." else from
     val safeTo   = if (to.length > 10) to.take(10) + "..." else to
     val safeVal  = if (valueHex.length > 14) valueHex.take(14) + "..." else valueHex
     logger.debug(s"EthereumConnector_vSept2025.makePaymentv210 → from=$safeFrom to=$safeTo value=$safeVal url=${rpcUrl}")
 
-    val payload = s"""
-      |{
-      |  "jsonrpc":"2.0",
-      |  "method":"eth_sendTransaction",
-      |  "params":[{
-      |    "from":"$from",
-      |    "to":"$to",
-      |    "value":"$valueHex"
-      |  }],
-      |  "id":1
-      |}
-      |""".stripMargin
+    val payload = maybeRawTx match {
+      case Some(raw) =>
+        s"""
+           |{
+           |  "jsonrpc":"2.0",
+           |  "method":"eth_sendRawTransaction",
+           |  "params":["$raw"],
+           |  "id":1
+           |}
+           |""".stripMargin
+      case None =>
+        s"""
+           |{
+           |  "jsonrpc":"2.0",
+           |  "method":"eth_sendTransaction",
+           |  "params":[{
+           |    "from":"$from",
+           |    "to":"$to",
+           |    "value":"$valueHex"
+           |  }],
+           |  "id":1
+           |}
+           |""".stripMargin
+    }
 
     for {
-      request <- NewStyle.function.tryons(ErrorMessages.UnknownError + " Failed to build HTTP request", 500, callContext) {
-        prepareHttpRequest(rpcUrl, _root_.akka.http.scaladsl.model.HttpMethods.POST, _root_.akka.http.scaladsl.model.HttpProtocol("HTTP/1.1"), payload)
+      request <- NewStyle.function.tryons(ErrorMessages.UnknownError + " Failed to build HTTP request", 500, callContext) {prepareHttpRequest(rpcUrl, _root_.akka.http.scaladsl.model.HttpMethods.POST, _root_.akka.http.scaladsl.model.HttpProtocol("HTTP/1.1"), payload)
       }
 
       response <- NewStyle.function.tryons(ErrorMessages.UnknownError + " Failed to call Ethereum RPC", 500, callContext) {
@@ -87,18 +102,29 @@ trait EthereumConnector_vSept2025 extends Connector with MdcLoggable {
         response.status.isSuccess()
       }
 
-      txId <- NewStyle.function.tryons(ErrorMessages.InvalidJsonFormat + " Failed to parse Ethereum RPC response", 500, callContext) {
+      txIdBox <- {
         implicit val formats = json.DefaultFormats
         val j: JValue = json.parse(body)
-        val maybe = (j \ "result").extractOpt[String]
-          .orElse((j \ "error" \ "message").extractOpt[String].map(msg => throw new RuntimeException(msg)))
-        maybe match {
-          case Some(hash) if hash.nonEmpty => TransactionId(hash)
-          case _ => throw new RuntimeException("Empty transaction hash")
+        val errorNode = (j \ "error")
+        if (errorNode != json.JNothing && errorNode != json.JNull) {
+          val msg = (errorNode \ "message").extractOpt[String].getOrElse("Unknown Ethereum RPC error")
+          val code = (errorNode \ "code").extractOpt[BigInt].map(_.toString).getOrElse("?")
+          scala.concurrent.Future.successful(Failure(s"Ethereum RPC error(code=$code): $msg"))
+        } else {
+          NewStyle.function.tryons(ErrorMessages.InvalidJsonFormat + " Failed to parse Ethereum RPC response", 500, callContext) {
+            val resultHashOpt: Option[String] =
+              (j \ "result").extractOpt[String]
+                .orElse((j \ "result" \ "hash").extractOpt[String])
+                .orElse((j \ "result" \ "transactionHash").extractOpt[String])
+            resultHashOpt match {
+              case Some(hash) if hash.nonEmpty => TransactionId(hash)
+              case _ => throw new RuntimeException("Empty transaction hash")
+            }
+          }.map(Full(_))
         }
       }
     } yield {
-      (Full(txId), callContext)
+      (txIdBox, callContext)
     }
   }
 }
