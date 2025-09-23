@@ -52,22 +52,22 @@ class EthereumConnector_vSept2025Test extends V510ServerSetup{
       }
 
 //       This is only for testing; you can comment it out when the local Anvil is running.
-            val resF = StubConnector.makePaymentv210(
-              from,
-              to,
-              TransactionRequestId(java.util.UUID.randomUUID().toString),
-              trxBody,
-              amount,
-              "test",
-              TransactionRequestType("ETHEREUM") ,
-              "none",
-              None
-            )
-
-            val res = Await.result(resF, 10.seconds)
-            res._1 shouldBe a [Full[_]]
-            val txId = res._1.openOrThrowException(ErrorMessages.UnknownError)
-            txId.value should startWith ("0x")
+//            val resF = StubConnector.makePaymentv210(
+//              from,
+//              to,
+//              TransactionRequestId(java.util.UUID.randomUUID().toString),
+//              trxBody,
+//              amount,
+//              "test",
+//              TransactionRequestType("ETHEREUM") ,
+//              "none",
+//              None
+//            )
+//
+//            val res = Await.result(resF, 10.seconds)
+//            res._1 shouldBe a [Full[_]]
+//            val txId = res._1.openOrThrowException(ErrorMessages.UnknownError)
+//            txId.value should startWith ("0x")
     }
   }
   
@@ -88,22 +88,22 @@ class EthereumConnector_vSept2025Test extends V510ServerSetup{
       }
 
       // Enable integration test against private chain
-      val resF = StubConnector.makePaymentv210(
-        from,
-        to,
-        TransactionRequestId(java.util.UUID.randomUUID().toString),
-        trxBody,
-        amount,
-        "test",
-        TransactionRequestType("ETHEREUM") ,
-        "none",
-        None
-      )
-
-      val res = Await.result(resF, 30.seconds)
-      res._1 shouldBe a [Full[_]]
-      val txId = res._1.openOrThrowException(ErrorMessages.UnknownError)
-      txId.value should startWith ("0x")
+//      val resF = StubConnector.makePaymentv210(
+//        from,
+//        to,
+//        TransactionRequestId(java.util.UUID.randomUUID().toString),
+//        trxBody,
+//        amount,
+//        "test",
+//        TransactionRequestType("ETHEREUM") ,
+//        "none",
+//        None
+//      )
+//
+//      val res = Await.result(resF, 30.seconds)
+//      res._1 shouldBe a [Full[_]]
+//      val txId = res._1.openOrThrowException(ErrorMessages.UnknownError)
+//      txId.value should startWith ("0x")
     }
   }
 }
