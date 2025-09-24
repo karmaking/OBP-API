@@ -159,6 +159,18 @@ case class APIFailureNewStyle(failMsg: String,
   }
 }
 
+object ObpApiFailure {
+  def apply(failMsg: String, failCode: Int = 400, cc: Option[CallContext] = None) = {
+    fullBoxOrException(Empty ~> APIFailureNewStyle(failMsg, failCode, cc.map(_.toLight)))
+  }
+
+  // overload for plain CallContext
+  def apply(failMsg: String, failCode: Int, cc: CallContext) = {
+    fullBoxOrException(Empty ~> APIFailureNewStyle(failMsg, failCode, Some(cc.toLight)))
+  }
+}
+
+
 //if you change this, think about backwards compatibility! All existing
 //versions of the API return this failure message, so if you change it, make sure
 //that all stable versions retain the same behavior
