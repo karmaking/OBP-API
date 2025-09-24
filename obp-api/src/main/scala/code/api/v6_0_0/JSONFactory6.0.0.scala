@@ -27,9 +27,11 @@
 package code.api.v6_0_0
 
 import code.api.util.APIUtil.stringOrNull
+import code.api.util.RateLimitingPeriod.LimitCallPeriod
 import code.api.util._
 import code.api.v2_0_0.{EntitlementJSONs, JSONFactory200}
 import code.api.v3_0_0.{UserJsonV300, ViewJSON300, ViewsJSON300}
+import code.api.v3_1_0.{RateLimit, RedisCallLimitJson}
 import code.entitlement.Entitlement
 import code.util.Helper.MdcLoggable
 import com.openbankproject.commons.model._
@@ -78,6 +80,33 @@ case class UserV600(user: User, entitlements: List[Entitlement], views: Option[P
 case class UsersJsonV600(current_user: UserV600, on_behalf_of_user: UserV600)
 
 object JSONFactory600 extends CustomJsonFormats with MdcLoggable{
+
+  def createCurrentUsageJson(rateLimits: List[((Option[Long], Option[Long]), LimitCallPeriod)]): Option[RedisCallLimitJson] = {
+    if (rateLimits.isEmpty) None
+    else {
+      val grouped: Map[LimitCallPeriod, (Option[Long], Option[Long])] =
+        rateLimits.map { case (limits, period) => period -> limits }.toMap
+
+      def getInfo(period: RateLimitingPeriod.Value): Option[RateLimit] =
+        grouped.get(period).collect {
+          case (Some(x), Some(y)) => RateLimit(Some(x), Some(y))
+        }
+
+      Some(
+        RedisCallLimitJson(
+          getInfo(RateLimitingPeriod.PER_SECOND),
+          getInfo(RateLimitingPeriod.PER_MINUTE),
+          getInfo(RateLimitingPeriod.PER_HOUR),
+          getInfo(RateLimitingPeriod.PER_DAY),
+          getInfo(RateLimitingPeriod.PER_WEEK),
+          getInfo(RateLimitingPeriod.PER_MONTH)
+        )
+      )
+    }
+  }
+
+
+
   def createUserInfoJSON(current_user: UserV600, onBehalfOfUser: Option[UserV600]): UserJsonV600 = {
     UserJsonV600(
       user_id = current_user.user.userId,

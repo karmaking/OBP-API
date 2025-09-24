@@ -2,11 +2,13 @@ package code.api.v6_0_0
 
 import code.api.ResourceDocs1_4_0.SwaggerDefinitionsJSON._
 import code.api.util.APIUtil._
+import code.api.util.ApiRole.canReadCallLimits
 import code.api.util.ApiTag._
 import code.api.util.ErrorMessages.{$UserNotLoggedIn, InvalidJsonFormat, UnknownError, _}
 import code.api.util.FutureUtil.EndpointContext
-import code.api.util.NewStyle
+import code.api.util.{NewStyle, RateLimitingUtil}
 import code.api.util.NewStyle.HttpCode
+import code.api.v6_0_0.JSONFactory600.createCurrentUsageJson
 import code.bankconnectors.LocalMappedConnectorInternal
 import code.bankconnectors.LocalMappedConnectorInternal._
 import code.entitlement.Entitlement
@@ -20,6 +22,7 @@ import com.openbankproject.commons.ExecutionContext.Implicits.global
 
 import scala.collection.immutable.{List, Nil}
 import scala.collection.mutable.ArrayBuffer
+import scala.concurrent.Future
 
 
 trait APIMethods600 {
@@ -36,6 +39,46 @@ trait APIMethods600 {
 
     val apiRelations = ArrayBuffer[ApiRelation]()
     val codeContext = CodeContext(staticResourceDocs, apiRelations)
+
+
+    staticResourceDocs += ResourceDoc(
+      getCurrentCallsLimit,
+      implementedInApiVersion,
+      nameOf(getCurrentCallsLimit),
+      "GET",
+      "/management/consumers/CONSUMER_ID/consumer/current-usage",
+      "Get Call Limits for a Consumer Usage",
+      s"""
+         |Get Call Limits for a Consumer Usage.
+         |${userAuthenticationMessage(true)}
+         |
+         |""".stripMargin,
+      EmptyBody,
+      redisCallLimitJson,
+      List(
+        $UserNotLoggedIn,
+        InvalidJsonFormat,
+        InvalidConsumerId,
+        ConsumerNotFoundByConsumerId,
+        UserHasMissingRoles,
+        UpdateConsumerError,
+        UnknownError
+      ),
+      List(apiTagConsumer),
+      Some(List(canReadCallLimits)))
+
+
+    lazy val getCurrentCallsLimit: OBPEndpoint = {
+      case "management" :: "consumers" :: consumerId :: "consumer" :: "current-usage" :: Nil JsonGet _ =>
+        cc =>
+          implicit val ec = EndpointContext(Some(cc))
+          for {
+            _ <- NewStyle.function.getConsumerByConsumerId(consumerId, cc.callContext)
+            currentUsage <- Future(RateLimitingUtil.consumerRateLimitState(consumerId).toList)
+          } yield {
+            (createCurrentUsageJson(currentUsage), HttpCode.`200`(cc.callContext))
+          }
+    }
 
 
     staticResourceDocs += ResourceDoc(
