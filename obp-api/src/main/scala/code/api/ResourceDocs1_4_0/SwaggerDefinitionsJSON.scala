@@ -5742,9 +5742,7 @@ object SwaggerDefinitionsJSON {
   )
 
   lazy val transactionRequestBodyEthereumJsonV600 = TransactionRequestBodyEthereumJsonV600(
-    payment = EthereumPaymentJsonV600(
-      to = "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
-    ),
+    to = "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
     value = AmountOfMoneyJsonV121("ETH", "0.01"),
     description = descriptionExample.value
   )

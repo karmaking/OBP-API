@@ -118,9 +118,9 @@ trait APIMethods600 {
     }
 
     staticResourceDocs += ResourceDoc(
-      createTransactionRequestEthereum,
+      createTransactionRequestEthereumeSendTransaction,
       implementedInApiVersion,
-      nameOf(createTransactionRequestEthereum),
+      nameOf(createTransactionRequestEthereumeSendTransaction),
       "POST",
       "/banks/BANK_ID/accounts/ACCOUNT_ID/owner/transaction-request-types/ETHEREUM/transaction-requests",
       "Create Transaction Request (ETHEREUM)",
@@ -149,7 +149,7 @@ trait APIMethods600 {
       List(apiTagTransactionRequest, apiTagPSD2PIS, apiTagPsd2)
     )
 
-    lazy val createTransactionRequestEthereum: OBPEndpoint = {
+    lazy val createTransactionRequestEthereumeSendTransaction: OBPEndpoint = {
       case "banks" :: BankId(bankId) :: "accounts" :: AccountId(accountId) :: ViewId(viewId) :: "transaction-request-types" ::
         "ETHEREUM" :: "transaction-requests" :: Nil JsonPost json -> _ =>
         cc => implicit val ec = EndpointContext(Some(cc))

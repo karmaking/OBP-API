@@ -64,12 +64,8 @@ case class TransactionRequestBodyCardanoJsonV600(
 ) extends TransactionRequestCommonBodyJSON
 
 // ---------------- Ethereum models (V600) ----------------
-case class EthereumPaymentJsonV600(
-  to: String            // 0x address
-)
-
 case class TransactionRequestBodyEthereumJsonV600(
-  payment: EthereumPaymentJsonV600,
+  to: String,            // 0x address
   value: AmountOfMoneyJsonV121,   // currency should be "ETH"; amount string (decimal)
   description: String
 ) extends TransactionRequestCommonBodyJSON
