@@ -786,7 +786,7 @@ object LocalMappedConnectorInternal extends MdcLoggable {
       }
 
       _ <- (transactionRequestTypeValue match {
-        case ETHEREUM => Future.successful(true) // Allow ETH (non-ISO) for Ethereum requests
+        case ETH_SEND_RAW_TRANSACTION | ETH_SEND_TRANSACTION => Future.successful(true) // Allow ETH (non-ISO) for Ethereum requests
         case _ => Helper.booleanToFuture(s"${InvalidISOCurrencyCode} Current input is: '${transDetailsJson.value.currency}'", cc=callContext) {
           APIUtil.isValidCurrencyISOCode(transDetailsJson.value.currency)
         }
@@ -1447,7 +1447,7 @@ object LocalMappedConnectorInternal extends MdcLoggable {
               callContext)
           } yield (createdTransactionRequest, callContext)
         }
-        case ETHEREUM => {
+        case ETH_SEND_RAW_TRANSACTION | ETH_SEND_TRANSACTION => {
           for {
             transactionRequestBodyEthereum <- NewStyle.function.tryons(s"${InvalidJsonFormat} It should be $TransactionRequestBodyEthereumJsonV600 json format", 400, callContext) {
               json.extract[TransactionRequestBodyEthereumJsonV600]
@@ -1473,11 +1473,11 @@ object LocalMappedConnectorInternal extends MdcLoggable {
               thisBankId = bankId.value,
               thisAccountId = accountId.value,
               thisViewId = viewId.value,
-              otherBankRoutingScheme = ETHEREUM.toString,
+              otherBankRoutingScheme = ETH_SEND_TRANSACTION.toString,
               otherBankRoutingAddress = transactionRequestBodyEthereum.to,
-              otherBranchRoutingScheme = ETHEREUM.toString,
+              otherBranchRoutingScheme = ETH_SEND_TRANSACTION.toString,
               otherBranchRoutingAddress = transactionRequestBodyEthereum.to,
-              otherAccountRoutingScheme = ETHEREUM.toString,
+              otherAccountRoutingScheme = ETH_SEND_TRANSACTION.toString,
               otherAccountRoutingAddress = transactionRequestBodyEthereum.to,
               otherAccountSecondaryRoutingScheme = "ethereum",
               otherAccountSecondaryRoutingAddress = transactionRequestBodyEthereum.to,
