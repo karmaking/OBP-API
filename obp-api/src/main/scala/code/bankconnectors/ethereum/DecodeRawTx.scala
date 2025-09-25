@@ -7,6 +7,41 @@ import net.liftweb.json._
 
 object DecodeRawTx {
 
+  //  Legacy (type 0)
+  //  Mandatory: nonce, gasPrice, gasLimit, value (can be 0), data (can be 0x), v, r, s
+  //  Conditional: to (present for transfers/calls; omitted for contract creation where data is init code)
+  //  Optional/Recommended: chainId (EIP-155 replay protection; legacy pre‑155 may omit)
+  //  EIP-2930 (type 1)
+  //  Mandatory: chainId, nonce, gasPrice, gasLimit, accessList (can be empty []), v/r/s (or yParity+r+s)
+  //  Conditional: to (omit for contract creation), value (can be 0), data (can be 0x)
+  //  EIP-1559 (type 2)
+  //  Mandatory: chainId, nonce, maxPriorityFeePerGas, maxFeePerGas, gasLimit, accessList (can be empty []), v/r/s (or yParity+r+s)
+  //  Conditional: to (omit for contract creation), value (can be 0), data (can be 0x)
+  //  Derived (not part of signed payload)
+  //  hash: derived from raw tx
+  //    from: recovered from signature
+  //  estimatedFee: computed (gasLimit × gasPrice or gasUsed × price at execution)
+  //  type: 0/1/2 (0 is implicit for legacy)
+  //  In your decoded JSON fields: mandatory (for signed legacy) are nonce, gasPrice, gas, value, input, v/r/s; to is conditional; chainId is optional (but recommended). hash/from/estimatedFee are derived.
+  //    
+  // Case class representing the decoded transaction JSON structure
+  case class DecodedTxResponse(
+    hash: String,
+    `type`: Int,
+    chainId: Option[Long],
+    nonce: Option[Long],
+    gasPrice: Option[String],
+    gas: Option[String],
+    to: Option[String],
+    value: Option[String],
+    input: String,
+    from: Option[String],
+    v: Option[String],
+    r: Option[String],
+    s: Option[String],
+    estimatedFee: Option[String]
+  )
+
   private def fatal(msg: String): Nothing = {
     Console.err.println(msg)
     sys.exit(1)
@@ -46,20 +81,25 @@ object DecodeRawTx {
     }
   }
 
-  private def jStrOrNull(v: String): JValue = if (v == null) JNull else JString(v)
-  private def jOptStrOrNull(v: Option[String]): JValue = v.map(JString).getOrElse(JNull)
-
   /**
-    * Decode raw Ethereum transaction hex and return a JSON string summarizing the fields.
-    * The input must be a 0x-prefixed hex string; no file or stdin reading is performed.
-    */
-  def decodeRawTxToJson(rawIn: String): String = {
-    val rawHex  = normalizeHex(rawIn)
-    val txType  = detectType(rawHex)
+   * Decode raw Ethereum transaction hex and return a JSON string summarizing the fields.
+   * The input must be a 0x-prefixed hex string; no file or stdin reading is performed.
+   *
+   * Response is serialized from DecodedTxResponse case class with types:
+   *  - type, chainId, nonce, value are numeric (where available)
+   *  - gasPrice, gas, v, r, s, estimatedFee are hex strings with 0x prefix (where available)
+   *  - input is always a string
+   */
+  def decodeRawTxToJson(rawIn: String): DecodedTxResponse = {
+    implicit val formats: Formats = DefaultFormats
+    val rawHex = normalizeHex(rawIn)
+    val txType = detectType(rawHex)
 
     val decoded: RawTransaction =
       try TransactionDecoder.decode(rawHex)
-      catch { case e: Throwable => fatal(s"decode failed: ${e.getMessage}") }
+      catch {
+        case e: Throwable => fatal(s"decode failed: ${e.getMessage}")
+      }
 
     val (fromOpt, chainIdOpt, vHexOpt, rHexOpt, sHexOpt):
       (Option[String], Option[BigInteger], Option[String], Option[String], Option[String]) = decoded match {
@@ -68,52 +108,71 @@ object DecodeRawTx {
         val cid: Option[BigInteger] = try {
           val c = srt.getChainId // long in web3j 4.x; -1 if absent
           if (c > 0L) Some(BigInteger.valueOf(c)) else None
-        } catch { case _: Throwable => None }
-        val sig  = srt.getSignatureData
-        val vH   = vToHex(sig, cid)
-    val rH   = W3Numeric.toHexString(sig.getR)
-    val sH   = W3Numeric.toHexString(sig.getS)
+        } catch {
+          case _: Throwable => None
+        }
+        val sig = srt.getSignatureData
+        val vH = vToHex(sig, cid)
+        val rH = W3Numeric.toHexString(sig.getR)
+        val sH = W3Numeric.toHexString(sig.getS)
         (from, cid, Some(vH), Some(rH), Some(sH))
       case _ =>
         (None, None, None, None, None)
     }
 
-    val hash        = Hash.sha3(rawHex)
-    val gasPriceHex = Option(decoded.getGasPrice).map(W3Numeric.toHexStringWithPrefix).getOrElse(null)
-    val gasLimitHex = Option(decoded.getGasLimit).map(W3Numeric.toHexStringWithPrefix).getOrElse(null)
-    val valueHex    = Option(decoded.getValue).map(W3Numeric.toHexStringWithPrefix).getOrElse(null)
-    val nonceHex    = Option(decoded.getNonce).map(W3Numeric.toHexStringWithPrefix).getOrElse(null)
-    val toAddr      = decoded.getTo
-    val inputData   = Option(decoded.getData).getOrElse("0x")
+    val hash = Hash.sha3(rawHex)
+    val gasPriceHexOpt: Option[String] = Option(decoded.getGasPrice).map(W3Numeric.toHexStringWithPrefix)
+    val gasLimitHexOpt: Option[String] = Option(decoded.getGasLimit).map(W3Numeric.toHexStringWithPrefix)
+    // Convert value from WEI (BigInt) to ETH (BigDecimal) with 18 decimals
+    val valueDecOpt: Option[String] = Option(decoded.getValue).map { wei =>
+      (BigDecimal(wei) / BigDecimal("1000000000000000000")).toString()
+    }
+    val nonceDecOpt: Option[Long] = Option(decoded.getNonce).map(_.longValue())
+    val toAddrOpt: Option[String] = Option(decoded.getTo)
+    val inputData = Option(decoded.getData).getOrElse("0x")
 
-    val estimatedFeeHex =
-      (for {
+    val estimatedFeeHexOpt =
+      for {
         gp <- Option(decoded.getGasPrice)
         gl <- Option(decoded.getGasLimit)
-      } yield W3Numeric.toHexStringWithPrefix(gp.multiply(gl))).getOrElse(null)
+      } yield W3Numeric.toHexStringWithPrefix(gp.multiply(gl))
 
-    val j = JObject(List(
-      JField("hash", JString(hash)),
-      JField("type", JString(txType.toString)),
-      JField("chainId", chainIdOpt.map(cid => JString(cid.toString)).getOrElse(JNull)),
-      JField("nonce", jStrOrNull(nonceHex)),
-      JField("gasPrice", jStrOrNull(gasPriceHex)),
-      JField("gas", jStrOrNull(gasLimitHex)),
-      JField("to", jStrOrNull(toAddr)),
-      JField("value", jStrOrNull(valueHex)),
-      JField("input", jStrOrNull(inputData)),
-      JField("from", jOptStrOrNull(fromOpt)),
-      JField("v", jOptStrOrNull(vHexOpt)),
-      JField("r", jOptStrOrNull(rHexOpt)),
-      JField("s", jOptStrOrNull(sHexOpt)),
-      JField("estimatedFee", jStrOrNull(estimatedFeeHex))
-    ))
-    compactRender(j)
+    // Fallback: derive chainId from v when not provided by decoder (legacy EIP-155)
+    val chainIdNumOpt: Option[Long] = chainIdOpt.map(_.longValue()).orElse {
+      vHexOpt.flatMap { vh =>
+        val hex = vh.stripPrefix("0x")
+        if (hex.nonEmpty) {
+          val vBI = new BigInteger(hex, 16)
+          if (vBI.compareTo(BigInteger.valueOf(35)) >= 0) {
+            val parity = if (vBI.testBit(0)) 1L else 0L
+            Some(
+              vBI
+                .subtract(BigInteger.valueOf(35L + parity))
+                .divide(BigInteger.valueOf(2L))
+                .longValue()
+            )
+          } else None
+        } else None
+      }
+    }
+
+    DecodedTxResponse(
+      hash = hash,
+      `type` = txType,
+      chainId = chainIdNumOpt,
+      nonce = nonceDecOpt,
+      gasPrice = gasPriceHexOpt,
+      gas = gasLimitHexOpt,
+      to = toAddrOpt,
+      value = valueDecOpt,
+      input = inputData,
+      from = fromOpt,
+      v = vHexOpt,
+      r = rHexOpt,
+      s = sHexOpt,
+      estimatedFee = estimatedFeeHexOpt
+    )
+
   }
 
-  def main(args: Array[String]): Unit = {
-    val raxHex = "0xf86b178203e882520894627306090abab3a6e1400e9345bc60c78a8bef57880de0b6b3a764000080820ff6a016878a008fb817df6d771749336fa0c905ec5b7fafcd043f0d9e609a2b5e41e0a0611dbe0f2ee2428360c72f4287a2996cb0d45cb8995cc23eb6ba525cb9580e02"
-    val out = decodeRawTxToJson(raxHex)
-    print(out)
-  }
 }
