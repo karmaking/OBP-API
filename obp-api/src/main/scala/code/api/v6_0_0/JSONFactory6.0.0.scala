@@ -70,6 +70,12 @@ case class TransactionRequestBodyEthereumJsonV600(
   description: String
 ) extends TransactionRequestCommonBodyJSON
 
+// This is only for the request JSON body; we will construct `TransactionRequestBodyEthereumJsonV600` for OBP.
+case class TransactionRequestBodyEthSendRawTransactionJsonV600(
+  to: String,            // eth_sendRawTransaction params field.
+  description: String
+)
+
 case class UserJsonV600(
                          user_id: String,
                          email : String,

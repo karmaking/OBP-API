@@ -171,7 +171,7 @@ trait APIMethods600 {
          |${transactionRequestGeneralText}
          |
        """.stripMargin,
-      transactionRequestBodyEthereumJsonV600,
+      transactionRequestBodyEthSendRawTransactionJsonV600,
       transactionRequestWithChargeJSON400,
       List(
         $UserNotLoggedIn,
