@@ -778,14 +778,14 @@ object LocalMappedConnectorInternal extends MdcLoggable {
         case ETH_SEND_RAW_TRANSACTION => for {
           // Parse raw transaction JSON
           transactionRequestBodyEthSendRawTransactionJsonV600 <- NewStyle.function.tryons(
-            s"$InvalidJsonFormat It should be $TransactionRequestBodyEthSendRawTransactionJsonV600 or $TransactionRequestBodyEthereumJsonV600 json format",
+            s"$InvalidJsonFormat It should be $TransactionRequestBodyEthSendRawTransactionJsonV600  json format",
             400,
             callContext
           ) {
             json.extract[TransactionRequestBodyEthSendRawTransactionJsonV600]
           }
           // Decode raw transaction to extract 'from' address
-          decodedTx = DecodeRawTx.decodeRawTxToJson(transactionRequestBodyEthSendRawTransactionJsonV600.to)
+          decodedTx = DecodeRawTx.decodeRawTxToJson(transactionRequestBodyEthSendRawTransactionJsonV600.params)
           from = decodedTx.from
           _ <- Helper.booleanToFuture(
             s"$BankAccountNotFoundByAccountId Ethereum 'from' address must be the same as the accountId",
@@ -795,8 +795,9 @@ object LocalMappedConnectorInternal extends MdcLoggable {
           }
           // Construct TransactionRequestBodyEthereumJsonV600 for downstream processing
           transactionRequestBodyEthereum = TransactionRequestBodyEthereumJsonV600(
+            params = Some(transactionRequestBodyEthSendRawTransactionJsonV600.params),
             to = decodedTx.to.getOrElse(""),
-            value = AmountOfMoneyJsonV121("ETH", "0.01"),
+            value = AmountOfMoneyJsonV121("ETH", decodedTx.value.getOrElse("0")),
             description = transactionRequestBodyEthSendRawTransactionJsonV600.description
           )
         } yield (transactionRequestBodyEthereum)

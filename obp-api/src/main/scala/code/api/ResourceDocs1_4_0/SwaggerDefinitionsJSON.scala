@@ -5747,7 +5747,7 @@ object SwaggerDefinitionsJSON {
     description = descriptionExample.value
   )
   lazy val transactionRequestBodyEthSendRawTransactionJsonV600 = TransactionRequestBodyEthSendRawTransactionJsonV600(
-    to = "0xf86b018203e882520894627306090abab3a6e1400e9345bc60c78a8bef57880de0b6b3a764000080820ff6a0d0367709eee090a6ebd74c63db7329372db1966e76d28ce219d1e105c47bcba7a0042d52f7d2436ad96e8714bf0309adaf870ad6fb68cfe53ce958792b3da36c12",
+    params = "0xf86b018203e882520894627306090abab3a6e1400e9345bc60c78a8bef57880de0b6b3a764000080820ff6a0d0367709eee090a6ebd74c63db7329372db1966e76d28ce219d1e105c47bcba7a0042d52f7d2436ad96e8714bf0309adaf870ad6fb68cfe53ce958792b3da36c12",
     description = descriptionExample.value
   )
   

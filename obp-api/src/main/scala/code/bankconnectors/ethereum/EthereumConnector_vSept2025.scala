@@ -2,6 +2,7 @@ package code.bankconnectors.ethereum
 
 import code.api.util.APIUtil._
 import code.api.util.{CallContext, ErrorMessages, NewStyle}
+import code.api.v6_0_0.TransactionRequestBodyEthereumJsonV600
 import code.bankconnectors._
 import code.util.AkkaHttpClient._
 import code.util.Helper
@@ -53,7 +54,7 @@ trait EthereumConnector_vSept2025 extends Connector with MdcLoggable {
     val to   = toAccount.accountId.value
     val valueHex = ethToWeiHex(amount)
 
-    val maybeRawTx: Option[String] = Option(transactionRequestCommonBody).map(_.description).map(_.trim).filter(s => s.startsWith("0x") && s.length > 2)
+    val maybeRawTx: Option[String] = transactionRequestCommonBody.asInstanceOf[TransactionRequestBodyEthereumJsonV600].params.map(_.trim).filter(s => s.startsWith("0x") && s.length > 2)
 
     val safeFrom = if (from.length > 10) from.take(10) + "..." else from
     val safeTo   = if (to.length > 10) to.take(10) + "..." else to
