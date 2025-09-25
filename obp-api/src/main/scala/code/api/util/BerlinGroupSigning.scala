@@ -1,15 +1,15 @@
 package code.api.util
 
-import code.api.{APIFailureNewStyle, RequestHeader}
-import code.api.util.APIUtil.{OBPReturnType, fullBoxOrException}
+import code.api.util.APIUtil.OBPReturnType
 import code.api.util.ErrorUtil.apiFailure
 import code.api.util.newstyle.RegulatedEntityNewStyle.getRegulatedEntitiesNewStyle
+import code.api.{ObpApiFailure, RequestHeader}
 import code.consumer.Consumers
 import code.model.Consumer
 import code.util.Helper.MdcLoggable
 import com.openbankproject.commons.ExecutionContext.Implicits.global
-import com.openbankproject.commons.model.{RegulatedEntityAttributeSimple, RegulatedEntityTrait, User}
-import net.liftweb.common.{Box, Empty, Failure, Full}
+import com.openbankproject.commons.model.{RegulatedEntityTrait, User}
+import net.liftweb.common.{Box, Failure, Full}
 import net.liftweb.http.provider.HTTPParam
 import net.liftweb.util.Helpers
 
@@ -288,7 +288,7 @@ object BerlinGroupSigning extends MdcLoggable {
       } yield {
         entities match {
           case Nil =>
-            (Failure(ErrorMessages.RegulatedEntityNotFoundByCertificate), forwardResult._2)
+            (ObpApiFailure(ErrorMessages.RegulatedEntityNotFoundByCertificate, 401, forwardResult._2), forwardResult._2)
 
           case single :: Nil =>
             val idno = single.entityCode
@@ -334,7 +334,7 @@ object BerlinGroupSigning extends MdcLoggable {
 
           case multiple =>
             val names = multiple.map(e => s"'${e.entityName}' (Code: ${e.entityCode})").mkString(", ")
-            (Failure(s"${ErrorMessages.RegulatedEntityAmbiguityByCertificate}: multiple TPPs found: $names"), forwardResult._2)
+            (ObpApiFailure(s"${ErrorMessages.RegulatedEntityAmbiguityByCertificate}: multiple TPPs found: $names", 401, forwardResult._2), forwardResult._2)
         }
       }
     }
