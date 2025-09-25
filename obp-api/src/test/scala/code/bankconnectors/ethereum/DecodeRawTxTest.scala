@@ -13,14 +13,16 @@ class DecodeRawTxTest extends FeatureSpec with Matchers with GivenWhenThen {
       val response = DecodeRawTx.decodeRawTxToJson(rawTx)
 
       Then("the response should contain the expected transaction fields")
-      response.hash should startWith ("0x")
-      response.`type` shouldBe 0
+      response.hash shouldBe defined
+      response.hash.get should startWith ("0x")
+      response.`type` shouldBe Some(0)
       response.nonce shouldBe Some(23)
       response.gasPrice shouldBe Some("0x3e8")
       response.gas shouldBe Some("0x5208")
       response.to shouldBe Some("0x627306090abab3a6e1400e9345bc60c78a8bef57")
       response.value shouldBe Some("1")
-      response.input should (be ("0x") or be (""))
+      response.input shouldBe defined
+      response.input.get should (be ("0x") or be (""))
       response.v shouldBe Some("0xff6")
       response.r shouldBe defined
       response.r.get should startWith ("0x")

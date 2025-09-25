@@ -22,19 +22,18 @@ object DecodeRawTx {
   //    from: recovered from signature
   //  estimatedFee: computed (gasLimit × gasPrice or gasUsed × price at execution)
   //  type: 0/1/2 (0 is implicit for legacy)
-  //  In your decoded JSON fields: mandatory (for signed legacy) are nonce, gasPrice, gas, value, input, v/r/s; to is conditional; chainId is optional (but recommended). hash/from/estimatedFee are derived.
   //    
   // Case class representing the decoded transaction JSON structure
   case class DecodedTxResponse(
-    hash: String,
-    `type`: Int,
+    hash: Option[String],
+    `type`: Option[Int],
     chainId: Option[Long],
     nonce: Option[Long],
     gasPrice: Option[String],
     gas: Option[String],
     to: Option[String],
     value: Option[String],
-    input: String,
+    input: Option[String],
     from: Option[String],
     v: Option[String],
     r: Option[String],
@@ -93,7 +92,7 @@ object DecodeRawTx {
   def decodeRawTxToJson(rawIn: String): DecodedTxResponse = {
     implicit val formats: Formats = DefaultFormats
     val rawHex = normalizeHex(rawIn)
-    val txType = detectType(rawHex)
+    val txType = Some(detectType(rawHex))
 
     val decoded: RawTransaction =
       try TransactionDecoder.decode(rawHex)
@@ -157,7 +156,7 @@ object DecodeRawTx {
     }
 
     DecodedTxResponse(
-      hash = hash,
+      hash = Some(hash),
       `type` = txType,
       chainId = chainIdNumOpt,
       nonce = nonceDecOpt,
@@ -165,7 +164,7 @@ object DecodeRawTx {
       gas = gasLimitHexOpt,
       to = toAddrOpt,
       value = valueDecOpt,
-      input = inputData,
+      input = Some(inputData),
       from = fromOpt,
       v = vHexOpt,
       r = rHexOpt,
