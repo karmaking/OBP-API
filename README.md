@@ -192,6 +192,17 @@ Props values can be set as environment variables. Props need to be prefixed with
 
 `openid_connect.enabled=true` becomes `OBP_OPENID_CONNECT_ENABLED=true`.
 
+### Development Docker Setup
+
+For local development with Docker Compose, see the Docker setup in `development/docker/`:
+
+```bash
+cd development/docker
+docker-compose up --build
+```
+
+See `development/docker/README.md` for detailed instructions and configuration options.
+
 ## Databases
 
 The default database for testing etc is H2. PostgreSQL is used for the sandboxes (user accounts, metadata, transaction cache). The list of databases fully tested is: PostgreSQL, MS SQL and H2.

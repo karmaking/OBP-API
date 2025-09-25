@@ -1,0 +1,13 @@
+version: "3.8"
+
+services:
+  obp-api:
+    build:
+      context: ../..
+      dockerfile: development/docker/Dockerfile
+    ports:
+      - "8080:8080"
+    extra_hosts:
+      # Enable host.docker.internal to work on all platforms
+      # This allows Docker to connect to services running on the host machine
+      - "host.docker.internal:host-gateway"
