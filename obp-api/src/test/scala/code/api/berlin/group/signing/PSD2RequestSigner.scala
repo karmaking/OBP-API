@@ -41,7 +41,7 @@ class PSD2RequestSigner(
    * @param requestBody The JSON request body as string
    * @param psuDeviceId Optional PSU device ID (default: "device-1234567890")
    * @param psuDeviceName Optional PSU device name (default: "Kalina-PC")
-   * @param psuIpAddress Optional PSU IP address (default: "192.168.1.42")
+   * @param psuIpAddress Optional PSU IP address (default: "psu-service.local")
    * @param tppRedirectUri Optional TPP redirect URI (default: "tppapp://example.com/redirect")
    * @param tppNokRedirectUri Optional TPP error redirect URI (default: "https://example.com/redirect")
    * @return Map of HTTP headers for the signed request
@@ -50,7 +50,7 @@ class PSD2RequestSigner(
     requestBody: String,
     psuDeviceId: String = "device-1234567890",
     psuDeviceName: String = "Kalina-PC", 
-    psuIpAddress: String = "192.168.1.42",
+    psuIpAddress: String = "psu-service.local", // Use DNS/hostname instead of raw IP
     tppRedirectUri: String = "tppapp://example.com/redirect",
     tppNokRedirectUri: String = "https://example.com/redirect"
   ): Map[String, String] = {
