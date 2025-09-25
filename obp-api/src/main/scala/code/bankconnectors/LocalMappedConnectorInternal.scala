@@ -13,7 +13,8 @@ import code.api.util.newstyle.ViewNewStyle
 import code.api.v1_4_0.JSONFactory1_4_0.TransactionRequestAccountJsonV140
 import code.api.v2_1_0._
 import code.api.v4_0_0._
-import code.api.v6_0_0.{TransactionRequestBodyCardanoJsonV600, TransactionRequestBodyEthereumJsonV600}
+import code.api.v6_0_0.{TransactionRequestBodyCardanoJsonV600, TransactionRequestBodyEthSendRawTransactionJsonV600, TransactionRequestBodyEthereumJsonV600}
+import code.bankconnectors.ethereum.DecodeRawTx
 import code.branches.MappedBranch
 import code.fx.fx
 import code.fx.fx.TTL
@@ -773,8 +774,36 @@ object LocalMappedConnectorInternal extends MdcLoggable {
       }
 
       // Check the input JSON format, here is just check the common parts of all four types
-      transDetailsJson <- NewStyle.function.tryons(s"$InvalidJsonFormat The Json body should be the $TransactionRequestBodyCommonJSON ", 400, callContext) {
-        json.extract[TransactionRequestBodyCommonJSON]
+      transDetailsJson <- transactionRequestTypeValue match {
+        case ETH_SEND_RAW_TRANSACTION => for {
+          // Parse raw transaction JSON
+          transactionRequestBodyEthSendRawTransactionJsonV600 <- NewStyle.function.tryons(
+            s"$InvalidJsonFormat It should be $TransactionRequestBodyEthSendRawTransactionJsonV600 or $TransactionRequestBodyEthereumJsonV600 json format",
+            400,
+            callContext
+          ) {
+            json.extract[TransactionRequestBodyEthSendRawTransactionJsonV600]
+          }
+          // Decode raw transaction to extract 'from' address
+          decodedTx = DecodeRawTx.decodeRawTxToJson(transactionRequestBodyEthSendRawTransactionJsonV600.to)
+          from = decodedTx.from
+          _ <- Helper.booleanToFuture(
+            s"$BankAccountNotFoundByAccountId Ethereum 'from' address must be the same as the accountId",
+            cc = callContext
+          ) {
+            from.getOrElse("") == accountId.value
+          }
+          // Construct TransactionRequestBodyEthereumJsonV600 for downstream processing
+          transactionRequestBodyEthereum = TransactionRequestBodyEthereumJsonV600(
+            to = decodedTx.to.getOrElse(""),
+            value = AmountOfMoneyJsonV121("ETH", "0.01"),
+            description = transactionRequestBodyEthSendRawTransactionJsonV600.description
+          )
+        } yield (transactionRequestBodyEthereum)
+        case _ =>
+          NewStyle.function.tryons(s"$InvalidJsonFormat The Json body should be the $TransactionRequestBodyCommonJSON ", 400, callContext) {
+            json.extract[TransactionRequestBodyCommonJSON]
+          }
       }
 
       transactionAmountNumber <- NewStyle.function.tryons(s"$InvalidNumber Current input is  ${transDetailsJson.value.amount} ", 400, callContext) {
@@ -1449,9 +1478,22 @@ object LocalMappedConnectorInternal extends MdcLoggable {
         }
         case ETH_SEND_RAW_TRANSACTION | ETH_SEND_TRANSACTION => {
           for {
-            transactionRequestBodyEthereum <- NewStyle.function.tryons(s"${InvalidJsonFormat} It should be $TransactionRequestBodyEthereumJsonV600 json format", 400, callContext) {
-              json.extract[TransactionRequestBodyEthereumJsonV600]
-            }
+            // Handle ETH_SEND_RAW_TRANSACTION and ETH_SEND_TRANSACTION types with proper extraction and validation
+            (transactionRequestBodyEthereum, scheme) <-
+              if (transactionRequestTypeValue == ETH_SEND_RAW_TRANSACTION) {
+                Future.successful{(transDetailsJson.asInstanceOf[TransactionRequestBodyEthereumJsonV600], ETH_SEND_RAW_TRANSACTION.toString)}
+              } else {
+                for {
+                  transactionRequestBodyEthereum <- NewStyle.function.tryons(
+                    s"$InvalidJsonFormat It should be $TransactionRequestBodyEthereumJsonV600 json format",
+                    400,
+                    callContext
+                  ) {
+                    json.extract[TransactionRequestBodyEthereumJsonV600]
+                  }
+                } yield (transactionRequestBodyEthereum, ETH_SEND_TRANSACTION.toString)
+              } 
+            
             // Basic validations
             _ <- Helper.booleanToFuture(s"$InvalidJsonValue Ethereum 'to' address is required", cc=callContext) {
               Option(transactionRequestBodyEthereum.to).exists(_.nonEmpty)
@@ -1473,13 +1515,13 @@ object LocalMappedConnectorInternal extends MdcLoggable {
               thisBankId = bankId.value,
               thisAccountId = accountId.value,
               thisViewId = viewId.value,
-              otherBankRoutingScheme = ETH_SEND_TRANSACTION.toString,
+              otherBankRoutingScheme = scheme,
               otherBankRoutingAddress = transactionRequestBodyEthereum.to,
-              otherBranchRoutingScheme = ETH_SEND_TRANSACTION.toString,
+              otherBranchRoutingScheme = scheme,
               otherBranchRoutingAddress = transactionRequestBodyEthereum.to,
-              otherAccountRoutingScheme = ETH_SEND_TRANSACTION.toString,
+              otherAccountRoutingScheme = scheme,
               otherAccountRoutingAddress = transactionRequestBodyEthereum.to,
-              otherAccountSecondaryRoutingScheme = "ethereum",
+              otherAccountSecondaryRoutingScheme = scheme,
               otherAccountSecondaryRoutingAddress = transactionRequestBodyEthereum.to,
               callContext = callContext
             )
