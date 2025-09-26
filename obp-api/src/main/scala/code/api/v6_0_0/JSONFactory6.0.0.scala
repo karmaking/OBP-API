@@ -35,6 +35,7 @@ import code.api.v3_1_0.{RateLimit, RedisCallLimitJson}
 import code.entitlement.Entitlement
 import code.util.Helper.MdcLoggable
 import com.openbankproject.commons.model._
+import java.util.Date
 
 case class CardanoPaymentJsonV600(
   address: String,
@@ -55,6 +56,48 @@ case class CardanoAssetJsonV600(
 
 case class CardanoMetadataStringJsonV600(
   string: String
+)
+
+case class CallLimitPostJsonV600(
+  from_date: java.util.Date,
+  to_date: java.util.Date,
+  api_version: Option[String] = None,
+  api_name: Option[String] = None,
+  bank_id: Option[String] = None,
+  per_second_call_limit: String,
+  per_minute_call_limit: String,
+  per_hour_call_limit: String,
+  per_day_call_limit: String,
+  per_week_call_limit: String,
+  per_month_call_limit: String
+)
+
+case class CallLimitJsonV600(
+  rate_limiting_id: String,
+  from_date: java.util.Date,
+  to_date: java.util.Date,
+  api_version: Option[String],
+  api_name: Option[String],
+  bank_id: Option[String],
+  per_second_call_limit: String,
+  per_minute_call_limit: String,
+  per_hour_call_limit: String,
+  per_day_call_limit: String,
+  per_week_call_limit: String,
+  per_month_call_limit: String,
+  created_at: java.util.Date,
+  updated_at: java.util.Date
+)
+
+case class ActiveCallLimitsJsonV600(
+  call_limits: List[CallLimitJsonV600],
+  active_at_date: java.util.Date,
+  total_per_second_call_limit: Long,
+  total_per_minute_call_limit: Long,
+  total_per_hour_call_limit: Long,
+  total_per_day_call_limit: Long,
+  total_per_week_call_limit: Long,
+  total_per_month_call_limit: Long
 )
 
 case class TransactionRequestBodyCardanoJsonV600(
@@ -127,6 +170,39 @@ object JSONFactory600 extends CustomJsonFormats with MdcLoggable{
           views = obu.views.map(y => ViewsJSON300(y.views.map((v => ViewJSON300(v.bankId.value, v.accountId.value, v.viewId.value)))))
         )
       }
+    )
+  }
+
+  def createCallLimitJsonV600(rateLimiting: code.ratelimiting.RateLimiting): CallLimitJsonV600 = {
+    CallLimitJsonV600(
+      rate_limiting_id = rateLimiting.rateLimitingId,
+      from_date = rateLimiting.fromDate,
+      to_date = rateLimiting.toDate,
+      api_version = rateLimiting.apiVersion,
+      api_name = rateLimiting.apiName,
+      bank_id = rateLimiting.bankId,
+      per_second_call_limit = rateLimiting.perSecondCallLimit.toString,
+      per_minute_call_limit = rateLimiting.perMinuteCallLimit.toString,
+      per_hour_call_limit = rateLimiting.perHourCallLimit.toString,
+      per_day_call_limit = rateLimiting.perDayCallLimit.toString,
+      per_week_call_limit = rateLimiting.perWeekCallLimit.toString,
+      per_month_call_limit = rateLimiting.perMonthCallLimit.toString,
+      created_at = rateLimiting.createdAt.get,
+      updated_at = rateLimiting.updatedAt.get
+    )
+  }
+
+  def createActiveCallLimitsJsonV600(rateLimitings: List[code.ratelimiting.RateLimiting], activeDate: java.util.Date): ActiveCallLimitsJsonV600 = {
+    val callLimits = rateLimitings.map(createCallLimitJsonV600)
+    ActiveCallLimitsJsonV600(
+      call_limits = callLimits,
+      active_at_date = activeDate,
+      total_per_second_call_limit = rateLimitings.map(_.perSecondCallLimit).sum,
+      total_per_minute_call_limit = rateLimitings.map(_.perMinuteCallLimit).sum,
+      total_per_hour_call_limit = rateLimitings.map(_.perHourCallLimit).sum,
+      total_per_day_call_limit = rateLimitings.map(_.perDayCallLimit).sum,
+      total_per_week_call_limit = rateLimitings.map(_.perWeekCallLimit).sum,
+      total_per_month_call_limit = rateLimitings.map(_.perMonthCallLimit).sum
     )
   }
 }

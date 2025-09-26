@@ -168,6 +168,26 @@ object MappedRateLimitingProvider extends RateLimitingProviderTrait {
     result
   }
 
+  def deleteByRateLimitingId(rateLimitingId: String): Future[Box[Boolean]] = Future {
+    tryo {
+      RateLimiting.find(By(RateLimiting.RateLimitingId, rateLimitingId)) match {
+        case Full(rateLimiting) => rateLimiting.delete_!
+        case _ => false
+      }
+    }
+  }
+
+  def getByRateLimitingId(rateLimitingId: String): Future[Box[RateLimiting]] = Future {
+    RateLimiting.find(By(RateLimiting.RateLimitingId, rateLimitingId))
+  }
+
+  def getActiveCallLimitsByConsumerIdAtDate(consumerId: String, date: Date): Future[List[RateLimiting]] = Future {
+    RateLimiting.findAll(
+      By(RateLimiting.ConsumerId, consumerId),
+      By_<=(RateLimiting.FromDate, date),
+      By_>=(RateLimiting.ToDate, date)
+    )
+  }
 
 }
 

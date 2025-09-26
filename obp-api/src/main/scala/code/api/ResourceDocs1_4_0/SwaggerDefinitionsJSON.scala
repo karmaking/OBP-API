@@ -3965,6 +3965,48 @@ object SwaggerDefinitionsJSON {
     )
   )
 
+  lazy val callLimitPostJsonV600 = CallLimitPostJsonV600(
+    from_date = DateWithDayExampleObject,
+    to_date = DateWithDayExampleObject,
+    api_version = Some("v6.0.0"),
+    api_name = Some("getConsumerCallLimits"),
+    bank_id = None,
+    per_second_call_limit = "100",
+    per_minute_call_limit = "1000",
+    per_hour_call_limit = "-1",
+    per_day_call_limit = "-1",
+    per_week_call_limit = "-1",
+    per_month_call_limit = "-1"
+  )
+
+  lazy val callLimitJsonV600 = CallLimitJsonV600(
+    rate_limiting_id = "80e1e0b2-d8bf-4f85-a579-e69ef36e3305",
+    from_date = DateWithDayExampleObject,
+    to_date = DateWithDayExampleObject,
+    api_version = Some("v6.0.0"),
+    api_name = Some("getConsumerCallLimits"),
+    bank_id = None,
+    per_second_call_limit = "100",
+    per_minute_call_limit = "1000",
+    per_hour_call_limit = "-1",
+    per_day_call_limit = "-1",
+    per_week_call_limit = "-1",
+    per_month_call_limit = "-1",
+    created_at = DateWithDayExampleObject,
+    updated_at = DateWithDayExampleObject
+  )
+
+  lazy val activeCallLimitsJsonV600 = ActiveCallLimitsJsonV600(
+    call_limits = List(callLimitJsonV600),
+    active_at_date = DateWithDayExampleObject,
+    total_per_second_call_limit = 100,
+    total_per_minute_call_limit = 1000,
+    total_per_hour_call_limit = -1,
+    total_per_day_call_limit = -1,
+    total_per_week_call_limit = -1,
+    total_per_month_call_limit = -1
+  )
+
   lazy val accountWebhookPostJson = AccountWebhookPostJson(
     account_id =accountIdExample.value,
     trigger_name = ApiTrigger.onBalanceChange.toString(),

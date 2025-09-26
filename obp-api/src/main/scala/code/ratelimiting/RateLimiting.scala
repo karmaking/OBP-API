@@ -30,6 +30,9 @@ trait RateLimitingProviderTrait {
                                        perDay: Option[String],
                                        perWeek: Option[String],
                                        perMonth: Option[String]): Future[Box[RateLimiting]]
+  def deleteByRateLimitingId(rateLimitingId: String): Future[Box[Boolean]]
+  def getByRateLimitingId(rateLimitingId: String): Future[Box[RateLimiting]]
+  def getActiveCallLimitsByConsumerIdAtDate(consumerId: String, date: Date): Future[List[RateLimiting]]
 }
 
 trait RateLimitingTrait {
