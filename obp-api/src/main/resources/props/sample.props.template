@@ -1577,7 +1577,6 @@ experimental_become_user_that_created_consent=false
 # OAuth2 / API secrets
 securelogging_mask_secret=true
 securelogging_mask_client_secret=true
-securelogging_mask_client_id=true
 
 # Authorization / Tokens
 securelogging_mask_authorization=true
@@ -1588,27 +1587,17 @@ securelogging_mask_token=true
 
 # Passwords
 securelogging_mask_password=true
-securelogging_mask_passwd=true
-securelogging_mask_pass=true
 
 # API keys
 securelogging_mask_api_key=true
-securelogging_mask_apikey=true
 securelogging_mask_key=true
 securelogging_mask_private_key=true
 
-# Session / CSRF
-securelogging_mask_session=true
-securelogging_mask_csrf=true
-securelogging_mask_xsrf=true
-
 # Database
 securelogging_mask_jdbc=true
-securelogging_mask_mongodb=true
 
 # Credit card
 securelogging_mask_credit_card=true
 
 # Email addresses
 securelogging_mask_email=true
-

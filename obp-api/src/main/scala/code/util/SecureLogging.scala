@@ -37,9 +37,6 @@ object SecureLogging {
       conditionalPattern("securelogging_mask_client_secret") {
         (Pattern.compile("(?i)(client_secret[\"']?\\s*[:=]\\s*[\"']?)([^\"',\\s&]+)"), "$1***")
       },
-      conditionalPattern("securelogging_mask_client_id") {
-        (Pattern.compile("(?i)(client_id[\"']?\\s*[:=]\\s*[\"']?)([^\"',\\s&]+)"), "$1***")
-      },
 
       // Authorization / Tokens
       conditionalPattern("securelogging_mask_authorization") {
@@ -62,19 +59,10 @@ object SecureLogging {
       conditionalPattern("securelogging_mask_password") {
         (Pattern.compile("(?i)(password[\"']?\\s*[:=]\\s*[\"']?)([^\"',\\s&]+)"), "$1***")
       },
-      conditionalPattern("securelogging_mask_passwd") {
-        (Pattern.compile("(?i)(passwd[\"']?\\s*[:=]\\s*[\"']?)([^\"',\\s&]+)"), "$1***")
-      },
-      conditionalPattern("securelogging_mask_pass") {
-        (Pattern.compile("(?i)(pass[\"']?\\s*[:=]\\s*[\"']?)([^\"',\\s&]+)"), "$1***")
-      },
 
       // API keys
       conditionalPattern("securelogging_mask_api_key") {
         (Pattern.compile("(?i)(api_key[\"']?\\s*[:=]\\s*[\"']?)([^\"',\\s&]+)"), "$1***")
-      },
-      conditionalPattern("securelogging_mask_apikey") {
-        (Pattern.compile("(?i)(apikey[\"']?\\s*[:=]\\s*[\"']?)([^\"',\\s&]+)"), "$1***")
       },
       conditionalPattern("securelogging_mask_key") {
         (Pattern.compile("(?i)(key[\"']?\\s*[:=]\\s*[\"']?)([^\"',\\s&]+)"), "$1***")
@@ -83,31 +71,17 @@ object SecureLogging {
         (Pattern.compile("(?i)(private_key[\"']?\\s*[:=]\\s*[\"']?)([^\"',\\s&]+)"), "$1***")
       },
 
-      // Session / CSRF
-      conditionalPattern("securelogging_mask_session") {
-        (Pattern.compile("(?i)(session[\"']?\\s*[:=]\\s*[\"']?)([^\"',\\s&]+)"), "$1***")
-      },
-      conditionalPattern("securelogging_mask_csrf") {
-        (Pattern.compile("(?i)(csrf[\"']?\\s*[:=]\\s*[\"']?)([^\"',\\s&]+)"), "$1***")
-      },
-      conditionalPattern("securelogging_mask_xsrf") {
-        (Pattern.compile("(?i)(xsrf[\"']?\\s*[:=]\\s*[\"']?)([^\"',\\s&]+)"), "$1***")
-      },
-
-      // Database connections
+      // Database
       conditionalPattern("securelogging_mask_jdbc") {
         (Pattern.compile("(?i)(jdbc:[^\\s]+://[^:]+:)([^@\\s]+)(@)"), "$1***$3")
       },
-      conditionalPattern("securelogging_mask_mongodb") {
-        (Pattern.compile("(?i)(mongodb://[^:]+:)([^@\\s]+)(@)"), "$1***$3")
-      },
 
-      // Credit cards
+      // Credit card
       conditionalPattern("securelogging_mask_credit_card") {
         (Pattern.compile("\\b([0-9]{4})[\\s-]?([0-9]{4})[\\s-]?([0-9]{4})[\\s-]?([0-9]{3,7})\\b"), "$1-****-****-$4")
       },
 
-      // Emails
+      // Email addresses
       conditionalPattern("securelogging_mask_email") {
         (Pattern.compile("(?i)(email[\"']?\\s*[:=]\\s*[\"']?)([^\"',\\s&]+@[^\"',\\s&]+)"), "$1***@***.***")
       }
