@@ -53,7 +53,7 @@ import com.openbankproject.commons.ExecutionContext.Implicits.global
 import com.openbankproject.commons.model._
 import com.openbankproject.commons.model.enums.{TransactionRequestStatus, _}
 import com.openbankproject.commons.util.{ApiVersion, ScannedApiVersion}
-import net.liftweb.common.Full
+import net.liftweb.common.{Empty, Full}
 import net.liftweb.http.rest.RestHelper
 import net.liftweb.json
 import net.liftweb.json.{Extraction, compactRender, parse, prettyRender}
@@ -159,22 +159,55 @@ trait APIMethods510 {
       List(apiTagApi))
 
     lazy val getOAuth2ServerWellKnown: OBPEndpoint = {
-      case "well-known" :: Nil JsonGet _ => {
-        cc =>
-          implicit val ec = EndpointContext(Some(cc))
-          for {
-            (_, callContext) <- anonymousAccess(cc)
-          } yield {
-            // Advertise the configured OIDC provider for this OBP-API instance
-            // Check if OBP-OIDC is configured, otherwise default to Keycloak
-            val oidcProvider = APIUtil.getPropsValue("oauth2.oidc_provider", "keycloak").toLowerCase match {
-              case "obp-oidc" | "obpoidc" =>
-                WellKnownUriJsonV510("obp-oidc", OBPOIDC.wellKnownOpenidConfiguration.toURL.toString)
-              case _ =>
-                WellKnownUriJsonV510("keycloak", Keycloak.wellKnownOpenidConfiguration.toURL.toString)
-            }
-            (WellKnownUrisJsonV510(List(oidcProvider)), HttpCode.`200`(callContext))
+      case "well-known" :: Nil JsonGet _ => { cc =>
+        implicit val ec = EndpointContext(Some(cc))
+        for {
+          (_, callContext) <- anonymousAccess(cc)
+        } yield {
+          // Read and normalize property
+          val providerPropBox = APIUtil.getPropsValue("oauth2.oidc_provider")
+
+          // Define available providers
+          val availableProviders = Map(
+            "obp-oidc" -> WellKnownUriJsonV510("obp-oidc", OBPOIDC.wellKnownOpenidConfiguration.toURL.toString),
+            "keycloak" -> WellKnownUriJsonV510("keycloak", Keycloak.wellKnownOpenidConfiguration.toURL.toString)
+          )
+
+          // Resolve list of providers to show
+          val providersToShow: List[WellKnownUriJsonV510] = providerPropBox match {
+            case Empty =>
+              // Property missing: show nothing
+              Nil
+
+            case Full(value) if value.trim.isEmpty =>
+              // Empty string: show all
+              availableProviders.values.toList
+
+            case Full(value) =>
+              val wanted = value
+                .split(",")
+                .map(_.trim.toLowerCase)
+                .filter(_.nonEmpty)
+                .toSet
+
+              // Special case: "none" means show nothing
+              if (wanted.contains("none")) {
+                Nil
+              } else {
+                val (known, unknown) = wanted.partition(availableProviders.contains)
+                availableProviders
+                  .filterKeys(known.contains)
+                  .values
+                  .toList
+              }
+
+            case _ =>
+              // Unexpected case, fallback to show nothing
+              Nil
           }
+
+          (WellKnownUrisJsonV510(providersToShow), HttpCode.`200`(callContext))
+        }
       }
     }
 
