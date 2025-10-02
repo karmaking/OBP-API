@@ -90,6 +90,12 @@ object NewStyle extends MdcLoggable{
     def `204`(callContext: CallContext): Option[CallContext] = {
       Some(callContext.copy(httpCode = Some(204)))
     }
+    def `400`(callContext: CallContext): Option[CallContext] = {
+      Some(callContext.copy(httpCode = Some(400)))
+    }
+    def `400`(callContext: Option[CallContext]): Option[CallContext] = {
+      callContext.map(_.copy(httpCode = Some(400)))
+    }
     def `404`(callContext: CallContext): Option[CallContext] = {
       Some(callContext.copy(httpCode = Some(404)))
     }
