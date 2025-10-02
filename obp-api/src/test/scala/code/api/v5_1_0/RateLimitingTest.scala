@@ -124,7 +124,7 @@ class RateLimitingTest extends V510ServerSetup with PropsReset {
       val response510 = makeGetRequest(request510)
       Then("We should get a 200")
       response510.code should equal(200)
-      response510.body.extract[CallLimitJson510]
+      response510.body.extract[CallLimitsJson510]
 
     }
 

@@ -329,6 +329,12 @@
       <artifactId>flexmark-util-options</artifactId>
       <version>0.64.0</version>
     </dependency>
+      <!-- https://mvnrepository.com/artifact/org.web3j/core -->
+      <dependency>
+          <groupId>org.web3j</groupId>
+          <artifactId>core</artifactId>
+          <version>4.9.8</version>
+      </dependency>
     <dependency>
       <groupId>com.zaxxer</groupId>
       <artifactId>HikariCP</artifactId>

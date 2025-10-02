@@ -3,6 +3,8 @@
 ### Most recent changes at top of file
 ```
 Date          Commit        Action
+26/09/2025    77d54c2e      Added Ethereum Connector Configuration
+                            Added props ethereum.rpc.url, default is http://127.0.0.1:8545
 04/08/2025    d282d266      Enhanced Email Configuration with CommonsEmailWrapper
                             Replaced Lift Mailer with Apache Commons Email for improved email functionality.
                             Added comprehensive SMTP configuration options:

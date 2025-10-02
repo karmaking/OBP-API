@@ -686,6 +686,7 @@ case class ViewPermissionJson(
 )
 
 case class CallLimitJson510(
+                             rate_limiting_id: String,
                              from_date: Date,
                              to_date: Date,
                              per_second_call_limit : String,
@@ -695,9 +696,9 @@ case class CallLimitJson510(
                              per_week_call_limit : String,
                              per_month_call_limit : String,
                              created_at : Date,
-                             updated_at : Date,
-                             current_state: Option[RedisCallLimitJson]
+                             updated_at : Date
                            )
+case class CallLimitsJson510(limits: List[CallLimitJson510])
 
 object JSONFactory510 extends CustomJsonFormats with MdcLoggable {
 
@@ -1323,47 +1324,25 @@ object JSONFactory510 extends CustomJsonFormats with MdcLoggable {
     )
   }
 
-  def createCallLimitJson(consumer: Consumer,  rateLimiting: Option[RateLimiting], rateLimits: List[((Option[Long], Option[Long]), LimitCallPeriod)]): CallLimitJson510 = {
-    val redisRateLimit = rateLimits match {
-      case Nil => None
-      case _ =>
-        def getInfo(period: RateLimitingPeriod.Value): Option[RateLimit] = {
-          rateLimits.filter(_._2 == period) match {
-            case x :: Nil =>
-              x._1 match {
-                case (Some(x), Some(y)) => Some(RateLimit(Some(x), Some(y)))
-                case _ => None
-
-              }
-            case _ => None
-          }
-        }
-
-        Some(
-          RedisCallLimitJson(
-            getInfo(RateLimitingPeriod.PER_SECOND),
-            getInfo(RateLimitingPeriod.PER_MINUTE),
-            getInfo(RateLimitingPeriod.PER_HOUR),
-            getInfo(RateLimitingPeriod.PER_DAY),
-            getInfo(RateLimitingPeriod.PER_WEEK),
-            getInfo(RateLimitingPeriod.PER_MONTH)
-          )
+  def createCallLimitJson(rateLimitings: List[RateLimiting]): CallLimitsJson510 = {
+    CallLimitsJson510(
+      rateLimitings.map( i =>
+        CallLimitJson510(
+          rate_limiting_id = i.rateLimitingId,
+          from_date = i.fromDate,
+          to_date = i.toDate,
+          per_second_call_limit = i.perSecondCallLimit.toString,
+          per_minute_call_limit = i.perMinuteCallLimit.toString,
+          per_hour_call_limit = i.perHourCallLimit.toString,
+          per_day_call_limit = i.perDayCallLimit.toString,
+          per_week_call_limit = i.perWeekCallLimit.toString,
+          per_month_call_limit = i.perMonthCallLimit.toString,
+          created_at = i.createdAt.get,
+          updated_at = i.updatedAt.get,
         )
-    }
-
-    CallLimitJson510(
-      from_date = rateLimiting.map(_.fromDate).orNull,
-      to_date = rateLimiting.map(_.toDate).orNull,
-      per_second_call_limit = rateLimiting.map(_.perSecondCallLimit.toString).getOrElse("-1"),
-      per_minute_call_limit = rateLimiting.map(_.perMinuteCallLimit.toString).getOrElse("-1"),
-      per_hour_call_limit = rateLimiting.map(_.perHourCallLimit.toString).getOrElse("-1"),
-      per_day_call_limit = rateLimiting.map(_.perDayCallLimit.toString).getOrElse("-1"),
-      per_week_call_limit = rateLimiting.map(_.perWeekCallLimit.toString).getOrElse("-1"),
-      per_month_call_limit = rateLimiting.map(_.perMonthCallLimit.toString).getOrElse("-1"),
-      created_at = rateLimiting.map(_.createdAt.get).orNull,
-      updated_at = rateLimiting.map(_.updatedAt.get).orNull,
-      redisRateLimit
+      )
     )
+
 
   }
 

@@ -845,8 +845,26 @@ display_internal_errors=false
 # -- OBP OIDC OAuth 2 / OIDC ---------------------------------------------------
 # To run OBP OIDC (for developer testing) see: https://github.com/OpenBankProject/OBP-OIDC
 # OAuth2 Provider Selection (for well-known endpoint and token validation)
-# Choose which OIDC provider to use: 'keycloak' or 'obp-oidc'
-#oauth2.oidc_provider=obp-oidc
+# Configure which OIDC providers should be advertised by the /well-known endpoint.
+#
+# This property accepts a comma-separated, case-insensitive list of providers.
+# Available values:
+#   - keycloak  → advertise Keycloak well-known URL
+#   - obp-oidc  → advertise OBP-OIDC well-known URL
+#
+# Special cases:
+#   - (property missing) → show nothing
+#   - "" (empty string)  → show all available providers
+#   - none               → show nothing
+#
+# Examples:
+#   oauth2.oidc_provider=keycloak
+#   oauth2.oidc_provider=obp-oidc,keycloak
+#   oauth2.oidc_provider=
+#   oauth2.oidc_provider=none
+#
+# Default: property missing (show nothing)
+#oauth2.oidc_provider=obp-oidc,keycloak
 
 # OBP-OIDC OAuth2 Provider Settings
 #oauth2.obp_oidc.host=http://localhost:9000
@@ -1517,6 +1535,18 @@ regulated_entities = []
 # super_admin_email=tom@tesobe.com
 
 
+## Ethereum Connector Configuration
+## ================================
+## The Ethereum connector uses JSON-RPC to communicate with Ethereum nodes.
+## It supports two transaction modes:
+## 1) eth_sendRawTransaction - for pre-signed transactions (recommended for production)
+## 2) eth_sendTransaction - for unlocked accounts (development/test environments)
+##
+## Ethereum RPC endpoint URL
+## Default: http://127.0.0.1:8545 (local Ethereum node)
+ethereum.rpc.url=http://127.0.0.1:8545
+
+
 # Note: For secure and http only settings for cookies see resources/web.xml which is mentioned in the README.md
 
 
@@ -1566,3 +1596,38 @@ redis_logging_circuit_breaker_reset_ms = 60000
 
 # Experimental Developer Use only
 experimental_become_user_that_created_consent=false
+
+
+### ============================================================
+### Secure Logging Masking Configuration
+### Default: true (masking ON)
+### Set to false to disable masking for a given pattern
+### ============================================================
+
+# OAuth2 / API secrets
+securelogging_mask_secret=true
+securelogging_mask_client_secret=true
+
+# Authorization / Tokens
+securelogging_mask_authorization=true
+securelogging_mask_access_token=true
+securelogging_mask_refresh_token=true
+securelogging_mask_id_token=true
+securelogging_mask_token=true
+
+# Passwords
+securelogging_mask_password=true
+
+# API keys
+securelogging_mask_api_key=true
+securelogging_mask_key=true
+securelogging_mask_private_key=true
+
+# Database
+securelogging_mask_jdbc=true
+
+# Credit card
+securelogging_mask_credit_card=true
+
+# Email addresses
+securelogging_mask_email=true

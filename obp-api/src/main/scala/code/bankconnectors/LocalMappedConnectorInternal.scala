@@ -13,7 +13,8 @@ import code.api.util.newstyle.ViewNewStyle
 import code.api.v1_4_0.JSONFactory1_4_0.TransactionRequestAccountJsonV140
 import code.api.v2_1_0._
 import code.api.v4_0_0._
-import code.api.v6_0_0.TransactionRequestBodyCardanoJsonV600
+import code.api.v6_0_0.{TransactionRequestBodyCardanoJsonV600, TransactionRequestBodyEthSendRawTransactionJsonV600, TransactionRequestBodyEthereumJsonV600}
+import code.bankconnectors.ethereum.DecodeRawTx
 import code.branches.MappedBranch
 import code.fx.fx
 import code.fx.fx.TTL
@@ -128,7 +129,7 @@ object LocalMappedConnectorInternal extends MdcLoggable {
         user.name,
         callContext
       ) map { i =>
-        (unboxFullOrFail(i._1, callContext, s"$InvalidConnectorResponseForGetChallengeThreshold ", 400), i._2)
+        (unboxFullOrFail(i._1, callContext, s"$InvalidConnectorResponseForGetChallengeThreshold - ${nameOf(Connector.connector.vend.getChallengeThreshold _)}", 400), i._2)
       }
       challengeThresholdAmount <- NewStyle.function.tryons(s"$InvalidConnectorResponseForGetChallengeThreshold. challengeThreshold amount ${challengeThreshold.amount} not convertible to number", 400, callContext) {
         BigDecimal(challengeThreshold.amount)
@@ -773,8 +774,37 @@ object LocalMappedConnectorInternal extends MdcLoggable {
       }
 
       // Check the input JSON format, here is just check the common parts of all four types
-      transDetailsJson <- NewStyle.function.tryons(s"$InvalidJsonFormat The Json body should be the $TransactionRequestBodyCommonJSON ", 400, callContext) {
-        json.extract[TransactionRequestBodyCommonJSON]
+      transDetailsJson <- transactionRequestTypeValue match {
+        case ETH_SEND_RAW_TRANSACTION => for {
+          // Parse raw transaction JSON
+          transactionRequestBodyEthSendRawTransactionJsonV600 <- NewStyle.function.tryons(
+            s"$InvalidJsonFormat It should be $TransactionRequestBodyEthSendRawTransactionJsonV600  json format",
+            400,
+            callContext
+          ) {
+            json.extract[TransactionRequestBodyEthSendRawTransactionJsonV600]
+          }
+          // Decode raw transaction to extract 'from' address
+          decodedTx = DecodeRawTx.decodeRawTxToJson(transactionRequestBodyEthSendRawTransactionJsonV600.params)
+          from = decodedTx.from
+          _ <- Helper.booleanToFuture(
+            s"$BankAccountNotFoundByAccountId Ethereum 'from' address must be the same as the accountId",
+            cc = callContext
+          ) {
+            from.getOrElse("") == accountId.value
+          }
+          // Construct TransactionRequestBodyEthereumJsonV600 for downstream processing
+          transactionRequestBodyEthereum = TransactionRequestBodyEthereumJsonV600(
+            params = Some(transactionRequestBodyEthSendRawTransactionJsonV600.params),
+            to = decodedTx.to.getOrElse(""),
+            value = AmountOfMoneyJsonV121("ETH", decodedTx.value.getOrElse("0")),
+            description = transactionRequestBodyEthSendRawTransactionJsonV600.description
+          )
+        } yield (transactionRequestBodyEthereum)
+        case _ =>
+          NewStyle.function.tryons(s"$InvalidJsonFormat The Json body should be the $TransactionRequestBodyCommonJSON ", 400, callContext) {
+            json.extract[TransactionRequestBodyCommonJSON]
+          }
       }
 
       transactionAmountNumber <- NewStyle.function.tryons(s"$InvalidNumber Current input is  ${transDetailsJson.value.amount} ", 400, callContext) {
@@ -785,9 +815,12 @@ object LocalMappedConnectorInternal extends MdcLoggable {
         transactionAmountNumber > BigDecimal("0")
       }
 
-      _ <- Helper.booleanToFuture(s"${InvalidISOCurrencyCode} Current input is: '${transDetailsJson.value.currency}'", cc=callContext) {
-        APIUtil.isValidCurrencyISOCode(transDetailsJson.value.currency)
-      }
+      _ <- (transactionRequestTypeValue match {
+        case ETH_SEND_RAW_TRANSACTION | ETH_SEND_TRANSACTION => Future.successful(true) // Allow ETH (non-ISO) for Ethereum requests
+        case _ => Helper.booleanToFuture(s"${InvalidISOCurrencyCode} Current input is: '${transDetailsJson.value.currency}'", cc=callContext) {
+          APIUtil.isValidCurrencyISOCode(transDetailsJson.value.currency)
+        }
+      })
 
       (createdTransactionRequest, callContext) <- transactionRequestTypeValue match {
         case REFUND => {
@@ -1411,15 +1444,15 @@ object LocalMappedConnectorInternal extends MdcLoggable {
               thisBankId = bankId.value,
               thisAccountId = accountId.value,
               thisViewId = viewId.value,
-              otherBankRoutingScheme = "",
-              otherBankRoutingAddress = "",
-              otherBranchRoutingScheme = "",
-              otherBranchRoutingAddress = "",
-              otherAccountRoutingScheme = "",
-              otherAccountRoutingAddress = "",
+              otherBankRoutingScheme = CARDANO.toString,
+              otherBankRoutingAddress = transactionRequestBodyCardano.to.address,
+              otherBranchRoutingScheme = CARDANO.toString,
+              otherBranchRoutingAddress = transactionRequestBodyCardano.to.address,
+              otherAccountRoutingScheme = CARDANO.toString,
+              otherAccountRoutingAddress = transactionRequestBodyCardano.to.address,
               otherAccountSecondaryRoutingScheme = "cardano",
               otherAccountSecondaryRoutingAddress = transactionRequestBodyCardano.to.address,
-              callContext: Option[CallContext],
+              callContext = callContext
             )
             (toAccount, callContext) <- NewStyle.function.getBankAccountFromCounterparty(toCounterparty, true, callContext)
             // Check we can send money to it.
@@ -1436,6 +1469,77 @@ object LocalMappedConnectorInternal extends MdcLoggable {
               toAccount,
               transactionRequestType,
               transactionRequestBodyCardano,
+              transDetailsSerialized,
+              chargePolicy,
+              Some(OBP_TRANSACTION_REQUEST_CHALLENGE),
+              getScaMethodAtInstance(transactionRequestType.value).toOption,
+              None,
+              callContext)
+          } yield (createdTransactionRequest, callContext)
+        }
+        case ETH_SEND_RAW_TRANSACTION | ETH_SEND_TRANSACTION => {
+          for {
+            // Handle ETH_SEND_RAW_TRANSACTION and ETH_SEND_TRANSACTION types with proper extraction and validation
+            (transactionRequestBodyEthereum, scheme) <-
+              if (transactionRequestTypeValue == ETH_SEND_RAW_TRANSACTION) {
+                Future.successful{(transDetailsJson.asInstanceOf[TransactionRequestBodyEthereumJsonV600], ETH_SEND_RAW_TRANSACTION.toString)}
+              } else {
+                for {
+                  transactionRequestBodyEthereum <- NewStyle.function.tryons(
+                    s"$InvalidJsonFormat It should be $TransactionRequestBodyEthereumJsonV600 json format",
+                    400,
+                    callContext
+                  ) {
+                    json.extract[TransactionRequestBodyEthereumJsonV600]
+                  }
+                } yield (transactionRequestBodyEthereum, ETH_SEND_TRANSACTION.toString)
+              } 
+            
+            // Basic validations
+            _ <- Helper.booleanToFuture(s"$InvalidJsonValue Ethereum 'to' address is required", cc=callContext) {
+              Option(transactionRequestBodyEthereum.to).exists(_.nonEmpty)
+            }
+            _ <- Helper.booleanToFuture(s"$InvalidJsonValue Ethereum 'to' address must start with 0x and be 42 chars", cc=callContext) {
+              val toBody = transactionRequestBodyEthereum.to
+              toBody.startsWith("0x") && toBody.length == 42
+            }
+            _ <- Helper.booleanToFuture(s"$InvalidTransactionRequestCurrency Currency must be 'ETH'", cc=callContext) {
+              transactionRequestBodyEthereum.value.currency.equalsIgnoreCase("ETH")
+            }
+
+            // Create or get counterparty using the Ethereum address as secondary routing
+            (toCounterparty, callContext) <- NewStyle.function.getOrCreateCounterparty(
+              name = "ethereum-" + transactionRequestBodyEthereum.to.take(27),
+              description = transactionRequestBodyEthereum.description,
+              currency = transactionRequestBodyEthereum.value.currency,
+              createdByUserId = u.userId,
+              thisBankId = bankId.value,
+              thisAccountId = accountId.value,
+              thisViewId = viewId.value,
+              otherBankRoutingScheme = scheme,
+              otherBankRoutingAddress = transactionRequestBodyEthereum.to,
+              otherBranchRoutingScheme = scheme,
+              otherBranchRoutingAddress = transactionRequestBodyEthereum.to,
+              otherAccountRoutingScheme = scheme,
+              otherAccountRoutingAddress = transactionRequestBodyEthereum.to,
+              otherAccountSecondaryRoutingScheme = scheme,
+              otherAccountSecondaryRoutingAddress = transactionRequestBodyEthereum.to,
+              callContext = callContext
+            )
+
+            (toAccount, callContext) <- NewStyle.function.getBankAccountFromCounterparty(toCounterparty, true, callContext)
+            _ <- Helper.booleanToFuture(s"$CounterpartyBeneficiaryPermit", cc=callContext) { toCounterparty.isBeneficiary }
+
+            chargePolicy = sharedChargePolicy.toString
+            transDetailsSerialized <- NewStyle.function.tryons(UnknownError, 400, callContext) {
+              write(transactionRequestBodyEthereum)(Serialization.formats(NoTypeHints))
+            }
+            (createdTransactionRequest, callContext) <- NewStyle.function.createTransactionRequestv400(u,
+              viewId,
+              fromAccount,
+              toAccount,
+              transactionRequestType,
+              transactionRequestBodyEthereum,
               transDetailsSerialized,
               chargePolicy,
               Some(OBP_TRANSACTION_REQUEST_CHALLENGE),

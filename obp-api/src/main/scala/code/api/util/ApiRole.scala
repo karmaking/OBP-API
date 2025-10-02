@@ -483,6 +483,9 @@ object ApiRole extends MdcLoggable{
   case class CanSetCallLimits(requiresBankId: Boolean = false) extends ApiRole
   lazy val canSetCallLimits = CanSetCallLimits()
   
+  case class CanDeleteRateLimiting(requiresBankId: Boolean = false) extends ApiRole
+  lazy val canDeleteRateLimiting = CanDeleteRateLimiting()
+  
   case class CanCreateCustomerMessage(requiresBankId: Boolean = true) extends ApiRole
   lazy val canCreateCustomerMessage = CanCreateCustomerMessage()  
   
@@ -1168,7 +1171,8 @@ object Util {
         "CanCheckFundsAvailable", 
         "CanRefreshUser", 
         "CanReadFx", 
-        "CanSetCallLimits"
+        "CanSetCallLimits",
+        "CanDeleteRateLimiting"
       )
     
     val allowed = allowedPrefixes ::: allowedExistingNames

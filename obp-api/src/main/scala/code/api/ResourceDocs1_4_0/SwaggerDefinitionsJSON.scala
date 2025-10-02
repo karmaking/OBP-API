@@ -29,7 +29,6 @@ import com.openbankproject.commons.model._
 import com.openbankproject.commons.model.enums.TransactionRequestTypes._
 import com.openbankproject.commons.model.enums.{AttributeCategory, CardAttributeType, ChallengeType, TransactionRequestStatus}
 import com.openbankproject.commons.util.{ApiVersion, FieldNameApiVersions, ReflectUtils}
-import net.liftweb.common.Full
 import net.liftweb.json
 
 import java.net.URLEncoder
@@ -3947,6 +3946,66 @@ object SwaggerDefinitionsJSON {
     Some(redisCallLimitJson)
   )
 
+  lazy val callLimitsJson510Example: CallLimitsJson510 = CallLimitsJson510(
+    limits = List(
+      CallLimitJson510(
+        rate_limiting_id = "80e1e0b2-d8bf-4f85-a579-e69ef36e3305",
+        from_date = DateWithDayExampleObject,
+        to_date = DateWithDayExampleObject,
+        per_second_call_limit = "100",
+        per_minute_call_limit = "100",
+        per_hour_call_limit = "-1",
+        per_day_call_limit = "-1",
+        per_week_call_limit = "-1",
+        per_month_call_limit = "-1",
+        created_at = DateWithDayExampleObject,
+        updated_at = DateWithDayExampleObject
+      )
+    )
+  )
+
+  lazy val callLimitPostJsonV600 = CallLimitPostJsonV600(
+    from_date = DateWithDayExampleObject,
+    to_date = DateWithDayExampleObject,
+    api_version = Some("v6.0.0"),
+    api_name = Some("getConsumerCallLimits"),
+    bank_id = None,
+    per_second_call_limit = "100",
+    per_minute_call_limit = "1000",
+    per_hour_call_limit = "-1",
+    per_day_call_limit = "-1",
+    per_week_call_limit = "-1",
+    per_month_call_limit = "-1"
+  )
+
+  lazy val callLimitJsonV600 = CallLimitJsonV600(
+    rate_limiting_id = "80e1e0b2-d8bf-4f85-a579-e69ef36e3305",
+    from_date = DateWithDayExampleObject,
+    to_date = DateWithDayExampleObject,
+    api_version = Some("v6.0.0"),
+    api_name = Some("getConsumerCallLimits"),
+    bank_id = None,
+    per_second_call_limit = "100",
+    per_minute_call_limit = "1000",
+    per_hour_call_limit = "-1",
+    per_day_call_limit = "-1",
+    per_week_call_limit = "-1",
+    per_month_call_limit = "-1",
+    created_at = DateWithDayExampleObject,
+    updated_at = DateWithDayExampleObject
+  )
+
+  lazy val activeCallLimitsJsonV600 = ActiveCallLimitsJsonV600(
+    call_limits = List(callLimitJsonV600),
+    active_at_date = DateWithDayExampleObject,
+    total_per_second_call_limit = 100,
+    total_per_minute_call_limit = 1000,
+    total_per_hour_call_limit = -1,
+    total_per_day_call_limit = -1,
+    total_per_week_call_limit = -1,
+    total_per_month_call_limit = -1
+  )
+
   lazy val accountWebhookPostJson = AccountWebhookPostJson(
     account_id =accountIdExample.value,
     trigger_name = ApiTrigger.onBalanceChange.toString(),
@@ -5740,6 +5799,16 @@ object SwaggerDefinitionsJSON {
     passphrase = "password1234!",
     description = descriptionExample.value,
     metadata = Some(Map("202507022319" -> cardanoMetadataStringJsonV600))
+  )
+
+  lazy val transactionRequestBodyEthereumJsonV600 = TransactionRequestBodyEthereumJsonV600(
+    to = "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+    value = AmountOfMoneyJsonV121("ETH", "0.01"),
+    description = descriptionExample.value
+  )
+  lazy val transactionRequestBodyEthSendRawTransactionJsonV600 = TransactionRequestBodyEthSendRawTransactionJsonV600(
+    params = "0xf86b018203e882520894627306090abab3a6e1400e9345bc60c78a8bef57880de0b6b3a764000080820ff6a0d0367709eee090a6ebd74c63db7329372db1966e76d28ce219d1e105c47bcba7a0042d52f7d2436ad96e8714bf0309adaf870ad6fb68cfe53ce958792b3da36c12",
+    description = descriptionExample.value
   )
   
   //The common error or success format.

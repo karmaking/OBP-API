@@ -4021,7 +4021,7 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
         } yield {
           tpps match {
             case Nil =>
-              Failure(RegulatedEntityNotFoundByCertificate)
+              ObpApiFailure(RegulatedEntityNotFoundByCertificate, 401, cc)
             case single :: Nil =>
               logger.debug(s"Regulated entity by certificate: $single")
               // Only one match, proceed to role check
@@ -4029,12 +4029,12 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
                 logger.debug(s"Regulated entity by certificate (single.services: ${single.services}, serviceProvider: $serviceProvider): ")
                 Full(true)
               } else {
-                Failure(X509ActionIsNotAllowed)
+                ObpApiFailure(X509ActionIsNotAllowed, 403, cc)
               }
             case multiple =>
               // Ambiguity detected: more than one TPP matches the certificate
               val names = multiple.map(e => s"'${e.entityName}' (Code: ${e.entityCode})").mkString(", ")
-              Failure(s"$RegulatedEntityAmbiguityByCertificate: multiple TPPs found: $names")
+              ObpApiFailure(s"$RegulatedEntityAmbiguityByCertificate: multiple TPPs found: $names", 401, cc)
           }
         }
       case value if value.toUpperCase == "CERTIFICATE" => Future {
