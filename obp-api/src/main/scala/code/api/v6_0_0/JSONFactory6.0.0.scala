@@ -65,6 +65,20 @@ case class TransactionRequestBodyCardanoJsonV600(
   metadata: Option[Map[String, CardanoMetadataStringJsonV600]] = None
 ) extends TransactionRequestCommonBodyJSON
 
+// ---------------- Ethereum models (V600) ----------------
+case class TransactionRequestBodyEthereumJsonV600(
+  params: Option[String] = None,// This is for eth_sendRawTransaction 
+  to: String, // this is for eth_sendTransaction eg: 0x addressk
+  value: AmountOfMoneyJsonV121,   // currency should be "ETH"; amount string (decimal)
+  description: String
+) extends TransactionRequestCommonBodyJSON
+
+// This is only for the request JSON body; we will construct `TransactionRequestBodyEthereumJsonV600` for OBP.
+case class TransactionRequestBodyEthSendRawTransactionJsonV600(
+  params: String,            // eth_sendRawTransaction params field.
+  description: String
+)
+
 case class UserJsonV600(
                          user_id: String,
                          email : String,

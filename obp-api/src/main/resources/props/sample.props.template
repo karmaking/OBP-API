@@ -1517,6 +1517,18 @@ regulated_entities = []
 # super_admin_email=tom@tesobe.com
 
 
+## Ethereum Connector Configuration
+## ================================
+## The Ethereum connector uses JSON-RPC to communicate with Ethereum nodes.
+## It supports two transaction modes:
+## 1) eth_sendRawTransaction - for pre-signed transactions (recommended for production)
+## 2) eth_sendTransaction - for unlocked accounts (development/test environments)
+##
+## Ethereum RPC endpoint URL
+## Default: http://127.0.0.1:8545 (local Ethereum node)
+ethereum.rpc.url=http://127.0.0.1:8545
+
+
 # Note: For secure and http only settings for cookies see resources/web.xml which is mentioned in the README.md
 
 

@@ -14,11 +14,11 @@ import code.bankconnectors.LocalMappedConnectorInternal._
 import code.entitlement.Entitlement
 import code.views.Views
 import com.github.dwickern.macros.NameOf.nameOf
+import com.openbankproject.commons.ExecutionContext.Implicits.global
 import com.openbankproject.commons.model._
 import com.openbankproject.commons.util.{ApiVersion, ScannedApiVersion}
 import net.liftweb.common.Full
 import net.liftweb.http.rest.RestHelper
-import com.openbankproject.commons.ExecutionContext.Implicits.global
 
 import scala.collection.immutable.{List, Nil}
 import scala.collection.mutable.ArrayBuffer
@@ -158,6 +158,85 @@ trait APIMethods600 {
         "CARDANO" :: "transaction-requests" :: Nil JsonPost json -> _ =>
         cc => implicit val ec = EndpointContext(Some(cc))
           val transactionRequestType = TransactionRequestType("CARDANO")
+          LocalMappedConnectorInternal.createTransactionRequest(bankId, accountId, viewId , transactionRequestType, json)
+    }
+
+    staticResourceDocs += ResourceDoc(
+      createTransactionRequestEthereumeSendTransaction,
+      implementedInApiVersion,
+      nameOf(createTransactionRequestEthereumeSendTransaction),
+      "POST",
+      "/banks/BANK_ID/accounts/ACCOUNT_ID/owner/transaction-request-types/ETH_SEND_TRANSACTION/transaction-requests",
+      "Create Transaction Request (ETH_SEND_TRANSACTION)",
+      s"""
+         |
+         |Send ETH via Ethereum JSON-RPC.
+         |AccountId should hold the 0x address for now.
+         |
+         |${transactionRequestGeneralText}
+         |
+       """.stripMargin,
+      transactionRequestBodyEthereumJsonV600,
+      transactionRequestWithChargeJSON400,
+      List(
+        $UserNotLoggedIn,
+        $BankNotFound,
+        $BankAccountNotFound,
+        InsufficientAuthorisationToCreateTransactionRequest,
+        InvalidTransactionRequestType,
+        InvalidJsonFormat,
+        NotPositiveAmount,
+        InvalidTransactionRequestCurrency,
+        TransactionDisabled,
+        UnknownError
+      ),
+      List(apiTagTransactionRequest, apiTagPSD2PIS, apiTagPsd2)
+    )
+
+    lazy val createTransactionRequestEthereumeSendTransaction: OBPEndpoint = {
+      case "banks" :: BankId(bankId) :: "accounts" :: AccountId(accountId) :: ViewId(viewId) :: "transaction-request-types" ::
+        "ETH_SEND_TRANSACTION" :: "transaction-requests" :: Nil JsonPost json -> _ =>
+        cc => implicit val ec = EndpointContext(Some(cc))
+          val transactionRequestType = TransactionRequestType("ETH_SEND_TRANSACTION")
+          LocalMappedConnectorInternal.createTransactionRequest(bankId, accountId, viewId , transactionRequestType, json)
+    }
+    staticResourceDocs += ResourceDoc(
+      createTransactionRequestEthSendRawTransaction,
+      implementedInApiVersion,
+      nameOf(createTransactionRequestEthSendRawTransaction),
+      "POST",
+      "/banks/BANK_ID/accounts/ACCOUNT_ID/owner/transaction-request-types/ETH_SEND_RAW_TRANSACTION/transaction-requests",
+      "CREATE TRANSACTION REQUEST (ETH_SEND_RAW_TRANSACTION )",
+      s"""
+         |
+         |Send ETH via Ethereum JSON-RPC.
+         |AccountId should hold the 0x address for now.
+         |
+         |${transactionRequestGeneralText}
+         |
+       """.stripMargin,
+      transactionRequestBodyEthSendRawTransactionJsonV600,
+      transactionRequestWithChargeJSON400,
+      List(
+        $UserNotLoggedIn,
+        $BankNotFound,
+        $BankAccountNotFound,
+        InsufficientAuthorisationToCreateTransactionRequest,
+        InvalidTransactionRequestType,
+        InvalidJsonFormat,
+        NotPositiveAmount,
+        InvalidTransactionRequestCurrency,
+        TransactionDisabled,
+        UnknownError
+      ),
+      List(apiTagTransactionRequest, apiTagPSD2PIS, apiTagPsd2)
+    )
+
+    lazy val createTransactionRequestEthSendRawTransaction: OBPEndpoint = {
+      case "banks" :: BankId(bankId) :: "accounts" :: AccountId(accountId) :: ViewId(viewId) :: "transaction-request-types" ::
+        "ETH_SEND_RAW_TRANSACTION" :: "transaction-requests" :: Nil JsonPost json -> _ =>
+        cc => implicit val ec = EndpointContext(Some(cc))
+          val transactionRequestType = TransactionRequestType("ETH_SEND_RAW_TRANSACTION")
           LocalMappedConnectorInternal.createTransactionRequest(bankId, accountId, viewId , transactionRequestType, json)
     }
     

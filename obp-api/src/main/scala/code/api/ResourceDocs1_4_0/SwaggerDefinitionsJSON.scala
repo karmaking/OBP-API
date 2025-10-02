@@ -29,7 +29,6 @@ import com.openbankproject.commons.model._
 import com.openbankproject.commons.model.enums.TransactionRequestTypes._
 import com.openbankproject.commons.model.enums.{AttributeCategory, CardAttributeType, ChallengeType, TransactionRequestStatus}
 import com.openbankproject.commons.util.{ApiVersion, FieldNameApiVersions, ReflectUtils}
-import net.liftweb.common.Full
 import net.liftweb.json
 
 import java.net.URLEncoder
@@ -5758,6 +5757,16 @@ object SwaggerDefinitionsJSON {
     passphrase = "password1234!",
     description = descriptionExample.value,
     metadata = Some(Map("202507022319" -> cardanoMetadataStringJsonV600))
+  )
+
+  lazy val transactionRequestBodyEthereumJsonV600 = TransactionRequestBodyEthereumJsonV600(
+    to = "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+    value = AmountOfMoneyJsonV121("ETH", "0.01"),
+    description = descriptionExample.value
+  )
+  lazy val transactionRequestBodyEthSendRawTransactionJsonV600 = TransactionRequestBodyEthSendRawTransactionJsonV600(
+    params = "0xf86b018203e882520894627306090abab3a6e1400e9345bc60c78a8bef57880de0b6b3a764000080820ff6a0d0367709eee090a6ebd74c63db7329372db1966e76d28ce219d1e105c47bcba7a0042d52f7d2436ad96e8714bf0309adaf870ad6fb68cfe53ce958792b3da36c12",
+    description = descriptionExample.value
   )
   
   //The common error or success format.
