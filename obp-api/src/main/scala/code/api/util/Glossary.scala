@@ -3512,7 +3512,7 @@ object Glossary extends MdcLoggable  {
 					 |""".stripMargin)
 
 	glossaryItems += GlossaryItem(
-		title = "Regulated Entities",
+		title = "Regulated-Entities",
 		description =
 			s"""
 				 |In the context of the Open Bank Project (OBP), a "Regulated Entity" refers to organizations that are recognized and authorized to provide financial services under regulatory frameworks. These entities are overseen by regulatory authorities to ensure compliance with financial regulations and standards.
