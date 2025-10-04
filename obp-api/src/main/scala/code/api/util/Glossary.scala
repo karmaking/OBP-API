@@ -3506,6 +3506,71 @@ object Glossary extends MdcLoggable  {
 					 |
 					 |""".stripMargin)
 
+	glossaryItems += GlossaryItem(
+		title = "Regulated Entities",
+		description =
+			s"""
+				 |In the context of the Open Bank Project (OBP), a "Regulated Entity" refers to organizations that are recognized and authorized to provide financial services under regulatory frameworks. These entities are overseen by regulatory authorities to ensure compliance with financial regulations and standards.
+				 |
+				 |## Key Points About Regulated Entities in OBP:
+				 |
+				 |**Endpoint for Retrieval**: You can retrieve information about regulated entities using the ${getApiExplorerLink("Get Regulated Entities", "OBPv5_1_0-regulatedEntities")} endpoint. This does not require authentication and provides data on various regulated entities, including their services, entity details, and more.
+				 |
+				 |**Creating a Regulated Entity**: The API also allows for the creation of a regulated entity using the ${getApiExplorerLink("Create Regulated Entity", "OBPv5_1_0-createRegulatedEntity")} endpoint. User authentication is required for this operation.
+				 |
+				 |**Retrieving Specific Entity Details**: To get details of a specific regulated entity, you can use the ${getApiExplorerLink("Get Regulated Entity by Id", "OBPv5_1_0-getRegulatedEntityById")} endpoint, where you need to specify the entity ID. No authentication is needed.
+				 |
+				 |**Deleting a Regulated Entity**: If you need to remove a regulated entity, the ${getApiExplorerLink("Delete Regulated Entity", "OBPv5_1_0-deleteRegulatedEntity")} endpoint is available, but it requires authentication.
+				 |
+				 |## Entity Information:
+				 |
+				 |Each regulated entity has several attributes, including:
+				 |
+				 |* **Entity Code**: A unique identifier for the entity
+				 |* **Website**: The entitys official website URL
+				 |* **Country and Address Details**: Location information for the entity
+				 |* **Certificate Public Key**: Public key used for digital certificates
+				 |* **Entity Type and Name**: Classification and official name of the entity
+				 |* **Services offered**: List of financial services provided by the entity
+				 |
+				 |Regulated entities play a crucial role in maintaining trust and compliance within the financial ecosystem managed through the OBP platform.
+				 |
+				 |## Configuration Properties:
+				 |
+				 |Regulated entities functionality is supported by several configuration properties in OBP:
+				 |
+				 |**Certificate and Signature Verification** (for Berlin Group/PSD2 TPP authentication):
+				 |
+				 |* `truststore.path.tpp_signature` - Path to the truststore containing TPP certificates
+				 |* `truststore.password.tpp_signature` - Password for the TPP signature truststore
+				 |* `truststore.alias.tpp_signature` - Alias for the TPP signature certificate
+				 |
+				 |**Fallback Certificate Configuration**:
+				 |
+				 |* `truststore.path` - General truststore path (fallback if TPP-specific not set)
+				 |* `keystore.path` - Path to the keystore for certificate operations
+				 |* `keystore.password` - Password for the keystore
+				 |* `keystore.passphrase` - Passphrase for keystore private keys
+				 |* `keystore.alias` - Alias for certificate entries in keystore
+				 |
+				 |These properties are essential for TPP (Third Party Provider) certificate validation in PSD2/Berlin Group implementations, where regulated entities authenticate using QWAC (Qualified Website Authentication Certificate) or other qualified certificates.
+				 |
+				 |## Internal Usage by OBP:
+				 |
+				 |OBP internally uses regulated entities for several critical authentication and authorization functions:
+				 |
+				 |**Certificate-Based Authentication**: When the property `requirePsd2Certificates=ONLINE` is set, OBP automatically validates incoming API requests against registered regulated entities using their certificate information.
+				 |
+				 |**Automatic Consumer Creation**: For Berlin Group/PSD2 compliance, OBP automatically creates API consumers for TPPs based on their regulated entity registration and certificate validation.
+				 |
+				 |**Service Provider Authorization**: OBP checks if regulated entities have the required service provider roles (PSP_AI, PSP_PI, PSP_IC, PSP_AS) before granting access to specific API endpoints.
+				 |
+				 |**Berlin Group/UK Open Banking Integration**: Many Berlin Group (v1.3) and UK Open Banking (v3.1.0) API endpoints automatically call `passesPsd2Aisp()` and related functions to validate regulated entity certificates.
+				 |
+				 |This integration ensures that only properly registered and certificated Third Party Providers can access sensitive banking data and payment initiation services in compliance with PSD2 regulations.
+				 |
+				 |""".stripMargin)
+
 
 
 	private def getContentFromMarkdownFile(path: String): String = {
