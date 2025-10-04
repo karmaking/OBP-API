@@ -137,6 +137,11 @@ object Glossary extends MdcLoggable  {
 		s"""<a href="/message-docs?connector=$latestAkkaConnector#$process">$process</a>"""
 	}
 
+	val latestRabbitMQConnector : String = "rabbitmq_vOct2024"
+	def messageDocLinkRabbitMQ(process: String) : String = {
+		s"""<a href="/message-docs?connector=$latestRabbitMQConnector#$process">$process</a>"""
+	}
+
 	// Note: this doesn't get / use an OBP version
 	def getApiExplorerLink(title: String, operationId: String) : String = {
 		val apiExplorerPrefix = APIUtil.getPropsValue("webui_api_explorer_url", "")
@@ -3583,7 +3588,11 @@ object Glossary extends MdcLoggable  {
 				 |
 				 |This real-time integration ensures that regulated entity information is always current and reflects the latest regulatory status and certifications from official national sources.
 				 |
-				|See Message Docs for the connector functions.
+				 |
+				 |**RabbitMQ Message Documentation** (other connectors are also available):
+				 |
+				 |* ${messageDocLinkRabbitMQ("obp.getRegulatedEntities")} - Retrieve all regulated entities
+				 |* ${messageDocLinkRabbitMQ("obp.getRegulatedEntityByEntityId")} - Retrieve a specific regulated entity by ID
 				|
 				 |Note: You can / should run a separate instance of OBP for surfacing the Regulated Entities endpoints.
 				 |""".stripMargin)
