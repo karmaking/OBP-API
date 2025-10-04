@@ -3569,6 +3569,22 @@ object Glossary extends MdcLoggable  {
 				 |
 				 |This integration ensures that only properly registered and certificated Third Party Providers can access sensitive banking data and payment initiation services in compliance with PSD2 regulations.
 				 |
+				 |## Real-Time Certificate Retrieval:
+				 |
+				 |Regulated Entities can be retrieved in real time from the National Authority / National Bank through the following data flow patterns:
+				 |
+				 |**Direct National Authority Connection**:
+				 |
+				 |`OBP BG API instance -> getRegulatedEntities -> Connector -> National Authority`
+				 |
+				 |**Via OBP Regulated Entities API Instance**:
+				 |
+				 |`OBP BG API instance -> getRegulatedEntities -> Connector -> OBP Regulated Entities API instance -> Connector -> National Authority`
+				 |
+				 |This real-time integration ensures that regulated entity information is always current and reflects the latest regulatory status and certifications from official national sources.
+				 |
+				|See Message Docs for the connector functions.
+				|
 				 |Note: You can / should run a separate instance of OBP for surfacing the Regulated Entities endpoints.
 				 |""".stripMargin)
 
