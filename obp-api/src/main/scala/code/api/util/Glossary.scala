@@ -129,17 +129,17 @@ object Glossary extends MdcLoggable  {
 	val latestConnector : String = "rest_vMar2019"
 
 	def messageDocLink(process: String) : String = {
-		s"""<a href="/message-docs?connector=$latestConnector#$process">$process</a>"""
+		s"""<a href="/message-docs/$latestConnector#$process">$process</a>"""
 	}
 
 	val latestAkkaConnector : String = "akka_vDec2018"
 	def messageDocLinkAkka(process: String) : String = {
-		s"""<a href="/message-docs?connector=$latestAkkaConnector#$process">$process</a>"""
+		s"""<a href="/message-docs/$latestAkkaConnector#$process">$process</a>"""
 	}
 
 	val latestRabbitMQConnector : String = "rabbitmq_vOct2024"
 	def messageDocLinkRabbitMQ(process: String) : String = {
-		s"""<a href="/message-docs?connector=$latestRabbitMQConnector#$process">$process</a>"""
+		s"""<a href="/message-docs/$latestRabbitMQConnector#$process">$process</a>"""
 	}
 
 	// Note: this doesn't get / use an OBP version
