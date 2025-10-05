@@ -1,5 +1,6 @@
 package code.api.v6_0_0
 
+import code.accountattribute.AccountAttributeX
 import code.api.ObpApiFailure
 import code.api.ResourceDocs1_4_0.SwaggerDefinitionsJSON._
 import code.api.util.APIUtil._
@@ -9,6 +10,7 @@ import code.api.util.ErrorMessages.{$UserNotLoggedIn, InvalidDateFormat, Invalid
 import code.api.util.FutureUtil.EndpointContext
 import code.api.util.NewStyle.HttpCode
 import code.api.util.{NewStyle, RateLimitingUtil}
+import code.api.v3_0_0.JSONFactory300
 import code.api.v6_0_0.JSONFactory600.{createActiveCallLimitsJsonV600, createCallLimitJsonV600, createCurrentUsageJson}
 import code.bankconnectors.LocalMappedConnectorInternal
 import code.bankconnectors.LocalMappedConnectorInternal._
@@ -82,6 +84,58 @@ trait APIMethods600 {
         cc => implicit val ec = EndpointContext(Some(cc))
           val transactionRequestType = TransactionRequestType("HOLD")
           LocalMappedConnectorInternal.createTransactionRequest(bankId, accountId, viewId , transactionRequestType, json)
+    }
+
+    // --- GET Holding Account by Parent ---
+    staticResourceDocs += ResourceDoc(
+      getHoldingAccountByParent,
+      implementedInApiVersion,
+      nameOf(getHoldingAccountByParent),
+      "GET",
+      "/banks/BANK_ID/accounts/ACCOUNT_ID/VIEW_ID/holding-account",
+      "Get Holding Account By Parent",
+      s"""
+         |Return the Holding Account linked to the given parent account via account attribute `PARENT_ACCOUNT_ID`.
+         |If multiple holding accounts exist, the first one will be returned.
+         |
+       """.stripMargin,
+      EmptyBody,
+      moderatedCoreAccountJsonV300,
+      List(
+        $UserNotLoggedIn,
+        $BankNotFound,
+        $BankAccountNotFound,
+        $UserNoPermissionAccessView,
+        UnknownError
+      ),
+      List(apiTagAccount)
+    )
+
+    lazy val getHoldingAccountByParent: OBPEndpoint = {
+      case "banks" :: BankId(bankId) :: "accounts" :: AccountId(accountId) :: ViewId(viewId) :: "holding-account" :: Nil JsonGet _ =>
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            (user @Full(u), _, _, view, callContext) <- SS.userBankAccountView
+            // Find accounts by attribute PARENT_ACCOUNT_ID
+            (accountIdsBox, callContext) <- AccountAttributeX.accountAttributeProvider.vend.getAccountIdsByParams(bankId, Map("PARENT_ACCOUNT_ID" -> List(accountId.value))) map { ids => (ids, callContext) }
+            accountIds = accountIdsBox.getOrElse(Nil)
+            // load the first holding account
+            holdingOpt <- {
+              def firstHolding(ids: List[String]): Future[Option[BankAccount]] = ids match {
+                case Nil => Future.successful(None)
+                case id :: tail =>
+                  NewStyle.function.getBankAccount(bankId, AccountId(id), callContext).flatMap { case (acc, cc) =>
+                    if (acc.accountType == "HOLDING") Future.successful(Some(acc)) else firstHolding(tail)
+                  }
+              }
+              firstHolding(accountIds)
+            }
+            holding <- NewStyle.function.tryons($BankAccountNotFound, 404, callContext) { holdingOpt.get }
+            moderatedAccount <- NewStyle.function.moderatedBankAccountCore(holding, view, user, callContext)
+          } yield {
+            val core = JSONFactory300.createCoreBankAccountJSON(moderatedAccount)
+            (core, HttpCode.`200`(callContext))
+          }
     }
     
     staticResourceDocs += ResourceDoc(

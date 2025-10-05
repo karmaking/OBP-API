@@ -1637,6 +1637,7 @@ object LocalMappedConnectorInternal extends MdcLoggable {
               accountRoutings= Nil,
               callContext    = callContext
             )
+            _ <- code.model.dataAccess.BankAccountCreation.setAccountHolderAndRefreshUserAccountAccess(bankId, newAccountId, cc1.get.user.head, callContext)
             // Link attributes on holding account
             _ <- NewStyle.function.createOrUpdateAccountAttribute(
               bankId, holding.accountId, ProductCode("HOLDING"),
