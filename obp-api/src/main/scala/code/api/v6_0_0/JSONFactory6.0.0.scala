@@ -35,7 +35,6 @@ import code.api.v3_1_0.{RateLimit, RedisCallLimitJson}
 import code.entitlement.Entitlement
 import code.util.Helper.MdcLoggable
 import com.openbankproject.commons.model._
-import java.util.Date
 
 case class CardanoPaymentJsonV600(
   address: String,
@@ -121,6 +120,12 @@ case class TransactionRequestBodyEthSendRawTransactionJsonV600(
   params: String,            // eth_sendRawTransaction params field.
   description: String
 )
+
+// ---------------- HOLD models (V600) ----------------
+case class TransactionRequestBodyHoldJsonV600(
+  value: AmountOfMoneyJsonV121,
+  description: String
+) extends TransactionRequestCommonBodyJSON
 
 case class UserJsonV600(
                          user_id: String,

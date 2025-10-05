@@ -1,14 +1,14 @@
 package code.api.v6_0_0
 
-import code.api.{APIFailureNewStyle, ObpApiFailure}
+import code.api.ObpApiFailure
 import code.api.ResourceDocs1_4_0.SwaggerDefinitionsJSON._
 import code.api.util.APIUtil._
 import code.api.util.ApiRole.{canDeleteRateLimiting, canReadCallLimits, canSetCallLimits}
 import code.api.util.ApiTag._
 import code.api.util.ErrorMessages.{$UserNotLoggedIn, InvalidDateFormat, InvalidJsonFormat, UnknownError, _}
 import code.api.util.FutureUtil.EndpointContext
-import code.api.util.{NewStyle, RateLimitingUtil}
 import code.api.util.NewStyle.HttpCode
+import code.api.util.{NewStyle, RateLimitingUtil}
 import code.api.v6_0_0.JSONFactory600.{createActiveCallLimitsJsonV600, createCallLimitJsonV600, createCurrentUsageJson}
 import code.bankconnectors.LocalMappedConnectorInternal
 import code.bankconnectors.LocalMappedConnectorInternal._
@@ -19,11 +19,10 @@ import com.github.dwickern.macros.NameOf.nameOf
 import com.openbankproject.commons.ExecutionContext.Implicits.global
 import com.openbankproject.commons.model._
 import com.openbankproject.commons.util.{ApiVersion, ScannedApiVersion}
-import net.liftweb.common.{Box, Empty, Full}
+import net.liftweb.common.Full
 import net.liftweb.http.rest.RestHelper
 
 import java.text.SimpleDateFormat
-import java.util.Date
 import scala.collection.immutable.{List, Nil}
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
@@ -45,6 +44,46 @@ trait APIMethods600 {
     val codeContext = CodeContext(staticResourceDocs, apiRelations)
 
 
+    staticResourceDocs += ResourceDoc(
+      createTransactionRequestHold,
+      implementedInApiVersion,
+      nameOf(createTransactionRequestHold),
+      "POST",
+      "/banks/BANK_ID/accounts/ACCOUNT_ID/owner/transaction-request-types/HOLD/transaction-requests",
+      "Create Transaction Request (HOLD)",
+      s"""
+         |
+         |Create a transaction request to move funds from the account to its Holding Account.
+         |If the Holding Account does not exist, it will be created automatically.
+         |
+         |${transactionRequestGeneralText}
+         |
+       """.stripMargin,
+      transactionRequestBodyHoldJsonV600,
+      transactionRequestWithChargeJSON400,
+      List(
+        $UserNotLoggedIn,
+        $BankNotFound,
+        $BankAccountNotFound,
+        InsufficientAuthorisationToCreateTransactionRequest,
+        InvalidTransactionRequestType,
+        InvalidJsonFormat,
+        NotPositiveAmount,
+        InvalidTransactionRequestCurrency,
+        TransactionDisabled,
+        UnknownError
+      ),
+      List(apiTagTransactionRequest, apiTagPSD2PIS, apiTagPsd2)
+    )
+
+    lazy val createTransactionRequestHold: OBPEndpoint = {
+      case "banks" :: BankId(bankId) :: "accounts" :: AccountId(accountId) :: ViewId(viewId) :: "transaction-request-types" ::
+        "HOLD" :: "transaction-requests" :: Nil JsonPost json -> _ =>
+        cc => implicit val ec = EndpointContext(Some(cc))
+          val transactionRequestType = TransactionRequestType("HOLD")
+          LocalMappedConnectorInternal.createTransactionRequest(bankId, accountId, viewId , transactionRequestType, json)
+    }
+    
     staticResourceDocs += ResourceDoc(
       getCurrentCallsLimit,
       implementedInApiVersion,

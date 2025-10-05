@@ -5811,6 +5811,12 @@ object SwaggerDefinitionsJSON {
     description = descriptionExample.value
   )
   
+  // HOLD sample (V600)
+  lazy val transactionRequestBodyHoldJsonV600 = TransactionRequestBodyHoldJsonV600(
+    value = amountOfMoneyJsonV121,
+    description = descriptionExample.value
+  )
+  
   //The common error or success format.
   //Just some helper format to use in Json 
   case class NotSupportedYet()
