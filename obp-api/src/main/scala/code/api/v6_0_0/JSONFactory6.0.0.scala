@@ -58,6 +58,10 @@ case class CardanoMetadataStringJsonV600(
   string: String
 )
 
+case class TokenJSON(
+  token: String
+)
+
 case class CallLimitPostJsonV600(
   from_date: java.util.Date,
   to_date: java.util.Date,
@@ -218,5 +222,9 @@ object JSONFactory600 extends CustomJsonFormats with MdcLoggable{
       total_per_week_call_limit = rateLimitings.map(_.perWeekCallLimit).sum,
       total_per_month_call_limit = rateLimitings.map(_.perMonthCallLimit).sum
     )
+  }
+
+  def createTokenJSON(token: String): TokenJSON = {
+    TokenJSON(token)
   }
 }

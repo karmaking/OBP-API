@@ -3114,11 +3114,15 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
           (user, callContext)
         }
       } // Direct Login i.e DirectLogin: token=eyJhbGciOiJIUzI1NiJ9.eyIiOiIifQ.Y0jk1EQGB4XgdqmYZUHT6potmH3mKj5mEaA9qrIXXWQ
-      else if (getPropsAsBoolValue("allow_direct_login", true) && has2021DirectLoginHeader(cc.requestHeaders)) {
+      else if (getPropsAsBoolValue("allow_direct_login", true) && has2021DirectLoginHeader(cc.requestHeaders) && !url.contains("/my/logins/direct")) {
         DirectLogin.getUserFromDirectLoginHeaderFuture(cc)
       } // Direct Login Deprecated i.e Authorization: DirectLogin token=eyJhbGciOiJIUzI1NiJ9.eyIiOiIifQ.Y0jk1EQGB4XgdqmYZUHT6potmH3mKj5mEaA9qrIXXWQ
-      else if (getPropsAsBoolValue("allow_direct_login", true) && hasDirectLoginHeader(cc.authReqHeaderField)) {
+      else if (getPropsAsBoolValue("allow_direct_login", true) && hasDirectLoginHeader(cc.authReqHeaderField) && !url.contains("/my/logins/direct")) {
         DirectLogin.getUserFromDirectLoginHeaderFuture(cc)
+      } else if (getPropsAsBoolValue("allow_direct_login", true) &&
+        (has2021DirectLoginHeader(cc.requestHeaders) || hasDirectLoginHeader(cc.authReqHeaderField)) &&
+        url.contains("/my/logins/direct")) {
+        Future{(Empty, Some(cc))}
       } // Gateway Login
       else if (getPropsAsBoolValue("allow_gateway_login", false) && hasGatewayHeader(cc.authReqHeaderField)) {
         APIUtil.getPropsValue("gateway.host") match {

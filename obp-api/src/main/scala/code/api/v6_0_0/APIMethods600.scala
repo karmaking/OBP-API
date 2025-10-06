@@ -1,6 +1,7 @@
 package code.api.v6_0_0
 
-import code.api.{APIFailureNewStyle, ObpApiFailure}
+import code.api.{APIFailureNewStyle, DirectLogin, ObpApiFailure}
+import code.api.v6_0_0.JSONFactory600
 import code.api.ResourceDocs1_4_0.SwaggerDefinitionsJSON._
 import code.api.util.APIUtil._
 import code.api.util.ApiRole.{canDeleteRateLimiting, canReadCallLimits, canSetCallLimits}
@@ -404,6 +405,59 @@ trait APIMethods600 {
         cc => implicit val ec = EndpointContext(Some(cc))
           val transactionRequestType = TransactionRequestType("ETH_SEND_RAW_TRANSACTION")
           LocalMappedConnectorInternal.createTransactionRequest(bankId, accountId, viewId , transactionRequestType, json)
+    }
+
+
+    staticResourceDocs += ResourceDoc(
+      directLoginEndpoint,
+      implementedInApiVersion,
+      nameOf(directLoginEndpoint),
+      "POST",
+      "/my/logins/direct",
+      "Direct Login",
+      s"""This endpoint allows users to create a DirectLogin token to access the API.
+         |
+         |DirectLogin is a simple authentication flow. You POST your credentials (username, password, and consumer key) 
+         |to the DirectLogin endpoint and receive a token in return.
+         |
+         |This is an alias to the legacy DirectLogin endpoint that includes the standard API versioning prefix.
+         |
+         |This endpoint requires the following headers:
+         |- DirectLogin: username=YOUR_USERNAME, password=YOUR_PASSWORD, consumer_key=YOUR_CONSUMER_KEY
+         |OR
+         |- Authorization: DirectLogin username=YOUR_USERNAME, password=YOUR_PASSWORD, consumer_key=YOUR_CONSUMER_KEY
+         |
+         |Example header:
+         |DirectLogin: username=janeburel, password=686876, consumer_key=GET-YOUR-OWN-API-KEY-FROM-THE-OBP
+         |
+         |The token returned can be used as a bearer token in subsequent API calls.
+         |
+         |""".stripMargin,
+      EmptyBody,
+      JSONFactory600.createTokenJSON("DirectLoginToken{eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczpcL1wvd3d3Lm9wZW5iYW5rcHJvamVjdC5jb20iLCJpYXQiOjE0NTU4OTQyNzYsImV4cCI6MTQ1NTg5Nzg3NiwiYXVkIjoib2JwLWFwaSIsInN1YiI6IjA2Zjc0YjUwLTA5OGYtNDYwNi1hOGNjLTBjNDc5MjAyNmI5ZCIsImNvbnN1bWVyX2tleSI6IjYwNGY3ZTAyNGQ5MWU2MzMwNGMzOGM0YzRmZjc0MjMwZGU5NDk4NTEwNjgxZWNjM2Q5MzViNWQ5MGEwOTI3ODciLCJyb2xlIjoiY2FuX2FjY2Vzc19hcGkifQ.f8xHvXP5fDxo5-LlfTj1OQS9oqHNZfFd7N-WkV2o4Cc}"),
+      List(
+        InvalidDirectLoginParameters,
+        InvalidLoginCredentials,
+        InvalidConsumerCredentials,
+        UnknownError
+      ),
+      List(apiTagUser),
+      Some(List()))
+
+
+    lazy val directLoginEndpoint: OBPEndpoint = {
+      case "my" :: "logins" :: "direct" :: Nil JsonPost _ =>
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            (httpCode: Int, message: String, userId: Long) <- DirectLogin.createTokenFuture(DirectLogin.getAllParameters)
+            _ <- Future { DirectLogin.grantEntitlementsToUseDynamicEndpointsInSpacesInDirectLogin(userId) }
+          } yield {
+            if (httpCode == 200) {
+              (JSONFactory600.createTokenJSON(message), HttpCode.`201`(cc.callContext))
+            } else {
+              unboxFullOrFail(Empty, None, message, httpCode)
+            }
+          }
     }
     
   }
