@@ -47,6 +47,18 @@ now run the script from within the psql shell:
 \i ~/Documents/workspace_2024/OBP-API-C/OBP-API/obp-api/src/main/scripts/sql/create_oidc_user_and_views.sql
 ```
 
+or you can cd to the sql directory first and make use of relative paths.
+
+```bash
+cd ~/Documents/workspace_2024/OBP-API-C/OBP-API/obp-api/src/main/scripts/sql/OIDC
+
+psql
+```
+
+```sql
+\i ./give_read_access_to_users.sql
+```
+
 or run it from the linux terminal specifying the database
 
 ```bash
