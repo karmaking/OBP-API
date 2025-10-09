@@ -143,7 +143,7 @@ case class UserV600(user: User, entitlements: List[Entitlement], views: Option[P
 case class UsersJsonV600(current_user: UserV600, on_behalf_of_user: UserV600)
 
 case class PostBankJson600(
-                            bank_id: Option[String],
+                            bank_id: String,
                             bank_code: String,
                             full_name: Option[String],
                             logo: Option[String],

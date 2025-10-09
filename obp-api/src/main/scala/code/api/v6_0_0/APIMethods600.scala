@@ -430,7 +430,7 @@ trait APIMethods600 {
          |  - Outgoing account (name: Default outgoing settlement account, Account ID: OBP_DEFAULT_OUTGOING_ACCOUNT_ID, currency: EUR)
          |
          |""",
-      postBankJson500,
+      postBankJson600,
       bankJson500,
       List(
         InvalidJsonFormat,
@@ -452,8 +452,7 @@ trait APIMethods600 {
               json.extract[PostBankJson600]
             }
 
-            //if postJson.id is empty, just return SILENCE_IS_GOLDEN, and will pass the guard.
-            checkShortStringValue = APIUtil.checkOptionalShortString(postJson.bank_id.getOrElse(SILENCE_IS_GOLDEN))
+            checkShortStringValue = APIUtil.checkOptionalShortString(postJson.bank_id)
             _ <- Helper.booleanToFuture(failMsg = s"$checkShortStringValue.", cc = cc.callContext) {
               checkShortStringValue == SILENCE_IS_GOLDEN
             }
@@ -462,20 +461,20 @@ trait APIMethods600 {
               cc.callContext.map(_.consumer.isDefined == true).isDefined
             }
             _ <- Helper.booleanToFuture(failMsg = s"$InvalidJsonFormat Min length of BANK_ID should be greater than 3 characters.", cc = cc.callContext) {
-              postJson.bank_id.forall(_.length > 3)
+              postJson.bank_id.length > 3
             }
             _ <- Helper.booleanToFuture(failMsg = s"$InvalidJsonFormat BANK_ID can not contain space characters", cc = cc.callContext) {
               !postJson.bank_id.contains(" ")
             }
             _ <- Helper.booleanToFuture(failMsg = s"$InvalidJsonFormat BANK_ID can not contain `::::` characters", cc = cc.callContext) {
-              !`checkIfContains::::`(postJson.bank_id.getOrElse(""))
+              !`checkIfContains::::`(postJson.bank_id)
             }
             (banks, callContext) <- NewStyle.function.getBanks(cc.callContext)
             _ <- Helper.booleanToFuture(failMsg = ErrorMessages.bankIdAlreadyExists, cc = cc.callContext) {
               !banks.exists { b => postJson.bank_id.contains(b.bankId.value) }
             }
             (success, callContext) <- NewStyle.function.createOrUpdateBank(
-              postJson.bank_id.getOrElse(APIUtil.generateUUID()),
+              postJson.bank_id,
               postJson.full_name.getOrElse(""),
               postJson.bank_code,
               postJson.logo.getOrElse(""),
@@ -487,20 +486,20 @@ trait APIMethods600 {
               callContext
             )
             entitlements <- NewStyle.function.getEntitlementsByUserId(cc.userId, callContext)
-            entitlementsByBank = entitlements.filter(_.bankId == postJson.bank_id.getOrElse(""))
+            entitlementsByBank = entitlements.filter(_.bankId == postJson.bank_id)
             _ <- entitlementsByBank.exists(_.roleName == CanCreateEntitlementAtOneBank.toString()) match {
               case true =>
                 // Already has entitlement
                 Future()
               case false =>
-                Future(Entitlement.entitlement.vend.addEntitlement(postJson.bank_id.getOrElse(""), cc.userId, CanCreateEntitlementAtOneBank.toString()))
+                Future(Entitlement.entitlement.vend.addEntitlement(postJson.bank_id, cc.userId, CanCreateEntitlementAtOneBank.toString()))
             }
             _ <- entitlementsByBank.exists(_.roleName == CanReadDynamicResourceDocsAtOneBank.toString()) match {
               case true =>
                 // Already has entitlement
                 Future()
               case false =>
-                Future(Entitlement.entitlement.vend.addEntitlement(postJson.bank_id.getOrElse(""), cc.userId, CanReadDynamicResourceDocsAtOneBank.toString()))
+                Future(Entitlement.entitlement.vend.addEntitlement(postJson.bank_id, cc.userId, CanReadDynamicResourceDocsAtOneBank.toString()))
             }
           } yield {
             (JSONFactory500.createBankJSON500(success), HttpCode.`201`(callContext))
