@@ -106,52 +106,11 @@
 -- =============================================================================
 \echo 'Creating OIDC user role...'
 
--- Drop the users if they already exist (for re-running the script)
-
-DROP USER IF EXISTS :OIDC_USER;
-DROP USER IF EXISTS :OIDC_ADMIN_USER;
-
--- NOTE above will NOT drop if the users own other objects (which they will)
--- so to make sure we change the password use:
-
-ALTER ROLE :OIDC_USER WITH PASSWORD :OIDC_PASSWORD;
-ALTER ROLE :OIDC_ADMIN_USER WITH PASSWORD :OIDC_ADMIN_PASSWORD;
-
-
--- Create the OIDC user with limited privileges
-CREATE USER :OIDC_USER WITH
-    PASSWORD :OIDC_PASSWORD
-    NOSUPERUSER
-    NOCREATEDB
-    NOCREATEROLE
-    NOINHERIT
-    LOGIN
-    NOREPLICATION
-    NOBYPASSRLS;
-
--- Set connection limit for the OIDC user
-ALTER USER :OIDC_USER CONNECTION LIMIT 10;
-
--- Create the OIDC admin user with limited privileges
-CREATE USER :OIDC_ADMIN_USER WITH
-    PASSWORD :OIDC_ADMIN_PASSWORD
-    NOSUPERUSER
-    NOCREATEDB
-    NOCREATEROLE
-    NOINHERIT
-    LOGIN
-    NOREPLICATION
-    NOBYPASSRLS;
-
--- TODO: THIS IS NOT WORKING FOR SOME REASON, WE HAVE TO MANUALLY DO THIS LATER
--- need this so the admin can create rows
-GRANT USAGE, SELECT ON SEQUENCE consumer_id_seq TO :OIDC_ADMIN_USER;
-
--- double check this
-GRANT USAGE, SELECT ON SEQUENCE consumer_id_seq TO oidc_admin;
-
--- Set connection limit for the OIDC admin user
-ALTER USER :OIDC_ADMIN_USER CONNECTION LIMIT 5;
+-- NOTE: User creation commands have been moved to:
+-- - OIDC/cre_OIDC_USER.sql
+-- - OIDC/cre_OIDC_ADMIN_USER.sql
+-- - OIDC/alter_OIDC_USER.sql
+-- - OIDC/alter_OIDC_ADMIN_USER.sql
 
 \echo 'OIDC users created successfully.'
 
@@ -160,32 +119,8 @@ ALTER USER :OIDC_ADMIN_USER CONNECTION LIMIT 5;
 -- =============================================================================
 \echo 'Creating read-only view for OIDC access to authuser...'
 
--- Drop the view if it already exists
-DROP VIEW IF EXISTS v_oidc_users CASCADE;
-
--- Create a read-only view exposing only necessary authuser fields for OIDC
--- TODO: Consider excluding locked users by joining with mappedbadloginattempt table
---       and checking mbadattemptssinceresetorsuccess against max.bad.login.attempts prop
-CREATE VIEW v_oidc_users AS
-SELECT
-    ru.userid_ AS user_id,
-    au.username,
-    au.firstname,
-    au.lastname,
-    au.email,
-    au.validated,
-    au.provider,
-    au.password_pw,
-    au.password_slt,
-    au.createdat,
-    au.updatedat
-FROM authuser au
-INNER JOIN resourceuser ru ON au.user_c = ru.id
-WHERE au.validated = true  -- Only expose validated users to OIDC service
-ORDER BY au.username;
-
--- Add comment to the view for documentation
-COMMENT ON VIEW v_oidc_users IS 'Read-only view of authuser and resourceuser tables for OIDC service access. Only includes validated users and returns user_id from resourceuser.userid_. WARNING: Includes password hash and salt for OIDC credential verification - ensure secure access.';
+-- NOTE: View creation commands have been moved to:
+-- - OIDC/cre_v_oidc_users.sql
 
 \echo 'OIDC users view created successfully.'
 
@@ -194,32 +129,8 @@ COMMENT ON VIEW v_oidc_users IS 'Read-only view of authuser and resourceuser tab
 -- =============================================================================
 \echo 'Creating read-only view for OIDC access to consumers...'
 
--- Drop the view if it already exists
-DROP VIEW IF EXISTS v_oidc_clients CASCADE;
-
--- Create a read-only view exposing necessary consumer fields for OIDC
--- Note: Some OIDC-specific fields like grant_types and scopes may not exist in current schema
--- TODO: Add grant_types and scopes fields to consumer table if needed for full OIDC compliance
-CREATE VIEW v_oidc_clients AS
-SELECT
-    consumerid as consumer_id, -- This is really an identifier for management purposes. Its also used to link trusted consumers together.
-    key_c as key, -- The key is the OAuth1 identifier for the app.
-    key_c as client_id, -- The client_id is the OAuth2 identifier for the app.
-    secret, -- The OAuth1 secret
-    secret as client_secret, -- The OAuth2 secret
-    redirecturl as redirect_uris,
-    'authorization_code,refresh_token' as grant_types,  -- Default OIDC grant types
-    'openid,profile,email' as scopes,                   -- Default OIDC scopes
-    name as client_name,
-    'code' as response_types,
-    'client_secret_post' as token_endpoint_auth_method,
-    createdat as created_at
-FROM consumer
-WHERE isactive = true  -- Only expose active consumers to OIDC service
-ORDER BY client_name;
-
--- Add comment to the view for documentation
-COMMENT ON VIEW v_oidc_clients IS 'Read-only view of consumer table for OIDC service access. Only includes active consumers. Note: grant_types and scopes are hardcoded defaults - consider adding these fields to consumer table for full OIDC compliance.';
+-- NOTE: View creation commands have been moved to:
+-- - OIDC/cre_v_oidc_clients.sql
 
 \echo 'OIDC clients view created successfully.'
 
@@ -228,36 +139,8 @@ COMMENT ON VIEW v_oidc_clients IS 'Read-only view of consumer table for OIDC ser
 -- =============================================================================
 \echo 'Creating admin view for OIDC client management...'
 
--- Drop the view if it already exists
-DROP VIEW IF EXISTS v_oidc_admin_clients CASCADE;
-
--- Create a view that exposes all consumer fields for full CRUD operations
-CREATE VIEW v_oidc_admin_clients AS
-SELECT
-name
-,apptype
-,description
-,developeremail
-,sub
-,consumerid
-,createdat
-,updatedat
-,secret
-,azp
-,aud
-,iss
-,redirecturl
-,logourl
-,userauthenticationurl
-,clientcertificate
-,company
-,key_c
-,isactive
-FROM consumer
-ORDER BY name;
-
--- Add comment to the view for documentation
-COMMENT ON VIEW v_oidc_admin_clients IS 'Full admin view of consumer table for OIDC service administration. Provides complete CRUD access to all consumer fields for client management operations.';
+-- NOTE: View creation commands have been moved to:
+-- - OIDC/cre_v_oidc_admin_clients.sql
 
 \echo 'OIDC admin clients view created successfully.'
 
@@ -274,13 +157,10 @@ GRANT CONNECT ON DATABASE :DB_NAME TO :OIDC_ADMIN_USER;
 GRANT USAGE ON SCHEMA public TO :OIDC_USER;
 GRANT USAGE ON SCHEMA public TO :OIDC_ADMIN_USER;
 
--- Grant SELECT permission on the OIDC views (oidc_user - read-only access)
-GRANT SELECT ON v_oidc_users TO :OIDC_USER;
-GRANT SELECT ON v_oidc_clients TO :OIDC_USER;
-
--- Grant full CRUD permissions on the admin view and underlying consumer table (oidc_admin_user only)
-GRANT SELECT, INSERT, UPDATE, DELETE ON consumer TO :OIDC_ADMIN_USER;
-GRANT SELECT, INSERT, UPDATE, DELETE ON v_oidc_admin_clients TO :OIDC_ADMIN_USER;
+-- NOTE: View-specific GRANT permissions have been moved to:
+-- - OIDC/cre_v_oidc_users.sql
+-- - OIDC/cre_v_oidc_clients.sql
+-- - OIDC/cre_v_oidc_admin_clients.sql
 
 -- Explicitly revoke any other permissions to ensure proper access control
 REVOKE ALL PRIVILEGES ON ALL TABLES IN SCHEMA public FROM :OIDC_USER;
@@ -291,21 +171,10 @@ REVOKE ALL PRIVILEGES ON ALL TABLES IN SCHEMA public FROM :OIDC_ADMIN_USER;
 REVOKE ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public FROM :OIDC_ADMIN_USER;
 REVOKE ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA public FROM :OIDC_ADMIN_USER;
 
--- Grant permissions on the views again (in case they were revoked above)
--- OIDC_USER: Read-only access to users and active clients
-GRANT SELECT ON v_oidc_users TO :OIDC_USER;
-GRANT SELECT ON v_oidc_clients TO :OIDC_USER;
-
--- OIDC_ADMIN_USER: Full CRUD access to client administration
-GRANT SELECT, INSERT, UPDATE, DELETE ON consumer TO :OIDC_ADMIN_USER;
-GRANT SELECT, INSERT, UPDATE, DELETE ON v_oidc_admin_clients TO :OIDC_ADMIN_USER;
-
-GRANT USAGE, SELECT ON SEQUENCE consumer_id_seq TO :OIDC_ADMIN_USER;
-
--- double check this
---GRANT USAGE, SELECT ON SEQUENCE consumer_id_seq TO oidc_admin;
-
-
+-- NOTE: Final GRANT permissions have been moved to the view creation files:
+-- - OIDC/cre_v_oidc_users.sql
+-- - OIDC/cre_v_oidc_clients.sql
+-- - OIDC/cre_v_oidc_admin_clients.sql
 
 \echo 'Permissions granted successfully.'
 
