@@ -34,6 +34,7 @@ ORDER BY client_name;
 COMMENT ON VIEW v_oidc_clients IS 'Read-only view of consumer table for OIDC service access. Only includes active consumers. Note: grant_types and scopes are hardcoded defaults - consider adding these fields to consumer table for full OIDC compliance.';
 
 -- Grant SELECT permission on the OIDC view (oidc_user - read-only access)
+-- not sure OIDC_USER needs this.
 GRANT SELECT ON v_oidc_clients TO :OIDC_USER;
 
 \echo 'OIDC clients view created successfully.'
