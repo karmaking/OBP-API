@@ -1,16 +1,28 @@
 # TLDR;
 
-# For read access to Users (e.g. Keycloak) run
+# For read access to Users (e.g. Keycloak)
 
-/sql/OIDC/give_read_access_to_users.sql
+cd /sql/OIDC/
 
-# For read access to Clients. (e.g. OBP-OIDC) run
+psql
 
-/sql/OIDC/give_read_access_to_clients.sql
+\i /give_read_access_to_users.sql
 
-# For admin access to Clients / Consumers (e.g. OBP-OIDC) run
+# For read access to Clients. (e.g. OBP-OIDC)
 
-/sql/OIDC/give_admin_access_to_clients.sql
+cd /sql/OIDC/
+
+psql
+
+\i give_read_access_to_clients.sql
+
+# For admin access to Clients / Consumers (e.g. OBP-OIDC)
+
+cd /sql/OIDC/
+
+psql
+
+\i give_admin_access_to_clients.sql
 
 # Postgres Notes
 
