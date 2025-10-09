@@ -31,4 +31,9 @@ GRANT CONNECT ON DATABASE :DB_NAME TO :OIDC_USER;
 -- Grant USAGE on the public schema (or specific schema where authuser exists)
 GRANT USAGE ON SCHEMA public TO :OIDC_USER;
 
+-- Set default privileges to prevent future access to new objects that this user might create
+ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE ALL ON TABLES FROM :OIDC_USER;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE ALL ON SEQUENCES FROM :OIDC_USER;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE ALL ON FUNCTIONS FROM :OIDC_USER;
+
 \echo 'OIDC user created successfully.'
