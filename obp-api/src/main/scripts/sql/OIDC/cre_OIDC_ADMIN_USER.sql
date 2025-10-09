@@ -24,4 +24,10 @@ GRANT USAGE, SELECT ON SEQUENCE consumer_id_seq TO :OIDC_ADMIN_USER;
 -- double check this
 GRANT USAGE, SELECT ON SEQUENCE consumer_id_seq TO oidc_admin;
 
+-- Grant CONNECT privilege on the database
+GRANT CONNECT ON DATABASE :DB_NAME TO :OIDC_ADMIN_USER;
+
+-- Grant USAGE on the public schema (or specific schema where authuser exists)
+GRANT USAGE ON SCHEMA public TO :OIDC_ADMIN_USER;
+
 \echo 'OIDC admin user created successfully.'

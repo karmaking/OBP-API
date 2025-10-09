@@ -149,13 +149,9 @@
 -- =============================================================================
 \echo 'Granting permissions to OIDC user...'
 
--- Grant CONNECT privilege on the database
-GRANT CONNECT ON DATABASE :DB_NAME TO :OIDC_USER;
-GRANT CONNECT ON DATABASE :DB_NAME TO :OIDC_ADMIN_USER;
-
--- Grant USAGE on the public schema (or specific schema where authuser exists)
-GRANT USAGE ON SCHEMA public TO :OIDC_USER;
-GRANT USAGE ON SCHEMA public TO :OIDC_ADMIN_USER;
+-- NOTE: GRANT CONNECT and GRANT USAGE commands have been moved to:
+-- - OIDC/cre_OIDC_USER.sql
+-- - OIDC/cre_OIDC_ADMIN_USER.sql
 
 -- NOTE: View-specific GRANT permissions have been moved to:
 -- - OIDC/cre_v_oidc_users.sql

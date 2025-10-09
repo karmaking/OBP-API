@@ -17,4 +17,10 @@ CREATE USER :OIDC_USER WITH
     NOREPLICATION
     NOBYPASSRLS;
 
+-- Grant CONNECT privilege on the database
+GRANT CONNECT ON DATABASE :DB_NAME TO :OIDC_USER;
+
+-- Grant USAGE on the public schema (or specific schema where authuser exists)
+GRANT USAGE ON SCHEMA public TO :OIDC_USER;
+
 \echo 'OIDC user created successfully.'
