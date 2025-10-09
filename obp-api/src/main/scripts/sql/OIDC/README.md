@@ -1,4 +1,18 @@
-# Prerequisites
+# TLDR;
+
+# For read access to Users (e.g. Keycloak) run
+
+/sql/OIDC/give_read_access_to_users.sql
+
+# For read access to Clients. (e.g. OBP-OIDC) run
+
+/sql/OIDC/give_read_access_to_clients.sql
+
+# For admin access to Clients / Consumers (e.g. OBP-OIDC) run
+
+/sql/OIDC/give_admin_access_to_clients.sql
+
+# Postgres Notes
 
 For those of us that don't use postgres every day:
 
