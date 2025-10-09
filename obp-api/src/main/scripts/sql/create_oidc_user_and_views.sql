@@ -79,31 +79,15 @@
 -- If any difficulties see the TOP OF THIS FILE for step by step instructions.
 -- =============================================================================
 
--- Database connection parameters (update these to match your OBP configuration)
--- These should match the values in your OBP-API props file (db.url)
-\set DB_HOST 'localhost'
-\set DB_PORT '5432'
-\set DB_NAME 'sandbox'
-
--- OIDC user credentials
--- ⚠️  SECURITY: Change this to a strong password (20+ chars, mixed case, numbers, symbols)
-\set OIDC_USER "oidc_user"
-\set OIDC_PASSWORD '''lakij8777fagg'''
-
--- OIDC admin user credentials (for client administration)
--- ⚠️  SECURITY: Change this to a strong password (20+ chars, mixed case, numbers, symbols)
-\set OIDC_ADMIN_USER "oidc_admin"
-\set OIDC_ADMIN_PASSWORD '''fhka77uefassEE'''
+-- NOTE: Variable definitions and database connection have been moved to:
+-- - OIDC/set_and_connect.sql
+-- You can include them with: \i OIDC/set_and_connect.sql
 
 -- =============================================================================
--- 1. Connect to the OBP database
+-- 1. Create OIDC user role
 -- =============================================================================
-\echo 'Connecting to OBP database...'
-\c :DB_NAME
-
--- =============================================================================
--- 2. Create OIDC user role
--- =============================================================================
+-- NOTE: Database connection command has been moved to:
+-- - OIDC/set_and_connect.sql
 \echo 'Creating OIDC user role...'
 
 -- NOTE: User creation commands have been moved to:
