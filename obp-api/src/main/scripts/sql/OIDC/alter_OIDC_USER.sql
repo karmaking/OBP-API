@@ -1,5 +1,5 @@
 -- Include variable definitions and database connection
-\i OIDC/set_and_connect.sql
+\i set_and_connect.sql
 
 -- =============================================================================
 -- ALTER OIDC_USER

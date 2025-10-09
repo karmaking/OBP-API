@@ -1,5 +1,5 @@
 -- Include variable definitions and database connection
-\i OIDC/set_and_connect.sql
+\i set_and_connect.sql
 
 -- =============================================================================
 -- CREATE VIEW v_oidc_admin_clients
