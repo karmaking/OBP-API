@@ -3,6 +3,12 @@
 -- =============================================================================
 -- This script creates the OIDC user with limited privileges for read-only access
 
+
+REVOKE ALL PRIVILEGES ON ALL TABLES IN SCHEMA public FROM :OIDC_USER;
+REVOKE ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public FROM :OIDC_USER;
+REVOKE ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA public FROM :OIDC_USER;
+
+
 -- Drop the user if they already exist (for re-running the script)
 DROP USER IF EXISTS :OIDC_USER;
 
@@ -16,6 +22,8 @@ CREATE USER :OIDC_USER WITH
     LOGIN
     NOREPLICATION
     NOBYPASSRLS;
+
+
 
 -- Grant CONNECT privilege on the database
 GRANT CONNECT ON DATABASE :DB_NAME TO :OIDC_USER;
