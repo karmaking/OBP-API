@@ -3558,7 +3558,7 @@ object Glossary extends MdcLoggable  {
 				 |* `keystore.passphrase` - Passphrase for keystore private keys
 				 |* `keystore.alias` - Alias for certificate entries in keystore
 				 |
-				 |These properties are essential for TPP (Third Party Provider) certificate validation in PSD2/Berlin Group implementations, where regulated entities authenticate using QWAC (Qualified Website Authentication Certificate) or other qualified certificates.
+				 |These properties are used for TPP (Third Party Provider) certificate validation in PSD2/Berlin Group implementations, where regulated entities authenticate using QWAC (Qualified Website Authentication Certificate) or other qualified certificates.
 				 |
 				 |## Internal Usage by OBP:
 				 |
@@ -3574,7 +3574,7 @@ object Glossary extends MdcLoggable  {
 				 |
 				 |This integration ensures that only properly registered and certificated Third Party Providers can access sensitive banking data and payment initiation services in compliance with PSD2 regulations.
 				 |
-				 |## Real-Time Certificate Retrieval:
+				 |## Real-Time Entity / Certificate Retrieval:
 				 |
 				 |Regulated Entities can be retrieved in real time from the National Authority / National Bank through the following data flow patterns:
 				 |
@@ -3593,6 +3593,84 @@ object Glossary extends MdcLoggable  {
 				 |
 				 |* ${messageDocLinkRabbitMQ("obp.getRegulatedEntities")} - Retrieve all regulated entities
 				 |* ${messageDocLinkRabbitMQ("obp.getRegulatedEntityByEntityId")} - Retrieve a specific regulated entity by ID
+					| For instance, a National Authority might publish:
+					|{
+|  "comercialName": "BANK_X_TPP_AISP",
+|  "idno": "1234567890123",
+|  "licenseNumber": "123456_bank_x",
+|  "roles": [
+|    "PISP"
+|  ],
+|  "certificate": {
+|    "snCert": "117",
+|    "caCert": "Bank (test)"
+|  }
+|}
+|
+|
+|and the Bank's OBP Adapter converts this and returns it to the connector like so:
+|
+|{
+|  "inboundAdapterCallContext": {
+|    "correlationId": "f347feb7-0c25-4a2f-8a40-d853917d0ccd"
+|  },
+|  "status": {
+|    "errorCode": "",
+|    "backendMessages": []
+|  },
+|  "data": [
+|    {
+|      "entityName": "BANCA COM S.A.",
+|      "entityCode": "198762948",
+|      "attributes": [
+|        {
+|          "attributeType": "STRING",
+|          "name": "CERTIFICATE_SERIAL_NUMBER",
+|          "value": "1082"
+|        },
+|        {
+|          "attributeType": "STRING",
+|          "name": "CERTIFICATE_CA_NAME",
+|          "value": "BANK CA (test)"
+|        }
+|      ],
+|      "services": [
+|        {
+|          "roles": [
+|            "PSP_PI",
+|            "PSP_AI"
+|          ]
+|        }
+|      ]
+|    },
+|    {
+|      "entityName": "Bank Y S.A.",
+|      "entityCode": "1029876963",
+|      "attributes": [
+|        {
+|          "attributeType": "STRING",
+|          "name": "CERTIFICATE_SERIAL_NUMBER",
+|          "value": "1135"
+|        },
+|        {
+|          "attributeType": "STRING",
+|          "name": "CERTIFICATE_CA_NAME",
+|          "value": "BANK CA (test)"
+|        }
+|      ],
+|      "services": [
+|        {
+|          "roles": [
+|            "PSP_PI",
+|            "PSP_AI"
+|          ]
+|        }
+|      ]
+|    }
+|  ]
+|}
+|
+| Note the use of Regulated Entity Attribute Names to handle different data types from the national authority.
 				|
 				 |Note: You can / should run a separate instance of OBP for surfacing the Regulated Entities endpoints.
 				 |""".stripMargin)
