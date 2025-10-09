@@ -528,7 +528,7 @@ trait APIMethods600 {
          |- Authorization: DirectLogin username=YOUR_USERNAME, password=YOUR_PASSWORD, consumer_key=YOUR_CONSUMER_KEY
          |
          |Example header:
-         |DirectLogin: username=janeburel, password=686876, consumer_key=GET-YOUR-OWN-API-KEY-FROM-THE-OBP
+         |DirectLogin: username=YOUR_USERNAME, password=YOUR_PASSWORD, consumer_key=GET-YOUR-OWN-API-KEY-FROM-THE-OBP
          |
          |The token returned can be used as a bearer token in subsequent API calls.
          |

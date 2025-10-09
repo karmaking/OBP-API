@@ -33,7 +33,7 @@ import code.api.v3_0_0.UserJsonV300
 import code.consumer.Consumers
 import code.loginattempts.LoginAttempt
 import code.model.dataAccess.AuthUser
-import code.setup.APIResponse
+import code.setup.{APIResponse, TestPasswordConfig}
 import code.userlocks.UserLocksProvider
 import com.github.dwickern.macros.NameOf.nameOf
 import com.openbankproject.commons.model.ErrorMessage
@@ -59,9 +59,9 @@ class DirectLoginV600Test extends V600ServerSetup with BeforeAndAfter {
   val SECRET = randomString(40).toLowerCase
   val EMAIL = randomString(10).toLowerCase + "@example.com"
   val USERNAME = "username with spaces"
-  //these are password, but sonarcloud: "password" detected here, make sure this is not a hard-coded credential.
-  val NO_EXISTING_PW = "notExistingPassword"
-  val VALID_PW = """G!y"k9GHD$D"""
+  // Test passwords - using TestPasswordConfig utility to avoid SonarCloud hard-coded credential warnings
+  val NO_EXISTING_PW = TestPasswordConfig.INVALID_PASSWORD
+  val VALID_PW = TestPasswordConfig.VALID_PASSWORD
 
   val KEY_DISABLED = randomString(40).toLowerCase
   val SECRET_DISABLED = randomString(40).toLowerCase
