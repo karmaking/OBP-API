@@ -29,12 +29,14 @@ package code.api.v6_0_0
 import code.api.util.APIUtil.stringOrNull
 import code.api.util.RateLimitingPeriod.LimitCallPeriod
 import code.api.util._
+import code.api.v1_2_1.BankRoutingJsonV121
 import code.api.v2_0_0.{EntitlementJSONs, JSONFactory200}
 import code.api.v3_0_0.{UserJsonV300, ViewJSON300, ViewsJSON300}
 import code.api.v3_1_0.{RateLimit, RedisCallLimitJson}
 import code.entitlement.Entitlement
 import code.util.Helper.MdcLoggable
 import com.openbankproject.commons.model._
+
 import java.util.Date
 
 case class CardanoPaymentJsonV600(
@@ -56,6 +58,10 @@ case class CardanoAssetJsonV600(
 
 case class CardanoMetadataStringJsonV600(
   string: String
+)
+
+case class TokenJSON(
+  token: String
 )
 
 case class CallLimitPostJsonV600(
@@ -135,6 +141,15 @@ case class UserJsonV600(
 
 case class UserV600(user: User, entitlements: List[Entitlement], views: Option[Permission])
 case class UsersJsonV600(current_user: UserV600, on_behalf_of_user: UserV600)
+
+case class PostBankJson600(
+                            bank_id: String,
+                            bank_code: String,
+                            full_name: Option[String],
+                            logo: Option[String],
+                            website: Option[String],
+                            bank_routings: Option[List[BankRoutingJsonV121]]
+                          )
 
 object JSONFactory600 extends CustomJsonFormats with MdcLoggable{
 
@@ -218,5 +233,9 @@ object JSONFactory600 extends CustomJsonFormats with MdcLoggable{
       total_per_week_call_limit = rateLimitings.map(_.perWeekCallLimit).sum,
       total_per_month_call_limit = rateLimitings.map(_.perMonthCallLimit).sum
     )
+  }
+
+  def createTokenJSON(token: String): TokenJSON = {
+    TokenJSON(token)
   }
 }

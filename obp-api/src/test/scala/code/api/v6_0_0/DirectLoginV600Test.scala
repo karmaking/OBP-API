@@ -1,15 +1,39 @@
-package code.api
+/**
+Open Bank Project - API
+Copyright (C) 2011-2019, TESOBE GmbH
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+Email: contact@tesobe.com
+TESOBE GmbH
+Osloerstrasse 16/17
+Berlin 13359, Germany
+
+This product includes software developed at
+TESOBE (http://www.tesobe.com/)
+*/
+package code.api.v6_0_0
 
 import code.api.Constant.localIdentityProvider
 import code.api.util.ErrorMessages
 import code.api.util.ErrorMessages._
-import code.api.v2_0_0.OBPAPI2_0_0.Implementations2_0_0
-import code.api.v3_0_0.OBPAPI3_0_0.Implementations3_0_0
+import code.api.v6_0_0.OBPAPI6_0_0.Implementations6_0_0
 import code.api.v3_0_0.UserJsonV300
 import code.consumer.Consumers
 import code.loginattempts.LoginAttempt
 import code.model.dataAccess.AuthUser
-import code.setup.{APIResponse, ServerSetup, TestPasswordConfig}
+import code.setup.{APIResponse, TestPasswordConfig}
 import code.userlocks.UserLocksProvider
 import com.github.dwickern.macros.NameOf.nameOf
 import com.openbankproject.commons.model.ErrorMessage
@@ -19,9 +43,7 @@ import net.liftweb.mapper.By
 import net.liftweb.util.Helpers._
 import org.scalatest.{BeforeAndAfter, Tag}
 
-
-
-class DirectLoginTest extends ServerSetup with BeforeAndAfter {
+class DirectLoginV600Test extends V600ServerSetup with BeforeAndAfter {
 
   /**
     * Test tags
@@ -30,15 +52,14 @@ class DirectLoginTest extends ServerSetup with BeforeAndAfter {
     *
     *  This is made possible by the scalatest maven plugin
     */
-  object VersionOfApi200 extends Tag(ApiVersion.v2_0_0.toString)
-  object VersionOfApi300 extends Tag(ApiVersion.v3_0_0.toString)
-  object ApiEndpoint1 extends Tag(nameOf(Implementations2_0_0.getCurrentUser))
-  object ApiEndpoint2 extends Tag(nameOf(Implementations3_0_0.getCurrentUser))
+  object VersionOfApi extends Tag(ApiVersion.v6_0_0.toString)
+  object ApiEndpoint1 extends Tag(nameOf(Implementations6_0_0.directLoginEndpoint))
 
   val KEY = randomString(40).toLowerCase
   val SECRET = randomString(40).toLowerCase
   val EMAIL = randomString(10).toLowerCase + "@example.com"
   val USERNAME = "username with spaces"
+  // Test passwords - using TestPasswordConfig utility to avoid SonarCloud hard-coded credential warnings
   val NO_EXISTING_PW = TestPasswordConfig.INVALID_PASSWORD
   val VALID_PW = TestPasswordConfig.VALID_PASSWORD
 
@@ -47,6 +68,27 @@ class DirectLoginTest extends ServerSetup with BeforeAndAfter {
   val EMAIL_DISABLED = randomString(10).toLowerCase + "@example.com"
   val USERNAME_DISABLED = randomString(10).toLowerCase
   val PASSWORD_DISABLED = randomString(20)
+
+  val accessControlOriginHeader = ("Access-Control-Allow-Origin", "*")
+
+  val invalidUsernamePasswordHeader = ("DirectLogin", "username=invaliduser, password=invalid, consumer_key=" + KEY)
+  val invalidUsernamePasswordCharaterHeader = ("DirectLogin", "username=ABC-DEF#, password=ksksk, consumer_key=" + KEY)
+  val validUsernameInvalidPasswordHeader = ("DirectLogin", "username=%s, password=invalid, consumer_key=%s".format(USERNAME, KEY))
+  val invalidConsumerKeyHeader = ("DirectLogin", "username=%s, password=%s, consumer_key=invalidkey".format(USERNAME, VALID_PW))
+  val validDeprecatedHeader = ("Authorization", "DirectLogin username=%s, password=%s, consumer_key=%s".format(USERNAME, VALID_PW, KEY))
+  val validHeader = ("DirectLogin", "username=%s, password=%s, consumer_key=%s".format(USERNAME, VALID_PW, KEY))
+  val disabledConsumerValidHeader = ("Authorization", "DirectLogin username=%s, password=%s, consumer_key=%s".
+    format(USERNAME_DISABLED, PASSWORD_DISABLED, KEY_DISABLED))
+
+  val invalidUsernamePasswordCharaterHeaders = List(accessControlOriginHeader, invalidUsernamePasswordCharaterHeader)
+  val invalidUsernamePasswordHeaders = List(accessControlOriginHeader, invalidUsernamePasswordHeader)
+  val validUsernameInvalidPasswordHeaders = List(accessControlOriginHeader, validUsernameInvalidPasswordHeader)
+  val invalidConsumerKeyHeaders = List(accessControlOriginHeader, invalidConsumerKeyHeader)
+  val validHeaders = List(accessControlOriginHeader, validHeader, ("Authorization", "Basic 123456"))
+  val validDeprecatedHeaders = List(accessControlOriginHeader, validDeprecatedHeader)
+  val disabledConsumerKeyHeaders = List(accessControlOriginHeader, disabledConsumerValidHeader)
+
+  def directLoginV600Request = v6_0_0_Request / "my" / "logins" / "direct"
 
   before {
     if (AuthUser.find(By(AuthUser.username, USERNAME)).isEmpty)
@@ -57,7 +99,7 @@ class DirectLoginTest extends ServerSetup with BeforeAndAfter {
         validated(true).
         firstName(randomString(10)).
         lastName(randomString(10)).
-        saveMe
+        saveMe()
 
     if (Consumers.consumers.vend.getConsumerByConsumerKey(KEY).isEmpty)
       Consumers.consumers.vend.createConsumer(
@@ -72,53 +114,15 @@ class DirectLoginTest extends ServerSetup with BeforeAndAfter {
         validated(true).
         firstName(randomString(10)).
         lastName(randomString(10)).
-        saveMe
+        saveMe()
 
     if (Consumers.consumers.vend.getConsumerByConsumerKey(KEY_DISABLED).isEmpty)
-      Consumers.consumers.vend.createConsumer(Some(KEY_DISABLED), Some(SECRET_DISABLED), Some(false), Some("test application disabled"), None, Some("description"), Some("eveline@example.com"), None, 
-        None, None,None, None).openOrThrowException(attemptedToOpenAnEmptyBox)
+      Consumers.consumers.vend.createConsumer(
+        Some(KEY_DISABLED), Some(SECRET_DISABLED), Some(false), Some("disabled test application"), None, Some("disabled description"), Some("disabled@example.com"), None,None,None,None,None).openOrThrowException(attemptedToOpenAnEmptyBox)
   }
 
-  val accessControlOriginHeader = ("Access-Control-Allow-Origin", "*")
-
-  val invalidUsernamePasswordHeader = ("Authorization", ("DirectLogin username=\"notExistingUser\", " +
-    "password=%s, consumer_key=%s").format(NO_EXISTING_PW, KEY))
-
-  val invalidUsernamePasswordCharaterHeader = ("Authorization", ("DirectLogin username=\" a#s \", " +
-    "password=%s, consumer_key=%s").format(NO_EXISTING_PW, KEY))
-
-  val validUsernameInvalidPasswordHeader = ("Authorization", ("DirectLogin username=%s," +
-    "password=%s, consumer_key=%s").format(USERNAME, NO_EXISTING_PW, KEY))
-
-  val invalidConsumerKeyHeader = ("Authorization", ("DirectLogin username=%s, " +
-    "password=%s, consumer_key=%s").format(USERNAME, VALID_PW, "invalid"))
-
-  val validDeprecatedHeader = ("Authorization", "DirectLogin username=%s, password=%s, consumer_key=%s".
-    format(USERNAME, VALID_PW, KEY))
-
-  val validHeader = ("DirectLogin", "username=%s, password=%s, consumer_key=%s".
-    format(USERNAME, VALID_PW, KEY))
-
-  val disabledConsumerValidHeader = ("Authorization", "DirectLogin username=%s, password=%s, consumer_key=%s".
-    format(USERNAME_DISABLED, PASSWORD_DISABLED, KEY_DISABLED))
-
-  val invalidUsernamePasswordCharaterHeaders = List(accessControlOriginHeader, invalidUsernamePasswordCharaterHeader)
-
-  val invalidUsernamePasswordHeaders = List(accessControlOriginHeader, invalidUsernamePasswordHeader)
-
-  val validUsernameInvalidPasswordHeaders = List(accessControlOriginHeader, validUsernameInvalidPasswordHeader)
-
-  val invalidConsumerKeyHeaders = List(accessControlOriginHeader, invalidConsumerKeyHeader)
-
-  val validHeaders = List(accessControlOriginHeader, validHeader, ("Authorization", "Basic 123456"))
-  val validDeprecatedHeaders = List(accessControlOriginHeader, validDeprecatedHeader)
-
-  val disabledConsumerKeyHeaders = List(accessControlOriginHeader, disabledConsumerValidHeader)
-
-  def directLoginRequest = baseRequest / "my" / "logins" / "direct"
-
-  feature("DirectLogin") {
-    scenario("Invalid auth header") {
+  feature("DirectLogin v6.0.0") {
+    scenario("Invalid auth header", ApiEndpoint1, VersionOfApi) {
 
       //setupUserAndConsumer
 
@@ -128,7 +132,7 @@ class DirectLoginTest extends ServerSetup with BeforeAndAfter {
       //assert(registeredApplication(KEY) == true)
 
       When("we try to login without an Authorization header")
-      val request = directLoginRequest
+      val request = directLoginV600Request
       val response = makePostRequestAdditionalHeader(request, "", List(accessControlOriginHeader))
 
       Then("We should get a 400 - Bad Request")
@@ -136,7 +140,7 @@ class DirectLoginTest extends ServerSetup with BeforeAndAfter {
       assertResponse(response, ErrorMessages.MissingDirectLoginHeader)
     }
 
-    scenario("Invalid credentials") {
+    scenario("Invalid credentials", ApiEndpoint1, VersionOfApi) {
 
       //setupUserAndConsumer
 
@@ -145,7 +149,7 @@ class DirectLoginTest extends ServerSetup with BeforeAndAfter {
       //assert(registeredApplication(KEY) == true)
 
       When("we try to login with an invalid username/password")
-      val request = directLoginRequest
+      val request = directLoginV600Request
       val response = makePostRequestAdditionalHeader(request, "", invalidUsernamePasswordHeaders)
 
       Then("We should get a 401 - Unauthorized")
@@ -153,9 +157,9 @@ class DirectLoginTest extends ServerSetup with BeforeAndAfter {
       assertResponse(response, ErrorMessages.InvalidLoginCredentials)
     }
 
-    scenario("Invalid Characters") {
+    scenario("Invalid Characters", ApiEndpoint1, VersionOfApi) {
       When("we try to login with an invalid username Characters and invalid password Characters")
-      val request = directLoginRequest
+      val request = directLoginV600Request
       val response = makePostRequestAdditionalHeader(request, "", invalidUsernamePasswordCharaterHeaders)
 
       Then("We should get a 400 - Invalid Characters")
@@ -163,9 +167,9 @@ class DirectLoginTest extends ServerSetup with BeforeAndAfter {
       assertResponse(response, ErrorMessages.InvalidValueCharacters)
     }
 
-    scenario("valid Username, invalid password, login in too many times. The username will be locked") {
+    scenario("valid Username, invalid password, login in too many times. The username will be locked", ApiEndpoint1, VersionOfApi) {
       When("login with an valid username and invalid password, failed more than 5 times.")
-      val request = directLoginRequest
+      val request = directLoginV600Request
       var response = makePostRequestAdditionalHeader(request, "", validUsernameInvalidPasswordHeaders)
 
       response = makePostRequestAdditionalHeader(request, "", validUsernameInvalidPasswordHeaders)
@@ -189,17 +193,17 @@ class DirectLoginTest extends ServerSetup with BeforeAndAfter {
       LoginAttempt.resetBadLoginAttempts(localIdentityProvider, USERNAME)
     }
 
-    scenario("Consumer API key is disabled") {
+    scenario("Consumer API key is disabled", ApiEndpoint1, VersionOfApi) {
       Given("The app we are testing is registered and disabled")
       When("We try to login with username/password")
-      val request = directLoginRequest
+      val request = directLoginV600Request
       val response = makePostRequestAdditionalHeader(request, "", disabledConsumerKeyHeaders)
       Then("We should get a 401")
       response.code should equal(401)
       assertResponse(response, ErrorMessages.InvalidConsumerKey)
     }
 
-    scenario("Missing DirectLogin header") {
+    scenario("Missing DirectLogin header", ApiEndpoint1, VersionOfApi) {
 
       //setupUserAndConsumer
 
@@ -208,7 +212,7 @@ class DirectLoginTest extends ServerSetup with BeforeAndAfter {
       //assert(registeredApplication(KEY) == true)
 
       When("we try to login with a missing DirectLogin header")
-      val request = directLoginRequest
+      val request = directLoginV600Request
       val response = makePostRequest(request,"")
 
       Then("We should get a 400 - Bad Request")
@@ -216,7 +220,7 @@ class DirectLoginTest extends ServerSetup with BeforeAndAfter {
       assertResponse(response, ErrorMessages.MissingDirectLoginHeader)
     }
 
-    scenario("Login without consumer key") {
+    scenario("Login without consumer key", ApiEndpoint1, VersionOfApi) {
 
       //setupUserAndConsumer
 
@@ -225,7 +229,7 @@ class DirectLoginTest extends ServerSetup with BeforeAndAfter {
       //assert(registeredApplication(KEY) == true)
 
       When("the consumer key is invalid")
-      val request = directLoginRequest
+      val request = directLoginV600Request
       val response = makePostRequestAdditionalHeader(request, "", invalidConsumerKeyHeaders)
 
       Then("We should get a 401 - Unauthorized")
@@ -233,7 +237,7 @@ class DirectLoginTest extends ServerSetup with BeforeAndAfter {
       assertResponse(response, ErrorMessages.InvalidConsumerKey)
     }
 
-    scenario("Login with correct everything! - Deprecated Header", ApiEndpoint1, ApiEndpoint2) {
+    scenario("Login with correct everything! - Deprecated Header", ApiEndpoint1, VersionOfApi) {
 
       //setupUserAndConsumer
 
@@ -242,7 +246,7 @@ class DirectLoginTest extends ServerSetup with BeforeAndAfter {
       //assert(registeredApplication(KEY) == true)
 
       When("the header and credentials are good")
-      val request = directLoginRequest
+      val request = directLoginV600Request
       val response = makePostRequestAdditionalHeader(request, "", validDeprecatedHeaders)
       var token = "INVALID"
       Then("We should get a 201 - OK and a token")
@@ -259,18 +263,18 @@ class DirectLoginTest extends ServerSetup with BeforeAndAfter {
       When("when we use the token it should work")
       val headerWithToken = ("Authorization", "DirectLogin token=%s".format(token))
       val validHeadersWithToken = List(accessControlOriginHeader, headerWithToken)
-      val request2 = baseRequest / "obp" / "v2.0.0" / "my" / "accounts"
+      val request2 = v6_0_0_Request / "my" / "accounts"
       val response2 = makeGetRequest(request2, validHeadersWithToken)
 
       Then("We should get a 200 - OK and an empty list of accounts")
       response2.code should equal(200)
       response2.body match {
-        case JArray(List()) =>
+        case JObject(List(JField(accounts,JArray(List())))) =>
         case _ => fail("Expected empty list of accounts")
       }
 
       When("when we use the token to get current user and it should work - New Style")
-      val requestCurrentUserNewStyle = baseRequest / "obp" / "v3.0.0" / "users" / "current"
+      val requestCurrentUserNewStyle = v6_0_0_Request / "users" / "current"
       val responseCurrentUserNewStyle = makeGetRequest(requestCurrentUserNewStyle, validHeadersWithToken)
       And("We should get a 200")
       responseCurrentUserNewStyle.code should equal(200)
@@ -288,7 +292,7 @@ class DirectLoginTest extends ServerSetup with BeforeAndAfter {
       currentUserNewStyle.username shouldBe currentUserOldStyle.username
     }
     
-    scenario("Login with correct everything!", ApiEndpoint1, ApiEndpoint2) {
+    scenario("Login with correct everything!", ApiEndpoint1, VersionOfApi) {
 
       //setupUserAndConsumer
 
@@ -297,7 +301,7 @@ class DirectLoginTest extends ServerSetup with BeforeAndAfter {
       //assert(registeredApplication(KEY) == true)
 
       When("the header and credentials are good")
-      val request = directLoginRequest
+      val request = directLoginV600Request
       val response = makePostRequestAdditionalHeader(request, "", validHeaders)
       var token = "INVALID"
       Then("We should get a 201 - OK and a token")
@@ -314,18 +318,18 @@ class DirectLoginTest extends ServerSetup with BeforeAndAfter {
       When("when we use the token it should work")
       val headerWithToken = ("Authorization", "DirectLogin token=%s".format(token))
       val validHeadersWithToken = List(accessControlOriginHeader, headerWithToken)
-      val request2 = baseRequest / "obp" / "v2.0.0" / "my" / "accounts"
+      val request2 = v6_0_0_Request / "my" / "accounts"
       val response2 = makeGetRequest(request2, validHeadersWithToken)
 
       Then("We should get a 200 - OK and an empty list of accounts")
       response2.code should equal(200)
       response2.body match {
-        case JArray(List()) =>
+        case JObject(List(JField(accounts,JArray(List())))) =>
         case _ => fail("Expected empty list of accounts")
       }
 
       When("when we use the token to get current user and it should work - New Style")
-      val requestCurrentUserNewStyle = baseRequest / "obp" / "v3.0.0" / "users" / "current"
+      val requestCurrentUserNewStyle = v6_0_0_Request / "users" / "current"
       val responseCurrentUserNewStyle = makeGetRequest(requestCurrentUserNewStyle, validHeadersWithToken)
       And("We should get a 200")
       responseCurrentUserNewStyle.code should equal(200)
@@ -343,16 +347,16 @@ class DirectLoginTest extends ServerSetup with BeforeAndAfter {
       currentUserNewStyle.username shouldBe currentUserOldStyle.username
     } 
     
-    scenario("Login with correct everything and use props local_identity_provider", ApiEndpoint1, ApiEndpoint2) {
+    scenario("Login with correct everything and use props local_identity_provider", ApiEndpoint1, VersionOfApi) {
 
-      setPropsValues("local_identity_provider"-> Constant.HostName)
+      setPropsValues("local_identity_provider"-> code.api.Constant.HostName)
 
       Given("the app we are testing is registered and active")
       Then("We should be able to find it")
       //assert(registeredApplication(KEY) == true)
 
       When("the header and credentials are good")
-      val request = directLoginRequest
+      val request = directLoginV600Request
       val response = makePostRequestAdditionalHeader(request, "", validHeaders)
       var token = "INVALID"
       Then("We should get a 201 - OK and a token")
@@ -369,18 +373,18 @@ class DirectLoginTest extends ServerSetup with BeforeAndAfter {
       When("when we use the token it should work")
       val headerWithToken = ("Authorization", "DirectLogin token=%s".format(token))
       val validHeadersWithToken = List(accessControlOriginHeader, headerWithToken)
-      val request2 = baseRequest / "obp" / "v2.0.0" / "my" / "accounts"
+      val request2 = v6_0_0_Request / "my" / "accounts"
       val response2 = makeGetRequest(request2, validHeadersWithToken)
 
       Then("We should get a 200 - OK and an empty list of accounts")
       response2.code should equal(200)
       response2.body match {
-        case JArray(List()) =>
+        case JObject(List(JField(accounts,JArray(List())))) =>
         case _ => fail("Expected empty list of accounts")
       }
 
       When("when we use the token to get current user and it should work - New Style")
-      val requestCurrentUserNewStyle = baseRequest / "obp" / "v3.0.0" / "users" / "current"
+      val requestCurrentUserNewStyle = v6_0_0_Request / "users" / "current"
       val responseCurrentUserNewStyle = makeGetRequest(requestCurrentUserNewStyle, validHeadersWithToken)
       And("We should get a 200")
       responseCurrentUserNewStyle.code should equal(200)
@@ -398,7 +402,7 @@ class DirectLoginTest extends ServerSetup with BeforeAndAfter {
       currentUserNewStyle.username shouldBe currentUserOldStyle.username
     }
 
-    scenario("Login with correct everything but the user is locked", ApiEndpoint1, ApiEndpoint2) {
+    scenario("Login with correct everything but the user is locked", ApiEndpoint1, VersionOfApi) {
       lazy val username = "firstname.lastname"
       lazy val header = ("DirectLogin", "username=%s, password=%s, consumer_key=%s".
         format(username, VALID_PW, KEY))
@@ -413,10 +417,10 @@ class DirectLoginTest extends ServerSetup with BeforeAndAfter {
         validated(true).
         firstName(randomString(10)).
         lastName(randomString(10)).
-        saveMe
+        saveMe()
 
       When("the header and credentials are good")
-      lazy val response = makePostRequestAdditionalHeader(directLoginRequest, "", List(accessControlOriginHeader, header))
+      lazy val response = makePostRequestAdditionalHeader(directLoginV600Request, "", List(accessControlOriginHeader, header))
       var token = ""
       Then("We should get a 201 - OK and a token")
       response.code should equal(201)
@@ -436,7 +440,7 @@ class DirectLoginTest extends ServerSetup with BeforeAndAfter {
       UserLocksProvider.lockUser(localIdentityProvider, username)
 
       When("when we use the token to get current user and it should NOT work due to locked user - New Style")
-      lazy val requestCurrentUserNewStyle = baseRequest / "obp" / "v3.0.0" / "users" / "current"
+      lazy val requestCurrentUserNewStyle = v6_0_0_Request / "users" / "current"
       lazy val responseCurrentUserNewStyle = makeGetRequest(requestCurrentUserNewStyle, validHeadersWithToken)
       And("We should get a 401")
       responseCurrentUserNewStyle.code should equal(401)
@@ -450,12 +454,10 @@ class DirectLoginTest extends ServerSetup with BeforeAndAfter {
       responseCurrentUserOldStyle.body.extract[ErrorMessage].message should include(ErrorMessages.UsernameHasBeenLocked)
     }
 
-
-
-    scenario("Test the last issued token is valid as well as a previous one", ApiEndpoint2) {
+    scenario("Test the last issued token is valid as well as a previous one", ApiEndpoint1, VersionOfApi) {
 
       When("The header and credentials are good")
-      val request = directLoginRequest
+      val request = directLoginV600Request
       val response = makePostRequestAdditionalHeader(request, "", validHeaders)
       var token = ""
       Then("We should get a 201 - OK and a token")
@@ -471,7 +473,7 @@ class DirectLoginTest extends ServerSetup with BeforeAndAfter {
       val headerWithToken = ("DirectLogin", "token=%s".format(token))
       val validHeadersWithToken = List(accessControlOriginHeader, headerWithToken)
       When("When we use the token to get current user and it should work - New Style")
-      val requestCurrentUserNewStyle = baseRequest / "obp" / "v3.0.0" / "users" / "current"
+      val requestCurrentUserNewStyle = v6_0_0_Request / "users" / "current"
       val responseCurrentUserNewStyle = makeGetRequest(requestCurrentUserNewStyle, validHeadersWithToken)
       And("We should get a 200")
       responseCurrentUserNewStyle.code should equal(200)
@@ -485,15 +487,12 @@ class DirectLoginTest extends ServerSetup with BeforeAndAfter {
       And("We should get a 200")
       secondResponse.code should equal(200)
       // assertResponse(failedResponse, DirectLoginInvalidToken)
-
-
     }
 
-
-    scenario("Test DirectLogin header value is case insensitive", ApiEndpoint2) {
+    scenario("Test DirectLogin header value is case insensitive", ApiEndpoint1, VersionOfApi) {
 
       When("The header and credentials are good")
-      val request = directLoginRequest
+      val request = directLoginV600Request
       val response = makePostRequestAdditionalHeader(request, "", validHeaders)
       var token = ""
       Then("We should get a 201 - OK and a token")
@@ -509,7 +508,7 @@ class DirectLoginTest extends ServerSetup with BeforeAndAfter {
       val headerWithToken = ("dIreCtLoGin", "token=%s".format(token))
       val validHeadersWithToken = List(accessControlOriginHeader, headerWithToken)
       When("When we use the token to get current user and it should work - New Style")
-      val requestCurrentUserNewStyle = baseRequest / "obp" / "v3.0.0" / "users" / "current"
+      val requestCurrentUserNewStyle = v6_0_0_Request / "users" / "current"
       val responseCurrentUserNewStyle = makeGetRequest(requestCurrentUserNewStyle, validHeadersWithToken)
       And("We should get a 200")
       responseCurrentUserNewStyle.code should equal(200)
@@ -523,15 +522,10 @@ class DirectLoginTest extends ServerSetup with BeforeAndAfter {
       And("We should get a 200")
       secondResponse.code should equal(200)
       // assertResponse(failedResponse, DirectLoginInvalidToken)
-
-
     }
-
-
   }
 
   private def assertResponse(response: APIResponse, expectedErrorMessage: String): Unit = {
     response.body.extract[ErrorMessage].message should startWith(expectedErrorMessage)
   }
-  
 }
