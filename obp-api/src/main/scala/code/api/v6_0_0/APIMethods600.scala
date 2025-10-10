@@ -423,13 +423,7 @@ trait APIMethods600 {
          |The user creating this will be automatically assigned the Role CanCreateEntitlementAtOneBank.
          |Thus the User can manage the bank they create and assign Roles to other Users.
          |
-         |Only SANDBOX mode
-         |The settlement accounts are created specified by the bank in the POST body.
-         |Name and account id are created in accordance to the next rules:
-         |  - Incoming account (name: Default incoming settlement account, Account ID: OBP_DEFAULT_INCOMING_ACCOUNT_ID, currency: EUR)
-         |  - Outgoing account (name: Default outgoing settlement account, Account ID: OBP_DEFAULT_OUTGOING_ACCOUNT_ID, currency: EUR)
-         |
-         |""",
+
       postBankJson600,
       bankJson500,
       List(
@@ -520,7 +514,7 @@ trait APIMethods600 {
          |DirectLogin is a simple authentication flow. You POST your credentials (username, password, and consumer key) 
          |to the DirectLogin endpoint and receive a token in return.
          |
-         |This is an alias to the legacy DirectLogin endpoint that includes the standard API versioning prefix.
+         |This is an alias to the DirectLogin endpoint that includes the standard API versioning prefix.
          |
          |This endpoint requires the following headers:
          |- DirectLogin: username=YOUR_USERNAME, password=YOUR_PASSWORD, consumer_key=YOUR_CONSUMER_KEY
