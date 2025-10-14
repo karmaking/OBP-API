@@ -423,6 +423,13 @@ trait APIMethods600 {
          |The user creating this will be automatically assigned the Role CanCreateEntitlementAtOneBank.
          |Thus the User can manage the bank they create and assign Roles to other Users.
          |
+         Only SANDBOX mode (i.e. when connector=mapped in properties file)
+         |The settlement accounts are automatically created by the system when the bank is created.
+         |Name and account id are created in accordance to the next rules:
+         |  - Incoming account (name: Default incoming settlement account, Account ID: OBP_DEFAULT_INCOMING_ACCOUNT_ID, currency: EUR)
+         |  - Outgoing account (name: Default outgoing settlement account, Account ID: OBP_DEFAULT_OUTGOING_ACCOUNT_ID, currency: EUR)
+         |
+         |""",
 
       postBankJson600,
       bankJson500,
