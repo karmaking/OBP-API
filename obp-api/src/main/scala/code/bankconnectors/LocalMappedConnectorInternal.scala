@@ -1626,31 +1626,52 @@ object LocalMappedConnectorInternal extends MdcLoggable {
           for {
             // Create holding account with same currency and zero balance
             (holding, cc1) <- NewStyle.function.createBankAccount(
-              bankId         = bankId,
-              accountId      = newAccountId,
-              accountType    = "HOLDING",
-              accountLabel   = s"Holding account for ${parentAccount.accountId.value}",
-              currency       = parentAccount.currency,
+              bankId = bankId,
+              accountId = newAccountId,
+              accountType = "HOLDING",
+              accountLabel = s"Holding account for ${parentAccount.accountId.value}",
+              currency = parentAccount.currency,
               initialBalance = BigDecimal(0),
               accountHolderName = Option(parentAccount.accountHolder).getOrElse(""),
-              branchId       = parentAccount.branchId,
-              accountRoutings= Nil,
-              callContext    = callContext
+              branchId = parentAccount.branchId,
+              accountRoutings = Nil,
+              callContext = callContext
             )
             _ <- code.model.dataAccess.BankAccountCreation.setAccountHolderAndRefreshUserAccountAccess(bankId, newAccountId, cc1.get.user.head, callContext)
             // Link attributes on holding account
             _ <- NewStyle.function.createOrUpdateAccountAttribute(
-              bankId, holding.accountId, ProductCode("HOLDING"),
-              None, "ACCOUNT_ROLE", AccountAttributeType.STRING, "HOLDING", None, cc1
+              bankId = bankId,
+              accountId = holding.accountId,
+              productCode = ProductCode("HOLDING"),
+              accountAttributeId = None,
+              name = "ACCOUNT_ROLE",
+              attributeType = AccountAttributeType.STRING,
+              value = "HOLDING",
+              productInstanceCode = None,
+              callContext = cc1
             )
             _ <- NewStyle.function.createOrUpdateAccountAttribute(
-              bankId, holding.accountId, ProductCode("HOLDING"),
-              None, "PARENT_ACCOUNT_ID", AccountAttributeType.STRING, parentAccount.accountId.value, None, cc1
+              bankId = bankId,
+              accountId = holding.accountId,
+              productCode = ProductCode("HOLDING"),
+              accountAttributeId = None,
+              name = "PARENT_ACCOUNT_ID",
+              attributeType = AccountAttributeType.STRING,
+              value = parentAccount.accountId.value,
+              productInstanceCode = None,
+              callContext = cc1
             )
             // Optional reverse link on parent account
             _ <- NewStyle.function.createOrUpdateAccountAttribute(
-              bankId, parentAccount.accountId, ProductCode(parentAccount.accountType),
-              None, "HOLDING_ACCOUNT_ID", AccountAttributeType.STRING, holding.accountId.value, None, cc1
+              bankId = bankId,
+              accountId = parentAccount.accountId,
+              productCode = ProductCode(parentAccount.accountType),
+              accountAttributeId = None,
+              name = "HOLDING_ACCOUNT_ID",
+              attributeType = AccountAttributeType.STRING,
+              value = holding.accountId.value,
+              productInstanceCode = None,
+              callContext = cc1
             )
           } yield (holding, cc1)
       }
