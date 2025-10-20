@@ -1,25 +1,22 @@
 package code.api.v6_0_0
 
 import code.accountattribute.AccountAttributeX
-import code.api.ObpApiFailure
-import code.api.{APIFailureNewStyle, DirectLogin, ObpApiFailure}
-import code.api.v6_0_0.JSONFactory600
+import code.api.{DirectLogin, ObpApiFailure}
 import code.api.ResourceDocs1_4_0.SwaggerDefinitionsJSON._
 import code.api.util.APIUtil._
-import code.api.util.ApiRole.{CanCreateEntitlementAtOneBank, CanReadDynamicResourceDocsAtOneBank, canCreateBank, canDeleteRateLimiting, canReadCallLimits, canSetCallLimits}
+import code.api.util.ApiRole._
 import code.api.util.ApiTag._
 import code.api.util.ErrorMessages.{$UserNotLoggedIn, InvalidDateFormat, InvalidJsonFormat, UnknownError, _}
 import code.api.util.FutureUtil.EndpointContext
-import code.api.util.{APIUtil, ErrorMessages, NewStyle, RateLimitingUtil}
 import code.api.util.NewStyle.HttpCode
-import code.api.util.{NewStyle, RateLimitingUtil}
+import code.api.util.{APIUtil, ErrorMessages, NewStyle, RateLimitingUtil}
 import code.api.v3_0_0.JSONFactory300
-import code.api.v5_0_0.{JSONFactory500, PostBankJson500}
+import code.api.v5_0_0.JSONFactory500
 import code.api.v6_0_0.JSONFactory600.{createActiveCallLimitsJsonV600, createCallLimitJsonV600, createCurrentUsageJson}
 import code.bankconnectors.LocalMappedConnectorInternal
 import code.bankconnectors.LocalMappedConnectorInternal._
-import code.model._
 import code.entitlement.Entitlement
+import code.model._
 import code.ratelimiting.RateLimitingDI
 import code.util.Helper
 import code.util.Helper.SILENCE_IS_GOLDEN
@@ -28,7 +25,7 @@ import com.github.dwickern.macros.NameOf.nameOf
 import com.openbankproject.commons.ExecutionContext.Implicits.global
 import com.openbankproject.commons.model._
 import com.openbankproject.commons.util.{ApiVersion, ScannedApiVersion}
-import net.liftweb.common.Full
+import net.liftweb.common.{Empty, Full}
 import net.liftweb.http.rest.RestHelper
 
 import java.text.SimpleDateFormat
