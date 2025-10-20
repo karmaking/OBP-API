@@ -88,14 +88,14 @@ trait APIMethods600 {
 
     // --- GET Holding Account by Parent ---
     staticResourceDocs += ResourceDoc(
-      getHoldingAccountByParent,
+      getHoldingAccountByReleaser,
       implementedInApiVersion,
-      nameOf(getHoldingAccountByParent),
+      nameOf(getHoldingAccountByReleaser),
       "GET",
       "/banks/BANK_ID/accounts/ACCOUNT_ID/VIEW_ID/holding-account",
-      "Get Holding Account By Parent",
+      "Get Holding Account By Releaser",
       s"""
-         |Return the Holding Account linked to the given parent account via account attribute `PARENT_ACCOUNT_ID`.
+         |Return the Holding Account linked to the given releaser account via account attribute `RELEASER_ACCOUNT_ID`.
          |If multiple holding accounts exist, the first one will be returned.
          |
        """.stripMargin,
@@ -111,13 +111,13 @@ trait APIMethods600 {
       List(apiTagAccount)
     )
 
-    lazy val getHoldingAccountByParent: OBPEndpoint = {
+    lazy val getHoldingAccountByReleaser: OBPEndpoint = {
       case "banks" :: BankId(bankId) :: "accounts" :: AccountId(accountId) :: ViewId(viewId) :: "holding-account" :: Nil JsonGet _ =>
         cc => implicit val ec = EndpointContext(Some(cc))
           for {
             (user @Full(u), _, _, view, callContext) <- SS.userBankAccountView
-            // Find accounts by attribute PARENT_ACCOUNT_ID
-            (accountIdsBox, callContext) <- AccountAttributeX.accountAttributeProvider.vend.getAccountIdsByParams(bankId, Map("PARENT_ACCOUNT_ID" -> List(accountId.value))) map { ids => (ids, callContext) }
+            // Find accounts by attribute RELEASER_ACCOUNT_ID
+            (accountIdsBox, callContext) <- AccountAttributeX.accountAttributeProvider.vend.getAccountIdsByParams(bankId, Map("RELEASER_ACCOUNT_ID" -> List(accountId.value))) map { ids => (ids, callContext) }
             accountIds = accountIdsBox.getOrElse(Nil)
             // load the first holding account
             holdingOpt <- {

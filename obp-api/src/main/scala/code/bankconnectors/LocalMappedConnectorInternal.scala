@@ -1590,21 +1590,21 @@ object LocalMappedConnectorInternal extends MdcLoggable {
   }
 
   /**
-    * Find or create a Holding Account for the given parent account and link via account attributes.
+    * Find or create a Holding Account for the given releaser account and link via account attributes.
     * Rules:
-    * - Holding account uses the same currency as parent.
+    * - Holding account uses the same currency as releaser.
     * - Holding account type: "HOLDING".
-    * - Attributes on holding: ACCOUNT_ROLE=HOLDING, PARENT_ACCOUNT_ID=parentAccountId
-    * - Optional reverse link on parent: HOLDING_ACCOUNT_ID=holdingAccountId
+   * - Attributes on holding: ACCOUNT_ROLE=HOLDING, RELEASER_ACCOUNT_ID=releaserAccountId
+    * - Optional reverse link on releaser: HOLDING_ACCOUNT_ID=holdingAccountId
     */
   private def getOrCreateHoldingAccount(
     bankId: BankId,
-    parentAccount: BankAccount,
+    releaserAccount: BankAccount,
     callContext: Option[CallContext]
   ): Future[(BankAccount, Option[CallContext])] = {
-    val params = Map("PARENT_ACCOUNT_ID" -> List(parentAccount.accountId.value))
+    val params = Map("RELEASER_ACCOUNT_ID" -> List(releaserAccount.accountId.value))
     for {
-      // Query by attribute to find accounts that link to the parent
+      // Query by attribute to find accounts that link to the releaser
       accountIdsBox <- AccountAttributeX.accountAttributeProvider.vend.getAccountIdsByParams(bankId, params)
       accountIds = accountIdsBox.getOrElse(Nil).map(id => AccountId(id))
       // Try to find an existing holding account among them
@@ -1625,55 +1625,44 @@ object LocalMappedConnectorInternal extends MdcLoggable {
           val newAccountId = AccountId(APIUtil.generateUUID())
           for {
             // Create holding account with same currency and zero balance
-            (holding, cc1) <- NewStyle.function.createBankAccount(
+            (holding, cc) <- NewStyle.function.createBankAccount(
               bankId = bankId,
               accountId = newAccountId,
               accountType = "HOLDING",
-              accountLabel = s"Holding account for ${parentAccount.accountId.value}",
-              currency = parentAccount.currency,
+              accountLabel = s"Holding account for ${releaserAccount.accountId.value}",
+              currency = releaserAccount.currency,
               initialBalance = BigDecimal(0),
-              accountHolderName = Option(parentAccount.accountHolder).getOrElse(""),
-              branchId = parentAccount.branchId,
+              accountHolderName = Option(releaserAccount.accountHolder).getOrElse(""),
+              branchId = releaserAccount.branchId,
               accountRoutings = Nil,
               callContext = callContext
             )
-            _ <- code.model.dataAccess.BankAccountCreation.setAccountHolderAndRefreshUserAccountAccess(bankId, newAccountId, cc1.get.user.head, callContext)
-            // Link attributes on holding account
+            _ <- code.model.dataAccess.BankAccountCreation.setAccountHolderAndRefreshUserAccountAccess(bankId, newAccountId, cc.get.user.head, callContext)
+            // create attribute on holding account to link to releaser account
             _ <- NewStyle.function.createOrUpdateAccountAttribute(
               bankId = bankId,
               accountId = holding.accountId,
               productCode = ProductCode("HOLDING"),
               accountAttributeId = None,
-              name = "ACCOUNT_ROLE",
+              name = "RELEASER_ACCOUNT_ID",
               attributeType = AccountAttributeType.STRING,
-              value = "HOLDING",
+              value = releaserAccount.accountId.value,
               productInstanceCode = None,
-              callContext = cc1
+              callContext = cc
             )
+            // create attribute on releaser account to link to holding account
             _ <- NewStyle.function.createOrUpdateAccountAttribute(
               bankId = bankId,
-              accountId = holding.accountId,
-              productCode = ProductCode("HOLDING"),
-              accountAttributeId = None,
-              name = "PARENT_ACCOUNT_ID",
-              attributeType = AccountAttributeType.STRING,
-              value = parentAccount.accountId.value,
-              productInstanceCode = None,
-              callContext = cc1
-            )
-            // Optional reverse link on parent account
-            _ <- NewStyle.function.createOrUpdateAccountAttribute(
-              bankId = bankId,
-              accountId = parentAccount.accountId,
-              productCode = ProductCode(parentAccount.accountType),
+              accountId = releaserAccount.accountId,
+              productCode = ProductCode(releaserAccount.accountType),
               accountAttributeId = None,
               name = "HOLDING_ACCOUNT_ID",
               attributeType = AccountAttributeType.STRING,
               value = holding.accountId.value,
               productInstanceCode = None,
-              callContext = cc1
+              callContext = cc
             )
-          } yield (holding, cc1)
+          } yield (holding, cc)
       }
     } yield result
   }
