@@ -14,6 +14,7 @@ import code.api.v3_0_0.JSONFactory300
 import code.api.v6_0_0.JSONFactory600.{createActiveCallLimitsJsonV600, createCallLimitJsonV600, createCurrentUsageJson}
 import code.bankconnectors.LocalMappedConnectorInternal
 import code.bankconnectors.LocalMappedConnectorInternal._
+import code.model._
 import code.entitlement.Entitlement
 import code.ratelimiting.RateLimitingDI
 import code.views.Views
@@ -92,15 +93,16 @@ trait APIMethods600 {
       implementedInApiVersion,
       nameOf(getHoldingAccountByReleaser),
       "GET",
-      "/banks/BANK_ID/accounts/ACCOUNT_ID/VIEW_ID/holding-account",
-      "Get Holding Account By Releaser",
+      "/banks/BANK_ID/accounts/ACCOUNT_ID/VIEW_ID/holding-accounts",
+      "Get Holding Accounts By Releaser",
       s"""
-         |Return the Holding Account linked to the given releaser account via account attribute `RELEASER_ACCOUNT_ID`.
-         |If multiple holding accounts exist, the first one will be returned.
+         |
+         |Return the first Holding Account linked to the given releaser account via account attribute `RELEASER_ACCOUNT_ID`.
+         |Response is wrapped in a list and includes account attributes.
          |
        """.stripMargin,
       EmptyBody,
-      moderatedCoreAccountJsonV300,
+      moderatedCoreAccountsJsonV300,
       List(
         $UserNotLoggedIn,
         $BankNotFound,
@@ -112,7 +114,7 @@ trait APIMethods600 {
     )
 
     lazy val getHoldingAccountByReleaser: OBPEndpoint = {
-      case "banks" :: BankId(bankId) :: "accounts" :: AccountId(accountId) :: ViewId(viewId) :: "holding-account" :: Nil JsonGet _ =>
+      case "banks" :: BankId(bankId) :: "accounts" :: AccountId(accountId) :: ViewId(viewId) :: "holding-accounts" :: Nil JsonGet _ =>
         cc => implicit val ec = EndpointContext(Some(cc))
           for {
             (user @Full(u), _, _, view, callContext) <- SS.userBankAccountView
@@ -131,10 +133,13 @@ trait APIMethods600 {
               firstHolding(accountIds)
             }
             holding <- NewStyle.function.tryons($BankAccountNotFound, 404, callContext) { holdingOpt.get }
-            moderatedAccount <- NewStyle.function.moderatedBankAccountCore(holding, view, user, callContext)
+            moderatedAccount <- Future { holding.moderatedBankAccount(view, BankIdAccountId(holding.bankId, holding.accountId), user, callContext) } map {
+              x => unboxFullOrFail(x, callContext, UnknownError)
+            }
+            (attributes, callContext) <- NewStyle.function.getAccountAttributesByAccount(bankId, holding.accountId, callContext)
           } yield {
-            val core = JSONFactory300.createCoreBankAccountJSON(moderatedAccount)
-            (core, HttpCode.`200`(callContext))
+            val accountsJson = JSONFactory300.createFirehoseCoreBankAccountJSON(List(moderatedAccount), Some(attributes))
+            (accountsJson, HttpCode.`200`(callContext))
           }
     }
     
