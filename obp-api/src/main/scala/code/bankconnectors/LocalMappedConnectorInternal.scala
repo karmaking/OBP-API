@@ -833,14 +833,15 @@ object LocalMappedConnectorInternal extends MdcLoggable {
             holdBody <- NewStyle.function.tryons(s"$InvalidJsonFormat It should be $TransactionRequestBodyHoldJsonV600 json format", 400, callContext) {
               json.extract[TransactionRequestBodyHoldJsonV600]
             }
-            (holdingAccount, callContext) <- getOrCreateHoldingAccount(bankId, fromAccount, callContext)
+            releaserAccount = fromAccount
+            (holdingAccount, callContext) <- getOrCreateHoldingAccount(bankId, releaserAccount, callContext)
             transDetailsSerialized <- NewStyle.function.tryons(UnknownError, 400, callContext) {
               write(holdBody)(Serialization.formats(NoTypeHints))
             }
             (createdTransactionRequest, callContext) <- NewStyle.function.createTransactionRequestv400(
               u,
               viewId,
-              fromAccount,
+              releaserAccount,
               holdingAccount,
               transactionRequestType,
               holdBody,
