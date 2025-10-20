@@ -1,5 +1,8 @@
 package code.users
 
+import code.api.util.Consent.logger
+
+import java.util.Date
 import code.api.util._
 import code.entitlement.Entitlement
 import code.loginattempts.LoginAttempt.maxBadLoginAttempts
@@ -12,8 +15,8 @@ import net.liftweb.common.{Box, Empty, Full}
 import net.liftweb.mapper._
 import net.liftweb.util.Helpers
 
-import java.util.Date
 import scala.collection.immutable
+import scala.collection.immutable.List
 import scala.concurrent.Future
 
 object LiftUsers extends Users with MdcLoggable{
