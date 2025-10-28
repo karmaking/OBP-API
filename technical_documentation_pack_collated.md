@@ -1,6 +1,6 @@
 # Open Bank Project — Technical Documentation Pack (Collated)
 
-*Comprehensive System Architecture, Workflows, Security, and API Reference*
+_Comprehensive System Architecture, Workflows, Security, and API Reference_
 
 ---
 
@@ -8,25 +8,25 @@
 
 **High‑level components**
 
-* **OBP‑API** (Scala): core REST API supporting multiple versions (v1–v5), pluggable data connectors, views/entitlements, payments, metadata, KYC, etc.
-* **API Explorer / API Explorer II**: interactive Swagger/OpenAPI front‑ends for testing and discovery.
-* **API Manager** (Django): manage consumers, roles, metrics, and selected resources.
-* **Connectors**: northbound to OBP APIs; southbound to data sources (core banking, caches). Kafka/RabbitMQ and Akka remote supported for decoupling and scale.
-* **Consent & OAuth helpers**: example apps (e.g., OBP‑Hola) to demonstrate OAuth2/OIDC, consents, mTLS/JWS profiles.
-* **Persistence**: PostgreSQL (production), H2 (dev); optional caches.
-* **Runtime options**: Jetty (war), Docker, Kubernetes.
+- **OBP‑API** (Scala): core REST API supporting multiple versions (v1–v5), pluggable data connectors, views/entitlements, payments, metadata, KYC, etc.
+- **API Explorer / API Explorer II**: interactive Swagger/OpenAPI front‑ends for testing and discovery.
+- **API Manager** (Django): manage consumers, roles, metrics, and selected resources.
+- **Connectors**: northbound to OBP APIs; southbound to data sources (core banking, caches). Kafka/RabbitMQ and Akka remote supported for decoupling and scale.
+- **Consent & OAuth helpers**: example apps (e.g., OBP‑Hola) to demonstrate OAuth2/OIDC, consents, mTLS/JWS profiles.
+- **Persistence**: PostgreSQL (production), H2 (dev); optional caches.
+- **Runtime options**: Jetty (war), Docker, Kubernetes.
 
 **Reference deployment views**
 
-* *Monolith + DB*: OBP‑API on Jetty/Tomcat with PostgreSQL.
-* *Containerised*: OBP‑API image + Postgres; optional API Explorer/Manager containers.
-* *Kubernetes*: OBP‑API Deployment + Service, Postgres Stateful workload, optional Ingress & secrets, externalized config.
-* *Decoupled storage*: OBP‑API (stateless) + Akka Remote storage node with DB access; optional Kafka/RabbitMQ between API and core adapters.
+- _Monolith + DB_: OBP‑API on Jetty/Tomcat with PostgreSQL.
+- _Containerised_: OBP‑API image + Postgres; optional API Explorer/Manager containers.
+- _Kubernetes_: OBP‑API Deployment + Service, Postgres Stateful workload, optional Ingress & secrets, externalized config.
+- _Decoupled storage_: OBP‑API (stateless) + Akka Remote storage node with DB access; optional Kafka/RabbitMQ between API and core adapters.
 
 **Key integration points**
 
-* **AuthN/AuthZ**: OAuth 1.0a (legacy), OAuth 2.0, OIDC, DirectLogin; role‑based entitlements; fine‑grained *Views* for account/transaction level access; Consents for OB/PSD2 style access.
-* **Standards**: UK OB, Berlin Group, Bahrain OBF mapping via endpoints/consents; JWS signatures, mTLS where required.
+- **AuthN/AuthZ**: OAuth 1.0a (legacy), OAuth 2.0, OIDC, DirectLogin; role‑based entitlements; fine‑grained _Views_ for account/transaction level access; Consents for OB/PSD2 style access.
+- **Standards**: UK OB, Berlin Group, Bahrain OBF mapping via endpoints/consents; JWS signatures, mTLS where required.
 
 ---
 
@@ -98,10 +98,10 @@ User ──(has roles/entitlements)──► Bank/System actions
 
 ## 4) Component Logic
 
-* **Views**: declarative access lists (what fields/transactions are visible, what actions permitted) bound to an account. Grants are user↔view.
-* **Entitlements**: role assignments at *system* or *bank* scope; govern management operations (create banks, grant roles, etc.).
-* **Connectors**: adapter pattern; map OBP domain to underlying core data sources. Kafka/RabbitMQ optional for async decoupling; Akka Remote to separate API and DB hosts.
-* **Security**: OAuth2/OIDC (with JWKS), optional mTLS + certificate‑bound tokens; JWS for request/response signing as required by OB/FAPI profiles.
+- **Views**: declarative access lists (what fields/transactions are visible, what actions permitted) bound to an account. Grants are user↔view.
+- **Entitlements**: role assignments at _system_ or _bank_ scope; govern management operations (create banks, grant roles, etc.).
+- **Connectors**: adapter pattern; map OBP domain to underlying core data sources. Kafka/RabbitMQ optional for async decoupling; Akka Remote to separate API and DB hosts.
+- **Security**: OAuth2/OIDC (with JWKS), optional mTLS + certificate‑bound tokens; JWS for request/response signing as required by OB/FAPI profiles.
 
 ---
 
@@ -109,40 +109,40 @@ User ──(has roles/entitlements)──► Bank/System actions
 
 ### Option A — Quick local (IntelliJ / `mvn`)
 
-* Clone `OBP-API` → open in IntelliJ (Scala/Java toolchain).
-* Create `default.props` (dev) and choose connector (`mapped` for demo) and DB (H2 or Postgres).
-* `mvn package` → produce `.war`; run with Jetty 9 or use IntelliJ runner.
+- Clone `OBP-API` → open in IntelliJ (Scala/Java toolchain).
+- Create `default.props` (dev) and choose connector (`mapped` for demo) and DB (H2 or Postgres).
+- `mvn package` → produce `.war`; run with Jetty 9 or use IntelliJ runner.
 
 ### Option B — Docker (recommended for eval)
 
-* Pull `openbankproject/obp-api` image.
-* Provide config via env vars: prefix `OBP_`, replace `.` with `_`, uppercase (e.g., `openid_connect.enabled=true` → `OBP_OPENID_CONNECT_ENABLED=true`).
-* Wire Postgres; expose 8080.
+- Pull `openbankproject/obp-api` image.
+- Provide config via env vars: prefix `OBP_`, replace `.` with `_`, uppercase (e.g., `openid_connect.enabled=true` → `OBP_OPENID_CONNECT_ENABLED=true`).
+- Wire Postgres; expose 8080.
 
 ### Option C — Kubernetes
 
-* Apply manifest (`Deployment`, `Service`, `ConfigMap`/`Secret` for props, `StatefulSet` for Postgres, optional `Ingress`).
-* Externalise DB creds, JWT/keystore, and OAuth endpoints; configure probes.
+- Apply manifest (`Deployment`, `Service`, `ConfigMap`/`Secret` for props, `StatefulSet` for Postgres, optional `Ingress`).
+- Externalise DB creds, JWT/keystore, and OAuth endpoints; configure probes.
 
 ### Databases
 
-* **Dev**: H2 (enable web console if needed).
-* **Prod**: PostgreSQL; set SSL if required; grant schema/table privileges for user `obp`.
+- **Dev**: H2 (enable web console if needed).
+- **Prod**: PostgreSQL; set SSL if required; grant schema/table privileges for user `obp`.
 
 ### Updating
 
-* Track OBP‑API tags/releases; OBP supports multiple API versions simultaneously. For minor updates, roll forward container with readiness checks; for major schema changes, follow release notes and backup DB.
+- Track OBP‑API tags/releases; OBP supports multiple API versions simultaneously. For minor updates, roll forward container with readiness checks; for major schema changes, follow release notes and backup DB.
 
 ---
 
 ## 6) Access Control & Security Mechanisms
 
-* **Authentication**: OAuth 1.0a (legacy), OAuth 2.0, OIDC, DirectLogin (automation/dev only).
-* **Authorisation**: Role‑based **Entitlements** (system/bank scope) + account‑level **Views**.
-* **Consents**: OB/PSD2 style consent objects with permissions/scopes, linked to tokens.
-* **Crypto**: JWS request/response signing where profiles demand; JWKS for key discovery.
-* **mTLS / PoP**: Certificate‑bound tokens for higher assurance profiles (FAPI/UK OB), TLS client auth at gateway.
-* **Secrets**: JKS keystores for SSL and encrypted props values.
+- **Authentication**: OAuth 1.0a (legacy), OAuth 2.0, OIDC, DirectLogin (automation/dev only).
+- **Authorisation**: Role‑based **Entitlements** (system/bank scope) + account‑level **Views**.
+- **Consents**: OB/PSD2 style consent objects with permissions/scopes, linked to tokens.
+- **Crypto**: JWS request/response signing where profiles demand; JWKS for key discovery.
+- **mTLS / PoP**: Certificate‑bound tokens for higher assurance profiles (FAPI/UK OB), TLS client auth at gateway.
+- **Secrets**: JKS keystores for SSL and encrypted props values.
 
 ---
 
@@ -150,19 +150,19 @@ User ──(has roles/entitlements)──► Bank/System actions
 
 **Logging**
 
-* Copy `logback.xml.example` to `logback.xml`; adjust levels (TRACE/DEBUG/INFO) per environment.
-* In Docker/K8s, logs go to stdout/stderr → aggregate with your stack (e.g., Loki/Promtail, EFK).
+- Copy `logback.xml.example` to `logback.xml`; adjust levels (TRACE/DEBUG/INFO) per environment.
+- In Docker/K8s, logs go to stdout/stderr → aggregate with your stack (e.g., Loki/Promtail, EFK).
 
 **Health & metrics**
 
-* K8s liveness/readiness probes on OBP‑API root/version or lightweight GET; external synthetic checks via API Explorer smoke tests.
+- K8s liveness/readiness probes on OBP‑API root/version or lightweight GET; external synthetic checks via API Explorer smoke tests.
 
 **Troubleshooting checklist**
 
-* **Auth failures**: verify JWKS URL reachability, clock skew, audience/scope, mTLS cert chain.
-* **Permissions**: confirm entitlements vs. views; bootstrap `super_admin_user_ids` only for initial admin then remove.
-* **DB issues**: check Postgres grants; enable SSL and import server cert into JVM truststore if needed.
-* **Connector errors**: raise logging for connector package; verify message bus (Kafka/RabbitMQ) SSL settings if enabled.
+- **Auth failures**: verify JWKS URL reachability, clock skew, audience/scope, mTLS cert chain.
+- **Permissions**: confirm entitlements vs. views; bootstrap `super_admin_user_ids` only for initial admin then remove.
+- **DB issues**: check Postgres grants; enable SSL and import server cert into JVM truststore if needed.
+- **Connector errors**: raise logging for connector package; verify message bus (Kafka/RabbitMQ) SSL settings if enabled.
 
 ---
 
@@ -170,20 +170,20 @@ User ──(has roles/entitlements)──► Bank/System actions
 
 **Day‑1**
 
-* Provision Postgres; create db/user; load props via Secret/ConfigMap; start OBP‑API.
-* Create first admin: set `super_admin_user_ids`, login, grant `CanCreateEntitlementAtAnyBank`, then remove bootstrap prop.
+- Provision Postgres; create db/user; load props via Secret/ConfigMap; start OBP‑API.
+- Create first admin: set `super_admin_user_ids`, login, grant `CanCreateEntitlementAtAnyBank`, then remove bootstrap prop.
 
 **Day‑2**
 
-* Rotate keys (JKS) and tokens; manage roles & views via API Manager; enable audit trails.
-* Backups: nightly Postgres dump + config snapshot; test restore monthly.
-* Upgrades: blue/green or rolling on K8s; verify `/root` endpoints across versions.
+- Rotate keys (JKS) and tokens; manage roles & views via API Manager; enable audit trails.
+- Backups: nightly Postgres dump + config snapshot; test restore monthly.
+- Upgrades: blue/green or rolling on K8s; verify `/root` endpoints across versions.
 
 **Incident runbook (snippets)**
 
-* Increase log level via `logback.xml` reload or environment toggle; capture thread dumps.
-* Check API error payloads for `error_code` and `bank_id` context; correlate with gateway logs.
-* For SSL issues to DB or brokers, use `SSLPoke` and `openssl s_client` to diagnose.
+- Increase log level via `logback.xml` reload or environment toggle; capture thread dumps.
+- Check API error payloads for `error_code` and `bank_id` context; correlate with gateway logs.
+- For SSL issues to DB or brokers, use `SSLPoke` and `openssl s_client` to diagnose.
 
 ---
 
@@ -217,14 +217,14 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO obp;
 
 ## 10) Pointers to Further Docs (by topic)
 
-* API Explorer & endpoints (roles, views, consents)
-* OBP‑API README (install, DB, Jetty, logging, production options)
-* API Manager (roles/metrics)
-* OBP‑Hola (OAuth2/mTLS/JWS consent flows)
-* Docker images & tags
-* K8s quickstart manifests
-* ReadTheDocs guide (auth methods, connectors, concepts)
+- API Explorer & endpoints (roles, views, consents)
+- OBP‑API README (install, DB, Jetty, logging, production options)
+- API Manager (roles/metrics)
+- OBP‑Hola (OAuth2/mTLS/JWS consent flows)
+- Docker images & tags
+- K8s quickstart manifests
+- ReadTheDocs guide (auth methods, connectors, concepts)
 
 ---
 
-© TESOBE GmbH — Open Bank Project — Technical Documentation v1.0
+© TESOBE GmbH 2025
