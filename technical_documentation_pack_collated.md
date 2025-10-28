@@ -68,23 +68,9 @@ _Comprehensive System Architecture, Workflows, Security, and API Reference_
 
 ## 3) Diagrams (text sketches)
 
-```
-+------------------------+        +------------------+
-|  Ingress / API GW      |  TLS   |  OBP-API Service |
-+-----------+------------+  --->  +---------+--------+
-            |                              |
-            |                              | JDBC / Akka
-            |                              v
-            |                        +-----+------+
-            |                        | PostgreSQL |
-            |                        +------------+
-            |                                ^
-            |  OAuth2/OIDC / JWKs            |
-            v                                |
-      +-----+-------+                 +------+------+
-      |  Auth Srv  |<---------------->| Connectors |
-      +-------------+  Kafka/RabbitMQ +-------------+
-```
+**High-Level System Architecture**
+
+See the detailed architecture diagram in [comprehensive_documentation.md](comprehensive_documentation.md#21-high-level-architecture) (Section 2.1).
 
 **Views & Entitlements**
 
