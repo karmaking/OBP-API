@@ -194,63 +194,78 @@ The Open Bank Project (OBP) is an open-source RESTful API platform for banks tha
 ### 2.1 High-Level Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                        Client Applications                       │
-│  (Web Apps, Mobile Apps, Third-Party Services, Opey AI Agent)  │
-└────────────────────────────┬────────────────────────────────────┘
-                             │
-                             │ HTTPS/REST API
-                             │
-┌────────────────────────────┴────────────────────────────────────┐
-│                         API Gateway Layer                        │
-│                      (Rate Limiting, Routing)                    │
-└────────────────────────────┬────────────────────────────────────┘
-                             │
-         ┌───────────────────┼───────────────────┐
-         │                   │                   │
-         ▼                   ▼                   ▼
-┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐
-│   API Explorer  │ │   API Manager   │ │    Opey II      │
-│   (Frontend)    │ │   (Admin UI)    │ │   (AI Agent)    │
-└────────┬────────┘ └────────┬────────┘ └────────┬────────┘
-         │                   │                   │
-         │                   │                   │
-         └───────────────────┼───────────────────┘
-                             │
-                             ▼
-              ┌──────────────────────────────┐
-              │        OBP-API Core          │
-              │    (Scala/Lift Framework)    │
-              │                              │
-              │  ┌────────────────────────┐  │
-              │  │  Authentication Layer  │  │
-              │  │  (OAuth/OIDC/Direct)  │  │
-              │  └───────────┬────────────┘  │
-              │              │               │
-              │  ┌───────────▼────────────┐  │
-              │  │   Authorization Layer  │  │
-              │  │  (Roles & Entitlements)│  │
-              │  └───────────┬────────────┘  │
-              │              │               │
-              │  ┌───────────▼────────────┐  │
-              │  │     API Endpoints      │  │
-              │  │  (Multiple Versions)   │  │
-              │  └───────────┬────────────┘  │
-              │              │               │
-              │  ┌───────────▼────────────┐  │
-              │  │   Connector Layer      │  │
-              │  │  (Pluggable Adapters)  │  │
-              │  └───────────┬────────────┘  │
-              └──────────────┼───────────────┘
-                             │
-         ┌───────────────────┼───────────────────┐
-         │                   │                   │
-         ▼                   ▼                   ▼
-┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐
-│   PostgreSQL    │ │      Redis      │ │  Core Banking   │
-│  (Metadata DB)  │ │  (Cache/Rate    │ │    Systems      │
-│                 │ │   Limiting)     │ │  (via Connectors)│
-└─────────────────┘ └─────────────────┘ └─────────────────┘
+┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐  ┌───────────────────────────────┐
+│   API Explorer  │  │   API Manager   │  │    Opey II      │  │   Client Applications         │
+│   (Frontend)    │  │   (Admin UI)    │  │   (AI Agent)    │  │ (Web/Mobile Apps, TPP, etc.)  │
+└────────┬────────┘  └────────┬────────┘  └────────┬────────┘  └────────┬──────────────────────┘
+         │                    │                    │                    │
+         └────────────────────┴────────────────────┴────────────────────┘
+                                       │
+                                       │ HTTPS/REST API
+                                       │
+                   ┌───────────────────┴───────────────────┐
+                   │        OBP API Dispatch               │
+                   └───────────────────┬───────────────────┘
+                                       │
+                                       ▼
+                   ┌───────────────────────────────────────┐
+                   │         OBP-API Core                  │
+                   │     (Scala/Lift Framework)            │
+                   │                                       │
+                   │  ┌─────────────────────────────────┐  │
+                   │  │   Client Authentication         │  │
+                   │  │   (Consumer Keys, Certs)        │  │
+                   │  └──────────────┬──────────────────┘  │
+                   │                 │                     │
+                   │  ┌──────────────▼──────────────────┐  │
+                   │  │      Rate Limiting              │  │
+                   │  └──────────────┬──────────────────┘  │
+                   │                 │                     │
+                   │  ┌──────────────▼──────────────────┐  │
+                   │  │   Authentication Layer          │  │
+                   │  │   (OAuth/OIDC/Direct)           │  │
+                   │  └──────────────┬──────────────────┘  │
+                   │                 │                     │
+                   │  ┌──────────────▼──────────────────┐  │
+                   │  │   Authorization Layer           │  │
+                   │  │   (Roles & Entitlements)        │  │
+                   │  └──────────────┬──────────────────┘  │
+                   │                 │                     │
+                   │  ┌──────────────▼──────────────────┐  │
+                   │  │      API Endpoints              │  │
+                   │  │      (Multiple Versions)        │  │
+                   │  └──────────────┬──────────────────┘  │
+                   │                 │                     │
+                   │  ┌──────────────▼──────────────────┐  │
+                   │  │      Views                      │  │
+                   │  │      (Data Filtering)           │  │
+                   │  └──────────────┬──────────────────┘  │
+                   │                 │                     │
+                   │  ┌──────────────▼──────────────────┐  │
+                   │  │      Connector Layer            │  │
+                   │  │   (Pluggable Adapters)          │  │
+                   │  └──────────────┬──────────────────┘  │
+                   └─────────────────┼─────────────────────┘
+                                     │
+                  ┌──────────────────┴──────────────────┐
+                  │                                     │
+                  ▼                                     ▼
+       ┌─────────────────────┐         ┌───────────────────────────────┐
+       │      Direct         │         │      Adapter Layer            │
+       │     (Mapped)        │         │      (Any Language)           │
+       └──────────┬──────────┘         └──────────────┬────────────────┘
+                  │                                   │
+                  └───────────────┬───────────────────┘
+                                  │
+            ┌─────────────────────┼─────────────────────┐
+            │                     │                     │
+            ▼                     ▼                     ▼
+     ┌─────────────────┐   ┌─────────────────┐   ┌─────────────────────┐
+     │   PostgreSQL    │   │      Redis      │   │  Core Banking       │
+     │    (OBP DB)     │   │     (Cache)     │   │    Systems          │
+     │                 │   │                 │   │ (via Connectors /   │
+     │                 │   │                 │   │     Adapters)       │
+     └─────────────────┘   └─────────────────┘   └─────────────────────┘
 ```
 
 ### 2.2 Component Interaction Workflow
@@ -283,7 +298,7 @@ The Open Bank Project (OBP) is an open-source RESTful API platform for banks tha
 └─────────────────────────────────────┘
 ```
 
-#### Distributed Deployment with Akka Remote
+#### Distributed Deployment with Akka Remote (requires extra licence / config)
 
 ```
 ┌─────────────────┐         ┌─────────────────┐
@@ -330,18 +345,19 @@ The Open Bank Project (OBP) is an open-source RESTful API platform for banks tha
 - Framework: LangGraph, LangChain
 - Vector DB: Qdrant
 - Web Framework: FastAPI
-- Frontend: Streamlit
+- API: FastAPI-based service
+- Frontend: OBP Portal
 
 **Databases:**
 
 - Primary: PostgreSQL 12+
 - Cache: Redis 6+
 - Development: H2 (in-memory)
-- Support: MS SQL Server
+- Support: Postgres and any RDBMS
 
 **OIDC Providers:**
 
-- Production: Keycloak
+- Production: Keycloak, Hydra, Google, Yahoo, Auth0, Azure AD
 - Development/Testing: OBP-OIDC
 
 ---
@@ -655,7 +671,8 @@ DATABASES = {
 - LLM Integration: LangChain
 - Vector Database: Qdrant
 - Web Service: FastAPI
-- Frontend: Streamlit
+- API: FastAPI-based service
+- Frontend: OBP Portal
 
 **Supported LLM Providers:**
 
@@ -699,9 +716,10 @@ poetry shell
 mkdir src/data
 python src/scripts/populate_vector_db.py
 
-# Run services
+# Run API service
 python src/run_service.py  # Backend API (port 8000)
-streamlit run src/streamlit_app.py  # Frontend UI
+
+# Access via OBP Portal frontend
 ```
 
 **Docker Deployment:**
@@ -1380,7 +1398,7 @@ Authorization: Bearer ACCESS_TOKEN
 
 **Providers:**
 
-- **Production:** Keycloak, Auth0, Google, Azure AD
+- **Production:** Keycloak, Hydra, Google, Yahoo, Auth0, Azure AD
 - **Development:** OBP-OIDC
 
 **Configuration Example (Keycloak):**
@@ -4375,68 +4393,40 @@ POST /obp/v5.1.0/users/USER_ID/entitlements
 **Status:** In Active Development
 
 **Overview:**
-OBP-API-II represents the next generation of the Open Bank Project API, currently under development to address performance, scalability, and modern architecture requirements.
+OBP-API-II is a leaner tech stack for future Open Bank Project API versions with less dependencies.
 
-**Key Improvements:**
+**Purpose:**
 
-- **Enhanced Performance:** Optimized data access patterns and caching strategies
-- **Modern Architecture:** Updated to latest Scala and Lift framework versions
-- **Improved Security:** Enhanced authentication and authorization mechanisms
-- **Better Modularity:** Refactored codebase for easier maintenance and extension
-- **API Evolution:** Backward-compatible improvements to existing endpoints
+- **Aim:** Reduce the dependencies on Liftweb and Jetty.
 
 **Development Focus:**
 
-- Performance optimization for high-volume environments
-- Enhanced connector architecture for easier integration
-- Improved testing framework and coverage
-- Modern development tooling support (ZED IDE, etc.)
-- Better documentation and developer experience
+- Usage of OBP Scala Library
 
 **Migration Path:**
 
-- Full backward compatibility with existing OBP-API deployments
-- Gradual migration strategy for production environments
-- Parallel deployment support during transition period
+- Use OBP Dispatch to route between endpoints served by OBP-API and OBP-API-II (both stacks return Resource Docs so dispatch can discover and route)
 
 **Repository:**
 
 - GitHub: `OBP-API-II` (development branch)
-- Based on OBP-API with significant architectural improvements
 
 #### OBP-Dispatch (API Gateway/Proxy)
 
 **Status:** Experimental/Beta
 
 **Overview:**
-OBP-Dispatch is a lightweight proxy/gateway service designed to route requests to different OBP API backends. It enables advanced deployment architectures including multi-region, multi-version, and A/B testing scenarios.
+OBP-Dispatch is a lightweight proxy/gateway service designed to route requests to different OBP API backends.
+It is designed to route traffic to OBP-API or OBP-API-II or OBP-Trading instances.
 
 **Key Features:**
 
-- **Request Routing:** Intelligent routing based on configurable rules
-- **Load Balancing:** Distribute traffic across multiple OBP-API instances
-- **Version Management:** Route requests to different API versions
-- **Multi-Backend Support:** Connect to multiple OBP-API deployments
-- **Minimal Overhead:** Lightweight proxy with low latency
+- **Request Routing:** Intelligent routing based on configurable rules and discovery
 
 **Use Cases:**
 
-1. **Multi-Region Deployment:**
-   - Route users to geographically closest API instance
-   - Implement disaster recovery and failover
-
-2. **API Version Management:**
-   - Gradual rollout of new API versions
-   - A/B testing of new features
-   - Canary deployments
-
-3. **Bank Separation:**
-   - Route different banks to different backend instances
-   - Implement data isolation at infrastructure level
-
-4. **Development/Testing:**
-   - Route test traffic to sandbox environments
-   - Separate production and development traffic
+1. **API Version Management:**
+   - Gradual rollout of new API versions on different code bases.
 
 **Architecture:**
 
@@ -4454,7 +4444,7 @@ Client Request
     ▼    ▼    ▼        ▼
 ┌──────┐ ┌──────┐ ┌──────┐ ┌──────┐
 │OBP-  │ │OBP-  │ │OBP-  │ │OBP-  │
-│API 1 │ │API 2 │ │API 3 │ │API N │
+│API 1 │ │API 2 │ │Trading │API N │
 └──────┘ └──────┘ └──────┘ └──────┘
 ```
 
@@ -4511,55 +4501,4 @@ dispatch {
 **Status & Maturity:**
 
 - Currently in experimental phase
-- Suitable for testing and non-critical deployments
-- Production readiness under evaluation
-- Community feedback welcomed
 
-**Future Development:**
-
-- Enhanced routing capabilities
-- Built-in monitoring and metrics
-- Advanced load balancing algorithms
-- Circuit breaker patterns
-- Request/response transformation
-- Caching layer integration
-
-#### Other Roadmap Items
-
-**Version 4.0.0+ Planned Features:**
-
-- Enhanced Account query APIs (by Product Code, etc.)
-- Direct Debit modeling
-- Future Payments with Transaction Requests
-- Customer Portfolio summary endpoints
-- Auto-feed to Elasticsearch for Firehose data
-
-**SDK & Documentation:**
-
-- Second generation SDKs for major languages
-- Improved SDK documentation
-- OpenAPI 3.0 specification support
-- Enhanced code generation tools
-
-**Standards Evolution:**
-
-- PSD3 preparedness
-- Open Finance Framework support
-- Regional standard adaptations
-- Enhanced Berlin Group compatibility
-
-**Infrastructure:**
-
-- Kubernetes native deployments
-- Enhanced observability and tracing
-- Improved rate limiting mechanisms
-- Multi-tenancy improvements
-
-**Community & Ecosystem:**
-
-- Enhanced developer onboarding
-- Improved testing frameworks
-- Better contribution guidelines
-- Regular community meetings
-
-### 12.7 Useful API Endpoints Reference
