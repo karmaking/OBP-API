@@ -1,8 +1,8 @@
 # Open Bank Project (OBP) - Comprehensive Technical Documentation
 
-**Version:** 5.1.0  
-**Last Updated:** 2024  
-**Organization:** TESOBE GmbH  
+**Version:** 0.0.1
+**Last Updated:** 2025
+**Organization:** TESOBE GmbH
 **License:** AGPL V3 / Commercial License
 
 ---
@@ -32,24 +32,151 @@
 The Open Bank Project (OBP) is an open-source RESTful API platform for banks that enables Open Banking, PSD2, XS2A, and Open Finance compliance. It provides a comprehensive ecosystem for building financial applications with standardized API interfaces.
 
 **Core Value Proposition:**
+
 - **Tagline:** "Bank as a Platform. Transparency as an Asset"
 - **Mission:** Enable account holders to interact with their bank using a wider range of applications and services
 - **Key Features:**
-  - Transparency options for transaction data sharing
-  - Data blurring to preserve sensitive information
-  - Data enrichment (tags, comments, images on transactions)
-  - Multi-bank abstraction layer
-  - Support for multiple authentication methods
+  - **Transparency & Privacy**: Configurable data sharing with views, data blurring to preserve sensitive information
+  - **Data Enrichment**: Add tags, comments, images, and metadata to transactions
+  - **Multi-Bank Abstraction**: Universal API layer across different core banking systems
+  - **Flexible Authentication**: OAuth 1.0a, OAuth 2.0, OpenID Connect, Direct Login, Gateway Login
+  - **Comprehensive Banking APIs**: 1000+ endpoints covering accounts, payments, customers, KYC, cards, products
+  - **Real-Time & Batch Operations**: Support for both synchronous and asynchronous processing
 
-### 1.2 Key Capabilities
+### 1.2 Core Feature Categories
 
-- **Multi-Standard Support:** Berlin Group, UK Open Banking, Bahrain OBF, STET, Polish API, AU CDR
-- **Authentication:** OAuth 1.0a, OAuth 2.0, OpenID Connect (OIDC), Direct Login
-- **Extensibility:** Dynamic endpoints, connector architecture, plugin system
+#### 1.2.1 Account & Banking Operations
+
+- **Account Management**: Account creation, updates, attributes, account holders, account applications
+- **Balance & Transaction History**: Real-time balances, transaction retrieval with rich filtering
+- **Multi-Account Support**: Manage multiple accounts across different banks
+- **Account Views**: Granular permission system (Owner, Public, Accountant, Auditor, custom views)
+- **Account Attributes**: Flexible key-value attribute system for extending account metadata
+
+#### 1.2.2 Payment & Transfer Services
+
+- **Transaction Requests**: SEPA, COUNTERPARTY, SANDBOX, FREE_FORM, ACCOUNT, ACCOUNT_OTP
+- **Payment Initiation**: Single and bulk payments with SCA (Strong Customer Authentication)
+- **Standing Orders**: Recurring payment management
+- **Direct Debits**: Direct debit mandate management
+- **Transaction Challenges**: OTP and challenge-response for payment authorization
+- **Signing Baskets**: Batch payment approval workflows
+- **Transaction Attributes**: Custom metadata on transactions
+
+#### 1.2.3 Customer & KYC Management
+
+- **Customer Profiles**: Comprehensive customer data management
+- **Customer Attributes**: Extensible customer metadata (address, DOB, dependants, tax residence)
+- **Customer-Account Linking**: Associate customers with accounts
+- **KYC Processes**: KYC checks, documents, media uploads, status tracking
+- **CRM Integration**: Customer relationship management features
+- **Meeting Management**: Schedule and manage customer meetings
+
+#### 1.2.4 Card Management
+
+- **Card Lifecycle**: Create, update, retrieve card information
+- **Card Attributes**: Flexible metadata for cards (limits, features, preferences)
+- **Card Controls**: Activate, deactivate, set limits
+
+#### 1.2.5 Product & Fee Management
+
+- **Banking Products**: Accounts, loans, credit cards, savings products
+- **Product Attributes**: Configurable product metadata
+- **Product Collections**: Group products into collections
+- **Fee Management**: Product fees, charges, pricing information
+- **Product Catalog**: Searchable product offerings
+
+#### 1.2.6 Branch & ATM Services
+
+- **Branch Management**: Branch locations, opening hours, services, attributes
+- **ATM Management**: ATM locations, capabilities, accessibility features
+- **Location Services**: Geographic search and filtering
+- **Service Availability**: Real-time status and feature information
+
+#### 1.2.7 Authentication & Authorization
+
+- **Multiple Auth Methods**: OAuth 1.0a, OAuth 2.0, OpenID Connect (OIDC) with multiple concurrent providers, Direct Login, Gateway Login
+- **Consumer Management**: API consumer registration and key management
+- **Token Management**: Access token lifecycle management
+- **Consent Management**: PSD2-compliant consent workflows (AIS, PIS, PIIS)
+- **User Locks**: Account security with failed login attempt tracking
+
+#### 1.2.8 Access Control & Security
+
+- **Role-Based Access Control**: 334+ granular static roles
+- **Entitlements**: Fine-grained permission system for API access
+- **Entitlement Requests**: User-initiated permission request workflows
+- **Views System**: Account data visibility control (owner, public, accountant, auditor, custom)
+- **Scope Management**: OAuth 2.0 scope definitions
+- **Authentication Type Validation**: Enforce authentication requirements per endpoint
+
+#### 1.2.9 Extensibility & Customization
+
+- **Dynamic Endpoints**: Create custom API endpoints without code deployment
+- **Dynamic Entities**: Define custom data models dynamically
+- **Dynamic Resource Documentation**: Custom endpoint documentation
+- **Dynamic Message Docs**: Custom connector message documentation
+- **Endpoint Mapping**: Route custom paths to existing endpoints
+- **Connector Architecture**: Pluggable adapters for different banking systems
+- **Method Routing**: Route connector calls to different implementations
+
+#### 1.2.10 Regulatory & Compliance
+
+- **Multi-Standard Support**: Open Bank Project, Berlin Group NextGenPSD2, UK Open Banking, Bahrain OBF, STET, Polish API, AU CDR, Mexico OF
+- **PSD2 Compliance**: SCA, consent management, TPP access
+- **Regulated Entities**: Manage regulatory registrations
+- **Tax Residence**: Customer tax information management
+- **Audit Trails**: Comprehensive logging and tracking
+
+#### 1.2.11 Integration & Interoperability
+
+- **Webhooks**: Event-driven notifications for account and transaction events
+- **Foreign Exchange**: FX rate management and conversion
+- **API Collections**: Group related endpoints into collections
+- **API Versioning**: Multiple concurrent API versions (v1.2.1 through v6.0.0+)
+- **Standard Adapters**: Pre-built integrations for common banking standards
+
+#### 1.2.12 Performance & Scalability
+
+- **Rate Limiting**: Consumer-based rate limits (Redis or in-memory)
+- **Caching**: Multi-layer caching strategy with ETags
+- **Metrics & Monitoring**: API usage metrics, performance tracking
+- **Database Support**: PostgreSQL, Oracle, MySQL, MS SQL Server, H2
+- **Akka Integration**: Actor-based concurrency model
+- **Connection Pooling**: Efficient database connection management
+
+#### 1.2.13 Developer Experience
+
+- **API Explorer**: Interactive API documentation and testing (Vue.js/TypeScript)
+- **Swagger/OAS**: OpenAPI specification support
+- **Sandbox Mode**: Test environment with mock data
+- **Comprehensive Documentation**: Glossary, Resource Docs with Auto-generated API docs from code
+- **API Manager**: Django-based admin interface for API governance
+- **Web UI Props**: Configurable UI properties
+
+#### 1.2.14 Advanced Features
+
+- **Counterparty Limits**: Transaction limits for counterparties
+- **User Refresh**: Synchronize user data from external systems
+- **Migration Tools**: Database migration and data transformation utilities
+- **Scheduler**: Background job processing
+- **AI Integration**: Opey II conversational banking assistant
+- **Blockchain Integration**: Cardano blockchain connector support
+- **Metadata and Search**: Metadata and Full-text search across transactions and entities
+- **Social Media**: Social media handle management for accounts
+
+### 1.2.15 Technical Capabilities
+
+- **Multi-Standard Support:** Open Bank Project, Berlin Group NextGenPSD2, UK Open Banking, Bahrain OBF, STET PSD2, Polish API, AU CDR, Mexico OF
+- **Authentication Methods:** OAuth 1.0a, OAuth 2.0, OpenID Connect (OIDC) with multiple concurrent providers, Direct Login, Gateway Login
+- **Extensibility:** Dynamic endpoints, dynamic entities, connector architecture, method routing
 - **Rate Limiting:** Built-in support with Redis or in-memory backends
-- **Multi-Database Support:** PostgreSQL, MS SQL, H2
+- **Multi-Database Support:** PostgreSQL, Oracle, MySQL, MS SQL Server, H2
 - **Internationalization:** Multi-language support
-- **API Versions:** Multiple concurrent versions (v1.2.1 through v5.1.0+)
+- **API Versions:** Multiple concurrent versions (v1.2.1 through v6.0.0+)
+- **Deployment Options:** Standalone, Docker, Kubernetes, cloud-native
+- **Data Formats:** JSON, XML support
+- **Error Handling:** 400+ distinct error codes with detailed messages
 
 ### 1.3 Key Components
 
@@ -139,6 +266,7 @@ The Open Bank Project (OBP) is an open-source RESTful API platform for banks tha
 ### 2.3 Deployment Topologies
 
 #### Single Server Deployment
+
 ```
 ┌─────────────────────────────────────┐
 │         Single Server               │
@@ -156,6 +284,7 @@ The Open Bank Project (OBP) is an open-source RESTful API platform for banks tha
 ```
 
 #### Distributed Deployment with Akka Remote
+
 ```
 ┌─────────────────┐         ┌─────────────────┐
 │   API Layer     │         │   Data Layer    │
@@ -172,6 +301,7 @@ The Open Bank Project (OBP) is an open-source RESTful API platform for banks tha
 ### 2.4 Technology Stack
 
 **Backend (OBP-API):**
+
 - Language: Scala 2.12/2.13
 - Framework: Liftweb
 - Build Tool: Maven 3 / SBT
@@ -180,12 +310,14 @@ The Open Bank Project (OBP) is an open-source RESTful API platform for banks tha
 - JDK: OpenJDK 11, Oracle JDK 1.8/13
 
 **Frontend (API Explorer):**
+
 - Framework: Vue.js 3, TypeScript
 - Build Tool: Vite
 - UI: Tailwind CSS
 - Testing: Vitest, Playwright
 
 **Admin UI (API Manager):**
+
 - Framework: Django 3.x/4.x
 - Language: Python 3.x
 - Database: SQLite (dev) / PostgreSQL (prod)
@@ -193,6 +325,7 @@ The Open Bank Project (OBP) is an open-source RESTful API platform for banks tha
 - WSGI Server: Gunicorn
 
 **AI Agent (Opey II):**
+
 - Language: Python 3.10+
 - Framework: LangGraph, LangChain
 - Vector DB: Qdrant
@@ -200,12 +333,14 @@ The Open Bank Project (OBP) is an open-source RESTful API platform for banks tha
 - Frontend: Streamlit
 
 **Databases:**
+
 - Primary: PostgreSQL 12+
 - Cache: Redis 6+
 - Development: H2 (in-memory)
 - Support: MS SQL Server
 
 **OIDC Providers:**
+
 - Production: Keycloak
 - Development/Testing: OBP-OIDC
 
@@ -218,6 +353,7 @@ The Open Bank Project (OBP) is an open-source RESTful API platform for banks tha
 **Purpose:** Central RESTful API server providing banking operations
 
 **Key Features:**
+
 - Multi-version API support (v1.2.1 - v5.1.0+)
 - Pluggable connector architecture
 - OAuth 1.0a/2.0/OIDC authentication
@@ -228,6 +364,7 @@ The Open Bank Project (OBP) is an open-source RESTful API platform for banks tha
 - Sandbox data generation
 
 **Architecture Layers:**
+
 1. **API Layer:** HTTP endpoints, request routing, response formatting
 2. **Authentication Layer:** Token validation, session management
 3. **Authorization Layer:** Entitlements, roles, scopes
@@ -236,12 +373,14 @@ The Open Bank Project (OBP) is an open-source RESTful API platform for banks tha
 6. **Data Layer:** Database persistence, caching
 
 **Configuration:**
+
 - Properties files: `obp-api/src/main/resources/props/`
   - `default.props` - Development
   - `production.default.props` - Production
   - `test.default.props` - Testing
 
 **Key Props Settings:**
+
 ```properties
 # Server Mode
 server_mode=apis,portal  # Options: portal, apis, apis,portal
@@ -271,6 +410,7 @@ super_admin_user_ids=uuid-of-admin-user
 **Purpose:** Interactive API documentation and testing interface
 
 **Key Features:**
+
 - Browse all OBP API endpoints
 - Interactive API testing with OAuth flow
 - Request/response examples
@@ -279,12 +419,14 @@ super_admin_user_ids=uuid-of-admin-user
 - Swagger integration
 
 **Technology:**
+
 - Frontend: Vue.js 3 + TypeScript
 - Backend: Express.js (Node.js)
 - Build: Vite
 - Testing: Vitest (unit), Playwright (integration)
 
 **Configuration:**
+
 ```env
 # .env file
 PUBLIC_OBP_BASE_URL=http://127.0.0.1:8080
@@ -295,6 +437,7 @@ PORT=5173
 ```
 
 **Installation:**
+
 ```bash
 cd OBP-API-EXPLORER/API-Explorer-II
 npm install
@@ -303,13 +446,14 @@ npm run build  # Production build
 ```
 
 **Nginx Configuration:**
+
 ```nginx
 server {
     location / {
         root /path_to_dist/dist;
         try_files $uri $uri/ /index.html;
     }
-    
+
     location /api {
         proxy_pass http://localhost:8085;
         proxy_set_header X-Real-IP $remote_addr;
@@ -324,6 +468,7 @@ server {
 **Purpose:** Django-based administrative interface for managing OBP APIs and consumers
 
 **Key Features:**
+
 - Consumer (App) management and configuration
 - API metrics viewing and analysis
 - User entitlement grant/revoke functionality
@@ -333,6 +478,7 @@ server {
 - Web UI for administrative tasks
 
 **Technology:**
+
 - Framework: Django 3.x/4.x
 - Language: Python 3.x
 - Database: SQLite (development) / PostgreSQL (production)
@@ -341,6 +487,7 @@ server {
 - Web Server: Nginx / Apache (reverse proxy)
 
 **Configuration (`local_settings.py`):**
+
 ```python
 import os
 
@@ -391,6 +538,7 @@ API_DATE_FORMAT_WITH_MILLISECONDS = '%Y-%m-%dT%H:%M:%S.000Z'
 ```
 
 **Installation (Development):**
+
 ```bash
 # Create project structure
 mkdir OpenBankProject && cd OpenBankProject
@@ -420,6 +568,7 @@ nano apimanager/apimanager/local_settings.py
 ```
 
 **Installation (Production):**
+
 ```bash
 # After development setup, collect static files
 ./apimanager/manage.py collectstatic
@@ -440,6 +589,7 @@ sudo systemctl reload nginx
 ```
 
 **Directory Structure:**
+
 ```
 /OpenBankProject/
 ├── API-Manager/
@@ -463,6 +613,7 @@ sudo systemctl reload nginx
 ```
 
 **PostgreSQL Configuration:**
+
 ```python
 DATABASES = {
     'default': {
@@ -477,6 +628,7 @@ DATABASES = {
 ```
 
 **Management:**
+
 - Super Admin users can manage roles at `/users`
 - Set `super_admin_user_ids` in OBP-API props file
 - Users need appropriate roles to execute management functions
@@ -487,6 +639,7 @@ DATABASES = {
 **Purpose:** Conversational AI assistant for banking operations
 
 **Key Features:**
+
 - Natural language banking queries
 - Account information retrieval
 - Transaction analysis
@@ -497,6 +650,7 @@ DATABASES = {
 - Consent-based access control
 
 **Architecture:**
+
 - Agent Framework: LangGraph (stateful workflows)
 - LLM Integration: LangChain
 - Vector Database: Qdrant
@@ -504,11 +658,13 @@ DATABASES = {
 - Frontend: Streamlit
 
 **Supported LLM Providers:**
+
 - Anthropic (Claude)
 - OpenAI (GPT-4)
 - Ollama (Local models - Llama, Mistral)
 
 **Configuration:**
+
 ```env
 # .env file
 # LLM Configuration
@@ -533,6 +689,7 @@ LANGCHAIN_PROJECT=opey-agent
 ```
 
 **Installation:**
+
 ```bash
 cd OPEY/OBP-Opey-II
 poetry install
@@ -548,11 +705,13 @@ streamlit run src/streamlit_app.py  # Frontend UI
 ```
 
 **Docker Deployment:**
+
 ```bash
 docker compose up
 ```
 
 **OBP-API Configuration for Opey:**
+
 ```properties
 # In OBP-API props file
 skip_consent_sca_for_consumer_id_pairs=[{ \
@@ -562,6 +721,7 @@ skip_consent_sca_for_consumer_id_pairs=[{ \
 ```
 
 **Logging Features:**
+
 - Automatic username extraction from JWT tokens
 - Function-level log identification
 - Request/response tracking
@@ -572,6 +732,7 @@ skip_consent_sca_for_consumer_id_pairs=[{ \
 **Purpose:** Lightweight OIDC provider for development and testing
 
 **Key Features:**
+
 - Full OpenID Connect support
 - JWT token generation
 - JWKS endpoint
@@ -580,6 +741,7 @@ skip_consent_sca_for_consumer_id_pairs=[{ \
 - Development-friendly configuration
 
 **Configuration:**
+
 ```properties
 # In OBP-API props
 oauth2.oidc_provider=obp-oidc
@@ -606,6 +768,7 @@ openid_connect_1.access_type_offline=true
 **Purpose:** Enterprise-grade OIDC provider for production deployments
 
 **Key Features:**
+
 - Full OIDC/OAuth2 compliance
 - User federation
 - Multi-realm support
@@ -614,6 +777,7 @@ openid_connect_1.access_type_offline=true
 - User management UI
 
 **Configuration:**
+
 ```properties
 # In OBP-API props
 oauth2.oidc_provider=keycloak
@@ -639,6 +803,7 @@ openid_connect_1.endpoint.discovery=http://localhost:7070/realms/master/.well-kn
 **Overview:** European PSD2 XS2A standard for payment services
 
 **Supported Features:**
+
 - Account Information Service (AIS)
 - Payment Initiation Service (PIS)
 - Confirmation of Funds (CoF)
@@ -646,10 +811,12 @@ openid_connect_1.endpoint.discovery=http://localhost:7070/realms/master/.well-kn
 - Consent management
 
 **API Version Support:**
+
 - Berlin Group 1.3
 - STET 1.4
 
 **Key Endpoints:**
+
 ```
 POST /v1/consents
 GET /v1/accounts
@@ -659,6 +826,7 @@ GET /v1/funds-confirmations
 ```
 
 **Implementation Notes:**
+
 - Consent-based access model
 - OAuth2/OIDC for authentication
 - TPP certificate validation
@@ -669,6 +837,7 @@ GET /v1/funds-confirmations
 **Overview:** UK's Open Banking standard (Version 3.1)
 
 **Supported Features:**
+
 - Account and Transaction API
 - Payment Initiation API
 - Confirmation of Funds API
@@ -678,12 +847,14 @@ GET /v1/funds-confirmations
 **API Version:** UK 3.1
 
 **Security Profile:**
+
 - FAPI compliance
 - OBIE Directory integration
 - Qualified certificates (eIDAS)
 - MTLS support
 
 **Key Endpoints:**
+
 ```
 GET /open-banking/v3.1/aisp/accounts
 GET /open-banking/v3.1/aisp/transactions
@@ -698,6 +869,7 @@ POST /open-banking/v3.1/cbpii/funds-confirmation-consents
 **Current Version:** v5.1.0
 
 **Key Features:**
+
 - 600+ endpoints
 - Multi-bank support
 - Extended customer data
@@ -707,6 +879,7 @@ POST /open-banking/v3.1/cbpii/funds-confirmation-consents
 - Dynamic entity/endpoint creation
 
 **Versioning:**
+
 - v1.2.1, v1.3.0, v1.4.0 (Legacy, STABLE)
 - v2.0.0, v2.1.0, v2.2.0 (STABLE)
 - v3.0.0, v3.1.0 (STABLE)
@@ -714,6 +887,7 @@ POST /open-banking/v3.1/cbpii/funds-confirmation-consents
 - v5.0.0, v5.1.0 (STABLE/BLEEDING-EDGE)
 
 **Key Endpoint Categories:**
+
 - Account Management
 - Transaction Operations
 - Customer Management
@@ -726,21 +900,26 @@ POST /open-banking/v3.1/cbpii/funds-confirmation-consents
 ### 4.4 Other Supported Standards
 
 **Polish API 2.1.1.1:**
+
 - Polish Banking API standard
 - Local market adaptations
 
 **AU CDR v1.0.0:**
+
 - Australian Consumer Data Right
 - Banking sector implementation
 
 **BAHRAIN OBF 1.0.0:**
+
 - Bahrain Open Banking Framework
 - Central Bank of Bahrain standard
 
 **CNBV v1.0.0:**
+
 - Mexican banking standard
 
 **Regulatory Compliance:**
+
 - GDPR (EU data protection)
 - PSD2 (EU payment services)
 - FAPI (Financial-grade API security)
@@ -753,6 +932,7 @@ POST /open-banking/v3.1/cbpii/funds-confirmation-consents
 ### 5.1 Prerequisites
 
 **Software Requirements:**
+
 - Java: OpenJDK 11+ or Oracle JDK 1.8/13
 - Maven: 3.6+
 - Node.js: 18+ (for frontend components)
@@ -761,12 +941,14 @@ POST /open-banking/v3.1/cbpii/funds-confirmation-consents
 - Docker: 20+ (optional, for containerized deployment)
 
 **Hardware Requirements (Minimum):**
+
 - CPU: 4 cores
 - RAM: 8GB
 - Disk: 50GB
 - Network: 100 Mbps
 
 **Hardware Requirements (Production):**
+
 - CPU: 8+ cores
 - RAM: 16GB+
 - Disk: 200GB+ SSD
@@ -777,6 +959,7 @@ POST /open-banking/v3.1/cbpii/funds-confirmation-consents
 #### 5.2.1 Installing JDK
 
 **Using sdkman (Recommended):**
+
 ```bash
 curl -s "https://get.sdkman.io" | bash
 source "$HOME/.sdkman/bin/sdkman-init.sh"
@@ -784,6 +967,7 @@ sdk env install  # Uses .sdkmanrc in project
 ```
 
 **Manual Installation:**
+
 ```bash
 # Ubuntu/Debian
 sudo apt update
@@ -813,12 +997,14 @@ mvn install -pl .,obp-commons && mvn jetty:run -pl obp-api
 ```
 
 **Alternative with increased stack size:**
+
 ```bash
 export MAVEN_OPTS="-Xss128m"
 mvn install -pl .,obp-commons && mvn jetty:run -pl obp-api
 ```
 
 **For Java 11+ (if needed):**
+
 ```bash
 mkdir -p .mvn
 cat > .mvn/jvm.config << 'EOF'
@@ -836,6 +1022,7 @@ EOF
 #### 5.2.3 Database Setup
 
 **PostgreSQL Installation:**
+
 ```bash
 # Ubuntu/Debian
 sudo apt install postgresql postgresql-contrib
@@ -846,6 +1033,7 @@ brew services start postgresql
 ```
 
 **Database Configuration:**
+
 ```sql
 -- Connect to PostgreSQL
 psql postgres
@@ -870,12 +1058,14 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO obp;
 ```
 
 **Props Configuration:**
+
 ```properties
 db.driver=org.postgresql.Driver
 db.url=jdbc:postgresql://localhost:5432/obpdb?user=obp&password=your-secure-password
 ```
 
 **PostgreSQL with SSL:**
+
 ```properties
 db.url=jdbc:postgresql://localhost:5432/obpdb?user=obp&password=xxx&ssl=true
 
@@ -889,6 +1079,7 @@ hostssl all all 0.0.0.0/0 md5
 ```
 
 **H2 Database (Development):**
+
 ```properties
 db.driver=org.h2.Driver
 db.url=jdbc:h2:./obp_api.db;DB_CLOSE_ON_EXIT=FALSE
@@ -911,6 +1102,7 @@ redis-cli ping  # Should return PONG
 ```
 
 **Props Configuration:**
+
 ```properties
 use_consumer_limits=true
 cache.redis.url=127.0.0.1
@@ -922,11 +1114,13 @@ cache.redis.port=6379
 #### 5.3.1 Jetty 9 Configuration
 
 **Install Jetty:**
+
 ```bash
 sudo apt install jetty9
 ```
 
 **Configure Jetty (`/etc/default/jetty9`):**
+
 ```bash
 NO_START=0
 JETTY_HOST=127.0.0.1  # Change to 0.0.0.0 for external access
@@ -940,12 +1134,14 @@ JAVA_OPTIONS="-Drun.mode=production \
 ```
 
 **Build WAR file:**
+
 ```bash
 mvn package
 # Output: target/OBP-API-1.0.war
 ```
 
 **Deploy:**
+
 ```bash
 sudo cp target/OBP-API-1.0.war /usr/share/jetty9/webapps/root.war
 sudo chown jetty:jetty /usr/share/jetty9/webapps/root.war
@@ -960,6 +1156,7 @@ sudo systemctl restart jetty9
 #### 5.3.2 Production Props Configuration
 
 **Create `production.default.props`:**
+
 ```properties
 # Server Mode
 server_mode=apis
@@ -994,6 +1191,7 @@ webui_override_style_sheet=/path/to/custom.css
 #### 5.3.3 SSL/HTTPS Configuration
 
 **Enable secure cookies (`webapp/WEB-INF/web.xml`):**
+
 ```xml
 <session-config>
   <cookie-config>
@@ -1004,6 +1202,7 @@ webui_override_style_sheet=/path/to/custom.css
 ```
 
 **Nginx Reverse Proxy:**
+
 ```nginx
 server {
     listen 443 ssl http2;
@@ -1028,6 +1227,7 @@ server {
 #### 5.3.4 Docker Deployment
 
 **OBP-API Docker:**
+
 ```bash
 # Pull image
 docker pull openbankproject/obp-api
@@ -1044,8 +1244,9 @@ docker run -d \
 ```
 
 **Docker Compose:**
+
 ```yaml
-version: '3.8'
+version: "3.8"
 
 services:
   obp-api:
@@ -1099,10 +1300,12 @@ OBP-API supports multiple authentication methods to accommodate different use ca
 **Overview:** Traditional three-legged OAuth flow for third-party applications
 
 **Use Cases:**
+
 - Legacy integrations
 - Apps requiring delegated access without OpenID Connect support
 
 **Flow:**
+
 1. Consumer obtains request token
 2. User redirected to OBP for authorization
 3. User approves access
@@ -1110,6 +1313,7 @@ OBP-API supports multiple authentication methods to accommodate different use ca
 5. Access token used for API calls
 
 **Implementation:**
+
 ```bash
 # Get request token
 POST /oauth/initiate
@@ -1132,17 +1336,20 @@ Authorization: OAuth oauth_token="ACCESS_TOKEN", oauth_signature="..."
 **Overview:** Modern authorization framework supporting various grant types
 
 **Supported Grant Types:**
+
 - Authorization Code (recommended for web apps)
 - Client Credentials (for server-to-server)
 - Implicit (deprecated, not recommended)
 
 **Configuration:**
+
 ```properties
 allow_oauth2_login=true
 oauth2.jwk_set.url=https://idp.example.com/jwks
 ```
 
 **Authorization Code Flow:**
+
 ```bash
 # 1. Authorization request
 GET /oauth/authorize?
@@ -1172,10 +1379,12 @@ Authorization: Bearer ACCESS_TOKEN
 **Overview:** Identity layer on top of OAuth 2.0 providing user authentication
 
 **Providers:**
+
 - **Production:** Keycloak, Auth0, Google, Azure AD
 - **Development:** OBP-OIDC
 
 **Configuration Example (Keycloak):**
+
 ```properties
 # OpenID Connect Configuration
 openid_connect_1.button_text=Keycloak Login
@@ -1191,6 +1400,7 @@ openid_connect_1.access_type_offline=true
 ```
 
 **Multiple OIDC Providers:**
+
 ```properties
 # Provider 1 - Google
 openid_connect_1.button_text=Google
@@ -1208,6 +1418,7 @@ openid_connect_2.access_type_offline=true
 ```
 
 **JWT Token Validation:**
+
 ```properties
 oauth2.jwk_set.url=http://keycloak:7070/realms/obp/protocol/openid-connect/certs
 ```
@@ -1217,11 +1428,13 @@ oauth2.jwk_set.url=http://keycloak:7070/realms/obp/protocol/openid-connect/certs
 **Overview:** Simplified username/password authentication for trusted applications
 
 **Use Cases:**
+
 - Internal applications
 - Testing and development
 - Mobile apps with secure credential storage
 
 **Implementation:**
+
 ```bash
 # Direct Login
 POST /obp/v5.1.0/my/logins/direct
@@ -1241,6 +1454,7 @@ Authorization: DirectLogin token="TOKEN"
 ```
 
 **Security Considerations:**
+
 - Only use over HTTPS
 - Implement rate limiting
 - Use strong passwords
@@ -1249,6 +1463,7 @@ Authorization: DirectLogin token="TOKEN"
 ### 6.2 JWT Token Structure
 
 **Standard Claims:**
+
 ```json
 {
   "iss": "http://keycloak:7070/realms/obp",
@@ -1263,6 +1478,7 @@ Authorization: DirectLogin token="TOKEN"
 ```
 
 **JWT Validation Process:**
+
 1. Verify signature using JWKS
 2. Check issuer matches configured provider
 3. Validate expiration time
@@ -1278,22 +1494,24 @@ Authorization: DirectLogin token="TOKEN"
 **Overview:** OBP uses an entitlement-based system where users are granted specific roles that allow them to perform certain operations.
 
 **Core Concepts:**
+
 - **Entitlement:** Permission to perform a specific action
 - **Role:** Collection of entitlements (used interchangeably)
 - **Scope:** Optional constraint on entitlement (bank-level, system-level)
 
 **Common Roles:**
 
-| Role | Description | Scope |
-|------|-------------|-------|
-| `CanCreateAccount` | Create bank accounts | Bank |
-| `CanGetAnyUser` | View any user details | System |
+| Role                            | Description             | Scope  |
+| ------------------------------- | ----------------------- | ------ |
+| `CanCreateAccount`              | Create bank accounts    | Bank   |
+| `CanGetAnyUser`                 | View any user details   | System |
 | `CanCreateEntitlementAtAnyBank` | Grant roles at any bank | System |
-| `CanCreateBranch` | Create branch records | Bank |
-| `CanReadMetrics` | View API metrics | System |
-| `CanCreateConsumer` | Create OAuth consumers | System |
+| `CanCreateBranch`               | Create branch records   | Bank   |
+| `CanReadMetrics`                | View API metrics        | System |
+| `CanCreateConsumer`             | Create OAuth consumers  | System |
 
 **Granting Entitlements:**
+
 ```bash
 POST /obp/v5.1.0/users/USER_ID/entitlements
 Authorization: DirectLogin token="ADMIN_TOKEN"
@@ -1306,6 +1524,7 @@ Content-Type: application/json
 ```
 
 **Super Admin Bootstrap:**
+
 ```properties
 # In props file (temporary, for bootstrap only)
 super_admin_user_ids=uuid-1,uuid-2
@@ -1315,6 +1534,7 @@ super_admin_user_ids=uuid-1,uuid-2
 ```
 
 **Checking User Entitlements:**
+
 ```bash
 GET /obp/v5.1.0/users/USER_ID/entitlements
 Authorization: DirectLogin token="TOKEN"
@@ -1325,6 +1545,7 @@ Authorization: DirectLogin token="TOKEN"
 **Overview:** PSD2-compliant consent mechanism for controlled data access
 
 **Consent Types:**
+
 - Account Information (AIS)
 - Payment Initiation (PIS)
 - Confirmation of Funds (CoF)
@@ -1344,6 +1565,7 @@ Authorization: DirectLogin token="TOKEN"
 ```
 
 **Creating a Consent:**
+
 ```bash
 POST /obp/v5.1.0/consumer/consents
 Authorization: Bearer ACCESS_TOKEN
@@ -1362,6 +1584,7 @@ Content-Type: application/json
 ```
 
 **Challenge Flow (SCA):**
+
 ```bash
 # 1. Create consent - returns challenge
 POST /obp/v5.1.0/banks/BANK_ID/consents/CONSENT_ID/challenge
@@ -1374,6 +1597,7 @@ POST /obp/v5.1.0/banks/BANK_ID/consents/CONSENT_ID/challenge
 ```
 
 **Consent for Opey:**
+
 ```properties
 # Skip SCA for trusted consumer pairs
 skip_consent_sca_for_consumer_id_pairs=[{
@@ -1387,12 +1611,14 @@ skip_consent_sca_for_consumer_id_pairs=[{
 **Overview:** Fine-grained control over what data is visible to different actors
 
 **Standard Views:**
+
 - `owner` - Full account access (account holder)
 - `accountant` - Transaction data, no personal info
 - `auditor` - Read-only comprehensive access
 - `public` - Public information only
 
 **Custom Views:**
+
 ```bash
 POST /obp/v5.1.0/banks/BANK_ID/accounts/ACCOUNT_ID/views
 {
@@ -1414,6 +1640,7 @@ POST /obp/v5.1.0/banks/BANK_ID/accounts/ACCOUNT_ID/views
 **Overview:** Protect API resources from abuse and ensure fair usage
 
 **Configuration:**
+
 ```properties
 # Enable rate limiting
 use_consumer_limits=true
@@ -1427,6 +1654,7 @@ user_consumer_limit_anonymous_access=60
 ```
 
 **Setting Consumer Limits:**
+
 ```bash
 PUT /obp/v5.1.0/management/consumers/CONSUMER_ID/consumer/call-limits
 {
@@ -1440,6 +1668,7 @@ PUT /obp/v5.1.0/management/consumers/CONSUMER_ID/consumer/call-limits
 ```
 
 **Rate Limit Headers:**
+
 ```
 HTTP/1.1 429 Too Many Requests
 X-Rate-Limit-Limit: 100
@@ -1454,6 +1683,7 @@ X-Rate-Limit-Reset: 45
 ### 7.5 Security Best Practices
 
 **Password Security:**
+
 ```properties
 # Props encryption using OpenSSL
 jwt.use.ssl=true
@@ -1466,12 +1696,14 @@ db.url=BASE64_ENCODED_ENCRYPTED_VALUE
 ```
 
 **Transport Security:**
+
 - Always use HTTPS in production
 - Enable HTTP Strict Transport Security (HSTS)
 - Use TLS 1.2 or higher
 - Implement certificate pinning for mobile apps
 
 **API Security:**
+
 - Validate all input parameters
 - Implement request signing
 - Use CSRF tokens for web forms
@@ -1479,6 +1711,7 @@ db.url=BASE64_ENCODED_ENCRYPTED_VALUE
 - Regular security updates
 
 **Jetty Password Obfuscation:**
+
 ```bash
 # Generate obfuscated password
 java -cp /usr/share/jetty9/lib/jetty-util-*.jar \
@@ -1498,6 +1731,7 @@ db.password=OBF:1v2j1uum1xtv1zej1zer1xtn1uvk1v1v
 ### 8.1 Logging Configuration
 
 **Logback Configuration (`logback.xml`):**
+
 ```xml
 <configuration>
   <appender name="FILE" class="ch.qos.logback.core.FileAppender">
@@ -1515,14 +1749,14 @@ db.password=OBF:1v2j1uum1xtv1zej1zer1xtn1uvk1v1v
 
   <!-- API logging -->
   <logger name="code.api" level="INFO"/>
-  
+
   <!-- OAuth/OIDC debugging -->
   <logger name="code.api.OAuth2" level="DEBUG"/>
   <logger name="code.api.util.JwtUtil" level="DEBUG"/>
-  
+
   <!-- Connector logging -->
   <logger name="code.bankconnectors" level="INFO"/>
-  
+
   <!-- Database queries -->
   <logger name="net.liftweb.mapper" level="WARN"/>
 
@@ -1534,6 +1768,7 @@ db.password=OBF:1v2j1uum1xtv1zej1zer1xtn1uvk1v1v
 ```
 
 **Component-Specific Logging:**
+
 ```xml
 <!-- Enable specific components -->
 <logger name="code.api.v5_1_0.APIMethods510" level="DEBUG"/>
@@ -1544,6 +1779,7 @@ db.password=OBF:1v2j1uum1xtv1zej1zer1xtn1uvk1v1v
 ### 8.2 API Metrics
 
 **Metrics Endpoint:**
+
 ```bash
 GET /obp/v5.1.0/management/metrics
 Authorization: DirectLogin token="TOKEN"
@@ -1559,6 +1795,7 @@ GET /obp/v5.1.0/management/metrics?
 ```
 
 **Aggregate Metrics:**
+
 ```bash
 GET /obp/v5.1.0/management/aggregate-metrics
 {
@@ -1572,11 +1809,13 @@ GET /obp/v5.1.0/management/aggregate-metrics
 ```
 
 **Top APIs:**
+
 ```bash
 GET /obp/v5.1.0/management/metrics/top-apis
 ```
 
 **Elasticsearch Integration:**
+
 ```properties
 # Enable ES metrics
 es.metrics.enabled=true
@@ -1590,6 +1829,7 @@ POST /obp/v5.1.0/search/metrics
 ### 8.3 Monitoring Endpoints
 
 **Health Check:**
+
 ```bash
 GET /obp/v5.1.0/root
 {
@@ -1601,6 +1841,7 @@ GET /obp/v5.1.0/root
 ```
 
 **Connector Status:**
+
 ```bash
 GET /obp/v5.1.0/connector-loopback
 {
@@ -1611,6 +1852,7 @@ GET /obp/v5.1.0/connector-loopback
 ```
 
 **Database Info:**
+
 ```bash
 GET /obp/v5.1.0/database/info
 {
@@ -1622,6 +1864,7 @@ GET /obp/v5.1.0/database/info
 ```
 
 **Rate Limiting Status:**
+
 ```bash
 GET /obp/v5.1.0/rate-limiting
 {
@@ -1639,6 +1882,7 @@ GET /obp/v5.1.0/rate-limiting
 **Problem:** OBP-20208: Cannot match the issuer and JWKS URI
 
 **Solution:**
+
 ```properties
 # Ensure issuer matches JWT iss claim
 oauth2.jwk_set.url=http://keycloak:7070/realms/obp/protocol/openid-connect/certs
@@ -1654,6 +1898,7 @@ curl -X GET http://localhost:8080/obp/v5.1.0/users/current \
 **Problem:** OAuth signature mismatch
 
 **Solution:**
+
 - Verify consumer key/secret
 - Check URL encoding
 - Ensure timestamp is current
@@ -1664,6 +1909,7 @@ curl -X GET http://localhost:8080/obp/v5.1.0/users/current \
 **Problem:** Connection timeout to PostgreSQL
 
 **Solution:**
+
 ```bash
 # Check PostgreSQL is running
 sudo systemctl status postgresql
@@ -1682,6 +1928,7 @@ db.url=jdbc:postgresql://localhost:5432/obpdb?...&maxPoolSize=50
 **Problem:** Database migration needed
 
 **Solution:**
+
 ```bash
 # OBP-API handles migrations automatically on startup
 # Check logs for migration status
@@ -1693,6 +1940,7 @@ tail -f logs/obp-api.log | grep -i migration
 **Problem:** Rate limiting not working
 
 **Solution:**
+
 ```bash
 # Check Redis connectivity
 redis-cli ping
@@ -1713,6 +1961,7 @@ use_consumer_limits=true
 **Problem:** OutOfMemoryError
 
 **Solution:**
+
 ```bash
 # Increase JVM memory
 export MAVEN_OPTS="-Xmx2048m -Xms1024m -XX:MaxPermSize=512m"
@@ -1729,6 +1978,7 @@ jconsole  # Connect to JVM process
 **Problem:** Slow API responses
 
 **Diagnosis:**
+
 ```bash
 # Check metrics for slow endpoints
 GET /obp/v5.1.0/management/metrics?
@@ -1743,6 +1993,7 @@ GET /obp/v5.1.0/management/metrics?
 ```
 
 **Solutions:**
+
 - Enable Redis caching
 - Optimize database indexes
 - Increase connection pool size
@@ -1752,18 +2003,21 @@ GET /obp/v5.1.0/management/metrics?
 ### 8.5 Debug Tools
 
 **API Call Context:**
+
 ```bash
 GET /obp/v5.1.0/development/call-context
 # Returns current request context for debugging
 ```
 
 **Log Cache:**
+
 ```bash
 GET /obp/v5.1.0/management/logs/INFO
 # Retrieves cached log entries
 ```
 
 **Testing Endpoints:**
+
 ```bash
 # Test delay/timeout handling
 GET /obp/v5.1.0/development/waiting-for-godot?sleep=1000
@@ -1779,12 +2033,14 @@ GET /obp/v5.1.0/rate-limiting
 ### 9.1 API Explorer Usage
 
 **Accessing API Explorer:**
+
 ```
 http://localhost:5173  # Development
 https://apiexplorer.yourdomain.com  # Production
 ```
 
 **Key Features:**
+
 1. **Browse APIs:** Navigate through 600+ endpoints organized by category
 2. **Try APIs:** Execute requests directly from the browser
 3. **OAuth Flow:** Built-in OAuth authentication
@@ -1793,6 +2049,7 @@ https://apiexplorer.yourdomain.com  # Production
 6. **Multi-language:** English and Spanish support
 
 **Authentication Flow:**
+
 1. Click "Login" button
 2. Select OAuth provider (OBP-OIDC, Keycloak, etc.)
 3. Authenticate with credentials
@@ -1802,6 +2059,7 @@ https://apiexplorer.yourdomain.com  # Production
 ### 9.2 API Versioning
 
 **Accessing Different Versions:**
+
 ```bash
 # v5.1.0 (latest)
 GET /obp/v5.1.0/banks
@@ -1814,6 +2072,7 @@ GET /berlin-group/v1.3/accounts
 ```
 
 **Version Status Check:**
+
 ```bash
 GET /obp/v5.1.0/root
 {
@@ -1825,6 +2084,7 @@ GET /obp/v5.1.0/root
 ### 9.3 Swagger Documentation
 
 **Accessing Swagger:**
+
 ```bash
 # OBP Standard
 GET /obp/v5.1.0/resource-docs/v5.1.0/swagger
@@ -1837,6 +2097,7 @@ GET /obp/v5.1.0/resource-docs/UKv3.1/swagger
 ```
 
 **Import to Postman/Insomnia:**
+
 1. Get Swagger JSON from endpoint above
 2. Import into API client
 3. Configure authentication
@@ -1987,6 +2248,7 @@ npm run build
 ### 10.3 Production Deployment (High Availability)
 
 **Architecture:**
+
 ```
                      ┌──────────────┐
                      │  Load        │
@@ -2015,6 +2277,7 @@ npm run build
 **Steps:**
 
 1. **Database Setup (PostgreSQL HA):**
+
 ```bash
 # Primary server
 postgresql.conf:
@@ -2028,6 +2291,7 @@ recovery.conf:
 ```
 
 2. **Redis Cluster:**
+
 ```bash
 # 3 masters + 3 replicas
 redis-cli --cluster create \
@@ -2037,6 +2301,7 @@ redis-cli --cluster create \
 ```
 
 3. **OBP-API Configuration (each node):**
+
 ```properties
 # PostgreSQL connection
 db.url=jdbc:postgresql://pg-primary:5432/obpdb?user=obp&password=xxx
@@ -2050,6 +2315,7 @@ session.provider=redis
 ```
 
 4. **HAProxy Configuration:**
+
 ```haproxy
 frontend obp_frontend
     bind *:443 ssl crt /etc/ssl/certs/obp.pem
@@ -2065,6 +2331,7 @@ backend obp_nodes
 ```
 
 5. **Deploy and Monitor:**
+
 ```bash
 # Deploy to all nodes
 for node in node1 node2 node3; do
@@ -2097,41 +2364,41 @@ spec:
         app: obp-api
     spec:
       containers:
-      - name: obp-api
-        image: openbankproject/obp-api:latest
-        ports:
-        - containerPort: 8080
-        env:
-        - name: OBP_DB_DRIVER
-          value: "org.postgresql.Driver"
-        - name: OBP_DB_URL
-          valueFrom:
-            secretKeyRef:
-              name: obp-secrets
-              key: db-url
-        - name: OBP_CONNECTOR
-          value: "mapped"
-        - name: OBP_CACHE_REDIS_URL
-          value: "redis-service"
-        resources:
-          requests:
-            memory: "2Gi"
-            cpu: "1000m"
-          limits:
-            memory: "4Gi"
-            cpu: "2000m"
-        livenessProbe:
-          httpGet:
-            path: /obp/v5.1.0/root
-            port: 8080
-          initialDelaySeconds: 60
-          periodSeconds: 10
-        readinessProbe:
-          httpGet:
-            path: /obp/v5.1.0/root
-            port: 8080
-          initialDelaySeconds: 30
-          periodSeconds: 5
+        - name: obp-api
+          image: openbankproject/obp-api:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: OBP_DB_DRIVER
+              value: "org.postgresql.Driver"
+            - name: OBP_DB_URL
+              valueFrom:
+                secretKeyRef:
+                  name: obp-secrets
+                  key: db-url
+            - name: OBP_CONNECTOR
+              value: "mapped"
+            - name: OBP_CACHE_REDIS_URL
+              value: "redis-service"
+          resources:
+            requests:
+              memory: "2Gi"
+              cpu: "1000m"
+            limits:
+              memory: "4Gi"
+              cpu: "2000m"
+          livenessProbe:
+            httpGet:
+              path: /obp/v5.1.0/root
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /obp/v5.1.0/root
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 5
 ---
 apiVersion: v1
 kind: Service
@@ -2141,12 +2408,13 @@ spec:
   selector:
     app: obp-api
   ports:
-  - port: 80
-    targetPort: 8080
+    - port: 80
+      targetPort: 8080
   type: LoadBalancer
 ```
 
 **Secrets Management:**
+
 ```bash
 kubectl create secret generic obp-secrets \
   --from-literal=db-url='jdbc:postgresql://postgres:5432/obpdb?user=obp&password=xxx' \
@@ -2157,6 +2425,7 @@ kubectl create secret generic obp-secrets \
 ### 10.5 Backup and Disaster Recovery
 
 **Database Backup:**
+
 ```bash
 #!/bin/bash
 # backup-obp.sh
@@ -2180,6 +2449,7 @@ find $BACKUP_DIR -name "*.sql.gz" -mtime +30 -delete
 ```
 
 **Restore Process:**
+
 ```bash
 # 1. Stop OBP-API
 sudo systemctl stop jetty9
@@ -2201,6 +2471,7 @@ sudo systemctl start jetty9
 ### 11.1 Setting Up Development Environment
 
 **Prerequisites:**
+
 ```bash
 # Install Java
 sdk install java 11.0.2-open
@@ -2222,6 +2493,7 @@ sudo apt install git
 ```
 
 **IDE Setup (IntelliJ IDEA):**
+
 1. Install Scala plugin
 2. Import project as Maven project
 3. Configure JDK (File → Project Structure → SDK)
@@ -2230,6 +2502,7 @@ sudo apt install git
 6. Enable annotation processing
 
 **Building from Source:**
+
 ```bash
 # Clone repository
 git clone https://github.com/OpenBankProject/OBP-API.git
@@ -2251,6 +2524,7 @@ mvn -Pdev clean install
 ### 11.2 Running Tests
 
 **Unit Tests:**
+
 ```bash
 # All tests
 mvn clean test
@@ -2266,6 +2540,7 @@ mvn clean test jacoco:report
 ```
 
 **Integration Tests:**
+
 ```bash
 # Setup test database
 createdb obpdb_test
@@ -2282,6 +2557,7 @@ db.url=jdbc:h2:mem:test_db
 ```
 
 **Test Configuration:**
+
 ```scala
 // In test class
 class AccountTest extends ServerSetup {
@@ -2289,7 +2565,7 @@ class AccountTest extends ServerSetup {
     super.beforeAll()
     // Setup test data
   }
-  
+
   feature("Account operations") {
     scenario("Create account") {
       val request = """{"label": "Test Account"}"""
@@ -2305,6 +2581,7 @@ class AccountTest extends ServerSetup {
 ### 11.3 Creating Custom Connectors
 
 **Connector Structure:**
+
 ```scala
 // CustomConnector.scala
 package code.bankconnectors
@@ -2314,26 +2591,27 @@ import code.bankconnectors.Connector
 import net.liftweb.common.Box
 
 object CustomConnector extends Connector {
-  
+
   val connectorName = "custom_connector_2024"
-  
+
   override def getBankLegacy(bankId: BankId, callContext: Option[CallContext]): Box[(Bank, Option[CallContext])] = {
     // Your implementation
     val bank = // Fetch from your backend
     Full((bank, callContext))
   }
-  
+
   override def getAccountLegacy(bankId: BankId, accountId: AccountId, callContext: Option[CallContext]): Box[(BankAccount, Option[CallContext])] = {
     // Your implementation
     val account = // Fetch from your backend
     Full((account, callContext))
   }
-  
+
   // Implement other required methods...
 }
 ```
 
 **Registering Connector:**
+
 ```properties
 # In props file
 connector=custom_connector_2024
@@ -2342,6 +2620,7 @@ connector=custom_connector_2024
 ### 11.4 Creating Dynamic Endpoints
 
 **Define Dynamic Endpoint:**
+
 ```bash
 POST /obp/v5.1.0/management/dynamic-endpoints
 {
@@ -2367,6 +2646,7 @@ POST /obp/v5.1.0/management/dynamic-endpoints
 ```
 
 **Define Dynamic Entity:**
+
 ```bash
 POST /obp/v5.1.0/management/dynamic-entities
 {
@@ -2379,20 +2659,21 @@ POST /obp/v5.1.0/management/dynamic-entities
 ### 11.5 Code Style and Conventions
 
 **Scala Code Style:**
+
 ```scala
 // Good practices
 class AccountService {
-  
+
   // Use descriptive names
   def createNewAccount(bankId: BankId, userId: UserId): Future[Box[Account]] = {
-    
+
     // Use pattern matching
     account match {
       case Full(acc) => Future.successful(Full(acc))
       case Empty => Future.successful(Empty)
       case Failure(msg, _, _) => Future.successful(Failure(msg))
     }
-    
+
     // Use for-comprehensions
     for {
       bank <- getBankFuture(bankId)
@@ -2400,7 +2681,7 @@ class AccountService {
       account <- createAccountFuture(bank, user)
     } yield account
   }
-  
+
   // Document public APIs
   /**
    * Retrieves account by ID
@@ -2417,6 +2698,7 @@ class AccountService {
 ### 11.6 Contributing to OBP
 
 **Contribution Workflow:**
+
 1. Fork the repository
 2. Create feature branch: `git checkout -b feature/amazing-feature`
 3. Make changes following code style
@@ -2427,6 +2709,7 @@ class AccountService {
 8. Create Pull Request
 
 **Pull Request Checklist:**
+
 - [ ] Tests pass
 - [ ] Code follows style guidelines
 - [ ] Documentation updated
@@ -2435,6 +2718,7 @@ class AccountService {
 - [ ] Descriptive PR title and description
 
 **Signing Contributor Agreement:**
+
 - Required for first-time contributors
 - Sign the Harmony CLA
 - Preserves open-source license
@@ -2456,6 +2740,7 @@ The Open Bank Project follows an agile roadmap that evolves based on feedback fr
 **Key Improvements:**
 
 **Architecture Enhancements:**
+
 - Enhanced modular design for better maintainability
 - Improved performance and scalability
 - Better separation of concerns
@@ -2463,6 +2748,7 @@ The Open Bank Project follows an agile roadmap that evolves based on feedback fr
 - Enhanced error handling and logging
 
 **Developer Experience:**
+
 - Improved API documentation generation
 - Better test coverage and test utilities
 - Enhanced debugging capabilities
@@ -2470,6 +2756,7 @@ The Open Bank Project follows an agile roadmap that evolves based on feedback fr
 - Modern build tools and dependency management
 
 **Features:**
+
 - Backward compatibility with existing OBP-API endpoints
 - Gradual migration path from OBP-API to OBP-API-II
 - Enhanced connector architecture
@@ -2477,6 +2764,7 @@ The Open Bank Project follows an agile roadmap that evolves based on feedback fr
 - Better support for microservices patterns
 
 **Technology Stack:**
+
 - Scala 2.13/3.x (upgraded from 2.12)
 - Modern Lift framework versions
 - Enhanced Akka integration
@@ -2484,6 +2772,7 @@ The Open Bank Project follows an agile roadmap that evolves based on feedback fr
 - Better async/await patterns
 
 **Migration Strategy:**
+
 - Phased rollout alongside existing OBP-API
 - Comprehensive migration documentation
 - Backward compatibility layer
@@ -2491,12 +2780,14 @@ The Open Bank Project follows an agile roadmap that evolves based on feedback fr
 - Zero-downtime upgrade path
 
 **Timeline:**
+
 - Alpha: Q1 2024 (Internal testing)
 - Beta: Q2 2024 (Selected bank pilots)
 - Production Ready: Q3-Q4 2024
 - General Availability: 2025
 
 **Benefits:**
+
 - 30-50% performance improvement
 - Reduced memory footprint
 - Better horizontal scaling
@@ -2512,6 +2803,7 @@ The Open Bank Project follows an agile roadmap that evolves based on feedback fr
 **Key Features:**
 
 **Intelligent Routing:**
+
 - Route by bank ID
 - Route by API version
 - Route by endpoint pattern
@@ -2519,6 +2811,7 @@ The Open Bank Project follows an agile roadmap that evolves based on feedback fr
 - Custom routing rules via configuration
 
 **Load Balancing:**
+
 - Round-robin distribution
 - Weighted distribution
 - Health check integration
@@ -2526,6 +2819,7 @@ The Open Bank Project follows an agile roadmap that evolves based on feedback fr
 - Circuit breaker pattern
 
 **Multi-Backend Support:**
+
 - Multiple OBP-API backends
 - Different versions simultaneously
 - Geographic distribution
@@ -2533,6 +2827,7 @@ The Open Bank Project follows an agile roadmap that evolves based on feedback fr
 - Canary releases
 
 **Configuration:**
+
 ```conf
 # application.conf example
 dispatch {
@@ -2550,7 +2845,7 @@ dispatch {
       regions = ["US"]
     }
   }
-  
+
   routing {
     rules = [
       {
@@ -2594,6 +2889,7 @@ dispatch {
    - Resource optimization
 
 **Deployment:**
+
 ```bash
 # Build
 mvn clean package
@@ -2608,6 +2904,7 @@ docker run -p 8080:8080 \
 ```
 
 **Architecture:**
+
 ```
                     ┌──────────────────┐
                     │   OBP-Dispatch   │
@@ -2624,6 +2921,7 @@ docker run -p 8080:8080 \
 ```
 
 **Benefits:**
+
 - Simplified client configuration
 - Centralized routing logic
 - Easy version migration
@@ -2631,6 +2929,7 @@ docker run -p 8080:8080 \
 - High availability
 
 **Monitoring:**
+
 - Request/response metrics
 - Backend health status
 - Routing decision logs
@@ -2640,6 +2939,7 @@ docker run -p 8080:8080 \
 ### 12.4 Upcoming Features (All Components)
 
 **API Version 6.0.0:**
+
 - Enhanced consent management
 - Improved transaction categorization
 - Advanced analytics endpoints
@@ -2648,6 +2948,7 @@ docker run -p 8080:8080 \
 - GraphQL support (experimental)
 
 **Standards Compliance:**
+
 - PSD3 preparation (European Union)
 - FDX 5.0 support (North America)
 - CDR 2.0 enhancements (Australia
@@ -2693,6 +2994,7 @@ docker run -p 8080:8080 \
 ### 12.2 Environment Variables Reference
 
 **OBP-API Environment Variables:**
+
 ```bash
 # Database
 OBP_DB_DRIVER=org.postgresql.Driver
@@ -2721,6 +3023,7 @@ OBP_LOG_LEVEL=INFO
 ```
 
 **Opey II Environment Variables:**
+
 ```bash
 # LLM Provider
 MODEL_PROVIDER=anthropic
@@ -2745,6 +3048,7 @@ LANGCHAIN_API_KEY=lsv2_pt_...
 ### 12.3 Props File Complete Reference
 
 **Core Settings:**
+
 ```properties
 # Server Mode
 server_mode=apis,portal  # portal | apis | apis,portal
@@ -2820,454 +3124,456 @@ allowed_origins=http://localhost:5173
 
 #### Infrastructure / Config Level (OBP-00XXX)
 
-| Error Code | Message | Description |
-|------------|---------|-------------|
-| OBP-00001 | Hostname not specified | Props configuration missing hostname |
-| OBP-00002 | Data import disabled | Sandbox data import not enabled |
-| OBP-00003 | Transaction disabled | Transaction requests not enabled |
-| OBP-00005 | Public views not allowed | Public views disabled in props |
-| OBP-00008 | API version not supported | Requested API version not enabled |
-| OBP-00009 | Account firehose not allowed | Account firehose disabled in props |
-| OBP-00010 | Missing props value | Required property not configured |
-| OBP-00011 | No valid Elasticsearch indices | ES indices not configured |
-| OBP-00012 | Customer firehose not allowed | Customer firehose disabled |
-| OBP-00013 | API instance id not specified | Instance ID missing from props |
-| OBP-00014 | Mandatory properties not set | Required props missing |
+| Error Code | Message                        | Description                          |
+| ---------- | ------------------------------ | ------------------------------------ |
+| OBP-00001  | Hostname not specified         | Props configuration missing hostname |
+| OBP-00002  | Data import disabled           | Sandbox data import not enabled      |
+| OBP-00003  | Transaction disabled           | Transaction requests not enabled     |
+| OBP-00005  | Public views not allowed       | Public views disabled in props       |
+| OBP-00008  | API version not supported      | Requested API version not enabled    |
+| OBP-00009  | Account firehose not allowed   | Account firehose disabled in props   |
+| OBP-00010  | Missing props value            | Required property not configured     |
+| OBP-00011  | No valid Elasticsearch indices | ES indices not configured            |
+| OBP-00012  | Customer firehose not allowed  | Customer firehose disabled           |
+| OBP-00013  | API instance id not specified  | Instance ID missing from props       |
+| OBP-00014  | Mandatory properties not set   | Required props missing               |
 
 #### Exceptions (OBP-01XXX)
 
-| Error Code | Message | Description |
-|------------|---------|-------------|
-| OBP-01000 | Request timeout | Backend service timeout |
+| Error Code | Message         | Description             |
+| ---------- | --------------- | ----------------------- |
+| OBP-01000  | Request timeout | Backend service timeout |
 
 #### WebUI Props (OBP-08XXX)
 
-| Error Code | Message | Description |
-|------------|---------|-------------|
-| OBP-08001 | Invalid WebUI props format | Name format incorrect |
-| OBP-08002 | WebUI props not found | Invalid WEB_UI_PROPS_ID |
+| Error Code | Message                    | Description             |
+| ---------- | -------------------------- | ----------------------- |
+| OBP-08001  | Invalid WebUI props format | Name format incorrect   |
+| OBP-08002  | WebUI props not found      | Invalid WEB_UI_PROPS_ID |
 
 #### Dynamic Entities/Endpoints (OBP-09XXX)
 
-| Error Code | Message | Description |
-|------------|---------|-------------|
-| OBP-09001 | DynamicEntity not found | Invalid DYNAMIC_ENTITY_ID |
-| OBP-09002 | DynamicEntity name exists | Duplicate entityName |
-| OBP-09003 | DynamicEntity not exists | Check entityName |
-| OBP-09004 | DynamicEntity missing argument | Required argument missing |
-| OBP-09005 | Entity not found | Invalid entityId |
-| OBP-09006 | Operation not allowed | Data exists, cannot delete |
-| OBP-09007 | Validation failure | Data validation failed |
-| OBP-09008 | DynamicEndpoint exists | Duplicate endpoint |
-| OBP-09009 | DynamicEndpoint not found | Invalid DYNAMIC_ENDPOINT_ID |
-| OBP-09010 | Invalid user for DynamicEntity | Not the creator |
-| OBP-09011 | Invalid user for DynamicEndpoint | Not the creator |
-| OBP-09013 | Invalid Swagger JSON | DynamicEndpoint Swagger invalid |
-| OBP-09014 | Invalid request payload | JSON doesn't match validation |
-| OBP-09015 | Dynamic data not found | Invalid data reference |
-| OBP-09016 | Duplicate query parameters | Query params must be unique |
-| OBP-09017 | Duplicate header keys | Header keys must be unique |
+| Error Code | Message                          | Description                     |
+| ---------- | -------------------------------- | ------------------------------- |
+| OBP-09001  | DynamicEntity not found          | Invalid DYNAMIC_ENTITY_ID       |
+| OBP-09002  | DynamicEntity name exists        | Duplicate entityName            |
+| OBP-09003  | DynamicEntity not exists         | Check entityName                |
+| OBP-09004  | DynamicEntity missing argument   | Required argument missing       |
+| OBP-09005  | Entity not found                 | Invalid entityId                |
+| OBP-09006  | Operation not allowed            | Data exists, cannot delete      |
+| OBP-09007  | Validation failure               | Data validation failed          |
+| OBP-09008  | DynamicEndpoint exists           | Duplicate endpoint              |
+| OBP-09009  | DynamicEndpoint not found        | Invalid DYNAMIC_ENDPOINT_ID     |
+| OBP-09010  | Invalid user for DynamicEntity   | Not the creator                 |
+| OBP-09011  | Invalid user for DynamicEndpoint | Not the creator                 |
+| OBP-09013  | Invalid Swagger JSON             | DynamicEndpoint Swagger invalid |
+| OBP-09014  | Invalid request payload          | JSON doesn't match validation   |
+| OBP-09015  | Dynamic data not found           | Invalid data reference          |
+| OBP-09016  | Duplicate query parameters       | Query params must be unique     |
+| OBP-09017  | Duplicate header keys            | Header keys must be unique      |
 
 #### General Messages (OBP-10XXX)
 
-| Error Code | Message | Description |
-|------------|---------|-------------|
-| OBP-10001 | Incorrect JSON format | JSON syntax error |
-| OBP-10002 | Invalid number | Cannot convert to number |
-| OBP-10003 | Invalid ISO currency code | Not a valid 3-letter code |
-| OBP-10004 | FX currency not supported | Invalid currency pair |
-| OBP-10005 | Invalid date format | Cannot parse date |
-| OBP-10006 | Invalid currency value | Currency value invalid |
-| OBP-10007 | Incorrect role name | Role name invalid |
-| OBP-10008 | Cannot transform JSON | JSON to model failed |
-| OBP-10009 | Cannot save resource | Save/update failed |
-| OBP-10010 | Not implemented | Feature not implemented |
-| OBP-10011 | Invalid future date | Date must be in future |
-| OBP-10012 | Maximum limit exceeded | Max value is 10000 |
-| OBP-10013 | Empty box | Attempted to open empty box |
-| OBP-10014 | Cannot decrypt property | Decryption failed |
-| OBP-10015 | Allowed values | Invalid value provided |
-| OBP-10016 | Invalid filter parameters | URL filter incorrect |
-| OBP-10017 | Incorrect URL format | URL format invalid |
-| OBP-10018 | Too many requests | Rate limit exceeded |
-| OBP-10019 | Invalid boolean | Cannot convert to boolean |
-| OBP-10020 | Incorrect JSON | JSON content invalid |
-| OBP-10021 | Invalid connector name | Connector name incorrect |
-| OBP-10022 | Invalid connector method | Method name incorrect |
-| OBP-10023 | Sort direction error | Use DESC or ASC |
-| OBP-10024 | Invalid offset | Must be positive integer |
-| OBP-10025 | Invalid limit | Must be >= 1 |
-| OBP-10026 | Date format error | Wrong date string format |
-| OBP-10028 | Invalid anon parameter | Use TRUE or FALSE |
-| OBP-10029 | Invalid duration | Must be positive integer |
-| OBP-10030 | SCA method not defined | No SCA method configured |
-| OBP-10031 | Invalid outbound mapping | JSON structure invalid |
-| OBP-10032 | Invalid inbound mapping | JSON structure invalid |
-| OBP-10033 | Invalid IBAN | IBAN format incorrect |
-| OBP-10034 | Invalid URL parameters | URL params invalid |
-| OBP-10035 | Invalid JSON value | JSON value incorrect |
-| OBP-10036 | Invalid is_deleted | Use TRUE or FALSE |
-| OBP-10037 | Invalid HTTP method | HTTP method incorrect |
-| OBP-10038 | Invalid HTTP protocol | Protocol incorrect |
-| OBP-10039 | Incorrect trigger name | Trigger name invalid |
-| OBP-10040 | Service too busy | Try again later |
-| OBP-10041 | Invalid locale | Unsupported locale |
-| OBP-10050 | Cannot create FX currency | FX creation failed |
-| OBP-10051 | Invalid log level | Log level invalid |
-| OBP-10404 | 404 Not Found | URI not found |
-| OBP-10405 | Resource does not exist | Resource not found |
+| Error Code | Message                   | Description                 |
+| ---------- | ------------------------- | --------------------------- |
+| OBP-10001  | Incorrect JSON format     | JSON syntax error           |
+| OBP-10002  | Invalid number            | Cannot convert to number    |
+| OBP-10003  | Invalid ISO currency code | Not a valid 3-letter code   |
+| OBP-10004  | FX currency not supported | Invalid currency pair       |
+| OBP-10005  | Invalid date format       | Cannot parse date           |
+| OBP-10006  | Invalid currency value    | Currency value invalid      |
+| OBP-10007  | Incorrect role name       | Role name invalid           |
+| OBP-10008  | Cannot transform JSON     | JSON to model failed        |
+| OBP-10009  | Cannot save resource      | Save/update failed          |
+| OBP-10010  | Not implemented           | Feature not implemented     |
+| OBP-10011  | Invalid future date       | Date must be in future      |
+| OBP-10012  | Maximum limit exceeded    | Max value is 10000          |
+| OBP-10013  | Empty box                 | Attempted to open empty box |
+| OBP-10014  | Cannot decrypt property   | Decryption failed           |
+| OBP-10015  | Allowed values            | Invalid value provided      |
+| OBP-10016  | Invalid filter parameters | URL filter incorrect        |
+| OBP-10017  | Incorrect URL format      | URL format invalid          |
+| OBP-10018  | Too many requests         | Rate limit exceeded         |
+| OBP-10019  | Invalid boolean           | Cannot convert to boolean   |
+| OBP-10020  | Incorrect JSON            | JSON content invalid        |
+| OBP-10021  | Invalid connector name    | Connector name incorrect    |
+| OBP-10022  | Invalid connector method  | Method name incorrect       |
+| OBP-10023  | Sort direction error      | Use DESC or ASC             |
+| OBP-10024  | Invalid offset            | Must be positive integer    |
+| OBP-10025  | Invalid limit             | Must be >= 1                |
+| OBP-10026  | Date format error         | Wrong date string format    |
+| OBP-10028  | Invalid anon parameter    | Use TRUE or FALSE           |
+| OBP-10029  | Invalid duration          | Must be positive integer    |
+| OBP-10030  | SCA method not defined    | No SCA method configured    |
+| OBP-10031  | Invalid outbound mapping  | JSON structure invalid      |
+| OBP-10032  | Invalid inbound mapping   | JSON structure invalid      |
+| OBP-10033  | Invalid IBAN              | IBAN format incorrect       |
+| OBP-10034  | Invalid URL parameters    | URL params invalid          |
+| OBP-10035  | Invalid JSON value        | JSON value incorrect        |
+| OBP-10036  | Invalid is_deleted        | Use TRUE or FALSE           |
+| OBP-10037  | Invalid HTTP method       | HTTP method incorrect       |
+| OBP-10038  | Invalid HTTP protocol     | Protocol incorrect          |
+| OBP-10039  | Incorrect trigger name    | Trigger name invalid        |
+| OBP-10040  | Service too busy          | Try again later             |
+| OBP-10041  | Invalid locale            | Unsupported locale          |
+| OBP-10050  | Cannot create FX currency | FX creation failed          |
+| OBP-10051  | Invalid log level         | Log level invalid           |
+| OBP-10404  | 404 Not Found             | URI not found               |
+| OBP-10405  | Resource does not exist   | Resource not found          |
 
 #### Authentication/Authorization (OBP-20XXX)
 
-| Error Code | Message | Description |
-|------------|---------|-------------|
-| OBP-20001 | User not logged in | Authentication required |
-| OBP-20002 | DirectLogin missing parameters | Required params missing |
-| OBP-20003 | DirectLogin invalid token | Token invalid or expired |
-| OBP-20004 | Invalid login credentials | Username/password wrong |
-| OBP-20005 | User not found by ID | Invalid USER_ID |
-| OBP-20006 | User missing roles | Insufficient entitlements |
-| OBP-20007 | User not found by email | Email not found |
-| OBP-20008 | Invalid consumer key | Consumer key invalid |
-| OBP-20009 | Invalid consumer credentials | Credentials incorrect |
-| OBP-20010 | Value too long | Value exceeds limit |
-| OBP-20011 | Invalid characters | Invalid chars in value |
-| OBP-20012 | Invalid DirectLogin parameters | Parameters incorrect |
-| OBP-20013 | Account locked | User account locked |
-| OBP-20014 | Invalid consumer ID | Invalid CONSUMER_ID |
-| OBP-20015 | No permission to update consumer | Not the creator |
-| OBP-20016 | Unexpected login error | Login error occurred |
-| OBP-20017 | No view access | No access to VIEW_ID |
-| OBP-20018 | Invalid redirect URL | Internal redirect invalid |
-| OBP-20019 | No owner view | User lacks owner view |
-| OBP-20020 | Invalid custom view format | Must start with _ |
-| OBP-20021 | System views immutable | Cannot modify system views |
-| OBP-20022 | View permission denied | View doesn't permit access |
-| OBP-20023 | Consumer missing roles | Insufficient consumer roles |
-| OBP-20024 | Consumer not found | Invalid CONSUMER_ID |
-| OBP-20025 | Scope not found | Invalid SCOPE_ID |
-| OBP-20026 | Consumer lacks scope | Missing SCOPE_ID |
-| OBP-20027 | User not found | Provider/username not found |
-| OBP-20028 | GatewayLogin missing params | Parameters missing |
-| OBP-20029 | GatewayLogin error | Unknown error |
-| OBP-20030 | Gateway host missing | Property not defined |
-| OBP-20031 | Gateway whitelist | Not allowed address |
-| OBP-20040 | Gateway JWT invalid | JWT corrupted |
-| OBP-20041 | Cannot extract JWT | JWT extraction failed |
-| OBP-20042 | No need to call CBS | CBS call unnecessary |
-| OBP-20043 | Cannot find user | User not found |
-| OBP-20044 | Cannot get CBS token | CBS token failed |
-| OBP-20045 | Cannot get/create user | User operation failed |
-| OBP-20046 | No JWT for response | JWT unavailable |
-| OBP-20047 | Insufficient grant permission | Cannot grant view access |
-| OBP-20048 | Insufficient revoke permission | Cannot revoke view access |
-| OBP-20049 | Source view less permission | Fewer permissions than target |
-| OBP-20050 | Not super admin | User not super admin |
-| OBP-20051 | Elasticsearch index not found | ES index missing |
-| OBP-20052 | Result set too small | Privacy threshold |
-| OBP-20053 | ES query body empty | Query cannot be empty |
-| OBP-20054 | Invalid amount | Amount value invalid |
-| OBP-20055 | Missing query params | Required params missing |
-| OBP-20056 | Elasticsearch disabled | ES not enabled |
-| OBP-20057 | User not found by userId | Invalid userId |
-| OBP-20058 | Consumer disabled | Consumer is disabled |
-| OBP-20059 | Cannot assign account access | Assignment failed |
-| OBP-20060 | No read access | User lacks view access |
-| OBP-20062 | Frequency per day error | Invalid frequency value |
-| OBP-20063 | Frequency must be one | One-off requires freq=1 |
-| OBP-20064 | User deleted | User is deleted |
-| OBP-20065 | Cannot get/create DAuth user | DAuth user failed |
-| OBP-20066 | DAuth missing parameters | Parameters missing |
-| OBP-20067 | DAuth unknown error | Unknown DAuth error |
-| OBP-20068 | DAuth host missing | Property not defined |
-| OBP-20069 | DAuth whitelist | Not allowed address |
-| OBP-20070 | No DAuth JWT | JWT unavailable |
-| OBP-20071 | DAuth JWT invalid | JWT corrupted |
-| OBP-20072 | Invalid DAuth header | Header format wrong |
-| OBP-20079 | Invalid provider URL | Provider mismatch |
-| OBP-20080 | Invalid auth header | Header format unsupported |
-| OBP-20081 | User attribute not found | Invalid USER_ATTRIBUTE_ID |
-| OBP-20082 | Missing DirectLogin header | Header missing |
-| OBP-20083 | Invalid DirectLogin header | Missing DirectLogin word |
-| OBP-20084 | Cannot grant system view | Insufficient permissions |
-| OBP-20085 | Cannot grant custom view | Permission denied |
-| OBP-20086 | Cannot revoke system view | Insufficient permissions |
-| OBP-20087 | Cannot revoke custom view | Permission denied |
-| OBP-20088 | Consent access empty | Access must be requested |
-| OBP-20089 | Recurring indicator invalid | Must be false for allAccounts |
-| OBP-20090 | Frequency invalid | Must be 1 for allAccounts |
-| OBP-20091 | Invalid availableAccounts | Must be 'allAccounts' |
-| OBP-20101 | Not super admin or missing role | Admin check failed |
-| OBP-20102 | Cannot get/create user | User operation failed |
-| OBP-20103 | Invalid user provider | Provider invalid |
-| OBP-20104 | User not found | Provider/ID not found |
-| OBP-20105 | Balance not found | Invalid BALANCE_ID |
+| Error Code | Message                          | Description                   |
+| ---------- | -------------------------------- | ----------------------------- |
+| OBP-20001  | User not logged in               | Authentication required       |
+| OBP-20002  | DirectLogin missing parameters   | Required params missing       |
+| OBP-20003  | DirectLogin invalid token        | Token invalid or expired      |
+| OBP-20004  | Invalid login credentials        | Username/password wrong       |
+| OBP-20005  | User not found by ID             | Invalid USER_ID               |
+| OBP-20006  | User missing roles               | Insufficient entitlements     |
+| OBP-20007  | User not found by email          | Email not found               |
+| OBP-20008  | Invalid consumer key             | Consumer key invalid          |
+| OBP-20009  | Invalid consumer credentials     | Credentials incorrect         |
+| OBP-20010  | Value too long                   | Value exceeds limit           |
+| OBP-20011  | Invalid characters               | Invalid chars in value        |
+| OBP-20012  | Invalid DirectLogin parameters   | Parameters incorrect          |
+| OBP-20013  | Account locked                   | User account locked           |
+| OBP-20014  | Invalid consumer ID              | Invalid CONSUMER_ID           |
+| OBP-20015  | No permission to update consumer | Not the creator               |
+| OBP-20016  | Unexpected login error           | Login error occurred          |
+| OBP-20017  | No view access                   | No access to VIEW_ID          |
+| OBP-20018  | Invalid redirect URL             | Internal redirect invalid     |
+| OBP-20019  | No owner view                    | User lacks owner view         |
+| OBP-20020  | Invalid custom view format       | Must start with \_            |
+| OBP-20021  | System views immutable           | Cannot modify system views    |
+| OBP-20022  | View permission denied           | View doesn't permit access    |
+| OBP-20023  | Consumer missing roles           | Insufficient consumer roles   |
+| OBP-20024  | Consumer not found               | Invalid CONSUMER_ID           |
+| OBP-20025  | Scope not found                  | Invalid SCOPE_ID              |
+| OBP-20026  | Consumer lacks scope             | Missing SCOPE_ID              |
+| OBP-20027  | User not found                   | Provider/username not found   |
+| OBP-20028  | GatewayLogin missing params      | Parameters missing            |
+| OBP-20029  | GatewayLogin error               | Unknown error                 |
+| OBP-20030  | Gateway host missing             | Property not defined          |
+| OBP-20031  | Gateway whitelist                | Not allowed address           |
+| OBP-20040  | Gateway JWT invalid              | JWT corrupted                 |
+| OBP-20041  | Cannot extract JWT               | JWT extraction failed         |
+| OBP-20042  | No need to call CBS              | CBS call unnecessary          |
+| OBP-20043  | Cannot find user                 | User not found                |
+| OBP-20044  | Cannot get CBS token             | CBS token failed              |
+| OBP-20045  | Cannot get/create user           | User operation failed         |
+| OBP-20046  | No JWT for response              | JWT unavailable               |
+| OBP-20047  | Insufficient grant permission    | Cannot grant view access      |
+| OBP-20048  | Insufficient revoke permission   | Cannot revoke view access     |
+| OBP-20049  | Source view less permission      | Fewer permissions than target |
+| OBP-20050  | Not super admin                  | User not super admin          |
+| OBP-20051  | Elasticsearch index not found    | ES index missing              |
+| OBP-20052  | Result set too small             | Privacy threshold             |
+| OBP-20053  | ES query body empty              | Query cannot be empty         |
+| OBP-20054  | Invalid amount                   | Amount value invalid          |
+| OBP-20055  | Missing query params             | Required params missing       |
+| OBP-20056  | Elasticsearch disabled           | ES not enabled                |
+| OBP-20057  | User not found by userId         | Invalid userId                |
+| OBP-20058  | Consumer disabled                | Consumer is disabled          |
+| OBP-20059  | Cannot assign account access     | Assignment failed             |
+| OBP-20060  | No read access                   | User lacks view access        |
+| OBP-20062  | Frequency per day error          | Invalid frequency value       |
+| OBP-20063  | Frequency must be one            | One-off requires freq=1       |
+| OBP-20064  | User deleted                     | User is deleted               |
+| OBP-20065  | Cannot get/create DAuth user     | DAuth user failed             |
+| OBP-20066  | DAuth missing parameters         | Parameters missing            |
+| OBP-20067  | DAuth unknown error              | Unknown DAuth error           |
+| OBP-20068  | DAuth host missing               | Property not defined          |
+| OBP-20069  | DAuth whitelist                  | Not allowed address           |
+| OBP-20070  | No DAuth JWT                     | JWT unavailable               |
+| OBP-20071  | DAuth JWT invalid                | JWT corrupted                 |
+| OBP-20072  | Invalid DAuth header             | Header format wrong           |
+| OBP-20079  | Invalid provider URL             | Provider mismatch             |
+| OBP-20080  | Invalid auth header              | Header format unsupported     |
+| OBP-20081  | User attribute not found         | Invalid USER_ATTRIBUTE_ID     |
+| OBP-20082  | Missing DirectLogin header       | Header missing                |
+| OBP-20083  | Invalid DirectLogin header       | Missing DirectLogin word      |
+| OBP-20084  | Cannot grant system view         | Insufficient permissions      |
+| OBP-20085  | Cannot grant custom view         | Permission denied             |
+| OBP-20086  | Cannot revoke system view        | Insufficient permissions      |
+| OBP-20087  | Cannot revoke custom view        | Permission denied             |
+| OBP-20088  | Consent access empty             | Access must be requested      |
+| OBP-20089  | Recurring indicator invalid      | Must be false for allAccounts |
+| OBP-20090  | Frequency invalid                | Must be 1 for allAccounts     |
+| OBP-20091  | Invalid availableAccounts        | Must be 'allAccounts'         |
+| OBP-20101  | Not super admin or missing role  | Admin check failed            |
+| OBP-20102  | Cannot get/create user           | User operation failed         |
+| OBP-20103  | Invalid user provider            | Provider invalid              |
+| OBP-20104  | User not found                   | Provider/ID not found         |
+| OBP-20105  | Balance not found                | Invalid BALANCE_ID            |
 
 #### OAuth 2.0 (OBP-202XX)
 
-| Error Code | Message | Description |
-|------------|---------|-------------|
-| OBP-20200 | Application not identified | Cannot identify app |
-| OBP-20201 | OAuth2 not allowed | OAuth2 disabled |
-| OBP-20202 | Cannot verify JWT | JWT verification failed |
-| OBP-20203 | No JWKS URL | JWKS URL missing |
-| OBP-20204 | Bad JWT | JWT error |
-| OBP-20205 | Parse error | Parsing failed |
-| OBP-20206 | Bad JOSE | JOSE exception |
-| OBP-20207 | JOSE exception | Internal JOSE error |
-| OBP-20208 | Cannot match issuer/JWKS | Issuer/JWKS mismatch |
-| OBP-20209 | Token has no consumer | Consumer not linked |
-| OBP-20210 | Certificate mismatch | Different certificate |
-| OBP-20211 | OTP expired | One-time password expired |
-| OBP-20213 | Token endpoint auth forbidden | Auth method unsupported |
-| OBP-20214 | OAuth2 not recognized | Token not recognized |
-| OBP-20215 | Token validation error | Validation problem |
-| OBP-20216 | Invalid OTP | One-time password invalid |
+| Error Code | Message                       | Description               |
+| ---------- | ----------------------------- | ------------------------- |
+| OBP-20200  | Application not identified    | Cannot identify app       |
+| OBP-20201  | OAuth2 not allowed            | OAuth2 disabled           |
+| OBP-20202  | Cannot verify JWT             | JWT verification failed   |
+| OBP-20203  | No JWKS URL                   | JWKS URL missing          |
+| OBP-20204  | Bad JWT                       | JWT error                 |
+| OBP-20205  | Parse error                   | Parsing failed            |
+| OBP-20206  | Bad JOSE                      | JOSE exception            |
+| OBP-20207  | JOSE exception                | Internal JOSE error       |
+| OBP-20208  | Cannot match issuer/JWKS      | Issuer/JWKS mismatch      |
+| OBP-20209  | Token has no consumer         | Consumer not linked       |
+| OBP-20210  | Certificate mismatch          | Different certificate     |
+| OBP-20211  | OTP expired                   | One-time password expired |
+| OBP-20213  | Token endpoint auth forbidden | Auth method unsupported   |
+| OBP-20214  | OAuth2 not recognized         | Token not recognized      |
+| OBP-20215  | Token validation error        | Validation problem        |
+| OBP-20216  | Invalid OTP                   | One-time password invalid |
 
 #### Headers (OBP-2025X)
 
-| Error Code | Message | Description |
-|------------|---------|-------------|
-| OBP-20250 | Authorization ambiguity | Ambiguous auth headers |
-| OBP-20251 | Missing mandatory headers | Required headers missing |
-| OBP-20252 | Empty request headers | Null/empty not allowed |
-| OBP-20253 | Invalid UUID | Must be UUID format |
-| OBP-20254 | Invalid Signature header | Signature header invalid |
-| OBP-20255 | Request ID already used | Duplicate request ID |
-| OBP-20256 | Invalid Consent-Id usage | Header misuse |
-| OBP-20257 | Invalid RFC 7231 date | Date format wrong |
+| Error Code | Message                   | Description              |
+| ---------- | ------------------------- | ------------------------ |
+| OBP-20250  | Authorization ambiguity   | Ambiguous auth headers   |
+| OBP-20251  | Missing mandatory headers | Required headers missing |
+| OBP-20252  | Empty request headers     | Null/empty not allowed   |
+| OBP-20253  | Invalid UUID              | Must be UUID format      |
+| OBP-20254  | Invalid Signature header  | Signature header invalid |
+| OBP-20255  | Request ID already used   | Duplicate request ID     |
+| OBP-20256  | Invalid Consent-Id usage  | Header misuse            |
+| OBP-20257  | Invalid RFC 7231 date     | Date format wrong        |
 
 #### X.509 Certificates (OBP-203XX)
 
-| Error Code | Message | Description |
-|------------|---------|-------------|
-| OBP-20300 | PEM certificate issue | Certificate error |
-| OBP-20301 | Parsing failed | Cannot parse PEM |
-| OBP-20302 | Certificate expired | Cert is expired |
-| OBP-20303 | Certificate not yet valid | Cert not active yet |
-| OBP-20304 | No RSA public key | RSA key not found |
-| OBP-20305 | No EC public key | EC key not found |
-| OBP-20306 | No certificate | Cert not in header |
-| OBP-20307 | Action not allowed | Insufficient PSD2 role |
-| OBP-20308 | No PSD2 roles | PSD2 roles missing |
-| OBP-20309 | No public key | Public key missing |
-| OBP-20310 | Cannot verify signature | Signature verification failed |
-| OBP-20311 | Request not signed | Signature missing |
-| OBP-20312 | Cannot validate public key | Key validation failed |
+| Error Code | Message                    | Description                   |
+| ---------- | -------------------------- | ----------------------------- |
+| OBP-20300  | PEM certificate issue      | Certificate error             |
+| OBP-20301  | Parsing failed             | Cannot parse PEM              |
+| OBP-20302  | Certificate expired        | Cert is expired               |
+| OBP-20303  | Certificate not yet valid  | Cert not active yet           |
+| OBP-20304  | No RSA public key          | RSA key not found             |
+| OBP-20305  | No EC public key           | EC key not found              |
+| OBP-20306  | No certificate             | Cert not in header            |
+| OBP-20307  | Action not allowed         | Insufficient PSD2 role        |
+| OBP-20308  | No PSD2 roles              | PSD2 roles missing            |
+| OBP-20309  | No public key              | Public key missing            |
+| OBP-20310  | Cannot verify signature    | Signature verification failed |
+| OBP-20311  | Request not signed         | Signature missing             |
+| OBP-20312  | Cannot validate public key | Key validation failed         |
 
 #### OpenID Connect (OBP-204XX)
 
-| Error Code | Message | Description |
-|------------|---------|-------------|
-| OBP-20400 | Cannot exchange code | Token exchange failed |
-| OBP-20401 | Cannot save OIDC user | User save failed |
-| OBP-20402 | Cannot save OIDC token | Token save failed |
-| OBP-20403 | Invalid OIDC state | State parameter invalid |
-| OBP-20404 | Cannot handle OIDC data | Data handling failed |
-| OBP-20405 | Cannot validate ID token | ID token invalid |
+| Error Code | Message                  | Description             |
+| ---------- | ------------------------ | ----------------------- |
+| OBP-20400  | Cannot exchange code     | Token exchange failed   |
+| OBP-20401  | Cannot save OIDC user    | User save failed        |
+| OBP-20402  | Cannot save OIDC token   | Token save failed       |
+| OBP-20403  | Invalid OIDC state       | State parameter invalid |
+| OBP-20404  | Cannot handle OIDC data  | Data handling failed    |
+| OBP-20405  | Cannot validate ID token | ID token invalid        |
 
 #### Resources (OBP-30XXX)
 
-| Error Code | Message | Description |
-|------------|---------|-------------|
-| OBP-30001 | Bank not found | Invalid BANK_ID |
-| OBP-30002 | Customer not found | Invalid CUSTOMER_NUMBER |
-| OBP-30003 | Account not found | Invalid ACCOUNT_ID |
-| OBP-30004 | Counterparty not found | Invalid account reference |
-| OBP-30005 | View not found | Invalid VIEW_ID |
-| OBP-30006 | Customer number exists | Duplicate customer number |
-| OBP-30007 | Customer already exists | User already linked |
-| OBP-30008 | User customer link not found | Link not found |
-| OBP-30009 | ATM not found | Invalid ATM_ID |
-| OBP-30010 | Branch not found | Invalid BRANCH_ID |
-| OBP-30011 | Product not found | Invalid PRODUCT_CODE |
-| OBP-30012 | Counterparty not found | Invalid IBAN |
-| OBP-30013 | Counterparty not beneficiary | Not a beneficiary |
-| OBP-30014 | Counterparty exists | Duplicate counterparty |
-| OBP-30015 | Cannot create branch | Insert failed |
-| OBP-30016 | Cannot update branch | Update failed |
-| OBP-30017 | Counterparty not found | Invalid COUNTERPARTY_ID |
-| OBP-30018 | Bank account not found | Invalid BANK_ID/ACCOUNT_ID |
-| OBP-30019 | Consumer not found | Invalid CONSUMER_ID |
-| OBP-30020 | Cannot create bank | Insert failed |
-| OBP-30021 | Cannot update bank | Update failed |
-| OBP-30022 | No view permission | Permission missing |
-| OBP-30023 | Cannot update consumer | Update failed |
-| OBP-30024 | Cannot create consumer | Insert failed |
-| OBP-30025 | Cannot create user link | Link creation failed |
-| OBP-30026 | Consumer key exists | Duplicate key |
-| OBP-30027 | No account holders | Holders not found |
-| OBP-30028 | Cannot create ATM | Insert failed |
-| OBP-30029 | Cannot update ATM | Update failed |
-| OBP-30030 | Cannot create product | Insert failed |
-| OBP-30031 | Cannot update product | Update failed |
-| OBP-30032 | Cannot create card | Insert failed |
-| OBP-30033 | Cannot update card | Update failed |
-| OBP-30034 | ViewId not supported | Invalid VIEW_ID |
-| OBP-30035 | User customer link not found | Link not found |
-| OBP-30036 | Cannot create counterparty metadata | Insert failed |
-| OBP-30037 | Counterparty metadata not found | Metadata missing |
-| OBP-30038 | Cannot create FX rate | Insert failed |
-| OBP-30039 | Cannot update FX rate | Update failed |
-| OBP-30040 | Unknown FX rate error | FX error |
-| OBP-30041 | Checkbook order not found | Order not found |
-| OBP-30042 | Cannot get top APIs | Database error |
-| OBP-30043 | Cannot get aggregate metrics | Database error |
-| OBP-30044 | Default bank ID not set | Property missing |
-| OBP-30045 | Cannot get top consumers | Database error |
-| OBP-30046 | Customer not found | Invalid CUSTOMER_ID |
-| OBP-30047 | Cannot create webhook | Insert failed |
-| OBP-30048 | Cannot get webhooks | Retrieval failed |
-| OBP-30049 | Cannot update webhook | Update failed |
-| OBP-30050 | Webhook not found | Invalid webhook ID |
-| OBP-30051 | Cannot create customer | Insert failed |
-| OBP-30052 | Cannot check customer | Check failed |
-| OBP-30053 | Cannot create user auth context | Insert failed |
-| OBP-30054 | Cannot update user auth context | Update failed |
-| OBP-30055 | User auth context not found | Invalid USER_ID |
-| OBP-30056 | User auth context not found | Invalid context ID |
-| OBP-30057 | User auth context update not found | Update not found |
-| OBP-30058 | Cannot update customer | Update failed |
-| OBP-30059 | Card not found | Card not found |
-| OBP-30060 | Card exists | Duplicate card |
-| OBP-30061 | Card attribute not found | Invalid attribute ID |
-| OBP-30062 | Parent product not found | Invalid parent code |
-| OBP-30063 | Cannot grant account access | Grant failed |
-| OBP-30064 | Cannot revoke account access | Revoke failed |
-| OBP-30065 | Cannot find account access | Access not found |
-| OBP-30066 | Cannot get accounts | Retrieval failed |
-| OBP-30067 | Transaction not found | Invalid TRANSACTION_ID |
-| OBP-30068 | Transaction refunded | Already refunded |
-| OBP-30069 | Customer attribute not found | Invalid attribute ID |
-| OBP-30070 | Transaction attribute not found | Invalid attribute ID |
-| OBP-30071 | Attribute not found | Invalid definition ID |
-| OBP-30072 | Cannot create counterparty | Insert failed |
-| OBP-30073 | Account not found | Invalid routing |
-| OBP-30074 | Account not found | Invalid IBAN |
-| OBP-30075 | Account routing not found | Routing invalid |
-| OBP-30076 | Account not found | Invalid ACCOUNT_ID |
-| OBP-30077 | Cannot create OAuth2 consumer | Insert failed |
-| OBP-30078 | Transaction request attribute not found | Invalid attribute ID |
-| OBP-30079 | API collection not found | Collection missing |
-| OBP-30080 | Cannot create API collection | Insert failed |
-| OBP-30081 | Cannot delete API collection | Delete failed |
-| OBP-30082 | API collection endpoint not found | Endpoint missing |
-| OBP-30083 | Cannot create endpoint | Insert failed |
-| OBP-30084 | Cannot delete endpoint | Delete failed |
-| OBP-30085 | Endpoint exists | Duplicate endpoint |
-| OBP-30086 | Collection exists | Duplicate collection |
-| OBP-30087 | Double entry transaction not found | Transaction missing |
-| OBP-30088 | Invalid auth context key | Key invalid |
-| OBP-30089 | Cannot update ATM languages | Update failed |
-| OBP-30091 | Cannot update ATM currencies | Update failed |
-| OBP-30092 | Cannot update ATM accessibility | Update failed |
-| OBP-30093 | Cannot update ATM services | Update failed |
-| OBP-30094 | Cannot update ATM notes | Update failed |
-| OBP-30095 | Cannot update ATM categories | Update failed |
-| OBP-30096 | Cannot create endpoint tag | Insert failed |
-| OBP-30097 | Cannot update endpoint tag | Update failed |
-| OBP-30098 | Unknown endpoint tag error | Tag error |
-| OBP-30099 | Endpoint tag not found | Invalid tag ID |
-| OBP-30100 | Endpoint tag exists | Duplicate tag |
-| OBP-30101 | Meetings not supported | Feature disabled |
-| OBP-30102 | Meeting API key missing | Key not configured |
-| OBP-30103 | Meeting secret missing | Secret not configured |
-| OBP-30104 | Meeting not found | Meeting missing |
-| OBP-30105 | Invalid balance currency | Currency invalid |
-| OBP-30106 | Invalid balance amount | Amount invalid |
-| OBP-30107 | Invalid user ID | USER_ID invalid |
-| OBP-30108 | Invalid account type | Type invalid |
-| OBP-30109 | Initial balance must be zero | Must be 0 |
-| OBP-30110 | Invalid account ID format | Format invalid |
-| OBP-30111 | Invalid bank ID format | Format invalid |
-| OBP-30112 | Invalid initial balance | Not a number |
-| OBP-30113 | Invalid customer bank | Wrong bank |
-| OBP-30114 | Invalid account routings | Routing invalid |
-| OBP-30115 | Account routing exists | Duplicate routing |
-| OBP-30116 | Invalid payment system | Name invalid |
-| OBP-30117 | Product fee not found | Invalid fee ID |
-| OBP-30118 | Cannot create product fee | Insert failed |
-| OBP-30119 | Cannot update product fee | Update failed |
-| OBP-30120 | Cannot delete ATM | Delete failed |
-| OBP-30200 | Card not found | Invalid CARD_NUMBER |
-| OBP-30201 | Agent not found | Invalid AGENT_ID |
-| OBP-30202 | Cannot create agent | Insert failed |
-| OBP-30203 | Cannot update agent | Update failed |
-| OBP-30204 | Customer account link not found | Link missing |
-| OBP-30205 | Entitlement is bank role | Need bank_id |
-| OBP-30206 | Entitlement is system role | bank_id must be empty |
-| OBP-30207 | Invalid password format | Password too weak |
-| OBP-30208 | Account ID exists | Duplicate ACCOUNT_ID |
-| OBP-30209 | Insufficient auth for branch | Missing role |
-| OBP-30210 | Insufficient auth for bank | Missing role |
-| OBP-30211 | Invalid connector | Invalid CONNECTOR |
-| OBP-30212 | Entitlement not found | Invalid entitlement ID |
-| OBP-30213 | User lacks entitlement | Missing ENTITLEMENT_ID |
-| OBP-30214 | Entitlement request exists | Duplicate request |
-| OBP-30215 | Entitlement request not found | Request missing |
-| OBP-30216 | Entitlement exists | Duplicate entitlement |
-| OBP-30217 | Cannot add entitlement request | Insert failed |
-| OBP-30218 | Insufficient auth to delete | Missing role |
-| OBP-30219 | Cannot delete entitlement | Delete failed |
-| OBP-30220 | Cannot grant entitlement | Grant failed |
-| OBP-30221 | Cannot grant - grantor issue | Insufficient privileges |
-| OBP-30222 | Counterparty not found | Invalid routings |
-| OBP-30223 | Account already linked | Customer link exists |
-| OBP-30224 | Cannot create link | Link creation failed |
-| OBP-30225 | Link not found | Invalid link ID |
-| OBP-30226 | Cannot get links | Retrieval failed |
-| OBP-30227 | Cannot update link | Update failed |
-| OBP-30228 | Cannot delete link | Delete failed |
-| OBP-30229 | Cannot get consent | Implicit SCA failed |
-| OBP-30250 | Cannot create system view | Insert failed |
-| OBP-30251 | Cannot delete system view | Delete failed |
-| OBP-30252 | System view not found | Invalid VIEW_ID |
-| OBP-30253 | Cannot update system view | Update failed |
-| OBP-30254 | System view exists | Duplicate view |
-| OBP-30255 | Empty view name | Name required |
-| OBP-30256 | Cannot delete custom view | Delete failed |
-| OBP-30257 | Cannot find custom view | View missing |
-| OBP-30258 | System view cannot be public | Not allowed |
-| OBP-30259 | Cannot create custom view | Insert failed |
-| OBP-30260 | Cannot update custom view | Update failed |
-| OBP-30261 | Cannot create counterparty limit | Insert failed |
-| OBP-30262 | Cannot update counterparty limit | Update failed |
-| OBP-30263 | Counterparty limit not found | Limit missing |
-| OBP-30264 | Counterparty limit exists | Duplicate limit |
-| OBP-30265 | Cannot delete limit | Delete failed |
-| OBP-30266 | Custom view exists | Duplicate view |
-| OBP-30267 | User lacks permission | Permission missing |
-| OBP-30268 | Limit validation error | Validation failed |
-| OBP-30269 | Account number ambiguous | Multiple matches |
-| OBP-30270 | Invalid account number | Number invalid |
-| OBP-30271 | Account not found | Invalid routings |
-| OBP-30300 | Tax residence not found | Invalid residence ID |
-| OBP-30310 | Customer address not found | Invalid address ID |
-| OBP-30311 | Account application not found | Invalid application ID |
-| OBP-30312 | Resource user not found | Invalid USER_ID |
-| OBP-30313 | Missing userId and customerId | Both missing |
-| OBP-30314 | Application already accepted | Already processed |
-| OBP-30315 | Cannot update status | Update failed |
-| OBP-30316 | Cannot create application | Insert failed |
-| OBP-30317 | Cannot delete counterparty | Delete failed |
-| OBP-30318 | Cannot delete metadata | Delete failed |
-| OBP-30319 | Cannot update label | Update failed |
-| OBP-30320 | Cannot get product | Retrieval failed |
-| OBP-30321 | Cannot get product tree | Retrieval failed |
-| OBP-30323 | Cannot get charge value | Retrieval failed |
-| OBP-30324 | Cannot get charges | Retrieval failed |
-| OBP-30325 | Agent account link not found | Link missing |
-| OBP-30326 | Agents not found | No agents |
-| OBP-30327 | Cannot create agent link | Insert failed |
-| OBP-30328 | Agent number exists | Duplicate number |
-| OBP-30329 | Cannot get agent links | Retrieval failed |
-| OBP-30330 | Agent not beneficiary | Not confirmed |
-| OBP-30331 | Invalid entitlement name | Name invalid |
+| Error Code | Message                                 | Description                |
+| ---------- | --------------------------------------- | -------------------------- |
+| OBP-30001  | Bank not found                          | Invalid BANK_ID            |
+| OBP-30002  | Customer not found                      | Invalid CUSTOMER_NUMBER    |
+| OBP-30003  | Account not found                       | Invalid ACCOUNT_ID         |
+| OBP-30004  | Counterparty not found                  | Invalid account reference  |
+| OBP-30005  | View not found                          | Invalid VIEW_ID            |
+| OBP-30006  | Customer number exists                  | Duplicate customer number  |
+| OBP-30007  | Customer already exists                 | User already linked        |
+| OBP-30008  | User customer link not found            | Link not found             |
+| OBP-30009  | ATM not found                           | Invalid ATM_ID             |
+| OBP-30010  | Branch not found                        | Invalid BRANCH_ID          |
+| OBP-30011  | Product not found                       | Invalid PRODUCT_CODE       |
+| OBP-30012  | Counterparty not found                  | Invalid IBAN               |
+| OBP-30013  | Counterparty not beneficiary            | Not a beneficiary          |
+| OBP-30014  | Counterparty exists                     | Duplicate counterparty     |
+| OBP-30015  | Cannot create branch                    | Insert failed              |
+| OBP-30016  | Cannot update branch                    | Update failed              |
+| OBP-30017  | Counterparty not found                  | Invalid COUNTERPARTY_ID    |
+| OBP-30018  | Bank account not found                  | Invalid BANK_ID/ACCOUNT_ID |
+| OBP-30019  | Consumer not found                      | Invalid CONSUMER_ID        |
+| OBP-30020  | Cannot create bank                      | Insert failed              |
+| OBP-30021  | Cannot update bank                      | Update failed              |
+| OBP-30022  | No view permission                      | Permission missing         |
+| OBP-30023  | Cannot update consumer                  | Update failed              |
+| OBP-30024  | Cannot create consumer                  | Insert failed              |
+| OBP-30025  | Cannot create user link                 | Link creation failed       |
+| OBP-30026  | Consumer key exists                     | Duplicate key              |
+| OBP-30027  | No account holders                      | Holders not found          |
+| OBP-30028  | Cannot create ATM                       | Insert failed              |
+| OBP-30029  | Cannot update ATM                       | Update failed              |
+| OBP-30030  | Cannot create product                   | Insert failed              |
+| OBP-30031  | Cannot update product                   | Update failed              |
+| OBP-30032  | Cannot create card                      | Insert failed              |
+| OBP-30033  | Cannot update card                      | Update failed              |
+| OBP-30034  | ViewId not supported                    | Invalid VIEW_ID            |
+| OBP-30035  | User customer link not found            | Link not found             |
+| OBP-30036  | Cannot create counterparty metadata     | Insert failed              |
+| OBP-30037  | Counterparty metadata not found         | Metadata missing           |
+| OBP-30038  | Cannot create FX rate                   | Insert failed              |
+| OBP-30039  | Cannot update FX rate                   | Update failed              |
+| OBP-30040  | Unknown FX rate error                   | FX error                   |
+| OBP-30041  | Checkbook order not found               | Order not found            |
+| OBP-30042  | Cannot get top APIs                     | Database error             |
+| OBP-30043  | Cannot get aggregate metrics            | Database error             |
+| OBP-30044  | Default bank ID not set                 | Property missing           |
+| OBP-30045  | Cannot get top consumers                | Database error             |
+| OBP-30046  | Customer not found                      | Invalid CUSTOMER_ID        |
+| OBP-30047  | Cannot create webhook                   | Insert failed              |
+| OBP-30048  | Cannot get webhooks                     | Retrieval failed           |
+| OBP-30049  | Cannot update webhook                   | Update failed              |
+| OBP-30050  | Webhook not found                       | Invalid webhook ID         |
+| OBP-30051  | Cannot create customer                  | Insert failed              |
+| OBP-30052  | Cannot check customer                   | Check failed               |
+| OBP-30053  | Cannot create user auth context         | Insert failed              |
+| OBP-30054  | Cannot update user auth context         | Update failed              |
+| OBP-30055  | User auth context not found             | Invalid USER_ID            |
+| OBP-30056  | User auth context not found             | Invalid context ID         |
+| OBP-30057  | User auth context update not found      | Update not found           |
+| OBP-30058  | Cannot update customer                  | Update failed              |
+| OBP-30059  | Card not found                          | Card not found             |
+| OBP-30060  | Card exists                             | Duplicate card             |
+| OBP-30061  | Card attribute not found                | Invalid attribute ID       |
+| OBP-30062  | Parent product not found                | Invalid parent code        |
+| OBP-30063  | Cannot grant account access             | Grant failed               |
+| OBP-30064  | Cannot revoke account access            | Revoke failed              |
+| OBP-30065  | Cannot find account access              | Access not found           |
+| OBP-30066  | Cannot get accounts                     | Retrieval failed           |
+| OBP-30067  | Transaction not found                   | Invalid TRANSACTION_ID     |
+| OBP-30068  | Transaction refunded                    | Already refunded           |
+| OBP-30069  | Customer attribute not found            | Invalid attribute ID       |
+| OBP-30070  | Transaction attribute not found         | Invalid attribute ID       |
+| OBP-30071  | Attribute not found                     | Invalid definition ID      |
+| OBP-30072  | Cannot create counterparty              | Insert failed              |
+| OBP-30073  | Account not found                       | Invalid routing            |
+| OBP-30074  | Account not found                       | Invalid IBAN               |
+| OBP-30075  | Account routing not found               | Routing invalid            |
+| OBP-30076  | Account not found                       | Invalid ACCOUNT_ID         |
+| OBP-30077  | Cannot create OAuth2 consumer           | Insert failed              |
+| OBP-30078  | Transaction request attribute not found | Invalid attribute ID       |
+| OBP-30079  | API collection not found                | Collection missing         |
+| OBP-30080  | Cannot create API collection            | Insert failed              |
+| OBP-30081  | Cannot delete API collection            | Delete failed              |
+| OBP-30082  | API collection endpoint not found       | Endpoint missing           |
+| OBP-30083  | Cannot create endpoint                  | Insert failed              |
+| OBP-30084  | Cannot delete endpoint                  | Delete failed              |
+| OBP-30085  | Endpoint exists                         | Duplicate endpoint         |
+| OBP-30086  | Collection exists                       | Duplicate collection       |
+| OBP-30087  | Double entry transaction not found      | Transaction missing        |
+| OBP-30088  | Invalid auth context key                | Key invalid                |
+| OBP-30089  | Cannot update ATM languages             | Update failed              |
+| OBP-30091  | Cannot update ATM currencies            | Update failed              |
+| OBP-30092  | Cannot update ATM accessibility         | Update failed              |
+| OBP-30093  | Cannot update ATM services              | Update failed              |
+| OBP-30094  | Cannot update ATM notes                 | Update failed              |
+| OBP-30095  | Cannot update ATM categories            | Update failed              |
+| OBP-30096  | Cannot create endpoint tag              | Insert failed              |
+| OBP-30097  | Cannot update endpoint tag              | Update failed              |
+| OBP-30098  | Unknown endpoint tag error              | Tag error                  |
+| OBP-30099  | Endpoint tag not found                  | Invalid tag ID             |
+| OBP-30100  | Endpoint tag exists                     | Duplicate tag              |
+| OBP-30101  | Meetings not supported                  | Feature disabled           |
+| OBP-30102  | Meeting API key missing                 | Key not configured         |
+| OBP-30103  | Meeting secret missing                  | Secret not configured      |
+| OBP-30104  | Meeting not found                       | Meeting missing            |
+| OBP-30105  | Invalid balance currency                | Currency invalid           |
+| OBP-30106  | Invalid balance amount                  | Amount invalid             |
+| OBP-30107  | Invalid user ID                         | USER_ID invalid            |
+| OBP-30108  | Invalid account type                    | Type invalid               |
+| OBP-30109  | Initial balance must be zero            | Must be 0                  |
+| OBP-30110  | Invalid account ID format               | Format invalid             |
+| OBP-30111  | Invalid bank ID format                  | Format invalid             |
+| OBP-30112  | Invalid initial balance                 | Not a number               |
+| OBP-30113  | Invalid customer bank                   | Wrong bank                 |
+| OBP-30114  | Invalid account routings                | Routing invalid            |
+| OBP-30115  | Account routing exists                  | Duplicate routing          |
+| OBP-30116  | Invalid payment system                  | Name invalid               |
+| OBP-30117  | Product fee not found                   | Invalid fee ID             |
+| OBP-30118  | Cannot create product fee               | Insert failed              |
+| OBP-30119  | Cannot update product fee               | Update failed              |
+| OBP-30120  | Cannot delete ATM                       | Delete failed              |
+| OBP-30200  | Card not found                          | Invalid CARD_NUMBER        |
+| OBP-30201  | Agent not found                         | Invalid AGENT_ID           |
+| OBP-30202  | Cannot create agent                     | Insert failed              |
+| OBP-30203  | Cannot update agent                     | Update failed              |
+| OBP-30204  | Customer account link not found         | Link missing               |
+| OBP-30205  | Entitlement is bank role                | Need bank_id               |
+| OBP-30206  | Entitlement is system role              | bank_id must be empty      |
+| OBP-30207  | Invalid password format                 | Password too weak          |
+| OBP-30208  | Account ID exists                       | Duplicate ACCOUNT_ID       |
+| OBP-30209  | Insufficient auth for branch            | Missing role               |
+| OBP-30210  | Insufficient auth for bank              | Missing role               |
+| OBP-30211  | Invalid connector                       | Invalid CONNECTOR          |
+| OBP-30212  | Entitlement not found                   | Invalid entitlement ID     |
+| OBP-30213  | User lacks entitlement                  | Missing ENTITLEMENT_ID     |
+| OBP-30214  | Entitlement request exists              | Duplicate request          |
+| OBP-30215  | Entitlement request not found           | Request missing            |
+| OBP-30216  | Entitlement exists                      | Duplicate entitlement      |
+| OBP-30217  | Cannot add entitlement request          | Insert failed              |
+| OBP-30218  | Insufficient auth to delete             | Missing role               |
+| OBP-30219  | Cannot delete entitlement               | Delete failed              |
+| OBP-30220  | Cannot grant entitlement                | Grant failed               |
+| OBP-30221  | Cannot grant - grantor issue            | Insufficient privileges    |
+| OBP-30222  | Counterparty not found                  | Invalid routings           |
+| OBP-30223  | Account already linked                  | Customer link exists       |
+| OBP-30224  | Cannot create link                      | Link creation failed       |
+| OBP-30225  | Link not found                          | Invalid link ID            |
+| OBP-30226  | Cannot get links                        | Retrieval failed           |
+| OBP-30227  | Cannot update link                      | Update failed              |
+| OBP-30228  | Cannot delete link                      | Delete failed              |
+| OBP-30229  | Cannot get consent                      | Implicit SCA failed        |
+| OBP-30250  | Cannot create system view               | Insert failed              |
+| OBP-30251  | Cannot delete system view               | Delete failed              |
+| OBP-30252  | System view not found                   | Invalid VIEW_ID            |
+| OBP-30253  | Cannot update system view               | Update failed              |
+| OBP-30254  | System view exists                      | Duplicate view             |
+| OBP-30255  | Empty view name                         | Name required              |
+| OBP-30256  | Cannot delete custom view               | Delete failed              |
+| OBP-30257  | Cannot find custom view                 | View missing               |
+| OBP-30258  | System view cannot be public            | Not allowed                |
+| OBP-30259  | Cannot create custom view               | Insert failed              |
+| OBP-30260  | Cannot update custom view               | Update failed              |
+| OBP-30261  | Cannot create counterparty limit        | Insert failed              |
+| OBP-30262  | Cannot update counterparty limit        | Update failed              |
+| OBP-30263  | Counterparty limit not found            | Limit missing              |
+| OBP-30264  | Counterparty limit exists               | Duplicate limit            |
+| OBP-30265  | Cannot delete limit                     | Delete failed              |
+| OBP-30266  | Custom view exists                      | Duplicate view             |
+| OBP-30267  | User lacks permission                   | Permission missing         |
+| OBP-30268  | Limit validation error                  | Validation failed          |
+| OBP-30269  | Account number ambiguous                | Multiple matches           |
+| OBP-30270  | Invalid account number                  | Number invalid             |
+| OBP-30271  | Account not found                       | Invalid routings           |
+| OBP-30300  | Tax residence not found                 | Invalid residence ID       |
+| OBP-30310  | Customer address not found              | Invalid address ID         |
+| OBP-30311  | Account application not found           | Invalid application ID     |
+| OBP-30312  | Resource user not found                 | Invalid USER_ID            |
+| OBP-30313  | Missing userId and customerId           | Both missing               |
+| OBP-30314  | Application already accepted            | Already processed          |
+| OBP-30315  | Cannot update status                    | Update failed              |
+| OBP-30316  | Cannot create application               | Insert failed              |
+| OBP-30317  | Cannot delete counterparty              | Delete failed              |
+| OBP-30318  | Cannot delete metadata                  | Delete failed              |
+| OBP-30319  | Cannot update label                     | Update failed              |
+| OBP-30320  | Cannot get product                      | Retrieval failed           |
+| OBP-30321  | Cannot get product tree                 | Retrieval failed           |
+| OBP-30323  | Cannot get charge value                 | Retrieval failed           |
+| OBP-30324  | Cannot get charges                      | Retrieval failed           |
+| OBP-30325  | Agent account link not found            | Link missing               |
+| OBP-30326  | Agents not found                        | No agents                  |
+| OBP-30327  | Cannot create agent link                | Insert failed              |
+| OBP-30328  | Agent number exists                     | Duplicate number           |
+| OBP-30329  | Cannot get agent links                  | Retrieval failed           |
+| OBP-30330  | Agent not beneficiary                   | Not confirmed              |
+| OBP-30331  | Invalid entitlement name                | Name invalid               |
+
 | OBP-
 
 ### 12.5 Useful API Endpoints Reference
 
 **System Information:**
+
 ```
 GET  /obp/v5.1.0/root                           # API version info
 GET  /obp/v5.1.0/rate-limiting                  # Rate limit status
@@ -3276,6 +3582,7 @@ GET  /obp/v5.1.0/database/info                 # Database info
 ```
 
 **Authentication:**
+
 ```
 POST /obp/v5.1.0/my/logins/direct              # Direct login
 GET  /obp/v5.1.0/users/current                 # Current user
@@ -3283,6 +3590,7 @@ GET  /obp/v5.1.0/my/spaces                     # User banks
 ```
 
 **Account Operations:**
+
 ```
 GET  /obp/v5.1.0/banks                         # List banks
 GET  /obp/v5.1.0/banks/BANK_ID/accounts/private  # User accounts
@@ -3291,12 +3599,14 @@ POST /obp/v5.1.0/banks/BANK_ID/accounts       # Create account
 ```
 
 **Transaction Operations:**
+
 ```
 GET  /obp/v5.1.0/banks/BANK_ID/accounts/ACCOUNT_ID/VIEW_ID/transactions
 POST /obp/v5.1.0/banks/BANK_ID/accounts/ACCOUNT_ID/VIEW_ID/transaction-request-types/TYPE/transaction-requests
 ```
 
 **Admin Operations:**
+
 ```
 GET  /obp/v5.1.0/management/metrics            # API metrics
 GET  /obp/v5.1.0/management/consumers          # List consumers
@@ -3307,6 +3617,7 @@ GET  /obp/v5.1.0/users                         # List users
 ### 12.8 Resources and Links
 
 **Official Resources:**
+
 - Website: https://www.openbankproject.com
 - GitHub: https://github.com/OpenBankProject
 - API Sandbox: https://apisandbox.openbankproject.com
@@ -3314,17 +3625,20 @@ GET  /obp/v5.1.0/users                         # List users
 - Documentation: https://github.com/OpenBankProject/OBP-API/wiki
 
 **Standards:**
+
 - Berlin Group: https://www.berlin-group.org
 - UK Open Banking: https://www.openbanking.org.uk
 - PSD2: https://ec.europa.eu/info/law/payment-services-psd-2-directive-eu-2015-2366_en
 - FAPI: https://openid.net/wg/fapi/
 
 **Community:**
+
 - Slack: openbankproject.slack.com
 - Twitter: @openbankproject
 - Mailing List: https://groups.google.com/g/openbankproject
 
 **Support:**
+
 - Issues: https://github.com/OpenBankProject/OBP-API/issues
 - Email: contact@tesobe.com
 - Commercial Support: https://www.tesobe.com
@@ -3332,6 +3646,7 @@ GET  /obp/v5.1.0/users                         # List users
 ### 12.9 Version History
 
 **Major Releases:**
+
 - v5.1.0 (2024) - Enhanced OIDC, Dynamic endpoints
 - v5.0.0 (2022) - Major refactoring, Performance improvements
 - v4.0.0 (2022) - Berlin Group, UK Open Banking support
@@ -3342,6 +3657,7 @@ GET  /obp/v5.1.0/users                         # List users
 - v1.4.0 (2016) - First production release
 
 **Status Definitions:**
+
 - **STABLE:** Production-ready, guaranteed backward compatibility
 - **DRAFT:** Under development, may change
 - **BLEEDING-EDGE:** Latest features, experimental
@@ -3355,53 +3671,40 @@ This comprehensive documentation provides a complete reference for deploying, co
 
 For the latest updates and community support, visit the official Open Bank Project GitHub repository and join the community channels.
 
-**Document Version:** 1.0  
-**Last Updated:** January 2024  
-**Maintained By:** TESOBE GmbH  
+**Document Version:** 1.0
+**Last Updated:** January 2024
+**Maintained By:** TESOBE GmbH
 **License:** This documentation is released under Creative Commons Attribution 4.0 International License
 
 ---
 
-**© 2010-2024 TESOBE GmbH. Open Bank Project is licensed under AGPL V3 and commercial licenses.**
-      - OBP_OAUTH2_JWK_SET_URL=http://keycloak:8080/realms/obp/protocol/openid-connect/certs
-    depends_on:
-      - postgres
-      - redis
-    networks:
-      - obp-network
+**© 2010-2024 TESOBE GmbH. Open Bank Project is licensed under AGPL V3 and commercial licenses.** - OBP_OAUTH2_JWK_SET_URL=http://keycloak:8080/realms/obp/protocol/openid-connect/certs
+depends_on: - postgres - redis
+networks: - obp-network
 
-  postgres:
-    image: postgres:14
-    environment:
-      - POSTGRES_DB=obpdb
-      - POSTGRES_USER=obp
-      - POSTGRES_PASSWORD=xxx
-    volumes:
-      - postgres-data:/var/lib/postgresql/data
-    networks:
-      - obp-network
+postgres:
+image: postgres:14
+environment: - POSTGRES_DB=obpdb - POSTGRES_USER=obp - POSTGRES_PASSWORD=xxx
+volumes: - postgres-data:/var/lib/postgresql/data
+networks: - obp-network
 
-  redis:
-    image: redis:7
-    networks:
-      - obp-network
+redis:
+image: redis:7
+networks: - obp-network
 
-  keycloak:
-    image: quay.io/keycloak/keycloak:latest
-    environment:
-      - KEYCLOAK_ADMIN=admin
-      - KEYCLOAK_ADMIN_PASSWORD=admin
-    ports:
-      - "7070:8080"
-    networks:
-      - obp-network
+keycloak:
+image: quay.io/keycloak/keycloak:latest
+environment: - KEYCLOAK_ADMIN=admin - KEYCLOAK_ADMIN_PASSWORD=admin
+ports: - "7070:8080"
+networks: - obp-network
 
 networks:
-  obp-network:
+obp-network:
 
 volumes:
-  postgres-data:
-```
+postgres-data:
+
+````
 
 ---
 
@@ -3424,9 +3727,10 @@ volumes:
 ```properties
 # Enable OAuth 1.0a (enabled by default)
 allow_oauth1=true
-```
+````
 
 **Example Request:**
+
 ```http
 GET /obp/v4.0.0/users/current
 Authorization: OAuth oauth_consumer_key="xxx",
@@ -3443,12 +3747,14 @@ Authorization: OAuth oauth_consumer_key="xxx",
 **Overview:** Modern OAuth2 with OIDC for authentication
 
 **Supported Grant Types:**
+
 - Authorization Code (recommended)
 - Implicit (deprecated, for legacy clients)
 - Client Credentials
 - Resource Owner Password Credentials
 
 **Configuration:**
+
 ```properties
 # Enable OAuth2
 allow_oauth2_login=true
@@ -3470,6 +3776,7 @@ openid_connect_1.button_text=Login with OIDC
 ```
 
 **Multiple OIDC Providers:**
+
 ```properties
 # Google
 openid_connect_1.client_id=xxx.apps.googleusercontent.com
@@ -3485,6 +3792,7 @@ openid_connect_2.button_text=Keycloak
 ```
 
 **Authorization Code Flow:**
+
 ```http
 1. Authorization Request:
 GET /auth?response_type=code
@@ -3513,18 +3821,21 @@ Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...
 **Overview:** Simplified authentication method for trusted applications
 
 **Characteristics:**
+
 - Username/password exchange for token
 - No OAuth redirect flow
 - Suitable for mobile apps and trusted clients
 - Time-limited tokens
 
 **Configuration:**
+
 ```properties
 allow_direct_login=true
 direct_login_consumer_key=your-trusted-consumer-key
 ```
 
 **Login Request:**
+
 ```http
 POST /my/logins/direct
 Authorization: DirectLogin username="user@example.com",
@@ -3534,6 +3845,7 @@ Content-Type: application/json
 ```
 
 **Response:**
+
 ```json
 {
   "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
@@ -3543,6 +3855,7 @@ Content-Type: application/json
 ```
 
 **API Request:**
+
 ```http
 GET /obp/v4.0.0/users/current
 Authorization: DirectLogin token="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
@@ -3551,6 +3864,7 @@ Authorization: DirectLogin token="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 ### 6.2 JWT Token Validation
 
 **Token Structure:**
+
 ```json
 {
   "header": {
@@ -3573,6 +3887,7 @@ Authorization: DirectLogin token="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 ```
 
 **Validation Process:**
+
 1. Extract JWT from Authorization header
 2. Decode header to get `kid` (key ID)
 3. Fetch public keys from JWKS endpoint
@@ -3583,6 +3898,7 @@ Authorization: DirectLogin token="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 8. Extract user identity from claims
 
 **JWKS Endpoint Response:**
+
 ```json
 {
   "keys": [
@@ -3600,16 +3916,19 @@ Authorization: DirectLogin token="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 **Troubleshooting JWT Issues:**
 
 **Error: OBP-20208: Cannot match the issuer and JWKS URI**
+
 - Verify `oauth2.jwk_set.url` contains the correct JWKS endpoint
 - Ensure issuer in JWT matches configured provider
 - Check URL format consistency (HTTP vs HTTPS, trailing slashes)
 
 **Error: OBP-20209: Invalid JWT signature**
+
 - Verify JWKS endpoint is accessible
 - Check that `kid` in JWT header matches available keys
 - Ensure system time is synchronized (NTP)
 
 **Debug Logging:**
+
 ```xml
 <!-- In logback.xml -->
 <logger name="code.api.OAuth2" level="DEBUG"/>
@@ -3619,6 +3938,7 @@ Authorization: DirectLogin token="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 ### 6.3 Consumer Key Management
 
 **Creating a Consumer:**
+
 ```http
 POST /management/consumers
 Authorization: DirectLogin token="xxx"
@@ -3634,6 +3954,7 @@ Content-Type: application/json
 ```
 
 **Response:**
+
 ```json
 {
   "consumer_id": "xxx",
@@ -3651,6 +3972,7 @@ Content-Type: application/json
 ```
 
 **Managing Consumers:**
+
 ```http
 # Get all consumers (requires CanGetConsumers role)
 GET /management/consumers
@@ -3673,6 +3995,7 @@ PUT /management/consumers/{CONSUMER_ID}/consumer/certificate
 #### 6.4.1 SSL with PostgreSQL
 
 **Generate SSL Certificates:**
+
 ```bash
 # Create SSL directory
 sudo mkdir -p /etc/postgresql/ssl
@@ -3693,6 +4016,7 @@ sudo chown postgres:postgres server.key server.crt
 ```
 
 **PostgreSQL Configuration (`postgresql.conf`):**
+
 ```ini
 ssl = on
 ssl_cert_file = '/etc/postgresql/ssl/server.crt'
@@ -3703,6 +4027,7 @@ ssl_ciphers = 'HIGH:MEDIUM:+3DES:!aNULL'
 ```
 
 **OBP-API Props:**
+
 ```properties
 db.url=jdbc:postgresql://localhost:5432/obpdb?user=obp&password=xxx&ssl=true&sslmode=require
 ```
@@ -3710,6 +4035,7 @@ db.url=jdbc:postgresql://localhost:5432/obpdb?user=obp&password=xxx&ssl=true&ssl
 #### 6.4.2 SSL Encryption with Props File
 
 **Generate Keystore:**
+
 ```bash
 # Generate keystore with key pair
 keytool -genkeypair -alias obp-api \
@@ -3727,6 +4053,7 @@ openssl x509 -pubkey -noout -in apipub.cert > public_key.pub
 ```
 
 **Encrypt Props Values:**
+
 ```bash
 #!/bin/bash
 # encrypt_prop.sh
@@ -3739,12 +4066,14 @@ echo -n "$2" | openssl pkeyutl \
 ```
 
 **Usage:**
+
 ```bash
 ./encrypt_prop.sh /path/to/public_key.pub "my-secret-password"
 # Outputs: BASE64_ENCODED_ENCRYPTED_VALUE
 ```
 
 **Props Configuration:**
+
 ```properties
 # Enable JWT encryption
 jwt.use.ssl=true
@@ -3759,6 +4088,7 @@ db.password=BASE64_ENCODED_ENCRYPTED_VALUE
 #### 6.4.3 Password Obfuscation (Jetty)
 
 **Generate Obfuscated Password:**
+
 ```bash
 java -cp /usr/share/jetty9/lib/jetty-util-*.jar \
   org.eclipse.jetty.util.security.Password \
@@ -3788,6 +4118,7 @@ Roles follow a consistent naming pattern:
 
 **Account Management** (35+ roles):
 ```
+
 CanCreateAccount
 CanUpdateAccount
 CanGetAccountsHeldAtOneBank
@@ -3796,10 +4127,12 @@ CanCreateAccountAttributeAtOneBank
 CanUpdateAccountAttribute
 CanDeleteAccountCascade
 ...
+
 ```
 
 **Customer Management** (40+ roles):
 ```
+
 CanCreateCustomer
 CanCreateCustomerAtAnyBank
 CanGetCustomer
@@ -3809,20 +4142,24 @@ CanUpdateCustomerData
 CanCreateCustomerAccountLink
 CanCreateCustomerAttributeAtOneBank
 ...
+
 ```
 
 **Transaction Management** (25+ roles):
 ```
+
 CanCreateAnyTransactionRequest
 CanGetTransactionRequestAtAnyBank
 CanUpdateTransactionRequestStatusAtAnyBank
 CanCreateTransactionAttributeAtOneBank
 CanCreateHistoricalTransaction
 ...
+
 ```
 
 **Bank Resource Management** (50+ roles):
 ```
+
 CanCreateBank
 CanCreateBranch
 CanCreateAtm
@@ -3831,10 +4168,12 @@ CanCreateFxRate
 CanDeleteBranchAtAnyBank
 CanUpdateAtm
 ...
+
 ```
 
 **User & Entitlement Management** (30+ roles):
 ```
+
 CanGetAnyUser
 CanCreateEntitlementAtOneBank
 CanCreateEntitlementAtAnyBank
@@ -3842,10 +4181,12 @@ CanDeleteEntitlementAtAnyBank
 CanGetEntitlementsForAnyUserAtAnyBank
 CanCreateUserCustomerLink
 ...
+
 ```
 
 **Consumer & API Management** (20+ roles):
 ```
+
 CanCreateConsumer
 CanGetConsumers
 CanEnableConsumers
@@ -3855,10 +4196,12 @@ CanReadCallLimits
 CanReadMetrics
 CanGetConfig
 ...
+
 ```
 
 **Dynamic Resources** (40+ roles):
 ```
+
 CanCreateDynamicEntity
 CanCreateBankLevelDynamicEntity
 CanCreateDynamicEndpoint
@@ -3869,20 +4212,24 @@ CanCreateDynamicMessageDoc
 CanGetMethodRoutings
 CanCreateMethodRouting
 ...
+
 ```
 
 **Consent Management** (10+ roles):
 ```
+
 CanUpdateConsentStatusAtOneBank
 CanUpdateConsentStatusAtAnyBank
 CanUpdateConsentAccountAccessAtOneBank
 CanRevokeConsentAtBank
 CanGetConsentsAtOneBank
 ...
+
 ```
 
 **Security & Compliance** (20+ roles):
 ```
+
 CanAddKycCheck
 CanAddKycDocument
 CanGetAnyKycChecks
@@ -3891,10 +4238,12 @@ CanDeleteRegulatedEntity
 CanCreateAuthenticationTypeValidation
 CanCreateJsonSchemaValidation
 ...
+
 ```
 
 **Logging & Monitoring** (15+ roles):
 ```
+
 CanGetTraceLevelLogsAtOneBank
 CanGetDebugLevelLogsAtAllBanks
 CanGetInfoLevelLogsAtOneBank
@@ -3902,30 +4251,36 @@ CanGetErrorLevelLogsAtAllBanks
 CanGetAllLevelLogsAtAllBanks
 CanGetConnectorMetrics
 ...
+
 ```
 
 **Views & Permissions** (15+ roles):
 ```
+
 CanCreateSystemView
 CanUpdateSystemView
 CanDeleteSystemView
 CanCreateSystemViewPermission
 CanDeleteSystemViewPermission
 ...
+
 ```
 
 **Cards** (10+ roles):
 ```
+
 CanCreateCardsForBank
 CanUpdateCardsForBank
 CanDeleteCardsForBank
 CanGetCardsForBank
 CanCreateCardAttributeDefinitionAtOneBank
 ...
+
 ```
 
 **Products & Fees** (15+ roles):
 ```
+
 CanCreateProduct
 CanCreateProductAtAnyBank
 CanCreateProductFee
@@ -3934,19 +4289,23 @@ CanDeleteProductFee
 CanGetProductFee
 CanMaintainProductCollection
 ...
+
 ```
 
 **Webhooks** (5+ roles):
 ```
+
 CanCreateWebhook
 CanUpdateWebhook
 CanGetWebhooks
 CanCreateSystemAccountNotificationWebhook
 CanCreateAccountNotificationWebhookAtOneBank
+
 ```
 
 **Data Management** (20+ roles):
 ```
+
 CanCreateSandbox
 CanCreateHistoricalTransaction
 CanUseAccountFirehoseAtAnyBank
@@ -3956,7 +4315,8 @@ CanDeleteBankCascade
 CanDeleteProductCascade
 CanDeleteCustomerCascade
 ...
-```
+
+````
 
 #### Viewing All Roles
 
@@ -3964,13 +4324,15 @@ CanDeleteCustomerCascade
 ```bash
 GET /obp/v5.1.0/roles
 Authorization: DirectLogin token="TOKEN"
-```
+````
 
 **Via Source Code:**
 The complete list of roles is defined in:
+
 - `obp-api/src/main/scala/code/api/util/ApiRole.scala`
 
 **Via API Explorer:**
+
 - Navigate to the "Role" endpoints section
 - View role requirements for each endpoint in the documentation
 
@@ -3995,10 +4357,12 @@ POST /obp/v5.1.0/users/USER_ID/entitlements
 #### Special Roles
 
 **Super Admin Roles:**
+
 - `CanCreateEntitlementAtAnyBank` - Can grant any role at any bank
 - `CanDeleteEntitlementAtAnyBank` - Can revoke any role at any bank
 
 **Firehose Roles:**
+
 - `CanUseAccountFirehoseAtAnyBank` - Access to all account data
 - `CanUseCustomerFirehoseAtAnyBank` - Access to all customer data
 
@@ -4014,6 +4378,7 @@ POST /obp/v5.1.0/users/USER_ID/entitlements
 OBP-API-II represents the next generation of the Open Bank Project API, currently under development to address performance, scalability, and modern architecture requirements.
 
 **Key Improvements:**
+
 - **Enhanced Performance:** Optimized data access patterns and caching strategies
 - **Modern Architecture:** Updated to latest Scala and Lift framework versions
 - **Improved Security:** Enhanced authentication and authorization mechanisms
@@ -4021,6 +4386,7 @@ OBP-API-II represents the next generation of the Open Bank Project API, currentl
 - **API Evolution:** Backward-compatible improvements to existing endpoints
 
 **Development Focus:**
+
 - Performance optimization for high-volume environments
 - Enhanced connector architecture for easier integration
 - Improved testing framework and coverage
@@ -4028,11 +4394,13 @@ OBP-API-II represents the next generation of the Open Bank Project API, currentl
 - Better documentation and developer experience
 
 **Migration Path:**
+
 - Full backward compatibility with existing OBP-API deployments
 - Gradual migration strategy for production environments
 - Parallel deployment support during transition period
 
 **Repository:**
+
 - GitHub: `OBP-API-II` (development branch)
 - Based on OBP-API with significant architectural improvements
 
@@ -4044,6 +4412,7 @@ OBP-API-II represents the next generation of the Open Bank Project API, currentl
 OBP-Dispatch is a lightweight proxy/gateway service designed to route requests to different OBP API backends. It enables advanced deployment architectures including multi-region, multi-version, and A/B testing scenarios.
 
 **Key Features:**
+
 - **Request Routing:** Intelligent routing based on configurable rules
 - **Load Balancing:** Distribute traffic across multiple OBP-API instances
 - **Version Management:** Route requests to different API versions
@@ -4051,6 +4420,7 @@ OBP-Dispatch is a lightweight proxy/gateway service designed to route requests t
 - **Minimal Overhead:** Lightweight proxy with low latency
 
 **Use Cases:**
+
 1. **Multi-Region Deployment:**
    - Route users to geographically closest API instance
    - Implement disaster recovery and failover
@@ -4069,6 +4439,7 @@ OBP-Dispatch is a lightweight proxy/gateway service designed to route requests t
    - Separate production and development traffic
 
 **Architecture:**
+
 ```
 Client Request
      │
@@ -4088,11 +4459,13 @@ Client Request
 ```
 
 **Configuration:**
+
 - Config file: `application.conf`
 - Routing rules: Based on headers, paths, or custom logic
 - Backend definitions: Multiple OBP-API endpoints
 
 **Deployment:**
+
 ```bash
 # Build
 cd OBP-API-Dispatch
@@ -4103,6 +4476,7 @@ java -jar target/OBP-API-Dispatch-1.0-SNAPSHOT-jar-with-dependencies.jar
 ```
 
 **Configuration Example:**
+
 ```hocon
 # application.conf
 dispatch {
@@ -4118,7 +4492,7 @@ dispatch {
       weight = 20
     }
   ]
-  
+
   routing {
     rules = [
       {
@@ -4135,12 +4509,14 @@ dispatch {
 ```
 
 **Status & Maturity:**
+
 - Currently in experimental phase
 - Suitable for testing and non-critical deployments
 - Production readiness under evaluation
 - Community feedback welcomed
 
 **Future Development:**
+
 - Enhanced routing capabilities
 - Built-in monitoring and metrics
 - Advanced load balancing algorithms
@@ -4151,6 +4527,7 @@ dispatch {
 #### Other Roadmap Items
 
 **Version 4.0.0+ Planned Features:**
+
 - Enhanced Account query APIs (by Product Code, etc.)
 - Direct Debit modeling
 - Future Payments with Transaction Requests
@@ -4158,28 +4535,31 @@ dispatch {
 - Auto-feed to Elasticsearch for Firehose data
 
 **SDK & Documentation:**
+
 - Second generation SDKs for major languages
 - Improved SDK documentation
 - OpenAPI 3.0 specification support
 - Enhanced code generation tools
 
 **Standards Evolution:**
+
 - PSD3 preparedness
 - Open Finance Framework support
 - Regional standard adaptations
 - Enhanced Berlin Group compatibility
 
 **Infrastructure:**
+
 - Kubernetes native deployments
 - Enhanced observability and tracing
 - Improved rate limiting mechanisms
 - Multi-tenancy improvements
 
 **Community & Ecosystem:**
+
 - Enhanced developer onboarding
 - Improved testing frameworks
 - Better contribution guidelines
 - Regular community meetings
 
 ### 12.7 Useful API Endpoints Reference
-
