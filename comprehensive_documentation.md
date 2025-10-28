@@ -884,7 +884,7 @@ POST /open-banking/v3.1/cbpii/funds-confirmation-consents
 
 **Overview:** OBP's native API standard with extensive banking operations
 
-**Current Version:** v5.1.0
+**Current Version:** v6.0.0
 
 **Key Features:**
 
@@ -902,7 +902,8 @@ POST /open-banking/v3.1/cbpii/funds-confirmation-consents
 - v2.0.0, v2.1.0, v2.2.0 (STABLE)
 - v3.0.0, v3.1.0 (STABLE)
 - v4.0.0 (STABLE)
-- v5.0.0, v5.1.0 (STABLE/BLEEDING-EDGE)
+- v5.0.0, v5.1.0 (STABLE)
+- v6.0.0 (STABLE/BLEEDING-EDGE)
 
 **Key Endpoint Categories:**
 
@@ -4501,4 +4502,3 @@ dispatch {
 **Status & Maturity:**
 
 - Currently in experimental phase
-
