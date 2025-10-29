@@ -3008,66 +3008,17 @@ The Open Bank Project follows an agile roadmap that evolves based on feedback fr
 
 ### 12.2 OBP-API-II (Next Generation API)
 
-**Status:** Under Active Development
+**Status:** Experimental
 
-**Purpose:** A modernized version of the OBP-API with improved architecture, performance, and developer experience.
-
-**Key Improvements:**
+**Purpose:** A modernized version of OBP-API for selected endpoints.
 
 **Architecture Enhancements:**
 
-- Enhanced modular design for better maintainability
-- Improved performance and scalability
-- Better separation of concerns
-- Modern Scala patterns and best practices
-- Enhanced error handling and logging
-
-**Developer Experience:**
-
-- Improved API documentation generation
-- Better test coverage and test utilities
-- Enhanced debugging capabilities
-- Streamlined development workflow
-- Modern build tools and dependency management
-
-**Features:**
-
-- Backward compatibility with existing OBP-API endpoints
-- Gradual migration path from OBP-API to OBP-API-II
-- Enhanced connector architecture
-- Improved dynamic endpoint capabilities
-- Better support for microservices patterns
+- Fewer dependencies including Jetty.
 
 **Technology Stack:**
 
 - Scala 2.13/3.x (upgraded from 2.12)
-- Modern Lift framework versions
-- Enhanced Akka integration
-- Improved database connection pooling
-- Better async/await patterns
-
-**Migration Strategy:**
-
-- Phased rollout alongside existing OBP-API
-- Comprehensive migration documentation
-- Backward compatibility layer
-- Automated migration tools
-- Zero-downtime upgrade path
-
-**Timeline:**
-
-- Alpha: Q1 2024 (Internal testing)
-- Beta: Q2 2024 (Selected bank pilots)
-- Production Ready: Q3-Q4 2024
-- General Availability: 2025
-
-**Benefits:**
-
-- 30-50% performance improvement
-- Reduced memory footprint
-- Better horizontal scaling
-- Improved developer productivity
-- Enhanced maintainability
 
 ### 12.3 OBP-Dispatch (Request Router)
 
@@ -4711,17 +4662,17 @@ OBP-API-II is a leaner tech stack for future Open Bank Project API versions with
 **Status:** Experimental/Beta
 
 **Overview:**
-OBP-Dispatch is a lightweight proxy/gateway service designed to route requests to different OBP API backends.
-It is designed to route traffic to OBP-API or OBP-API-II or OBP-Trading instances.
+OBP-Dispatch is a lightweight proxy/gateway service designed to route requests
+to OBP-API or OBP-API-II or OBP-Trading instances.
 
 **Key Features:**
 
-- **Request Routing:** Intelligent routing based on configurable rules and discovery
+- **Request Routing:** Routing based on Endpoint implementation.
 
 **Use Cases:**
 
 1. **API Version Management:**
-   - Gradual rollout of new API versions on different code bases.
+   - Routing to new OBP implementations.
 
 **Architecture:**
 
@@ -4743,12 +4694,6 @@ Client Request
 └──────┘ └──────┘ └──────┘ └──────┘
 ```
 
-**Configuration:**
-
-- Config file: `application.conf`
-- Routing rules: Based on headers, paths, or custom logic
-- Backend definitions: Multiple OBP-API endpoints
-
 **Deployment:**
 
 ```bash
@@ -4760,39 +4705,6 @@ mvn clean package
 java -jar target/OBP-API-Dispatch-1.0-SNAPSHOT-jar-with-dependencies.jar
 ```
 
-**Configuration Example:**
+**Status:**
 
-```hocon
-# application.conf
-dispatch {
-  backends = [
-    {
-      name = "primary"
-      url = "http://obp-api-primary:8080"
-      weight = 80
-    },
-    {
-      name = "secondary"
-      url = "http://obp-api-secondary:8080"
-      weight = 20
-    }
-  ]
-
-  routing {
-    rules = [
-      {
-        pattern = "/obp/v5.*"
-        backend = "primary"
-      },
-      {
-        pattern = "/obp/v4.*"
-        backend = "secondary"
-      }
-    ]
-  }
-}
-```
-
-**Status & Maturity:**
-
-- Currently in experimental phase
+- Experimental
