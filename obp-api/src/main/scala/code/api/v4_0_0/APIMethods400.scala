@@ -173,7 +173,7 @@ trait APIMethods400 extends MdcLoggable {
       implementedInApiVersion,
       nameOf(callsLimit),
       "PUT",
-      "/management/consumers/CONSUMER_ID/consumer/call-limits",
+      "/management/consumers/CONSUMER_ID/consumer/rate-limits",
       "Set Rate Limits / Call Limits per Consumer",
       s"""
          |Set the API rate limits / call limits for a Consumer:
@@ -202,14 +202,14 @@ trait APIMethods400 extends MdcLoggable {
         UnknownError
       ),
       List(apiTagConsumer, apiTagRateLimits),
-      Some(List(canSetCallLimits)))
+      Some(List(canUpdateRateLimits)))
 
     lazy val callsLimit : OBPEndpoint = {
-      case "management" :: "consumers" :: consumerId :: "consumer" :: "call-limits" :: Nil JsonPut json -> _ => {
+      case "management" :: "consumers" :: consumerId :: "consumer" :: "rate-limits" :: Nil JsonPut json -> _ => {
         cc => implicit val ec = EndpointContext(Some(cc))
           for {
             (Full(u), callContext) <-  authenticatedAccess(cc)
-            _ <- NewStyle.function.handleEntitlementsAndScopes("", u.userId, List(canSetCallLimits), callContext)
+            _ <- NewStyle.function.handleEntitlementsAndScopes("", u.userId, List(canUpdateRateLimits), callContext)
             postJson <- NewStyle.function.tryons(s"$InvalidJsonFormat The Json body should be the $CallLimitPostJsonV400 ", 400, callContext) {
               json.extract[CallLimitPostJsonV400]
             }
