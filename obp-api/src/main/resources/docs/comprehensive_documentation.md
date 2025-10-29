@@ -70,7 +70,7 @@ The Open Bank Project (OBP) is an open-source RESTful API platform for banks tha
 - **Customer-Account Linking**: Associate customers with accounts
 - **KYC Processes**: KYC checks, documents, media uploads, status tracking
 - **CRM Integration**: Customer relationship management features
-- **Meeting Management**: Schedule and manage customer meetings
+- **Consent Management**: PSD2-compliant consent workflows for data access
 
 #### 1.2.4 Card Management
 
@@ -320,7 +320,7 @@ The Open Bank Project (OBP) is an open-source RESTful API platform for banks tha
 - Language: Scala 2.12/2.13
 - Framework: Liftweb
 - Build Tool: Maven 3 / SBT
-- Server: Jetty 9
+- Server: Jetty or other Java Application Server
 - Concurrency: Akka
 - JDK: OpenJDK 11, Oracle JDK 1.8/13
 
@@ -891,7 +891,7 @@ POST /open-banking/v3.1/cbpii/funds-confirmation-consents
 - 600+ endpoints
 - Multi-bank support
 - Extended customer data
-- Meeting scheduling
+- Consent management
 - Product management
 - Webhook support
 - Dynamic entity/endpoint creation
@@ -903,7 +903,7 @@ POST /open-banking/v3.1/cbpii/funds-confirmation-consents
 - v3.0.0, v3.1.0 (STABLE)
 - v4.0.0 (STABLE)
 - v5.0.0, v5.1.0 (STABLE)
-- v6.0.0 (STABLE/BLEEDING-EDGE)
+- v6.0.0 (BLEEDING-EDGE)
 
 **Key Endpoint Categories:**
 
@@ -3673,7 +3673,7 @@ GET  /obp/v5.1.0/users                         # List users
 - v3.0.0 (2020) - OAuth 2.0, OIDC support
 - v2.2.0 (2018) - Consent management
 - v2.0.0 (2017) - API standardization
-- v1.4.0 (2016) - First production release
+- v1.4.0 (2016) - First release
 
 **Status Definitions:**
 
@@ -3686,18 +3686,15 @@ GET  /obp/v5.1.0/users                         # List users
 
 ## Conclusion
 
-This comprehensive documentation provides a complete reference for deploying, configuring, and managing the Open Bank Project platform. The OBP ecosystem offers a robust, standards-compliant solution for Open Banking implementations with extensive authentication options, security mechanisms, and monitoring capabilities.
-
-For the latest updates and community support, visit the official Open Bank Project GitHub repository and join the community channels.
-
-**Document Version:** 1.0
-**Last Updated:** January 2024
+For the latest updates visit Open Bank Project GitHub or contact TESOBE.
+**Document Version:** 0.2
+**Last Updated:** October 29 2025
 **Maintained By:** TESOBE GmbH
-**License:** This documentation is released under Creative Commons Attribution 4.0 International License
+**License:** AGPL V3
 
 ---
 
-**© 2010-2024 TESOBE GmbH. Open Bank Project is licensed under AGPL V3 and commercial licenses.** - OBP_OAUTH2_JWK_SET_URL=http://keycloak:8080/realms/obp/protocol/openid-connect/certs
+**© 2010-2025 TESOBE GmbH. Open Bank Project is licensed under AGPL V3 and commercial licenses.** - OBP_OAUTH2_JWK_SET_URL=http://keycloak:8080/realms/obp/protocol/openid-connect/certs
 depends_on: - postgres - redis
 networks: - obp-network
 
@@ -4115,6 +4112,10 @@ java -cp /usr/share/jetty9/lib/jetty-util-*.jar \
 
 OBP-API uses a comprehensive role-based access control (RBAC) system with over **334 static roles**. Roles control access to specific API endpoints and operations.
 
+**Note:** All roles can be dynamically listed using the `/obp/v5.1.0/roles` endpoint.
+
+**Last Updated:** 2025-10-29
+
 #### Role Naming Convention
 
 Roles follow a consistent naming pattern:
@@ -4135,215 +4136,388 @@ Roles follow a consistent naming pattern:
 
 #### Key Role Categories
 
-**Account Management** (35+ roles):
+**Account Management:**
+- CanCreateAccount
+- CanUpdateAccount
+- CanGetAccountsHeldAtOneBank
+- CanGetAccountsHeldAtAnyBank
+- CanCreateAccountAttributeAtOneBank
+- CanUpdateAccountAttribute
+- CanDeleteAccountCascade
+- CanCreateAccountAttributeDefinitionAtOneBank
+- CanDeleteAccountAttributeDefinitionAtOneBank
+- CanGetAccountAttributeDefinitionAtOneBank
+- CanUpdateAccountAttribute
+- CanGetAccountApplications
+- CanUpdateAccountApplications
+- CanGetAccountsMinimalForCustomerAtAnyBank
+- CanUseAccountFirehose
+- CanUseAccountFirehoseAtAnyBank
+- CanSeeAccountAccessForAnyUser
+
+**Customer Management:**
+- CanCreateCustomer
+- CanCreateCustomerAtAnyBank
+- CanGetCustomer
+- CanGetCustomers
+- CanGetCustomersAtAnyBank
+- CanGetCustomersMinimal
+- CanGetCustomersMinimalAtAnyBank
+- CanGetCustomerOverview
+- CanGetCustomerOverviewFlat
+- CanUpdateCustomerEmail
+- CanUpdateCustomerNumber
+- CanUpdateCustomerMobilePhoneNumber
+- CanUpdateCustomerIdentity
+- CanUpdateCustomerBranch
+- CanUpdateCustomerData
+- CanUpdateCustomerCreditLimit
+- CanUpdateCustomerCreditRatingAndSource
+- CanUpdateCustomerCreditRatingAndSourceAtAnyBank
+- CanGetCorrelatedUsersInfo
+- CanGetCorrelatedUsersInfoAtAnyBank
+- CanCreateCustomerAccountLink
+- CanDeleteCustomerAccountLink
+- CanGetCustomerAccountLink
+- CanGetCustomerAccountLinks
+- CanUpdateCustomerAccountLink
+- CanCreateCustomerAttributeAtOneBank
+- CanCreateCustomerAttributeAtAnyBank
+- CanCreateCustomerAttributeDefinitionAtOneBank
+- CanGetCustomerAttributeAtOneBank
+- CanGetCustomerAttributeAtAnyBank
+- CanGetCustomerAttributesAtOneBank
+- CanGetCustomerAttributesAtAnyBank
+- CanGetCustomerAttributeDefinitionAtOneBank
+- CanUpdateCustomerAttributeAtOneBank
+- CanUpdateCustomerAttributeAtAnyBank
+- CanDeleteCustomerAttributeAtOneBank
+- CanDeleteCustomerAttributeAtAnyBank
+- CanDeleteCustomerAttributeDefinitionAtOneBank
+- CanCreateCustomerAddress
+- CanGetCustomerAddress
+- CanDeleteCustomerAddress
+- CanCreateCustomerMessage
+- CanGetCustomerMessages
+- CanDeleteCustomerCascade
+- CanUseCustomerFirehoseAtAnyBank
+
+**Transaction Management:**
+- CanCreateAnyTransactionRequest
+- CanGetTransactionRequestAtAnyBank
+- CanUpdateTransactionRequestStatusAtAnyBank
+- CanCreateTransactionAttributeAtOneBank
+- CanCreateTransactionAttributeDefinitionAtOneBank
+- CanGetTransactionAttributeAtOneBank
+- CanGetTransactionAttributesAtOneBank
+- CanGetTransactionAttributeDefinitionAtOneBank
+- CanUpdateTransactionAttributeAtOneBank
+- CanDeleteTransactionAttributeDefinitionAtOneBank
+- CanCreateTransactionRequestAttributeAtOneBank
+- CanCreateTransactionRequestAttributeDefinitionAtOneBank
+- CanGetTransactionRequestAttributeAtOneBank
+- CanGetTransactionRequestAttributesAtOneBank
+- CanGetTransactionRequestAttributeDefinitionAtOneBank
+- CanUpdateTransactionRequestAttributeAtOneBank
+- CanDeleteTransactionRequestAttributeDefinitionAtOneBank
+- CanCreateHistoricalTransaction
+- CanCreateHistoricalTransactionAtBank
+- CanDeleteTransactionCascade
+- CanCreateTransactionType
+- CanGetDoubleEntryTransactionAtOneBank
+- CanGetDoubleEntryTransactionAtAnyBank
+
+**Bank Resource Management:**
+- CanCreateBranch
+- CanCreateBranchAtAnyBank
+- CanUpdateBranch
+- CanDeleteBranch
+- CanDeleteBranchAtAnyBank
+- CanCreateAtm
+- CanCreateAtmAtAnyBank
+- CanUpdateAtm
+- CanUpdateAtmAtAnyBank
+- CanDeleteAtm
+- CanDeleteAtmAtAnyBank
+- CanCreateAtmAttribute
+- CanCreateAtmAttributeAtAnyBank
+- CanGetAtmAttribute
+- CanGetAtmAttributeAtAnyBank
+- CanUpdateAtmAttribute
+- CanUpdateAtmAttributeAtAnyBank
+- CanDeleteAtmAttribute
+- CanDeleteAtmAttributeAtAnyBank
+- CanCreateFxRate
+- CanCreateFxRateAtAnyBank
+- CanReadFx
+- CanDeleteBankCascade
+- CanCreateBankAttribute
+- CanGetBankAttribute
+- CanUpdateBankAttribute
+- CanDeleteBankAttribute
+- CanCreateBankAttributeDefinitionAtOneBank
+- CanCreateBankAccountBalance
+- CanGetBankAccountBalance
+- CanGetBankAccountBalances
+- CanUpdateBankAccountBalance
+- CanDeleteBankAccountBalance
+
+**User & Entitlement Management:**
+- CanCreateUserCustomerLink
+- CanCreateUserCustomerLinkAtAnyBank
+- CanGetUserCustomerLink
+- CanGetUserCustomerLinkAtAnyBank
+- CanDeleteUserCustomerLink
+- CanDeleteUserCustomerLinkAtAnyBank
+- CanCreateEntitlementAtOneBank
+- CanCreateEntitlementAtAnyBank
+- CanDeleteEntitlementAtOneBank
+- CanDeleteEntitlementAtAnyBank
+- CanGetEntitlementsForOneBank
+- CanGetEntitlementsForAnyBank
+- CanGetEntitlementsForAnyUserAtOneBank
+- CanGetEntitlementsForAnyUserAtAnyBank
+- CanGetEntitlementRequestsAtAnyBank
+- CanDeleteEntitlementRequestsAtAnyBank
+- CanCreateUserAuthContext
+- CanCreateUserAuthContextUpdate
+- CanGetUserAuthContext
+- CanDeleteUserAuthContext
+- CanCreateUserInvitation
+- CanGetUserInvitation
+- CanRefreshUser
+- CanSyncUser
+- CanReadUserLockedStatus
+- CanCreateResetPasswordUrl
+
+**Consumer & API Management:**
+- CanCreateConsumer
+- CanGetConsumers
+- CanEnableConsumers
+- CanDisableConsumers
+- CanUpdateConsumerName
+- CanUpdateConsumerRedirectUrl
+- CanUpdateConsumerLogoUrl
+- CanUpdateConsumerCertificate
+- CanSetCallLimits
+- CanReadCallLimits
+- CanDeleteRateLimiting
+- CanReadMetrics
+- CanGetMetricsAtOneBank
+- CanSearchMetrics
+- CanGetConfig
+- CanGetConnectorMetrics
+- CanGetAdapterInfo
+- CanGetAdapterInfoAtOneBank
+- CanGetDatabaseInfo
+- CanGetSystemIntegrity
+- CanGetCallContext
+
+**Dynamic Resources:**
+- CanCreateDynamicEndpoint
+- CanGetDynamicEndpoint
+- CanGetDynamicEndpoints
+- CanUpdateDynamicEndpoint
+- CanDeleteDynamicEndpoint
+- CanCreateBankLevelDynamicEndpoint
+- CanGetBankLevelDynamicEndpoint
+- CanGetBankLevelDynamicEndpoints
+- CanUpdateBankLevelDynamicEndpoint
+- CanDeleteBankLevelDynamicEndpoint
+- CanCreateSystemLevelDynamicEntity
+- CanGetSystemLevelDynamicEntities
+- CanUpdateSystemLevelDynamicEntity
+- CanDeleteSystemLevelDynamicEntity
+- CanCreateBankLevelDynamicEntity
+- CanGetBankLevelDynamicEntities
+- CanUpdateBankLevelDynamicEntity
+- CanDeleteBankLevelDynamicEntity
+- CanCreateDynamicResourceDoc
+- CanGetDynamicResourceDoc
+- CanGetAllDynamicResourceDocs
+- CanUpdateDynamicResourceDoc
+- CanDeleteDynamicResourceDoc
+- CanReadDynamicResourceDocsAtOneBank
+- CanCreateBankLevelDynamicResourceDoc
+- CanGetBankLevelDynamicResourceDoc
+- CanGetAllBankLevelDynamicResourceDocs
+- CanUpdateBankLevelDynamicResourceDoc
+- CanDeleteBankLevelDynamicResourceDoc
+- CanCreateDynamicMessageDoc
+- CanGetDynamicMessageDoc
+- CanGetAllDynamicMessageDocs
+- CanUpdateDynamicMessageDoc
+- CanDeleteDynamicMessageDoc
+- CanCreateBankLevelDynamicMessageDoc
+- CanGetBankLevelDynamicMessageDoc
+- CanDeleteBankLevelDynamicMessageDoc
+- CanCreateEndpointMapping
+- CanGetEndpointMapping
+- CanGetAllEndpointMappings
+- CanUpdateEndpointMapping
+- CanDeleteEndpointMapping
+- CanCreateBankLevelEndpointMapping
+- CanGetBankLevelEndpointMapping
+- CanGetAllBankLevelEndpointMappings
+- CanUpdateBankLevelEndpointMapping
+- CanDeleteBankLevelEndpointMapping
+- CanCreateMethodRouting
+- CanGetMethodRoutings
+- CanUpdateMethodRouting
+- CanDeleteMethodRouting
+- CanCreateConnectorMethod
+- CanGetConnectorMethod
+- CanGetAllConnectorMethods
+- CanUpdateConnectorMethod
+- CanGetConnectorEndpoint
+- CanCreateSystemLevelEndpointTag
+- CanGetSystemLevelEndpointTag
+- CanUpdateSystemLevelEndpointTag
+- CanDeleteSystemLevelEndpointTag
+- CanCreateBankLevelEndpointTag
+- CanGetBankLevelEndpointTag
+- CanUpdateBankLevelEndpointTag
+- CanDeleteBankLevelEndpointTag
+- CanGetAllApiCollections
+- CanGetApiCollectionsForUser
+- CanReadResourceDoc
+- CanReadStaticResourceDoc
+- CanReadGlossary
+
+**Consent Management:**
+- CanGetConsentsAtOneBank
+- CanGetConsentsAtAnyBank
+- CanUpdateConsentStatusAtOneBank
+- CanUpdateConsentStatusAtAnyBank
+- CanUpdateConsentAccountAccessAtOneBank
+- CanUpdateConsentAccountAccessAtAnyBank
+- CanUpdateConsentUserAtOneBank
+- CanUpdateConsentUserAtAnyBank
+- CanRevokeConsentAtBank
+
+**Security & Compliance:**
+- CanAddKycCheck
+- CanGetAnyKycChecks
+- CanAddKycDocument
+- CanGetAnyKycDocuments
+- CanAddKycMedia
+- CanGetAnyKycMedia
+- CanAddKycStatus
+- CanGetAnyKycStatuses
+- CanCreateRegulatedEntity
+- CanDeleteRegulatedEntity
+- CanCreateRegulatedEntityAttribute
+- CanGetRegulatedEntityAttribute
+- CanGetRegulatedEntityAttributes
+- CanUpdateRegulatedEntityAttribute
+- CanDeleteRegulatedEntityAttribute
+- CanCreateAuthenticationTypeValidation
+- CanGetAuthenticationTypeValidation
+- CanUpdateAuthenticationTypeValidation
+- CanDeleteAuthenticationValidation
+- CanCreateJsonSchemaValidation
+- CanGetJsonSchemaValidation
+- CanUpdateJsonSchemaValidation
+- CanDeleteJsonSchemaValidation
+- CanCreateTaxResidence
+- CanGetTaxResidence
+- CanDeleteTaxResidence
+
+**Logging & Monitoring:**
+- CanGetTraceLevelLogsAtOneBank
+- CanGetTraceLevelLogsAtAllBanks
+- CanGetDebugLevelLogsAtOneBank
+- CanGetDebugLevelLogsAtAllBanks
+- CanGetInfoLevelLogsAtOneBank
+- CanGetInfoLevelLogsAtAllBanks
+- CanGetWarningLevelLogsAtOneBank
+- CanGetWarningLevelLogsAtAllBanks
+- CanGetErrorLevelLogsAtOneBank
+- CanGetErrorLevelLogsAtAllBanks
+- CanGetAllLevelLogsAtOneBank
+- CanGetAllLevelLogsAtAllBanks
+
+**Views & Permissions:**
+- CanCreateSystemView
+- CanGetSystemView
+- CanUpdateSystemView
+- CanDeleteSystemView
+- CanCreateSystemViewPermission
+- CanDeleteSystemViewPermission
+
+**Cards:**
+- CanCreateCardsForBank
+- CanGetCardsForBank
+- CanUpdateCardsForBank
+- CanDeleteCardsForBank
+- CanCreateCardAttributeDefinitionAtOneBank
+- CanGetCardAttributeDefinitionAtOneBank
+- CanDeleteCardAttributeDefinitionAtOneBank
+
+**Products & Fees:**
+- CanCreateProduct
+- CanCreateProductAtAnyBank
+- CanCreateProductAttribute
+- CanGetProductAttribute
+- CanUpdateProductAttribute
+- CanDeleteProductAttribute
+- CanCreateProductAttributeDefinitionAtOneBank
+- CanGetProductAttributeDefinitionAtOneBank
+- CanDeleteProductAttributeDefinitionAtOneBank
+- CanCreateProductFee
+- CanGetProductFee
+- CanUpdateProductFee
+- CanDeleteProductFee
+- CanDeleteProductCascade
+- CanMaintainProductCollection
+
+**Webhooks:**
+- CanCreateWebhook
+- CanGetWebhooks
+- CanUpdateWebhook
+- CanCreateSystemAccountNotificationWebhook
+- CanCreateAccountNotificationWebhookAtOneBank
+
+**Data Management:**
+- CanCreateSandbox
+- CanSearchWarehouse
+- CanSearchWarehouseStatistics
+- CanCreateDirectDebitAtOneBank
+- CanCreateStandingOrderAtOneBank
+- CanCreateCounterparty
+- CanCreateCounterpartyAtAnyBank
+- CanGetCounterparty
+- CanGetCounterpartyAtAnyBank
+- CanGetCounterparties
+- CanGetCounterpartiesAtAnyBank
+- CanDeleteCounterparty
+- CanDeleteCounterpartyAtAnyBank
+- CanAddSocialMediaHandle
+- CanGetSocialMediaHandles
+- CanUpdateAgentStatusAtOneBank
+- CanUpdateAgentStatusAtAnyBank
 ```
 
-CanCreateAccount
-CanUpdateAccount
-CanGetAccountsHeldAtOneBank
-CanGetAccountsHeldAtAnyBank
-CanCreateAccountAttributeAtOneBank
-CanUpdateAccountAttribute
-CanDeleteAccountCascade
-...
+**Scopes:**
 
-```
+- CanCreateScopeAtOneBank
+- CanCreateScopeAtAnyBank
+- CanDeleteScopeAtAnyBank
 
-**Customer Management** (40+ roles):
-```
+**Web UI:**
 
-CanCreateCustomer
-CanCreateCustomerAtAnyBank
-CanGetCustomer
-CanGetCustomersAtAnyBank
-CanUpdateCustomerEmail
-CanUpdateCustomerData
-CanCreateCustomerAccountLink
-CanCreateCustomerAttributeAtOneBank
-...
-
-```
-
-**Transaction Management** (25+ roles):
-```
-
-CanCreateAnyTransactionRequest
-CanGetTransactionRequestAtAnyBank
-CanUpdateTransactionRequestStatusAtAnyBank
-CanCreateTransactionAttributeAtOneBank
-CanCreateHistoricalTransaction
-...
-
-```
-
-**Bank Resource Management** (50+ roles):
-```
-
-CanCreateBank
-CanCreateBranch
-CanCreateAtm
-CanCreateProduct
-CanCreateFxRate
-CanDeleteBranchAtAnyBank
-CanUpdateAtm
-...
-
-```
-
-**User & Entitlement Management** (30+ roles):
-```
-
-CanGetAnyUser
-CanCreateEntitlementAtOneBank
-CanCreateEntitlementAtAnyBank
-CanDeleteEntitlementAtAnyBank
-CanGetEntitlementsForAnyUserAtAnyBank
-CanCreateUserCustomerLink
-...
-
-```
-
-**Consumer & API Management** (20+ roles):
-```
-
-CanCreateConsumer
-CanGetConsumers
-CanEnableConsumers
-CanDisableConsumers
-CanSetCallLimits
-CanReadCallLimits
-CanReadMetrics
-CanGetConfig
-...
-
-```
-
-**Dynamic Resources** (40+ roles):
-```
-
-CanCreateDynamicEntity
-CanCreateBankLevelDynamicEntity
-CanCreateDynamicEndpoint
-CanCreateBankLevelDynamicEndpoint
-CanCreateDynamicResourceDoc
-CanCreateBankLevelDynamicResourceDoc
-CanCreateDynamicMessageDoc
-CanGetMethodRoutings
-CanCreateMethodRouting
-...
-
-```
-
-**Consent Management** (10+ roles):
-```
-
-CanUpdateConsentStatusAtOneBank
-CanUpdateConsentStatusAtAnyBank
-CanUpdateConsentAccountAccessAtOneBank
-CanRevokeConsentAtBank
-CanGetConsentsAtOneBank
-...
-
-```
-
-**Security & Compliance** (20+ roles):
-```
-
-CanAddKycCheck
-CanAddKycDocument
-CanGetAnyKycChecks
-CanCreateRegulatedEntity
-CanDeleteRegulatedEntity
-CanCreateAuthenticationTypeValidation
-CanCreateJsonSchemaValidation
-...
-
-```
-
-**Logging & Monitoring** (15+ roles):
-```
-
-CanGetTraceLevelLogsAtOneBank
-CanGetDebugLevelLogsAtAllBanks
-CanGetInfoLevelLogsAtOneBank
-CanGetErrorLevelLogsAtAllBanks
-CanGetAllLevelLogsAtAllBanks
-CanGetConnectorMetrics
-...
-
-```
-
-**Views & Permissions** (15+ roles):
-```
-
-CanCreateSystemView
-CanUpdateSystemView
-CanDeleteSystemView
-CanCreateSystemViewPermission
-CanDeleteSystemViewPermission
-...
-
-```
-
-**Cards** (10+ roles):
-```
-
-CanCreateCardsForBank
-CanUpdateCardsForBank
-CanDeleteCardsForBank
-CanGetCardsForBank
-CanCreateCardAttributeDefinitionAtOneBank
-...
-
-```
-
-**Products & Fees** (15+ roles):
-```
-
-CanCreateProduct
-CanCreateProductAtAnyBank
-CanCreateProductFee
-CanUpdateProductFee
-CanDeleteProductFee
-CanGetProductFee
-CanMaintainProductCollection
-...
-
-```
-
-**Webhooks** (5+ roles):
-```
-
-CanCreateWebhook
-CanUpdateWebhook
-CanGetWebhooks
-CanCreateSystemAccountNotificationWebhook
-CanCreateAccountNotificationWebhookAtOneBank
-
-```
-
-**Data Management** (20+ roles):
-```
-
-CanCreateSandbox
-CanCreateHistoricalTransaction
-CanUseAccountFirehoseAtAnyBank
-CanUseCustomerFirehoseAtAnyBank
-CanDeleteTransactionCascade
-CanDeleteBankCascade
-CanDeleteProductCascade
-CanDeleteCustomerCascade
-...
-
-````
+- CanCreateWebUiProps
+- CanGetWebUiProps
+- CanDeleteWebUiProps
 
 #### Viewing All Roles
 
 **Via API:**
+
 ```bash
 GET /obp/v5.1.0/roles
 Authorization: DirectLogin token="TOKEN"
-````
+```
 
 **Via Source Code:**
 The complete list of roles is defined in:
