@@ -2246,9 +2246,35 @@ GET /obp/v5.1.0/root
 }
 ```
 
-### 9.3 Swagger Documentation
+### 9.3 API Documentation Formats
 
-**Accessing Swagger:**
+**Resource Docs (OBP Native Format):**
+
+OBP's native documentation format provides comprehensive endpoint information including roles, example bodies, and implementation details.
+
+```bash
+# OBP Standard
+GET /obp/v5.1.0/resource-docs/v5.1.0/obp
+
+# Berlin Group
+GET /obp/v5.1.0/resource-docs/BGv1.3/obp
+
+# UK Open Banking
+GET /obp/v5.1.0/resource-docs/UKv3.1/obp
+
+# Filter by tags
+GET /obp/v5.1.0/resource-docs/v5.1.0/obp?tags=Account,Bank
+
+# Filter by functions
+GET /obp/v5.1.0/resource-docs/v5.1.0/obp?functions=getBank,getAccounts
+
+# Filter by content type (dynamic/static)
+GET /obp/v5.1.0/resource-docs/v5.1.0/obp?content=dynamic
+```
+
+**Swagger Documentation:**
+
+Swagger/OpenAPI format for integration with standard API tools.
 
 ```bash
 # OBP Standard
@@ -2267,6 +2293,8 @@ GET /obp/v5.1.0/resource-docs/UKv3.1/swagger
 2. Import into API client
 3. Configure authentication
 4. Test endpoints
+
+**Note:** The Swagger format is generated from Resource Docs. Resource Docs contain additional information not available in Swagger format.
 
 ### 9.4 Common API Workflows
 
