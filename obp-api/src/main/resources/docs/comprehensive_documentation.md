@@ -70,7 +70,7 @@ The Open Bank Project (OBP) is an open-source RESTful API platform for banks tha
 - **Customer-Account Linking**: Associate customers with accounts
 - **KYC Processes**: KYC checks, documents, media uploads, status tracking
 - **CRM Integration**: Customer relationship management features
-- **Meeting Management**: Schedule and manage customer meetings
+- **Consent Management**: PSD2-compliant consent workflows for data access
 
 #### 1.2.4 Card Management
 
@@ -891,7 +891,7 @@ POST /open-banking/v3.1/cbpii/funds-confirmation-consents
 - 600+ endpoints
 - Multi-bank support
 - Extended customer data
-- Meeting scheduling
+- Consent management
 - Product management
 - Webhook support
 - Dynamic entity/endpoint creation
@@ -903,7 +903,7 @@ POST /open-banking/v3.1/cbpii/funds-confirmation-consents
 - v3.0.0, v3.1.0 (STABLE)
 - v4.0.0 (STABLE)
 - v5.0.0, v5.1.0 (STABLE)
-- v6.0.0 (STABLE/BLEEDING-EDGE)
+- v6.0.0 (BLEEDING-EDGE)
 
 **Key Endpoint Categories:**
 
@@ -4113,6 +4113,8 @@ java -cp /usr/share/jetty9/lib/jetty-util-*.jar \
 OBP-API uses a comprehensive role-based access control (RBAC) system with over **334 static roles**. Roles control access to specific API endpoints and operations.
 
 **Note:** All roles can be dynamically listed using the `/obp/v5.1.0/roles` endpoint.
+
+**Last Updated:** 2025-10-29
 
 #### Role Naming Convention
 
