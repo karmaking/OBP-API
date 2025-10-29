@@ -808,6 +808,149 @@ openid_connect_1.endpoint.discovery=http://localhost:7070/realms/master/.well-kn
 
 ---
 
+### 3.7 Connectors
+
+**Purpose:** Connectors provide the integration layer between OBP-API and backend banking systems or data sources.
+
+**Available Connectors:**
+
+**Mapped (Internal)**
+
+- Direct database connector for sandbox/development
+- Stores data in OBP's own database tables
+- No external system required
+- Configuration: `connector=mapped`
+
+**Kafka**
+
+- Message-based connector using Apache Kafka
+- Asynchronous communication with backend systems
+- Supports high-throughput scenarios
+- Configuration: `connector=kafka_vMar2017`
+
+**RabbitMQ**
+
+- Message queue-based connector
+- Alternative to Kafka for message-based integration
+- Supports reliable message delivery
+- Configuration: Configure via props with RabbitMQ connection details
+
+**Akka Remote**
+
+- Actor-based remote connector
+- Separates API layer from data layer
+- Enables distributed deployments
+- Configuration: `connector=akka_vDec2018`
+
+**Cardano**
+
+- Blockchain connector for Cardano network
+- Enables blockchain-based banking operations
+- Supports smart contract integration
+- Configuration: `connector=cardano`
+
+**Ethereum**
+
+- Blockchain connector for Ethereum network
+- Smart contract integration for DeFi applications
+- Web3 compatibility
+- Configuration: `connector=ethereum`
+
+**REST/Stored Procedure**
+
+- Direct REST API or stored procedure connectors
+- Custom integration with existing systems
+- Flexible adapter pattern
+
+**Custom Connectors:**
+
+- Create custom connectors by extending the `Connector` trait
+- See section 11.3 for implementation details
+
+---
+
+### 3.8 Adapters
+
+**Purpose:** Adapters are backend services that receive messages from OBP-API connectors and respond according to Message Doc definitions.
+
+**Overview:**
+
+Adapters act as the bridge between OBP-API and core banking systems:
+
+- **Receive:** Accept messages from OBP-API via message queues (Kafka/RabbitMQ) or remote calls (Akka)
+- **Process:** Interact with core banking systems, databases, or other backend services
+- **Respond:** Return data formatted according to Message Doc specifications
+
+**Architecture:**
+
+```
+OBP-API (Connector) → Message Queue → Adapter → Core Banking System
+                    ←              ←        ←
+```
+
+**Key Characteristics:**
+
+- **Language Agnostic:** Adapters can be written in any programming language
+- **Message Doc Compliance:** Must implement request/response formats defined in Message Docs
+- **Scalability:** Multiple adapter instances can process messages concurrently
+- **Flexibility:** Different adapters can serve different banking systems or functions
+
+**Implementation:**
+
+Adapters listen to message queues or remote calls, parse incoming messages according to Message Doc schemas, execute business logic, and return responses in the required format.
+
+**Example Use Cases:**
+
+- Adapter in Java connecting to legacy mainframe systems
+- Adapter in Python integrating with modern REST APIs
+- Adapter in Go for high-performance transaction processing
+- Adapter in Scala for Akka-based distributed systems
+
+---
+
+### 3.9 Message Docs
+
+**Purpose:** Message Docs define the structure and schema of messages exchanged between OBP-API connectors and backend adapters.
+
+**Overview:**
+
+Message Docs serve as API contracts for connector-adapter communication, specifying:
+
+- Request message format and required fields
+- Response message format and data structure
+- Field types and validation rules
+- Example messages for testing
+
+**Key Features:**
+
+- **Dynamic Definition:** Message Docs can be created dynamically via API without code changes
+- **Version Control:** Different connector versions can have different message formats
+- **Documentation:** Auto-generated documentation for adapter developers
+- **Validation:** Ensures message compatibility between connectors and adapters
+
+**Available Message Docs:**
+
+Message Docs are available for various connectors including Kafka, RabbitMQ, and Akka. Each connector version has its own set of message definitions.
+
+**Example:** [RabbitMQ Message Docs](https://apiexplorer-ii-sandbox.openbankproject.com/message-docs/rabbitmq_vOct2024)
+
+**Configuration:**
+
+```properties
+# Enable message doc endpoints
+connector=rabbitmq_vOct2024
+```
+
+**Related Roles:**
+
+- CanCreateDynamicMessageDoc
+- CanGetDynamicMessageDoc
+- CanGetAllDynamicMessageDocs
+- CanUpdateDynamicMessageDoc
+- CanDeleteDynamicMessageDoc
+
+---
+
 ## 4. Standards Compliance
 
 ### 4.1 Berlin Group NextGenPSD2
@@ -1580,7 +1723,7 @@ Authorization: DirectLogin token="TOKEN"
 **Creating a Consent:**
 
 ```bash
-POST /obp/v5.1.0/consumer/consents
+POST /obp/v5.1.0/my/consents/IMPLICIT
 Authorization: Bearer ACCESS_TOKEN
 Content-Type: application/json
 
@@ -1594,6 +1737,8 @@ Content-Type: application/json
   "time_to_live": 7776000,
   "email": "user@example.com"
 }
+
+Note: Replace `IMPLICIT` with `SMS` or `EMAIL` for other SCA methods.
 ```
 
 **Challenge Flow (SCA):**
@@ -2020,6 +2165,7 @@ GET /obp/v5.1.0/management/metrics?
 ```bash
 GET /obp/v5.1.0/development/call-context
 # Returns current request context for debugging
+# Required role: CanGetCallContext
 ```
 
 **Log Cache:**
@@ -2094,9 +2240,35 @@ GET /obp/v5.1.0/root
 }
 ```
 
-### 9.3 Swagger Documentation
+### 9.3 API Documentation Formats
 
-**Accessing Swagger:**
+**Resource Docs (OBP Native Format):**
+
+OBP's native documentation format provides comprehensive endpoint information including roles, example bodies, and implementation details.
+
+```bash
+# OBP Standard
+GET /obp/v5.1.0/resource-docs/v5.1.0/obp
+
+# Berlin Group
+GET /obp/v5.1.0/resource-docs/BGv1.3/obp
+
+# UK Open Banking
+GET /obp/v5.1.0/resource-docs/UKv3.1/obp
+
+# Filter by tags
+GET /obp/v5.1.0/resource-docs/v5.1.0/obp?tags=Account,Bank
+
+# Filter by functions
+GET /obp/v5.1.0/resource-docs/v5.1.0/obp?functions=getBank,getAccounts
+
+# Filter by content type (dynamic/static)
+GET /obp/v5.1.0/resource-docs/v5.1.0/obp?content=dynamic
+```
+
+**Swagger Documentation:**
+
+Swagger/OpenAPI format for integration with standard API tools.
 
 ```bash
 # OBP Standard
@@ -2115,6 +2287,8 @@ GET /obp/v5.1.0/resource-docs/UKv3.1/swagger
 2. Import into API client
 3. Configure authentication
 4. Test endpoints
+
+**Note:** The Swagger format is generated from Resource Docs. Resource Docs contain additional information not available in Swagger format.
 
 ### 9.4 Common API Workflows
 
@@ -2144,7 +2318,7 @@ GET /obp/v5.1.0/banks/gh.29.uk/accounts/ACCOUNT_ID/owner/transactions
 # 1. Authenticate (OAuth2/OIDC recommended)
 
 # 2. Create consent
-POST /obp/v5.1.0/consumer/consents
+POST /obp/v5.1.0/my/consents/IMPLICIT
 {
   "everything": false,
   "account_access": [...],
