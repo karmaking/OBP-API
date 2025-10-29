@@ -752,7 +752,7 @@ skip_consent_sca_for_consumer_id_pairs=[{ \
 - User authentication simulation
 - Development-friendly configuration
 
-**Configuration:**
+**Configuration (excerpt):**
 
 ```properties
 # In OBP-API props
@@ -804,6 +804,11 @@ openid_connect_1.client_id=obp-client
 openid_connect_1.client_secret=your-secret
 openid_connect_1.callback_url=http://localhost:8080/auth/openid-connect/callback
 openid_connect_1.endpoint.discovery=http://localhost:7070/realms/master/.well-known/openid-configuration
+```
+Pre-built Keycloak image with OBP Keycloak provider:
+
+```bash
+docker pull openbankproject/obp-keycloak:main-themed
 ```
 
 ---
