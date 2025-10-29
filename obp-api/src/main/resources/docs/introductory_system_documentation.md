@@ -259,6 +259,11 @@ The Open Bank Project (OBP) is an open-source RESTful API platform for banks tha
                    │  └──────────────┬──────────────────┘  │
                    │                 │                     │
                    │  ┌──────────────▼──────────────────┐  │
+                   │  │      OBP Models                 │  │
+                   │  │      (Data Structures)          │  │
+                   │  └──────────────┬──────────────────┘  │
+                   │                 │                     │
+                   │  ┌──────────────▼──────────────────┐  │
                    │  │      Connector Layer            │  │
                    │  │   (Pluggable Adapters)          │  │
                    │  └──────────────┬──────────────────┘  │
