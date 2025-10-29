@@ -1729,7 +1729,7 @@ Authorization: DirectLogin token="TOKEN"
 **Creating a Consent:**
 
 ```bash
-POST /obp/v5.1.0/consumer/consents
+POST /obp/v5.1.0/my/consents/IMPLICIT
 Authorization: Bearer ACCESS_TOKEN
 Content-Type: application/json
 
@@ -1743,6 +1743,8 @@ Content-Type: application/json
   "time_to_live": 7776000,
   "email": "user@example.com"
 }
+
+Note: Replace `IMPLICIT` with `SMS` or `EMAIL` for other SCA methods.
 ```
 
 **Challenge Flow (SCA):**
@@ -2293,7 +2295,7 @@ GET /obp/v5.1.0/banks/gh.29.uk/accounts/ACCOUNT_ID/owner/transactions
 # 1. Authenticate (OAuth2/OIDC recommended)
 
 # 2. Create consent
-POST /obp/v5.1.0/consumer/consents
+POST /obp/v5.1.0/my/consents/IMPLICIT
 {
   "everything": false,
   "account_access": [...],
