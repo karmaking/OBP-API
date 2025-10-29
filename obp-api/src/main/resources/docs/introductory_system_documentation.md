@@ -1029,8 +1029,24 @@ Repeat for: `makePaymentV400`, `notifyTransactionRequest`
 - Language: Scala
 - Framework: Akka
 - Database: PostgreSQL with Slick ORM
-- Message Format: SEPA XML (ISO 20022)
+- Message Format: SEPA XML (ISO 20022 standard)
 - Code Generation: scalaxb for XSD classes
+
+**ISO 20022 Compliance:**
+
+The SEPA Adapter implements ISO 20022 message standards for financial messaging:
+
+- **pacs.008.001.02** - FIToFICustomerCreditTransfer (Credit Transfer)
+- **pacs.004.001.02** - PaymentReturn (Payment Return)
+- **pacs.002.001.03** - FIToFIPaymentStatusReport (Payment Reject)
+- **pacs.028.001.01** - FIToFIPaymentStatusRequest (Request Status Update)
+- **camt.056.001.01** - FIToFIPaymentCancellationRequest (Payment Recall)
+- **camt.029.001.03** - ResolutionOfInvestigation (Recall Negative Answer)
+- **camt.027.001.06** - ClaimNonReceipt (Inquiry Claim Non Receipt)
+- **camt.087.001.05** - RequestToModifyPayment (Inquiry Claim Value Date Correction)
+- **camt.029.001.08** - ResolutionOfInvestigation (Inquiry Responses)
+
+ISO 20022 provides standardized XML schemas for electronic data interchange between financial institutions, ensuring interoperability across the SEPA payment network.
 
 **Running the Adapter:**
 
