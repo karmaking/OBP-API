@@ -1,6 +1,6 @@
-# Open Bank Project — Technical Documentation Pack (Collated)
+# Open Bank Project — Brief System Documentation
 
-_Comprehensive System Architecture, Workflows, Security, and API Reference_
+_System Architecture, Workflows, Security, and API Reference_
 
 ---
 
@@ -70,7 +70,7 @@ _Comprehensive System Architecture, Workflows, Security, and API Reference_
 
 **High-Level System Architecture**
 
-See the detailed architecture diagram in [comprehensive_documentation.md](comprehensive_documentation.md#21-high-level-architecture) (Section 2.1).
+See the detailed architecture diagram in [introductory_system_documentation.md](introductory_system_documentation.md#21-high-level-architecture) (Section 2.1).
 
 **Views & Entitlements**
 
@@ -114,7 +114,7 @@ User ──(has roles/entitlements)──► Bank/System actions
 
 - **Dev**: H2 (enable web console if needed).
 - **Prod**: PostgreSQL recommended; set SSL if required; grant schema/table privileges.\
-Any JDBC-compliant DB is supported (e.g. MS SQL, Oracle DB, etc.)
+  Any JDBC-compliant DB is supported (e.g. MS SQL, Oracle DB, etc.)
 
 ### Updating
 
@@ -214,4 +214,4 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO obp_user;
 
 ---
 
-© TESOBE GmbH 2025
+© TESOBE GmbH 2025 AGPL V3
