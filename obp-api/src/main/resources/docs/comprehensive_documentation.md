@@ -283,9 +283,9 @@ The Open Bank Project (OBP) is an open-source RESTful API platform for banks tha
 #### Single Server Deployment
 
 ```
-┌─────────────────────────────────────┐
-│         Single Server               │
-│                                     │
+┌────────────────────────────────────┐
+│         Single Server              │
+│                                    │
 │  ┌──────────────────────────────┐  │
 │  │       OBP-API (Jetty)        │  │
 │  └──────────────────────────────┘  │
@@ -295,7 +295,7 @@ The Open Bank Project (OBP) is an open-source RESTful API platform for banks tha
 │  ┌──────────────────────────────┐  │
 │  │         Redis                │  │
 │  └──────────────────────────────┘  │
-└─────────────────────────────────────┘
+└────────────────────────────────────┘
 ```
 
 #### Distributed Deployment with Akka Remote (requires extra licence / config)
@@ -441,7 +441,7 @@ super_admin_user_ids=uuid-of-admin-user
 - Build: Vite
 - Testing: Vitest (unit), Playwright (integration)
 
-**Configuration:**
+**Configuration (excerpt):**
 
 ```env
 # .env file
@@ -646,7 +646,7 @@ DATABASES = {
 **Management:**
 
 - Super Admin users can manage roles at `/users`
-- Set `super_admin_user_ids` in OBP-API props file
+- Set `super_admin_user_ids` in OBP-API props file (as temporary bootstrap admin user)
 - Users need appropriate roles to execute management functions
 - Entitlement management requires proper permissions
 
@@ -680,7 +680,7 @@ DATABASES = {
 - OpenAI (GPT-4)
 - Ollama (Local models - Llama, Mistral)
 
-**Configuration:**
+**Configuration .env file (excerpt, see .env-example):**
 
 ```env
 # .env file
@@ -705,7 +705,7 @@ LANGCHAIN_API_KEY=lsv2_pt_xxx
 LANGCHAIN_PROJECT=opey-agent
 ```
 
-**Installation:**
+**Installation (local/development):**
 
 ```bash
 cd OPEY/OBP-Opey-II
@@ -722,18 +722,12 @@ python src/run_service.py  # Backend API (port 8000)
 # Access via OBP Portal frontend
 ```
 
-**Docker Deployment:**
-
-```bash
-docker compose up
-```
-
 **OBP-API Configuration for Opey:**
 
 ```properties
 # In OBP-API props file
 skip_consent_sca_for_consumer_id_pairs=[{ \
-    "grantor_consumer_id": "<api-explorer-consumer-id>",\
+    "grantor_consumer_id": "<api-explorer-consumer-id, or portal-consumer-id>",\
     "grantee_consumer_id": "<opey-consumer-id>" \
 }]
 ```
@@ -961,7 +955,7 @@ POST /open-banking/v3.1/cbpii/funds-confirmation-consents
 
 **Hardware Requirements (Minimum):**
 
-- CPU: 4 cores
+- CPU: 2 cores
 - RAM: 8GB
 - Disk: 50GB
 - Network: 100 Mbps
