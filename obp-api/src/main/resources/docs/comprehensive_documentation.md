@@ -2171,6 +2171,7 @@ GET /obp/v5.1.0/management/metrics?
 ```bash
 GET /obp/v5.1.0/development/call-context
 # Returns current request context for debugging
+# Required role: CanGetCallContext
 ```
 
 **Log Cache:**
