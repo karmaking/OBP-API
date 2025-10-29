@@ -814,6 +814,67 @@ openid_connect_1.endpoint.discovery=http://localhost:7070/realms/master/.well-kn
 
 ---
 
+### 3.7 Connectors
+
+**Purpose:** Connectors provide the integration layer between OBP-API and backend banking systems or data sources.
+
+**Available Connectors:**
+
+**Mapped (Internal)**
+
+- Direct database connector for sandbox/development
+- Stores data in OBP's own database tables
+- No external system required
+- Configuration: `connector=mapped`
+
+**Kafka**
+
+- Message-based connector using Apache Kafka
+- Asynchronous communication with backend systems
+- Supports high-throughput scenarios
+- Configuration: `connector=kafka_vMar2017`
+
+**RabbitMQ**
+
+- Message queue-based connector
+- Alternative to Kafka for message-based integration
+- Supports reliable message delivery
+- Configuration: Configure via props with RabbitMQ connection details
+
+**Akka Remote**
+
+- Actor-based remote connector
+- Separates API layer from data layer
+- Enables distributed deployments
+- Configuration: `connector=akka_vDec2018`
+
+**Cardano**
+
+- Blockchain connector for Cardano network
+- Enables blockchain-based banking operations
+- Supports smart contract integration
+- Configuration: `connector=cardano`
+
+**Ethereum**
+
+- Blockchain connector for Ethereum network
+- Smart contract integration for DeFi applications
+- Web3 compatibility
+- Configuration: `connector=ethereum`
+
+**REST/Stored Procedure**
+
+- Direct REST API or stored procedure connectors
+- Custom integration with existing systems
+- Flexible adapter pattern
+
+**Custom Connectors:**
+
+- Create custom connectors by extending the `Connector` trait
+- See section 11.3 for implementation details
+
+---
+
 ## 4. Standards Compliance
 
 ### 4.1 Berlin Group NextGenPSD2
