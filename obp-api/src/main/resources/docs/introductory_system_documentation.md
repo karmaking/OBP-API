@@ -19,9 +19,10 @@
    - 3.5 [OBP-OIDC (Development Provider)](#35-obp-oidc-development-provider)
    - 3.6 [Keycloak Integration (Production Provider)](#36-keycloak-integration-production-provider)
    - 3.7 [OBP-Hola](#37-obp-hola)
-   - 3.8 [Connectors](#38-connectors)
-   - 3.9 [Adapters](#39-adapters)
-   - 3.10 [Message Docs](#310-message-docs)
+   - 3.8 [OBP-SEPA-Adapter](#38-obp-sepa-adapter)
+   - 3.9 [Connectors](#39-connectors)
+   - 3.10 [Adapters](#310-adapters)
+   - 3.11 [Message Docs](#311-message-docs)
 4. [Standards Compliance](#standards-compliance)
 5. [Installation and Configuration](#installation-and-configuration)
 6. [Authentication and Security](#authentication-and-security)
@@ -906,7 +907,149 @@ docker run -p 8087:8087 \
 
 ---
 
-### 3.8 Connectors
+### 3.8 OBP-SEPA-Adapter
+
+**Purpose:** Reference implementation for SEPA payment processing with OBP-API
+
+**Overview:**
+
+OBP-SEPA-Adapter is a Scala/Akka-based adapter that enables SEPA (Single Euro Payments Area) payment processing through OBP-API. It handles incoming and outgoing SEPA messages, storing transactions and transaction requests via the OBP-API.
+
+**Key Features:**
+
+- **SEPA Credit Transfer:** Full support for pacs.008.001.02 messages
+- **Payment Returns:** Handle payment return messages (pacs.004.001.02)
+- **Payment Rejections:** Process rejection messages (pacs.002.001.03)
+- **Payment Recalls:** Support for recall messages (camt.056.001.01)
+- **File Processing:** Generate and process SEPA XML files
+- **PostgreSQL Storage:** Dedicated database for SEPA message management
+- **Akka Connector Integration:** Communicates with OBP-API via Akka remote
+
+**Supported SEPA Messages:**
+
+**Integrated with OBP-API:**
+
+- Credit Transfer (pacs.008.001.02)
+- Payment Return (pacs.004.001.02)
+- Payment Reject (pacs.002.001.03)
+- Payment Recall (camt.056.001.01)
+- Payment Recall Negative Answer (camt.029.001.03)
+
+**Supported but not integrated:**
+
+- Inquiry Claim messages (camt.027, camt.087, camt.029)
+- Request Status Update (pacs.028.001.01)
+
+**Architecture:**
+
+```
+OBP-API (Star Connector) → Akka Remote → SEPA Adapter → PostgreSQL
+                                              ↓
+                                         SEPA Files (in/out)
+```
+
+**Configuration:**
+
+**OBP-API props:**
+
+```properties
+connector=star
+starConnector_supported_types=mapped,akka
+transactionRequests_supported_types=SANDBOX_TAN,COUNTERPARTY,SEPA,ACCOUNT_OTP,ACCOUNT,REFUND
+akka_connector.hostname=127.0.0.1
+akka_connector.port=2662
+```
+
+**SEPA Adapter application.conf:**
+
+```conf
+databaseConfig = {
+  dataSourceClass = "org.postgresql.ds.PGSimpleDataSource"
+  properties = {
+    databaseName = "sepa_db"
+    user = "sepa_user"
+    password = "password"
+  }
+}
+
+obp-api = {
+  authorization = {
+    direct-login-token = "YOUR_DIRECTLOGIN_TOKEN"
+  }
+}
+
+sepa-adapter {
+  bank-id = "THE_DEFAULT_BANK_ID"
+  bank-bic = "OBPBDEB1XXX"
+}
+```
+
+**Method Routing Setup:**
+
+Create method routings to route payment methods through Akka connector:
+
+```json
+{
+  "is_bank_id_exact_match": false,
+  "method_name": "makePaymentv210",
+  "connector_name": "akka_vDec2018",
+  "bank_id_pattern": ".*",
+  "parameters": []
+}
+```
+
+Repeat for: `makePaymentV400`, `notifyTransactionRequest`
+
+**Required Entitlements:**
+
+- CanCreateHistoricalTransaction
+- CanCreateAnyTransactionRequest
+
+**Use Cases:**
+
+- SEPA credit transfer payment processing
+- Payment returns and rejections handling
+- Payment recall workflows
+- SEPA file generation and processing
+- Euro zone payment integration
+
+**Technology Stack:**
+
+- Language: Scala
+- Framework: Akka
+- Database: PostgreSQL with Slick ORM
+- Message Format: SEPA XML (ISO 20022)
+- Code Generation: scalaxb for XSD classes
+
+**Running the Adapter:**
+
+```bash
+# Setup database
+psql -f src/main/scala/model/DatabaseSchema.sql
+
+# Configure application.conf
+# Edit src/main/resources/application.conf
+
+# Run the adapter
+sbt run
+```
+
+**Processing Files:**
+
+```bash
+# Generate outgoing SEPA files
+sbt "runMain sepa.scheduler.ProcessOutgoingFiles"
+# Files created in: src/main/scala/sepa/sct/file/out
+
+# Process incoming SEPA files
+sbt "runMain sepa.scheduler.ProcessIncomingFilesActorSystem"
+```
+
+**Repository:** https://github.com/OpenBankProject/OBP-SEPA-Adapter
+
+---
+
+### 3.9 Connectors
 
 **Purpose:** Connectors provide the integration layer between OBP-API and backend banking systems or data sources.
 
@@ -967,7 +1110,7 @@ docker run -p 8087:8087 \
 
 ---
 
-### 3.9 Adapters
+### 3.10 Adapters
 
 **Purpose:** Adapters are backend services that receive messages from OBP-API connectors and respond according to Message Doc definitions.
 
@@ -1006,7 +1149,7 @@ Adapters listen to message queues or remote calls, parse incoming messages accor
 
 ---
 
-### 3.10 Message Docs
+### 3.11 Message Docs
 
 **Purpose:** Message Docs define the structure and schema of messages exchanged between OBP-API connectors and backend adapters.
 
