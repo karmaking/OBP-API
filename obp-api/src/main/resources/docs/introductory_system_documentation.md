@@ -212,83 +212,83 @@ The Open Bank Project (OBP) is an open-source RESTful API platform for banks tha
 ### 2.1 High-Level Architecture
 
 ```
-┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐  ┌───────────────────────────────┐
-│   API Explorer  │  │   API Manager   │  │    Opey II      │  │   Client Applications         │
-│   (Frontend)    │  │   (Admin UI)    │  │   (AI Agent)    │  │ (Web/Mobile Apps, TPP, etc.)  │
-└────────┬────────┘  └────────┬────────┘  └────────┬────────┘  └────────┬──────────────────────┘
-         │                    │                    │                    │
-         └────────────────────┴────────────────────┴────────────────────┘
-                                       │
-                                       │ HTTPS/REST API
-                                       │
-                   ┌───────────────────┴───────────────────┐
-                   │        OBP API Dispatch               │
-                   └───────────────────┬───────────────────┘
-                                       │
-                                       ▼
-                   ┌───────────────────────────────────────┐
-                   │         OBP-API Core                  │
-                   │     (Scala/Lift Framework)            │
-                   │                                       │
-                   │  ┌─────────────────────────────────┐  │
-                   │  │   Client Authentication         │  │
-                   │  │   (Consumer Keys, Certs)        │  │
-                   │  └──────────────┬──────────────────┘  │
-                   │                 │                     │
-                   │  ┌──────────────▼──────────────────┐  │
-                   │  │      Rate Limiting              │  │
-                   │  └──────────────┬──────────────────┘  │
-                   │                 │                     │
-                   │  ┌──────────────▼──────────────────┐  │
-                   │  │   Authentication Layer          │  │
-                   │  │   (OAuth/OIDC/Direct)           │  │
-                   │  └──────────────┬──────────────────┘  │
-                   │                 │                     │
-                   │  ┌──────────────▼──────────────────┐  │
-                   │  │   Authorization Layer           │  │
-                   │  │   (Roles & Entitlements)        │  │
-                   │  └──────────────┬──────────────────┘  │
-                   │                 │                     │
-                   │  ┌──────────────▼──────────────────┐  │
-                   │  │      API Endpoints              │  │
-                   │  │      (Multiple Versions)        │  │
-                   │  └──────────────┬──────────────────┘  │
-                   │                 │                     │
-                   │  ┌──────────────▼──────────────────┐  │
-                   │  │      Views                      │  │
-                   │  │      (Data Filtering)           │  │
-                   │  └──────────────┬──────────────────┘  │
-                   │                 │                     │
-                   │  ┌──────────────▼──────────────────┐  │
-                   │  │      OBP Models                 │  │
-                   │  │      (Data Structures)          │  │
-                   │  └──────────────┬──────────────────┘  │
-                   │                 │                     │
-                   │  ┌──────────────▼──────────────────┐  │
-                   │  │      Connector Layer            │  │
-                   │  │   (Pluggable Adapters)          │  │
-                   │  └──────────────┬──────────────────┘  │
-                   └─────────────────┼─────────────────────┘
-                                     │
-                  ┌──────────────────┴──────────────────┐
-                  │                                     │
-                  ▼                                     ▼
-       ┌─────────────────────┐         ┌───────────────────────────────┐
-       │      Direct         │         │      Adapter Layer            │
-       │     (Mapped)        │         │      (Any Language)           │
-       └──────────┬──────────┘         └──────────────┬────────────────┘
-                  │                                   │
-                  └───────────────┬───────────────────┘
-                                  │
-            ┌─────────────────────┼─────────────────────┐
-            │                     │                     │
-            ▼                     ▼                     ▼
-     ┌─────────────────┐   ┌─────────────────┐   ┌─────────────────────┐
-     │   PostgreSQL    │   │      Redis      │   │  Core Banking       │
-     │    (OBP DB)     │   │     (Cache)     │   │    Systems          │
-     │                 │   │                 │   │ (via Connectors /   │
-     │                 │   │                 │   │     Adapters)       │
-     └─────────────────┘   └─────────────────┘   └─────────────────────┘
++-----------------+  +-----------------+  +-----------------+  +-------------------------------+
+|   API Explorer  |  |   API Manager   |  |    Opey II      |  |   Client Applications         |
+|   (Frontend)    |  |   (Admin UI)    |  |   (AI Agent)    |  | (Web/Mobile Apps, TPP, etc.)  |
++--------+--------+  +--------+--------+  +--------+--------+  +--------+----------------------+
+         |                    |                    |                    |
+         +--------------------+--------------------+--------------------+
+                                       |
+                                       | HTTPS/REST API
+                                       |
+                   +-------------------+-------------------+
+                   |        OBP API Dispatch               |
+                   +-------------------+-------------------+
+                                       |
+                                       v
+                   +---------------------------------------+
+                   |         OBP-API Core                  |
+                   |     (Scala/Lift Framework)            |
+                   |                                       |
+                   |  +---------------------------------+  |
+                   |  |   Client Authentication         |  |
+                   |  |   (Consumer Keys, Certs)        |  |
+                   |  +--------------+-----------------+  |
+                   |                 |                     |
+                   |  +--------------v------------------+  |
+                   |  |      Rate Limiting              |  |
+                   |  +--------------+------------------+  |
+                   |                 |                     |
+                   |  +--------------v------------------+  |
+                   |  |   Authentication Layer          |  |
+                   |  |   (OAuth/OIDC/Direct)           |  |
+                   |  +--------------+------------------+  |
+                   |                 |                     |
+                   |  +--------------v------------------+  |
+                   |  |   Authorization Layer           |  |
+                   |  |   (Roles & Entitlements)        |  |
+                   |  +--------------+------------------+  |
+                   |                 |                     |
+                   |  +--------------v------------------+  |
+                   |  |      API Endpoints              |  |
+                   |  |      (Multiple Versions)        |  |
+                   |  +--------------+------------------+  |
+                   |                 |                     |
+                   |  +--------------v------------------+  |
+                   |  |      Views                      |  |
+                   |  |      (Data Filtering)           |  |
+                   |  +--------------+------------------+  |
+                   |                 |                     |
+                   |  +--------------v------------------+  |
+                   |  |      OBP Models                 |  |
+                   |  |      (Data Structures)          |  |
+                   |  +--------------+------------------+  |
+                   |                 |                     |
+                   |  +--------------v------------------+  |
+                   |  |      Connector Layer            |  |
+                   |  |   (Pluggable Adapters)          |  |
+                   |  +--------------+------------------+  |
+                   +-----------------+---------------------+
+                                     |
+                  +------------------+------------------+
+                  |                                     |
+                  v                                     v
+       +---------------------+         +-------------------------------+
+       |      Direct         |         |      Adapter Layer            |
+       |     (Mapped)        |         |      (Any Language)           |
+       +----------+----------+         +----------+--------------------+
+                  |                                   |
+                  +---------------+-------------------+
+                                  |
+            +---------------------+---------------------+
+            |                     |                     |
+            v                     v                     v
+     +-----------------+   +-----------------+   +---------------------+
+     |   PostgreSQL    |   |      Redis      |   |  Core Banking       |
+     |    (OBP DB)     |   |     (Cache)     |   |    Systems          |
+     |                 |   |                 |   | (via Connectors /   |
+     |                 |   |                 |   |     Adapters)       |
+     +-----------------+   +-----------------+   +---------------------+
 ```
 
 ### 2.2 Component Interaction Workflow
@@ -306,34 +306,34 @@ The Open Bank Project (OBP) is an open-source RESTful API platform for banks tha
 #### Single Server Deployment
 
 ```
-┌────────────────────────────────────┐
-│         Single Server              │
-│                                    │
-│  ┌──────────────────────────────┐  │
-│  │       OBP-API (Jetty)        │  │
-│  └──────────────────────────────┘  │
-│  ┌──────────────────────────────┐  │
-│  │      PostgreSQL              │  │
-│  └──────────────────────────────┘  │
-│  ┌──────────────────────────────┐  │
-│  │         Redis                │  │
-│  └──────────────────────────────┘  │
-└────────────────────────────────────┘
++-------------------------------------+
+|         Single Server               |
+|                                     |
+|  +------------------------------+  |
+|  |       OBP-API (Jetty)        |  |
+|  +------------------------------+  |
+|  +------------------------------+  |
+|  |      PostgreSQL              |  |
+|  +------------------------------+  |
+|  +------------------------------+  |
+|  |         Redis                |  |
+|  +------------------------------+  |
++-------------------------------------+
 ```
 
 #### Distributed Deployment with Akka Remote (requires extra licence / config)
 
 ```
-┌─────────────────┐         ┌─────────────────┐
-│   API Layer     │         │   Data Layer    │
-│   (DMZ)         │ Akka    │   (Secure Zone) │
-│                 │ Remote  │                 │
-│  OBP-API        │◄───────►│  OBP-API        │
-│  (HTTP Server)  │         │  (Connector)    │
-│                 │         │                 │
-│  No DB Access   │         │  PostgreSQL     │
-│                 │         │  Core Banking   │
-└─────────────────┘         └─────────────────┘
++-----------------+         +-----------------+
+|   API Layer     |         |   Data Layer    |
+|   (DMZ)         | Akka    |   (Secure Zone) |
+|                 | Remote  |                 |
+|  OBP-API        |<------->|  OBP-API        |
+|  (HTTP Server)  |         |  (Connector)    |
+|                 |         |                 |
+|  No DB Access   |         |  PostgreSQL     |
+|                 |         |  Core Banking   |
++-----------------+         +-----------------+
 ```
 
 ### 2.4 Technology Stack
@@ -857,8 +857,9 @@ Ory Hydra is a hardened, open-source OAuth 2.0 and OpenID Connect server optimiz
 **Architecture:**
 
 ```
-Client → Hydra (OAuth2 Server) → OBP Hydra Identity Provider → OBP-API
-                ↓
+Client -> Hydra (OAuth2 Server) -> OBP Hydra Identity Provider -> OBP-API
+                |
+                v
            Database (PostgreSQL)
 ```
 
@@ -1068,8 +1069,9 @@ OBP-SEPA-Adapter is a Scala/Akka-based adapter that enables SEPA (Single Euro Pa
 **Architecture:**
 
 ```
-OBP-API (Star Connector) → Akka Remote → SEPA Adapter → PostgreSQL
-                                              ↓
+OBP-API (Star Connector) -> Akka Remote -> SEPA Adapter -> PostgreSQL
+                                              |
+                                              v
                                          SEPA Files (in/out)
 ```
 
@@ -1266,8 +1268,8 @@ Adapters act as the bridge between OBP-API and core banking systems:
 **Architecture:**
 
 ```
-OBP-API (Connector) → Message Queue → Adapter → Core Banking System
-                    ←              ←        ←
+OBP-API (Connector) -> Message Queue -> Adapter -> Core Banking System
+                    <-              <-        <-
 ```
 
 **Key Characteristics:**
