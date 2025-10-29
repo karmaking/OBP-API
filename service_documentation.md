@@ -214,6 +214,179 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO obp;
 ---
 
 © TESOBE GmbH 2025
+## 2. System Architecture
+
+### 2.1 High-Level Architecture
+
+```
+┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐  ┌───────────────────────────────┐
+│   API Explorer  │  │   API Manager   │  │    Opey II      │  │   Client Applications         │
+│   (Frontend)    │  │   (Admin UI)    │  │   (AI Agent)    │  │ (Web/Mobile Apps, TPP, etc.)  │
+└────────┬────────┘  └────────┬────────┘  └────────┬────────┘  └────────┬──────────────────────┘
+         │                    │                    │                    │
+         └────────────────────┴────────────────────┴────────────────────┘
+                                       │
+                                       │ HTTPS/REST API
+                                       │
+                   ┌───────────────────┴───────────────────┐
+                   │        OBP API Dispatch               │
+                   └───────────────────┬───────────────────┘
+                                       │
+                                       ▼
+                   ┌───────────────────────────────────────┐
+                   │         OBP-API Core                  │
+                   │     (Scala/Lift Framework)            │
+                   │                                       │
+                   │  ┌─────────────────────────────────┐  │
+                   │  │   Client Authentication         │  │
+                   │  │   (Consumer Keys, Certs)        │  │
+                   │  └──────────────┬──────────────────┘  │
+                   │                 │                     │
+                   │  ┌──────────────▼──────────────────┐  │
+                   │  │      Rate Limiting              │  │
+                   │  └──────────────┬──────────────────┘  │
+                   │                 │                     │
+                   │  ┌──────────────▼──────────────────┐  │
+                   │  │   Authentication Layer          │  │
+                   │  │   (OAuth/OIDC/Direct)           │  │
+                   │  └──────────────┬──────────────────┘  │
+                   │                 │                     │
+                   │  ┌──────────────▼──────────────────┐  │
+                   │  │   Authorization Layer           │  │
+                   │  │   (Roles & Entitlements)        │  │
+                   │  └──────────────┬──────────────────┘  │
+                   │                 │                     │
+                   │  ┌──────────────▼──────────────────┐  │
+                   │  │      API Endpoints              │  │
+                   │  │      (Multiple Versions)        │  │
+                   │  └──────────────┬──────────────────┘  │
+                   │                 │                     │
+                   │  ┌──────────────▼──────────────────┐  │
+                   │  │      Views                      │  │
+                   │  │      (Data Filtering)           │  │
+                   │  └──────────────┬──────────────────┘  │
+                   │                 │                     │
+                   │  ┌──────────────▼──────────────────┐  │
+                   │  │      Connector Layer            │  │
+                   │  │   (Pluggable Adapters)          │  │
+                   │  └──────────────┬──────────────────┘  │
+                   └─────────────────┼─────────────────────┘
+                                     │
+                  ┌──────────────────┴──────────────────┐
+                  │                                     │
+                  ▼                                     ▼
+       ┌─────────────────────┐         ┌───────────────────────────────┐
+       │      Direct         │         │      Adapter Layer            │
+       │     (Mapped)        │         │      (Any Language)           │
+       └──────────┬──────────┘         └──────────────┬────────────────┘
+                  │                                   │
+                  └───────────────┬───────────────────┘
+                                  │
+            ┌─────────────────────┼─────────────────────┐
+            │                     │                     │
+            ▼                     ▼                     ▼
+     ┌─────────────────┐   ┌─────────────────┐   ┌─────────────────────┐
+     │   PostgreSQL    │   │      Redis      │   │  Core Banking       │
+     │    (OBP DB)     │   │     (Cache)     │   │    Systems          │
+     │                 │   │                 │   │ (via Connectors /   │
+     │                 │   │                 │   │     Adapters)       │
+     └─────────────────┘   └─────────────────┘   └─────────────────────┘
+```
+
+### 2.2 Component Interaction Workflow
+
+1. **Client Request:** Application sends authenticated API request
+2. **Rate Limiting:** Request checked against consumer limits (Redis)
+3. **Authentication:** Token validated (OAuth/OIDC/Direct Login)
+4. **Authorization:** User entitlements checked against required roles
+5. **API Processing:** Request routed to appropriate API version endpoint
+6. **Connector Execution:** Data retrieved/modified via connector to backend
+7. **Response:** JSON response returned to client with appropriate data views
+
+### 2.3 Deployment Topologies
+
+#### Single Server Deployment
+
+```
+┌─────────────────────────────────────┐
+│         Single Server               │
+│                                     │
+│  ┌──────────────────────────────┐  │
+│  │       OBP-API (Jetty)        │  │
+│  └──────────────────────────────┘  │
+│  ┌──────────────────────────────┐  │
+│  │      PostgreSQL              │  │
+│  └──────────────────────────────┘  │
+│  ┌──────────────────────────────┐  │
+│  │         Redis                │  │
+│  └──────────────────────────────┘  │
+└─────────────────────────────────────┘
+```
+
+#### Distributed Deployment with Akka Remote (requires extra licence / config)
+
+```
+┌─────────────────┐         ┌─────────────────┐
+│   API Layer     │         │   Data Layer    │
+│   (DMZ)         │ Akka    │   (Secure Zone) │
+│                 │ Remote  │                 │
+│  OBP-API        │◄───────►│  OBP-API        │
+│  (HTTP Server)  │         │  (Connector)    │
+│                 │         │                 │
+│  No DB Access   │         │  PostgreSQL     │
+│                 │         │  Core Banking   │
+└─────────────────┘         └─────────────────┘
+```
+
+### 2.4 Technology Stack
+
+**Backend (OBP-API):**
+
+- Language: Scala 2.12/2.13
+- Framework: Liftweb
+- Build Tool: Maven 3 / SBT
+- Server: Jetty 9
+- Concurrency: Akka
+- JDK: OpenJDK 11, Oracle JDK 1.8/13
+
+**Frontend (API Explorer):**
+
+- Framework: Vue.js 3, TypeScript
+- Build Tool: Vite
+- UI: Tailwind CSS
+- Testing: Vitest, Playwright
+
+**Admin UI (API Manager):**
+
+- Framework: Django 3.x/4.x
+- Language: Python 3.x
+- Database: SQLite (dev) / PostgreSQL (prod)
+- Auth: OAuth 1.0a (OBP API-driven)
+- WSGI Server: Gunicorn
+
+**AI Agent (Opey II):**
+
+- Language: Python 3.10+
+- Framework: LangGraph, LangChain
+- Vector DB: Qdrant
+- Web Framework: FastAPI
+- API: FastAPI-based service
+- Frontend: OBP Portal
+
+**Databases:**
+
+- Primary: PostgreSQL 12+
+- Cache: Redis 6+
+- Development: H2 (in-memory)
+- Support: Postgres and any RDBMS
+
+**OIDC Providers:**
+
+- Production: Keycloak, Hydra, Google, Yahoo, Auth0, Azure AD
+- Development/Testing: OBP-OIDC
+
+---
+
 # Open Bank Project (OBP) - Comprehensive Technical Documentation
 
 **Version:** 0.0.1
@@ -402,179 +575,6 @@ The Open Bank Project (OBP) is an open-source RESTful API platform for banks tha
 - **Opey II:** AI-powered conversational banking assistant (Python/LangGraph)
 - **OBP-OIDC:** Development OpenID Connect provider for testing
 - **Keycloak Integration:** Production-grade OIDC provider support
-
----
-
-## 2. System Architecture
-
-### 2.1 High-Level Architecture
-
-```
-┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐  ┌───────────────────────────────┐
-│   API Explorer  │  │   API Manager   │  │    Opey II      │  │   Client Applications         │
-│   (Frontend)    │  │   (Admin UI)    │  │   (AI Agent)    │  │ (Web/Mobile Apps, TPP, etc.)  │
-└────────┬────────┘  └────────┬────────┘  └────────┬────────┘  └────────┬──────────────────────┘
-         │                    │                    │                    │
-         └────────────────────┴────────────────────┴────────────────────┘
-                                       │
-                                       │ HTTPS/REST API
-                                       │
-                   ┌───────────────────┴───────────────────┐
-                   │        OBP API Dispatch               │
-                   └───────────────────┬───────────────────┘
-                                       │
-                                       ▼
-                   ┌───────────────────────────────────────┐
-                   │         OBP-API Core                  │
-                   │     (Scala/Lift Framework)            │
-                   │                                       │
-                   │  ┌─────────────────────────────────┐  │
-                   │  │   Client Authentication         │  │
-                   │  │   (Consumer Keys, Certs)        │  │
-                   │  └──────────────┬──────────────────┘  │
-                   │                 │                     │
-                   │  ┌──────────────▼──────────────────┐  │
-                   │  │      Rate Limiting              │  │
-                   │  └──────────────┬──────────────────┘  │
-                   │                 │                     │
-                   │  ┌──────────────▼──────────────────┐  │
-                   │  │   Authentication Layer          │  │
-                   │  │   (OAuth/OIDC/Direct)           │  │
-                   │  └──────────────┬──────────────────┘  │
-                   │                 │                     │
-                   │  ┌──────────────▼──────────────────┐  │
-                   │  │   Authorization Layer           │  │
-                   │  │   (Roles & Entitlements)        │  │
-                   │  └──────────────┬──────────────────┘  │
-                   │                 │                     │
-                   │  ┌──────────────▼──────────────────┐  │
-                   │  │      API Endpoints              │  │
-                   │  │      (Multiple Versions)        │  │
-                   │  └──────────────┬──────────────────┘  │
-                   │                 │                     │
-                   │  ┌──────────────▼──────────────────┐  │
-                   │  │      Views                      │  │
-                   │  │      (Data Filtering)           │  │
-                   │  └──────────────┬──────────────────┘  │
-                   │                 │                     │
-                   │  ┌──────────────▼──────────────────┐  │
-                   │  │      Connector Layer            │  │
-                   │  │   (Pluggable Adapters)          │  │
-                   │  └──────────────┬──────────────────┘  │
-                   └─────────────────┼─────────────────────┘
-                                     │
-                  ┌──────────────────┴──────────────────┐
-                  │                                     │
-                  ▼                                     ▼
-       ┌─────────────────────┐         ┌───────────────────────────────┐
-       │      Direct         │         │      Adapter Layer            │
-       │     (Mapped)        │         │      (Any Language)           │
-       └──────────┬──────────┘         └──────────────┬────────────────┘
-                  │                                   │
-                  └───────────────┬───────────────────┘
-                                  │
-            ┌─────────────────────┼─────────────────────┐
-            │                     │                     │
-            ▼                     ▼                     ▼
-     ┌─────────────────┐   ┌─────────────────┐   ┌─────────────────────┐
-     │   PostgreSQL    │   │      Redis      │   │  Core Banking       │
-     │    (OBP DB)     │   │     (Cache)     │   │    Systems          │
-     │                 │   │                 │   │ (via Connectors /   │
-     │                 │   │                 │   │     Adapters)       │
-     └─────────────────┘   └─────────────────┘   └─────────────────────┘
-```
-
-### 2.2 Component Interaction Workflow
-
-1. **Client Request:** Application sends authenticated API request
-2. **Rate Limiting:** Request checked against consumer limits (Redis)
-3. **Authentication:** Token validated (OAuth/OIDC/Direct Login)
-4. **Authorization:** User entitlements checked against required roles
-5. **API Processing:** Request routed to appropriate API version endpoint
-6. **Connector Execution:** Data retrieved/modified via connector to backend
-7. **Response:** JSON response returned to client with appropriate data views
-
-### 2.3 Deployment Topologies
-
-#### Single Server Deployment
-
-```
-┌─────────────────────────────────────┐
-│         Single Server               │
-│                                     │
-│  ┌──────────────────────────────┐  │
-│  │       OBP-API (Jetty)        │  │
-│  └──────────────────────────────┘  │
-│  ┌──────────────────────────────┐  │
-│  │      PostgreSQL              │  │
-│  └──────────────────────────────┘  │
-│  ┌──────────────────────────────┐  │
-│  │         Redis                │  │
-│  └──────────────────────────────┘  │
-└─────────────────────────────────────┘
-```
-
-#### Distributed Deployment with Akka Remote (requires extra licence / config)
-
-```
-┌─────────────────┐         ┌─────────────────┐
-│   API Layer     │         │   Data Layer    │
-│   (DMZ)         │ Akka    │   (Secure Zone) │
-│                 │ Remote  │                 │
-│  OBP-API        │◄───────►│  OBP-API        │
-│  (HTTP Server)  │         │  (Connector)    │
-│                 │         │                 │
-│  No DB Access   │         │  PostgreSQL     │
-│                 │         │  Core Banking   │
-└─────────────────┘         └─────────────────┘
-```
-
-### 2.4 Technology Stack
-
-**Backend (OBP-API):**
-
-- Language: Scala 2.12/2.13
-- Framework: Liftweb
-- Build Tool: Maven 3 / SBT
-- Server: Jetty 9
-- Concurrency: Akka
-- JDK: OpenJDK 11, Oracle JDK 1.8/13
-
-**Frontend (API Explorer):**
-
-- Framework: Vue.js 3, TypeScript
-- Build Tool: Vite
-- UI: Tailwind CSS
-- Testing: Vitest, Playwright
-
-**Admin UI (API Manager):**
-
-- Framework: Django 3.x/4.x
-- Language: Python 3.x
-- Database: SQLite (dev) / PostgreSQL (prod)
-- Auth: OAuth 1.0a (OBP API-driven)
-- WSGI Server: Gunicorn
-
-**AI Agent (Opey II):**
-
-- Language: Python 3.10+
-- Framework: LangGraph, LangChain
-- Vector DB: Qdrant
-- Web Framework: FastAPI
-- API: FastAPI-based service
-- Frontend: OBP Portal
-
-**Databases:**
-
-- Primary: PostgreSQL 12+
-- Cache: Redis 6+
-- Development: H2 (in-memory)
-- Support: Postgres and any RDBMS
-
-**OIDC Providers:**
-
-- Production: Keycloak, Hydra, Google, Yahoo, Auth0, Azure AD
-- Development/Testing: OBP-OIDC
 
 ---
 
@@ -1722,6 +1722,781 @@ Authorization: DirectLogin token="TOKEN"
 
 ---
 
+## 6. Authentication and Security
+
+### 6.1 Authentication Methods
+
+#### 6.1.1 OAuth 1.0a
+
+**Overview:** Legacy OAuth method, still supported for backward compatibility
+
+**Flow:**
+1. Request temporary credentials (request token)
+2. Redirect user to authorization endpoint
+3. User grants access
+4. Exchange request token for access token
+5. Use access token for API requests
+
+**Configuration:**
+```properties
+# Enable OAuth 1.0a (enabled by default)
+allow_oauth1=true
+````
+
+**Example Request:**
+
+```http
+GET /obp/v4.0.0/users/current
+Authorization: OAuth oauth_consumer_key="xxx",
+                    oauth_token="xxx",
+                    oauth_signature_method="HMAC-SHA1",
+                    oauth_signature="xxx",
+                    oauth_timestamp="1234567890",
+                    oauth_nonce="xxx",
+                    oauth_version="1.0"
+```
+
+#### 6.1.2 OAuth 2.0 / OpenID Connect
+
+**Overview:** Modern OAuth2 with OIDC for authentication
+
+**Supported Grant Types:**
+
+- Authorization Code (recommended)
+- Implicit (deprecated, for legacy clients)
+- Client Credentials
+- Resource Owner Password Credentials
+
+**Configuration:**
+
+```properties
+# Enable OAuth2
+allow_oauth2_login=true
+
+# JWKS URI for token validation (can be comma-separated list)
+oauth2.jwk_set.url=http://localhost:9000/obp-oidc/jwks,https://www.googleapis.com/oauth2/v3/certs
+
+# OIDC Provider Configuration
+openid_connect_1.client_id=obp-client
+openid_connect_1.client_secret=your-secret
+openid_connect_1.callback_url=http://localhost:8080/auth/openid-connect/callback
+openid_connect_1.endpoint.discovery=http://localhost:9000/.well-known/openid-configuration
+openid_connect_1.endpoint.authorization=http://localhost:9000/auth
+openid_connect_1.endpoint.token=http://localhost:9000/token
+openid_connect_1.endpoint.userinfo=http://localhost:9000/userinfo
+openid_connect_1.endpoint.jwks_uri=http://localhost:9000/jwks
+openid_connect_1.access_type_offline=true
+openid_connect_1.button_text=Login with OIDC
+```
+
+**Multiple OIDC Providers:**
+
+```properties
+# Google
+openid_connect_1.client_id=xxx.apps.googleusercontent.com
+openid_connect_1.client_secret=xxx
+openid_connect_1.endpoint.discovery=https://accounts.google.com/.well-known/openid-configuration
+openid_connect_1.button_text=Google
+
+# Keycloak
+openid_connect_2.client_id=obp-client
+openid_connect_2.client_secret=xxx
+openid_connect_2.endpoint.discovery=http://keycloak:8080/realms/obp/.well-known/openid-configuration
+openid_connect_2.button_text=Keycloak
+```
+
+**Authorization Code Flow:**
+
+```http
+1. Authorization Request:
+GET /auth?response_type=code
+    &client_id=xxx
+    &redirect_uri=http://localhost:8080/callback
+    &scope=openid profile email
+    &state=random-state
+
+2. Token Exchange:
+POST /token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=authorization_code
+&code=xxx
+&redirect_uri=http://localhost:8080/callback
+&client_id=xxx
+&client_secret=xxx
+
+3. API Request with Token:
+GET /obp/v4.0.0/users/current
+Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+#### 6.1.3 Direct Login
+
+**Overview:** Simplified authentication method for trusted applications
+
+**Characteristics:**
+
+- Username/password exchange for token
+- No OAuth redirect flow
+- Suitable for mobile apps and trusted clients
+- Time-limited tokens
+
+**Configuration:**
+
+```properties
+allow_direct_login=true
+direct_login_consumer_key=your-trusted-consumer-key
+```
+
+**Login Request:**
+
+```http
+POST /my/logins/direct
+Authorization: DirectLogin username="user@example.com",
+                          password="xxx",
+                          consumer_key="xxx"
+Content-Type: application/json
+```
+
+**Response:**
+
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "consumer_id": "xxx",
+  "user_id": "xxx"
+}
+```
+
+**API Request:**
+
+```http
+GET /obp/v4.0.0/users/current
+Authorization: DirectLogin token="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+```
+
+### 6.2 JWT Token Validation
+
+**Token Structure:**
+
+```json
+{
+  "header": {
+    "alg": "RS256",
+    "typ": "JWT",
+    "kid": "key-id"
+  },
+  "payload": {
+    "iss": "http://localhost:9000/obp-oidc",
+    "sub": "user-uuid",
+    "aud": "obp-api-client",
+    "exp": 1234567890,
+    "iat": 1234567890,
+    "email": "user@example.com",
+    "name": "John Doe",
+    "preferred_username": "johndoe"
+  },
+  "signature": "..."
+}
+```
+
+**Validation Process:**
+
+1. Extract JWT from Authorization header
+2. Decode header to get `kid` (key ID)
+3. Fetch public keys from JWKS endpoint
+4. Verify signature using public key
+5. Validate `iss` (issuer) matches configured issuers
+6. Validate `exp` (expiration) is in future
+7. Validate `aud` (audience) if required
+8. Extract user identity from claims
+
+**JWKS Endpoint Response:**
+
+```json
+{
+  "keys": [
+    {
+      "kty": "RSA",
+      "use": "sig",
+      "kid": "key-id-1",
+      "n": "modulus...",
+      "e": "AQAB"
+    }
+  ]
+}
+```
+
+**Troubleshooting JWT Issues:**
+
+**Error: OBP-20208: Cannot match the issuer and JWKS URI**
+
+- Verify `oauth2.jwk_set.url` contains the correct JWKS endpoint
+- Ensure issuer in JWT matches configured provider
+- Check URL format consistency (HTTP vs HTTPS, trailing slashes)
+
+**Error: OBP-20209: Invalid JWT signature**
+
+- Verify JWKS endpoint is accessible
+- Check that `kid` in JWT header matches available keys
+- Ensure system time is synchronized (NTP)
+
+**Debug Logging:**
+
+```xml
+<!-- In logback.xml -->
+<logger name="code.api.OAuth2" level="DEBUG"/>
+<logger name="code.api.util.JwtUtil" level="DEBUG"/>
+```
+
+### 6.3 Consumer Key Management
+
+**Creating a Consumer:**
+
+```http
+POST /management/consumers
+Authorization: DirectLogin token="xxx"
+Content-Type: application/json
+
+{
+  "app_name": "My Banking App",
+  "app_type": "Web",
+  "description": "Customer-facing web application",
+  "developer_email": "dev@example.com",
+  "redirect_url": "https://myapp.com/callback"
+}
+```
+
+**Response:**
+
+```json
+{
+  "consumer_id": "xxx",
+  "key": "consumer-key-xxx",
+  "secret": "consumer-secret-xxx",
+  "app_name": "My Banking App",
+  "app_type": "Web",
+  "description": "Customer-facing web application",
+  "developer_email": "dev@example.com",
+  "redirect_url": "https://myapp.com/callback",
+  "created_by_user_id": "user-uuid",
+  "created": "2024-01-01T00:00:00Z",
+  "enabled": true
+}
+```
+
+**Managing Consumers:**
+
+```http
+# Get all consumers (requires CanGetConsumers role)
+GET /management/consumers
+
+# Get consumer by ID
+GET /management/consumers/{CONSUMER_ID}
+
+# Enable/Disable consumer
+PUT /management/consumers/{CONSUMER_ID}
+{
+  "enabled": false
+}
+
+# Update consumer certificate (for MTLS)
+PUT /management/consumers/{CONSUMER_ID}/consumer/certificate
+```
+
+### 6.4 SSL/TLS Configuration
+
+#### 6.4.1 SSL with PostgreSQL
+
+**Generate SSL Certificates:**
+
+```bash
+# Create SSL directory
+sudo mkdir -p /etc/postgresql/ssl
+cd /etc/postgresql/ssl
+
+# Generate private key
+sudo openssl genrsa -out server.key 2048
+
+# Generate certificate signing request
+sudo openssl req -new -key server.key -out server.csr
+
+# Self-sign certificate (or use CA-signed)
+sudo openssl x509 -req -days 365 -in server.csr -signkey server.key -out server.crt
+
+# Set permissions
+sudo chmod 600 server.key
+sudo chown postgres:postgres server.key server.crt
+```
+
+**PostgreSQL Configuration (`postgresql.conf`):**
+
+```ini
+ssl = on
+ssl_cert_file = '/etc/postgresql/ssl/server.crt'
+ssl_key_file = '/etc/postgresql/ssl/server.key'
+ssl_ca_file = '/etc/postgresql/ssl/ca.crt'  # Optional
+ssl_prefer_server_ciphers = on
+ssl_ciphers = 'HIGH:MEDIUM:+3DES:!aNULL'
+```
+
+**OBP-API Props:**
+
+```properties
+db.url=jdbc:postgresql://localhost:5432/obpdb?user=obp&password=xxx&ssl=true&sslmode=require
+```
+
+#### 6.4.2 SSL Encryption with Props File
+
+**Generate Keystore:**
+
+```bash
+# Generate keystore with key pair
+keytool -genkeypair -alias obp-api \
+  -keyalg RSA -keysize 2048 \
+  -keystore /path/to/api.keystore.jks \
+  -validity 365
+
+# Export public certificate
+keytool -export -alias obp-api \
+  -keystore /path/to/api.keystore.jks \
+  -rfc -file apipub.cert
+
+# Extract public key
+openssl x509 -pubkey -noout -in apipub.cert > public_key.pub
+```
+
+**Encrypt Props Values:**
+
+```bash
+#!/bin/bash
+# encrypt_prop.sh
+echo -n "$2" | openssl pkeyutl \
+  -pkeyopt rsa_padding_mode:pkcs1 \
+  -encrypt \
+  -pubin \
+  -inkey "$1" \
+  -out >(base64)
+```
+
+**Usage:**
+
+```bash
+./encrypt_prop.sh /path/to/public_key.pub "my-secret-password"
+# Outputs: BASE64_ENCODED_ENCRYPTED_VALUE
+```
+
+**Props Configuration:**
+
+```properties
+# Enable JWT encryption
+jwt.use.ssl=true
+keystore.path=/path/to/api.keystore.jks
+keystore.alias=obp-api
+
+# Encrypted property
+db.password.is_encrypted=true
+db.password=BASE64_ENCODED_ENCRYPTED_VALUE
+```
+
+#### 6.4.3 Password Obfuscation (Jetty)
+
+**Generate Obfuscated Password:**
+
+```bash
+java -cp /usr/share/jetty9/lib/jetty-util-*.jar \
+  org.eclipse.jetty.util.security.Password \
+### 12.5 Complete API Roles Reference
+
+OBP-API uses a comprehensive role-based access control (RBAC) system with over **334 static roles**. Roles control access to specific API endpoints and operations.
+
+#### Role Naming Convention
+
+Roles follow a consistent naming pattern:
+- `Can[Action][Resource][Scope]`
+- **Action:** Create, Get, Update, Delete, Read, Add, Maintain, Search, Enable, Disable, etc.
+- **Resource:** Account, Customer, Bank, Transaction, Product, Card, Branch, ATM, etc.
+- **Scope:** AtOneBank, AtAnyBank, ForUser, etc.
+
+#### Common Role Patterns
+
+**System-Level Roles** (requiresBankId = false):
+- Apply across all banks
+- Examples: `CanGetAnyUser`, `CanCreateBank`, `CanReadMetrics`
+
+**Bank-Level Roles** (requiresBankId = true):
+- Scoped to a specific bank
+- Examples: `CanCreateCustomer`, `CanCreateBranch`, `CanGetMetricsAtOneBank`
+
+#### Key Role Categories
+
+**Account Management** (35+ roles):
+```
+
+CanCreateAccount
+CanUpdateAccount
+CanGetAccountsHeldAtOneBank
+CanGetAccountsHeldAtAnyBank
+CanCreateAccountAttributeAtOneBank
+CanUpdateAccountAttribute
+CanDeleteAccountCascade
+...
+
+```
+
+**Customer Management** (40+ roles):
+```
+
+CanCreateCustomer
+CanCreateCustomerAtAnyBank
+CanGetCustomer
+CanGetCustomersAtAnyBank
+CanUpdateCustomerEmail
+CanUpdateCustomerData
+CanCreateCustomerAccountLink
+CanCreateCustomerAttributeAtOneBank
+...
+
+```
+
+**Transaction Management** (25+ roles):
+```
+
+CanCreateAnyTransactionRequest
+CanGetTransactionRequestAtAnyBank
+CanUpdateTransactionRequestStatusAtAnyBank
+CanCreateTransactionAttributeAtOneBank
+CanCreateHistoricalTransaction
+...
+
+```
+
+**Bank Resource Management** (50+ roles):
+```
+
+CanCreateBank
+CanCreateBranch
+CanCreateAtm
+CanCreateProduct
+CanCreateFxRate
+CanDeleteBranchAtAnyBank
+CanUpdateAtm
+...
+
+```
+
+**User & Entitlement Management** (30+ roles):
+```
+
+CanGetAnyUser
+CanCreateEntitlementAtOneBank
+CanCreateEntitlementAtAnyBank
+CanDeleteEntitlementAtAnyBank
+CanGetEntitlementsForAnyUserAtAnyBank
+CanCreateUserCustomerLink
+...
+
+```
+
+**Consumer & API Management** (20+ roles):
+```
+
+CanCreateConsumer
+CanGetConsumers
+CanEnableConsumers
+CanDisableConsumers
+CanSetCallLimits
+CanReadCallLimits
+CanReadMetrics
+CanGetConfig
+...
+
+```
+
+**Dynamic Resources** (40+ roles):
+```
+
+CanCreateDynamicEntity
+CanCreateBankLevelDynamicEntity
+CanCreateDynamicEndpoint
+CanCreateBankLevelDynamicEndpoint
+CanCreateDynamicResourceDoc
+CanCreateBankLevelDynamicResourceDoc
+CanCreateDynamicMessageDoc
+CanGetMethodRoutings
+CanCreateMethodRouting
+...
+
+```
+
+**Consent Management** (10+ roles):
+```
+
+CanUpdateConsentStatusAtOneBank
+CanUpdateConsentStatusAtAnyBank
+CanUpdateConsentAccountAccessAtOneBank
+CanRevokeConsentAtBank
+CanGetConsentsAtOneBank
+...
+
+```
+
+**Security & Compliance** (20+ roles):
+```
+
+CanAddKycCheck
+CanAddKycDocument
+CanGetAnyKycChecks
+CanCreateRegulatedEntity
+CanDeleteRegulatedEntity
+CanCreateAuthenticationTypeValidation
+CanCreateJsonSchemaValidation
+...
+
+```
+
+**Logging & Monitoring** (15+ roles):
+```
+
+CanGetTraceLevelLogsAtOneBank
+CanGetDebugLevelLogsAtAllBanks
+CanGetInfoLevelLogsAtOneBank
+CanGetErrorLevelLogsAtAllBanks
+CanGetAllLevelLogsAtAllBanks
+CanGetConnectorMetrics
+...
+
+```
+
+**Views & Permissions** (15+ roles):
+```
+
+CanCreateSystemView
+CanUpdateSystemView
+CanDeleteSystemView
+CanCreateSystemViewPermission
+CanDeleteSystemViewPermission
+...
+
+```
+
+**Cards** (10+ roles):
+```
+
+CanCreateCardsForBank
+CanUpdateCardsForBank
+CanDeleteCardsForBank
+CanGetCardsForBank
+CanCreateCardAttributeDefinitionAtOneBank
+...
+
+```
+
+**Products & Fees** (15+ roles):
+```
+
+CanCreateProduct
+CanCreateProductAtAnyBank
+CanCreateProductFee
+CanUpdateProductFee
+CanDeleteProductFee
+CanGetProductFee
+CanMaintainProductCollection
+...
+
+```
+
+**Webhooks** (5+ roles):
+```
+
+CanCreateWebhook
+CanUpdateWebhook
+CanGetWebhooks
+CanCreateSystemAccountNotificationWebhook
+CanCreateAccountNotificationWebhookAtOneBank
+
+```
+
+**Data Management** (20+ roles):
+```
+
+CanCreateSandbox
+CanCreateHistoricalTransaction
+CanUseAccountFirehoseAtAnyBank
+CanUseCustomerFirehoseAtAnyBank
+CanDeleteTransactionCascade
+CanDeleteBankCascade
+CanDeleteProductCascade
+CanDeleteCustomerCascade
+...
+
+````
+
+#### Viewing All Roles
+
+**Via API:**
+```bash
+GET /obp/v5.1.0/roles
+Authorization: DirectLogin token="TOKEN"
+````
+
+**Via Source Code:**
+The complete list of roles is defined in:
+
+- `obp-api/src/main/scala/code/api/util/ApiRole.scala`
+
+**Via API Explorer:**
+
+- Navigate to the "Role" endpoints section
+- View role requirements for each endpoint in the documentation
+
+#### Granting Roles
+
+```bash
+# Grant role to user at specific bank
+POST /obp/v5.1.0/users/USER_ID/entitlements
+{
+  "bank_id": "gh.29.uk",
+  "role_name": "CanCreateAccount"
+}
+
+# Grant system-level role (bank_id = "")
+POST /obp/v5.1.0/users/USER_ID/entitlements
+{
+  "bank_id": "",
+  "role_name": "CanGetAnyUser"
+}
+```
+
+#### Special Roles
+
+**Super Admin Roles:**
+
+- `CanCreateEntitlementAtAnyBank` - Can grant any role at any bank
+- `CanDeleteEntitlementAtAnyBank` - Can revoke any role at any bank
+
+**Firehose Roles:**
+
+- `CanUseAccountFirehoseAtAnyBank` - Access to all account data
+- `CanUseCustomerFirehoseAtAnyBank` - Access to all customer data
+
+**Note:** The complete list of 334 roles provides fine-grained access control for every operation in the OBP ecosystem. Roles can be combined to create custom permission sets tailored to specific use cases.
+
+### 12.6 Roadmap and Future Development
+
+#### OBP-API-II (Next Generation API)
+
+**Status:** In Active Development
+
+**Overview:**
+OBP-API-II is a leaner tech stack for future Open Bank Project API versions with less dependencies.
+
+**Purpose:**
+
+- **Aim:** Reduce the dependencies on Liftweb and Jetty.
+
+**Development Focus:**
+
+- Usage of OBP Scala Library
+
+**Migration Path:**
+
+- Use OBP Dispatch to route between endpoints served by OBP-API and OBP-API-II (both stacks return Resource Docs so dispatch can discover and route)
+
+**Repository:**
+
+- GitHub: `OBP-API-II` (development branch)
+
+#### OBP-Dispatch (API Gateway/Proxy)
+
+**Status:** Experimental/Beta
+
+**Overview:**
+OBP-Dispatch is a lightweight proxy/gateway service designed to route requests to different OBP API backends.
+It is designed to route traffic to OBP-API or OBP-API-II or OBP-Trading instances.
+
+**Key Features:**
+
+- **Request Routing:** Intelligent routing based on configurable rules and discovery
+
+**Use Cases:**
+
+1. **API Version Management:**
+   - Gradual rollout of new API versions on different code bases.
+
+**Architecture:**
+
+```
+Client Request
+     │
+     ▼
+┌────────────────┐
+│  OBP-Dispatch  │
+│    (Proxy)     │
+└────────┬───────┘
+         │
+    ┌────┼────┬────────┐
+    │    │    │        │
+    ▼    ▼    ▼        ▼
+┌──────┐ ┌──────┐ ┌──────┐ ┌──────┐
+│OBP-  │ │OBP-  │ │OBP-  │ │OBP-  │
+│API 1 │ │API 2 │ │Trading │API N │
+└──────┘ └──────┘ └──────┘ └──────┘
+```
+
+**Configuration:**
+
+- Config file: `application.conf`
+- Routing rules: Based on headers, paths, or custom logic
+- Backend definitions: Multiple OBP-API endpoints
+
+**Deployment:**
+
+```bash
+# Build
+cd OBP-API-Dispatch
+mvn clean package
+
+# Run
+java -jar target/OBP-API-Dispatch-1.0-SNAPSHOT-jar-with-dependencies.jar
+```
+
+**Configuration Example:**
+
+```hocon
+# application.conf
+dispatch {
+  backends = [
+    {
+      name = "primary"
+      url = "http://obp-api-primary:8080"
+      weight = 80
+    },
+    {
+      name = "secondary"
+      url = "http://obp-api-secondary:8080"
+      weight = 20
+    }
+  ]
+
+  routing {
+    rules = [
+      {
+        pattern = "/obp/v5.*"
+        backend = "primary"
+      },
+      {
+        pattern = "/obp/v4.*"
+        backend = "secondary"
+      }
+    ]
+  }
+}
+```
+
+**Status & Maturity:**
+
+- Currently in experimental phase
 ## 7. Access Control and Security Mechanisms
 
 ### 7.1 Role-Based Access Control (RBAC)
@@ -3943,778 +4718,3 @@ postgres-data:
 
 ---
 
-## 6. Authentication and Security
-
-### 6.1 Authentication Methods
-
-#### 6.1.1 OAuth 1.0a
-
-**Overview:** Legacy OAuth method, still supported for backward compatibility
-
-**Flow:**
-1. Request temporary credentials (request token)
-2. Redirect user to authorization endpoint
-3. User grants access
-4. Exchange request token for access token
-5. Use access token for API requests
-
-**Configuration:**
-```properties
-# Enable OAuth 1.0a (enabled by default)
-allow_oauth1=true
-````
-
-**Example Request:**
-
-```http
-GET /obp/v4.0.0/users/current
-Authorization: OAuth oauth_consumer_key="xxx",
-                    oauth_token="xxx",
-                    oauth_signature_method="HMAC-SHA1",
-                    oauth_signature="xxx",
-                    oauth_timestamp="1234567890",
-                    oauth_nonce="xxx",
-                    oauth_version="1.0"
-```
-
-#### 6.1.2 OAuth 2.0 / OpenID Connect
-
-**Overview:** Modern OAuth2 with OIDC for authentication
-
-**Supported Grant Types:**
-
-- Authorization Code (recommended)
-- Implicit (deprecated, for legacy clients)
-- Client Credentials
-- Resource Owner Password Credentials
-
-**Configuration:**
-
-```properties
-# Enable OAuth2
-allow_oauth2_login=true
-
-# JWKS URI for token validation (can be comma-separated list)
-oauth2.jwk_set.url=http://localhost:9000/obp-oidc/jwks,https://www.googleapis.com/oauth2/v3/certs
-
-# OIDC Provider Configuration
-openid_connect_1.client_id=obp-client
-openid_connect_1.client_secret=your-secret
-openid_connect_1.callback_url=http://localhost:8080/auth/openid-connect/callback
-openid_connect_1.endpoint.discovery=http://localhost:9000/.well-known/openid-configuration
-openid_connect_1.endpoint.authorization=http://localhost:9000/auth
-openid_connect_1.endpoint.token=http://localhost:9000/token
-openid_connect_1.endpoint.userinfo=http://localhost:9000/userinfo
-openid_connect_1.endpoint.jwks_uri=http://localhost:9000/jwks
-openid_connect_1.access_type_offline=true
-openid_connect_1.button_text=Login with OIDC
-```
-
-**Multiple OIDC Providers:**
-
-```properties
-# Google
-openid_connect_1.client_id=xxx.apps.googleusercontent.com
-openid_connect_1.client_secret=xxx
-openid_connect_1.endpoint.discovery=https://accounts.google.com/.well-known/openid-configuration
-openid_connect_1.button_text=Google
-
-# Keycloak
-openid_connect_2.client_id=obp-client
-openid_connect_2.client_secret=xxx
-openid_connect_2.endpoint.discovery=http://keycloak:8080/realms/obp/.well-known/openid-configuration
-openid_connect_2.button_text=Keycloak
-```
-
-**Authorization Code Flow:**
-
-```http
-1. Authorization Request:
-GET /auth?response_type=code
-    &client_id=xxx
-    &redirect_uri=http://localhost:8080/callback
-    &scope=openid profile email
-    &state=random-state
-
-2. Token Exchange:
-POST /token
-Content-Type: application/x-www-form-urlencoded
-
-grant_type=authorization_code
-&code=xxx
-&redirect_uri=http://localhost:8080/callback
-&client_id=xxx
-&client_secret=xxx
-
-3. API Request with Token:
-GET /obp/v4.0.0/users/current
-Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...
-```
-
-#### 6.1.3 Direct Login
-
-**Overview:** Simplified authentication method for trusted applications
-
-**Characteristics:**
-
-- Username/password exchange for token
-- No OAuth redirect flow
-- Suitable for mobile apps and trusted clients
-- Time-limited tokens
-
-**Configuration:**
-
-```properties
-allow_direct_login=true
-direct_login_consumer_key=your-trusted-consumer-key
-```
-
-**Login Request:**
-
-```http
-POST /my/logins/direct
-Authorization: DirectLogin username="user@example.com",
-                          password="xxx",
-                          consumer_key="xxx"
-Content-Type: application/json
-```
-
-**Response:**
-
-```json
-{
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "consumer_id": "xxx",
-  "user_id": "xxx"
-}
-```
-
-**API Request:**
-
-```http
-GET /obp/v4.0.0/users/current
-Authorization: DirectLogin token="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-```
-
-### 6.2 JWT Token Validation
-
-**Token Structure:**
-
-```json
-{
-  "header": {
-    "alg": "RS256",
-    "typ": "JWT",
-    "kid": "key-id"
-  },
-  "payload": {
-    "iss": "http://localhost:9000/obp-oidc",
-    "sub": "user-uuid",
-    "aud": "obp-api-client",
-    "exp": 1234567890,
-    "iat": 1234567890,
-    "email": "user@example.com",
-    "name": "John Doe",
-    "preferred_username": "johndoe"
-  },
-  "signature": "..."
-}
-```
-
-**Validation Process:**
-
-1. Extract JWT from Authorization header
-2. Decode header to get `kid` (key ID)
-3. Fetch public keys from JWKS endpoint
-4. Verify signature using public key
-5. Validate `iss` (issuer) matches configured issuers
-6. Validate `exp` (expiration) is in future
-7. Validate `aud` (audience) if required
-8. Extract user identity from claims
-
-**JWKS Endpoint Response:**
-
-```json
-{
-  "keys": [
-    {
-      "kty": "RSA",
-      "use": "sig",
-      "kid": "key-id-1",
-      "n": "modulus...",
-      "e": "AQAB"
-    }
-  ]
-}
-```
-
-**Troubleshooting JWT Issues:**
-
-**Error: OBP-20208: Cannot match the issuer and JWKS URI**
-
-- Verify `oauth2.jwk_set.url` contains the correct JWKS endpoint
-- Ensure issuer in JWT matches configured provider
-- Check URL format consistency (HTTP vs HTTPS, trailing slashes)
-
-**Error: OBP-20209: Invalid JWT signature**
-
-- Verify JWKS endpoint is accessible
-- Check that `kid` in JWT header matches available keys
-- Ensure system time is synchronized (NTP)
-
-**Debug Logging:**
-
-```xml
-<!-- In logback.xml -->
-<logger name="code.api.OAuth2" level="DEBUG"/>
-<logger name="code.api.util.JwtUtil" level="DEBUG"/>
-```
-
-### 6.3 Consumer Key Management
-
-**Creating a Consumer:**
-
-```http
-POST /management/consumers
-Authorization: DirectLogin token="xxx"
-Content-Type: application/json
-
-{
-  "app_name": "My Banking App",
-  "app_type": "Web",
-  "description": "Customer-facing web application",
-  "developer_email": "dev@example.com",
-  "redirect_url": "https://myapp.com/callback"
-}
-```
-
-**Response:**
-
-```json
-{
-  "consumer_id": "xxx",
-  "key": "consumer-key-xxx",
-  "secret": "consumer-secret-xxx",
-  "app_name": "My Banking App",
-  "app_type": "Web",
-  "description": "Customer-facing web application",
-  "developer_email": "dev@example.com",
-  "redirect_url": "https://myapp.com/callback",
-  "created_by_user_id": "user-uuid",
-  "created": "2024-01-01T00:00:00Z",
-  "enabled": true
-}
-```
-
-**Managing Consumers:**
-
-```http
-# Get all consumers (requires CanGetConsumers role)
-GET /management/consumers
-
-# Get consumer by ID
-GET /management/consumers/{CONSUMER_ID}
-
-# Enable/Disable consumer
-PUT /management/consumers/{CONSUMER_ID}
-{
-  "enabled": false
-}
-
-# Update consumer certificate (for MTLS)
-PUT /management/consumers/{CONSUMER_ID}/consumer/certificate
-```
-
-### 6.4 SSL/TLS Configuration
-
-#### 6.4.1 SSL with PostgreSQL
-
-**Generate SSL Certificates:**
-
-```bash
-# Create SSL directory
-sudo mkdir -p /etc/postgresql/ssl
-cd /etc/postgresql/ssl
-
-# Generate private key
-sudo openssl genrsa -out server.key 2048
-
-# Generate certificate signing request
-sudo openssl req -new -key server.key -out server.csr
-
-# Self-sign certificate (or use CA-signed)
-sudo openssl x509 -req -days 365 -in server.csr -signkey server.key -out server.crt
-
-# Set permissions
-sudo chmod 600 server.key
-sudo chown postgres:postgres server.key server.crt
-```
-
-**PostgreSQL Configuration (`postgresql.conf`):**
-
-```ini
-ssl = on
-ssl_cert_file = '/etc/postgresql/ssl/server.crt'
-ssl_key_file = '/etc/postgresql/ssl/server.key'
-ssl_ca_file = '/etc/postgresql/ssl/ca.crt'  # Optional
-ssl_prefer_server_ciphers = on
-ssl_ciphers = 'HIGH:MEDIUM:+3DES:!aNULL'
-```
-
-**OBP-API Props:**
-
-```properties
-db.url=jdbc:postgresql://localhost:5432/obpdb?user=obp&password=xxx&ssl=true&sslmode=require
-```
-
-#### 6.4.2 SSL Encryption with Props File
-
-**Generate Keystore:**
-
-```bash
-# Generate keystore with key pair
-keytool -genkeypair -alias obp-api \
-  -keyalg RSA -keysize 2048 \
-  -keystore /path/to/api.keystore.jks \
-  -validity 365
-
-# Export public certificate
-keytool -export -alias obp-api \
-  -keystore /path/to/api.keystore.jks \
-  -rfc -file apipub.cert
-
-# Extract public key
-openssl x509 -pubkey -noout -in apipub.cert > public_key.pub
-```
-
-**Encrypt Props Values:**
-
-```bash
-#!/bin/bash
-# encrypt_prop.sh
-echo -n "$2" | openssl pkeyutl \
-  -pkeyopt rsa_padding_mode:pkcs1 \
-  -encrypt \
-  -pubin \
-  -inkey "$1" \
-  -out >(base64)
-```
-
-**Usage:**
-
-```bash
-./encrypt_prop.sh /path/to/public_key.pub "my-secret-password"
-# Outputs: BASE64_ENCODED_ENCRYPTED_VALUE
-```
-
-**Props Configuration:**
-
-```properties
-# Enable JWT encryption
-jwt.use.ssl=true
-keystore.path=/path/to/api.keystore.jks
-keystore.alias=obp-api
-
-# Encrypted property
-db.password.is_encrypted=true
-db.password=BASE64_ENCODED_ENCRYPTED_VALUE
-```
-
-#### 6.4.3 Password Obfuscation (Jetty)
-
-**Generate Obfuscated Password:**
-
-```bash
-java -cp /usr/share/jetty9/lib/jetty-util-*.jar \
-  org.eclipse.jetty.util.security.Password \
-### 12.5 Complete API Roles Reference
-
-OBP-API uses a comprehensive role-based access control (RBAC) system with over **334 static roles**. Roles control access to specific API endpoints and operations.
-
-#### Role Naming Convention
-
-Roles follow a consistent naming pattern:
-- `Can[Action][Resource][Scope]`
-- **Action:** Create, Get, Update, Delete, Read, Add, Maintain, Search, Enable, Disable, etc.
-- **Resource:** Account, Customer, Bank, Transaction, Product, Card, Branch, ATM, etc.
-- **Scope:** AtOneBank, AtAnyBank, ForUser, etc.
-
-#### Common Role Patterns
-
-**System-Level Roles** (requiresBankId = false):
-- Apply across all banks
-- Examples: `CanGetAnyUser`, `CanCreateBank`, `CanReadMetrics`
-
-**Bank-Level Roles** (requiresBankId = true):
-- Scoped to a specific bank
-- Examples: `CanCreateCustomer`, `CanCreateBranch`, `CanGetMetricsAtOneBank`
-
-#### Key Role Categories
-
-**Account Management** (35+ roles):
-```
-
-CanCreateAccount
-CanUpdateAccount
-CanGetAccountsHeldAtOneBank
-CanGetAccountsHeldAtAnyBank
-CanCreateAccountAttributeAtOneBank
-CanUpdateAccountAttribute
-CanDeleteAccountCascade
-...
-
-```
-
-**Customer Management** (40+ roles):
-```
-
-CanCreateCustomer
-CanCreateCustomerAtAnyBank
-CanGetCustomer
-CanGetCustomersAtAnyBank
-CanUpdateCustomerEmail
-CanUpdateCustomerData
-CanCreateCustomerAccountLink
-CanCreateCustomerAttributeAtOneBank
-...
-
-```
-
-**Transaction Management** (25+ roles):
-```
-
-CanCreateAnyTransactionRequest
-CanGetTransactionRequestAtAnyBank
-CanUpdateTransactionRequestStatusAtAnyBank
-CanCreateTransactionAttributeAtOneBank
-CanCreateHistoricalTransaction
-...
-
-```
-
-**Bank Resource Management** (50+ roles):
-```
-
-CanCreateBank
-CanCreateBranch
-CanCreateAtm
-CanCreateProduct
-CanCreateFxRate
-CanDeleteBranchAtAnyBank
-CanUpdateAtm
-...
-
-```
-
-**User & Entitlement Management** (30+ roles):
-```
-
-CanGetAnyUser
-CanCreateEntitlementAtOneBank
-CanCreateEntitlementAtAnyBank
-CanDeleteEntitlementAtAnyBank
-CanGetEntitlementsForAnyUserAtAnyBank
-CanCreateUserCustomerLink
-...
-
-```
-
-**Consumer & API Management** (20+ roles):
-```
-
-CanCreateConsumer
-CanGetConsumers
-CanEnableConsumers
-CanDisableConsumers
-CanSetCallLimits
-CanReadCallLimits
-CanReadMetrics
-CanGetConfig
-...
-
-```
-
-**Dynamic Resources** (40+ roles):
-```
-
-CanCreateDynamicEntity
-CanCreateBankLevelDynamicEntity
-CanCreateDynamicEndpoint
-CanCreateBankLevelDynamicEndpoint
-CanCreateDynamicResourceDoc
-CanCreateBankLevelDynamicResourceDoc
-CanCreateDynamicMessageDoc
-CanGetMethodRoutings
-CanCreateMethodRouting
-...
-
-```
-
-**Consent Management** (10+ roles):
-```
-
-CanUpdateConsentStatusAtOneBank
-CanUpdateConsentStatusAtAnyBank
-CanUpdateConsentAccountAccessAtOneBank
-CanRevokeConsentAtBank
-CanGetConsentsAtOneBank
-...
-
-```
-
-**Security & Compliance** (20+ roles):
-```
-
-CanAddKycCheck
-CanAddKycDocument
-CanGetAnyKycChecks
-CanCreateRegulatedEntity
-CanDeleteRegulatedEntity
-CanCreateAuthenticationTypeValidation
-CanCreateJsonSchemaValidation
-...
-
-```
-
-**Logging & Monitoring** (15+ roles):
-```
-
-CanGetTraceLevelLogsAtOneBank
-CanGetDebugLevelLogsAtAllBanks
-CanGetInfoLevelLogsAtOneBank
-CanGetErrorLevelLogsAtAllBanks
-CanGetAllLevelLogsAtAllBanks
-CanGetConnectorMetrics
-...
-
-```
-
-**Views & Permissions** (15+ roles):
-```
-
-CanCreateSystemView
-CanUpdateSystemView
-CanDeleteSystemView
-CanCreateSystemViewPermission
-CanDeleteSystemViewPermission
-...
-
-```
-
-**Cards** (10+ roles):
-```
-
-CanCreateCardsForBank
-CanUpdateCardsForBank
-CanDeleteCardsForBank
-CanGetCardsForBank
-CanCreateCardAttributeDefinitionAtOneBank
-...
-
-```
-
-**Products & Fees** (15+ roles):
-```
-
-CanCreateProduct
-CanCreateProductAtAnyBank
-CanCreateProductFee
-CanUpdateProductFee
-CanDeleteProductFee
-CanGetProductFee
-CanMaintainProductCollection
-...
-
-```
-
-**Webhooks** (5+ roles):
-```
-
-CanCreateWebhook
-CanUpdateWebhook
-CanGetWebhooks
-CanCreateSystemAccountNotificationWebhook
-CanCreateAccountNotificationWebhookAtOneBank
-
-```
-
-**Data Management** (20+ roles):
-```
-
-CanCreateSandbox
-CanCreateHistoricalTransaction
-CanUseAccountFirehoseAtAnyBank
-CanUseCustomerFirehoseAtAnyBank
-CanDeleteTransactionCascade
-CanDeleteBankCascade
-CanDeleteProductCascade
-CanDeleteCustomerCascade
-...
-
-````
-
-#### Viewing All Roles
-
-**Via API:**
-```bash
-GET /obp/v5.1.0/roles
-Authorization: DirectLogin token="TOKEN"
-````
-
-**Via Source Code:**
-The complete list of roles is defined in:
-
-- `obp-api/src/main/scala/code/api/util/ApiRole.scala`
-
-**Via API Explorer:**
-
-- Navigate to the "Role" endpoints section
-- View role requirements for each endpoint in the documentation
-
-#### Granting Roles
-
-```bash
-# Grant role to user at specific bank
-POST /obp/v5.1.0/users/USER_ID/entitlements
-{
-  "bank_id": "gh.29.uk",
-  "role_name": "CanCreateAccount"
-}
-
-# Grant system-level role (bank_id = "")
-POST /obp/v5.1.0/users/USER_ID/entitlements
-{
-  "bank_id": "",
-  "role_name": "CanGetAnyUser"
-}
-```
-
-#### Special Roles
-
-**Super Admin Roles:**
-
-- `CanCreateEntitlementAtAnyBank` - Can grant any role at any bank
-- `CanDeleteEntitlementAtAnyBank` - Can revoke any role at any bank
-
-**Firehose Roles:**
-
-- `CanUseAccountFirehoseAtAnyBank` - Access to all account data
-- `CanUseCustomerFirehoseAtAnyBank` - Access to all customer data
-
-**Note:** The complete list of 334 roles provides fine-grained access control for every operation in the OBP ecosystem. Roles can be combined to create custom permission sets tailored to specific use cases.
-
-### 12.6 Roadmap and Future Development
-
-#### OBP-API-II (Next Generation API)
-
-**Status:** In Active Development
-
-**Overview:**
-OBP-API-II is a leaner tech stack for future Open Bank Project API versions with less dependencies.
-
-**Purpose:**
-
-- **Aim:** Reduce the dependencies on Liftweb and Jetty.
-
-**Development Focus:**
-
-- Usage of OBP Scala Library
-
-**Migration Path:**
-
-- Use OBP Dispatch to route between endpoints served by OBP-API and OBP-API-II (both stacks return Resource Docs so dispatch can discover and route)
-
-**Repository:**
-
-- GitHub: `OBP-API-II` (development branch)
-
-#### OBP-Dispatch (API Gateway/Proxy)
-
-**Status:** Experimental/Beta
-
-**Overview:**
-OBP-Dispatch is a lightweight proxy/gateway service designed to route requests to different OBP API backends.
-It is designed to route traffic to OBP-API or OBP-API-II or OBP-Trading instances.
-
-**Key Features:**
-
-- **Request Routing:** Intelligent routing based on configurable rules and discovery
-
-**Use Cases:**
-
-1. **API Version Management:**
-   - Gradual rollout of new API versions on different code bases.
-
-**Architecture:**
-
-```
-Client Request
-     │
-     ▼
-┌────────────────┐
-│  OBP-Dispatch  │
-│    (Proxy)     │
-└────────┬───────┘
-         │
-    ┌────┼────┬────────┐
-    │    │    │        │
-    ▼    ▼    ▼        ▼
-┌──────┐ ┌──────┐ ┌──────┐ ┌──────┐
-│OBP-  │ │OBP-  │ │OBP-  │ │OBP-  │
-│API 1 │ │API 2 │ │Trading │API N │
-└──────┘ └──────┘ └──────┘ └──────┘
-```
-
-**Configuration:**
-
-- Config file: `application.conf`
-- Routing rules: Based on headers, paths, or custom logic
-- Backend definitions: Multiple OBP-API endpoints
-
-**Deployment:**
-
-```bash
-# Build
-cd OBP-API-Dispatch
-mvn clean package
-
-# Run
-java -jar target/OBP-API-Dispatch-1.0-SNAPSHOT-jar-with-dependencies.jar
-```
-
-**Configuration Example:**
-
-```hocon
-# application.conf
-dispatch {
-  backends = [
-    {
-      name = "primary"
-      url = "http://obp-api-primary:8080"
-      weight = 80
-    },
-    {
-      name = "secondary"
-      url = "http://obp-api-secondary:8080"
-      weight = 20
-    }
-  ]
-
-  routing {
-    rules = [
-      {
-        pattern = "/obp/v5.*"
-        backend = "primary"
-      },
-      {
-        pattern = "/obp/v4.*"
-        backend = "secondary"
-      }
-    ]
-  }
-}
-```
-
-**Status & Maturity:**
-
-- Currently in experimental phase
