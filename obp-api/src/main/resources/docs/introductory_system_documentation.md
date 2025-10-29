@@ -1,9 +1,16 @@
-# Open Bank Project Introductory System Documentation
+# Open Bank Project
 
-**Version:** 0.0.1
-**Last Updated:** 2025
+# Introductory System Documentation
+
+This document serves as an overview of the Open Bank Project (OBP) technology ecosystem and related tools.
+It provides an introduction to its key components, architecture, deployment and management approaches and capabilities.
+
+For more detailed information or the sources of truths, please refer to the individual repository READMEs or contact TESOBE for commercial licences and support.
+
+**Version:** 0.5.0
+**Last Updated:** Oct 2025
 **Organization:** TESOBE GmbH
-**License:** AGPL V3 / Commercial License
+**License:** AGPL V3 or Commercial License from TESOBE GmbH
 
 ---
 
@@ -667,11 +674,11 @@ DATABASES = {
 
 **Key Features:**
 
-- Natural language banking queries
-- Account information retrieval
-- Transaction analysis
-- Payment initiation support
+- Natural language OBP API queries
+- Approve / Deny with tracking of Endpoint OperationId per session / once
+- Tool Call inspection
 - Multi-LLM support (Anthropic, OpenAI, Ollama)
+- OBP Resource Docs and Glossary in vector database.
 - Vector-based knowledge retrieval
 - LangSmith tracing integration
 - Consent-based access control
