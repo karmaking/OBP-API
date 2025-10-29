@@ -1,4 +1,4 @@
-# Open Bank Project (OBP) - Comprehensive Technical Documentation
+# Open Bank Project Introductory System Documentation
 
 **Version:** 0.0.1
 **Last Updated:** 2025
@@ -805,6 +805,7 @@ openid_connect_1.client_secret=your-secret
 openid_connect_1.callback_url=http://localhost:8080/auth/openid-connect/callback
 openid_connect_1.endpoint.discovery=http://localhost:7070/realms/master/.well-known/openid-configuration
 ```
+
 Pre-built Keycloak image with OBP Keycloak provider:
 
 ```bash
@@ -813,7 +814,89 @@ docker pull openbankproject/obp-keycloak:main-themed
 
 ---
 
-### 3.7 Connectors
+### 3.7 OBP-Hola
+
+**Purpose:** Reference implementation for OAuth2 authentication and consent flow testing
+
+**Overview:**
+
+OBP-Hola is a Java/Spring Boot application that demonstrates and tests OBP authentication, consent creation, and data access via OBP API. It serves as a reference implementation for developers integrating with OBP's consent framework.
+
+**Key Features:**
+
+- **OAuth2 Flow Testing:** Complete OAuth2 authorization code flow implementation
+- **Multi-Standard Support:** UK Open Banking, Berlin Group, and OBP styles
+- **Consent Management:** Create, view, and test consent flows
+- **mTLS Support:** Certificate-based authentication testing
+- **JWS Signing:** Request signing for enhanced security profiles
+- **Interactive UI:** Web interface for testing consent scenarios
+
+**Supported Standards:**
+
+- UK Open Banking (Account Information & Payment Initiation)
+- Berlin Group NextGenPSD2 (AIS/PIS)
+- OBP native consent flows
+
+**Dependencies:**
+
+- **OBP-API:** Core banking API
+- **Ory Hydra:** OAuth2 server
+- **OBP Hydra Identity Provider:** Identity management
+
+**Use Cases:**
+
+- Testing consent creation and authorization flows
+- Validating OAuth2 integration
+- Demonstrating PSD2 compliance workflows
+- Training and reference for TPP developers
+- Automated testing with OBP-Selenium integration
+
+**Configuration:**
+
+```properties
+# OAuth2 Server
+oauth2.public_url=https://oauth2.example.com
+
+# OBP API
+obp.base_url=https://api.example.com
+
+# Client credentials (from OBP consumer registration)
+oauth2.client_id=your-client-id
+oauth2.redirect_uri=http://localhost:8087/callback
+oauth2.client_scope=ReadAccountsDetail ReadBalances ReadTransactionsDetail
+
+# mTLS (if required)
+mtls.keyStore=/path/to/keystore.jks
+mtls.trustStore=/path/to/truststore.jks
+```
+
+**Running Hola:**
+
+```bash
+# Build with Maven
+mvn clean package
+
+# Run locally
+java -jar target/obp-hola-app-0.0.29-SNAPSHOT.jar
+
+# Access at http://localhost:8087
+```
+
+**Docker Deployment:**
+
+```bash
+docker build -t obp-hola .
+docker run -p 8087:8087 \
+  -e OAUTH2_PUBLIC_URL=https://oauth2.example.com \
+  -e OBP_BASE_URL=https://api.example.com \
+  obp-hola
+```
+
+**Repository:** https://github.com/OpenBankProject/OBP-Hola
+
+---
+
+### 3.8 Connectors
 
 **Purpose:** Connectors provide the integration layer between OBP-API and backend banking systems or data sources.
 
@@ -874,7 +957,7 @@ docker pull openbankproject/obp-keycloak:main-themed
 
 ---
 
-### 3.8 Adapters
+### 3.9 Adapters
 
 **Purpose:** Adapters are backend services that receive messages from OBP-API connectors and respond according to Message Doc definitions.
 
@@ -913,7 +996,7 @@ Adapters listen to message queues or remote calls, parse incoming messages accor
 
 ---
 
-### 3.9 Message Docs
+### 3.10 Message Docs
 
 **Purpose:** Message Docs define the structure and schema of messages exchanged between OBP-API connectors and backend adapters.
 
@@ -2988,97 +3071,23 @@ The Open Bank Project follows an agile roadmap that evolves based on feedback fr
 
 ### 12.3 OBP-Dispatch (Request Router)
 
-**Status:** Production Ready
+**Status:** In Development
 
-**Purpose:** A lightweight proxy/router to intelligently route API requests to different OBP-API backend instances based on configurable rules.
+**Purpose:** A lightweight proxy/router to route API requests to different OBP-API implementations.
 
 **Key Features:**
 
-**Intelligent Routing:**
+**Routing:**
 
-- Route by bank ID
-- Route by API version
-- Route by endpoint pattern
-- Route by geographic region
-- Custom routing rules via configuration
-
-**Load Balancing:**
-
-- Round-robin distribution
-- Weighted distribution
-- Health check integration
-- Automatic failover
-- Circuit breaker pattern
-
-**Multi-Backend Support:**
-
-- Multiple OBP-API backends
-- Different versions simultaneously
-- Geographic distribution
-- Blue-green deployments
-- Canary releases
-
-**Configuration:**
-
-```conf
-# application.conf example
-dispatch {
-  backends {
-    backend1 {
-      host = "obp-api-1.example.com"
-      port = 8080
-      weight = 50
-      regions = ["EU"]
-    }
-    backend2 {
-      host = "obp-api-2.example.com"
-      port = 8080
-      weight = 50
-      regions = ["US"]
-    }
-  }
-
-  routing {
-    rules = [
-      {
-        pattern = "/obp/v5.*"
-        backends = ["backend1"]
-      },
-      {
-        pattern = "/obp/v4.*"
-        backends = ["backend2"]
-      }
-    ]
-  }
-}
-```
+- Route traffic according to Resouce Docs available on OBP-API-II, OBP-Trading or OBP-API
 
 **Use Cases:**
 
-1. **Version Migration:**
-   - Route v4.0.0 traffic to legacy servers
-   - Route v5.1.0 traffic to new servers
-   - Gradual version rollout
+1. **Implementation Migration:**
+   - Re-Implement an endpoint in OBP-API-II
 
-2. **Geographic Distribution:**
-   - Route EU banks to EU data center
-   - Route US banks to US data center
-   - Compliance with data residency
-
-3. **A/B Testing:**
-   - Test new features with subset of traffic
-   - Compare performance metrics
-   - Gradual feature rollout
-
-4. **High Availability:**
-   - Automatic failover to backup
-   - Health monitoring
-   - Load distribution
-
-5. **Multi-Tenant Isolation:**
-   - Route premium banks to dedicated servers
-   - Isolate high-volume customers
-   - Resource optimization
+2. **New Endpoint implementation:**
+   - Implement a new endpoint in OBP-API-II or OBP-Trading
 
 **Deployment:**
 
@@ -3106,44 +3115,11 @@ docker run -p 8080:8080 \
          ┌───────────────────┼───────────────────┐
          │                   │                   │
     ┌────▼────┐         ┌────▼────┐        ┌────▼────┐
-    │ OBP-API │         │ OBP-API │        │ OBP-API │
+    │ OBP-API │         │ OBP-API-II │     │ OBP-Trading │
     │ v4.0.0  │         │ v5.0.0  │        │ v5.1.0  │
     │ (EU)    │         │ (US)    │        │ (APAC)  │
     └─────────┘         └─────────┘        └─────────┘
 ```
-
-**Benefits:**
-
-- Simplified client configuration
-- Centralized routing logic
-- Easy version migration
-- Geographic optimization
-- High availability
-
-**Monitoring:**
-
-- Request/response metrics
-- Backend health status
-- Routing decision logs
-- Performance analytics
-- Error tracking
-
-### 12.4 Upcoming Features (All Components)
-
-**API Version 6.0.0:**
-
-- Enhanced consent management
-- Improved transaction categorization
-- Advanced analytics endpoints
-- Machine learning integration APIs
-- Real-time notifications via WebSockets
-- GraphQL support (experimental)
-
-**Standards Compliance:**
-
-- PSD3 preparation (European Union)
-- FDX 5.0 support (North America)
-- CDR 2.0 enhancements (Australia
 
 ### 12.1 Glossary
 
@@ -3182,6 +3158,8 @@ docker run -p 8080:8080 \
 **View:** Permission set controlling data visibility
 
 **Webhook:** HTTP callback triggered by events
+
+See the OBP Glossary for a full list of terms.
 
 ### 12.2 Environment Variables Reference
 
@@ -3814,7 +3792,6 @@ GET  /obp/v5.1.0/users                         # List users
 - GitHub: https://github.com/OpenBankProject
 - API Sandbox: https://apisandbox.openbankproject.com
 - API Explorer: https://apiexplorer-ii-sandbox.openbankproject.com
-- Documentation: https://github.com/OpenBankProject/OBP-API/wiki
 
 **Standards:**
 
@@ -3822,12 +3799,12 @@ GET  /obp/v5.1.0/users                         # List users
 - UK Open Banking: https://www.openbanking.org.uk
 - PSD2: https://ec.europa.eu/info/law/payment-services-psd-2-directive-eu-2015-2366_en
 - FAPI: https://openid.net/wg/fapi/
+- Open Bank Project: https://apiexplorer-ii-sandbox.openbankproject.com
 
 **Community:**
 
-- Slack: openbankproject.slack.com
+- RocketChat: https://chat.openbankproject.com
 - Twitter: @openbankproject
-- Mailing List: https://groups.google.com/g/openbankproject
 
 **Support:**
 
@@ -3846,7 +3823,7 @@ GET  /obp/v5.1.0/users                         # List users
 - v3.0.0 (2020) - OAuth 2.0, OIDC support
 - v2.2.0 (2018) - Consent management
 - v2.0.0 (2017) - API standardization
-- v1.4.0 (2016) - First release
+- v1.4.0 (2016) - Early Release
 
 **Status Definitions:**
 
@@ -3860,42 +3837,10 @@ GET  /obp/v5.1.0/users                         # List users
 ## Conclusion
 
 For the latest updates visit Open Bank Project GitHub or contact TESOBE.
-**Document Version:** 0.2
+**This Document Version:** 0.2
 **Last Updated:** October 29 2025
 **Maintained By:** TESOBE GmbH
 **License:** AGPL V3
-
----
-
-**© 2010-2025 TESOBE GmbH. Open Bank Project is licensed under AGPL V3 and commercial licenses.** - OBP_OAUTH2_JWK_SET_URL=http://keycloak:8080/realms/obp/protocol/openid-connect/certs
-depends_on: - postgres - redis
-networks: - obp-network
-
-postgres:
-image: postgres:14
-environment: - POSTGRES_DB=obpdb - POSTGRES_USER=obp - POSTGRES_PASSWORD=xxx
-volumes: - postgres-data:/var/lib/postgresql/data
-networks: - obp-network
-
-redis:
-image: redis:7
-networks: - obp-network
-
-keycloak:
-image: quay.io/keycloak/keycloak:latest
-environment: - KEYCLOAK_ADMIN=admin - KEYCLOAK_ADMIN_PASSWORD=admin
-ports: - "7070:8080"
-networks: - obp-network
-
-networks:
-obp-network:
-
-volumes:
-postgres-data:
-
-````
-
----
 
 ## 6. Authentication and Security
 
@@ -3906,6 +3851,7 @@ postgres-data:
 **Overview:** Legacy OAuth method, still supported for backward compatibility
 
 **Flow:**
+
 1. Request temporary credentials (request token)
 2. Redirect user to authorization endpoint
 3. User grants access
@@ -3913,10 +3859,11 @@ postgres-data:
 5. Use access token for API requests
 
 **Configuration:**
+
 ```properties
 # Enable OAuth 1.0a (enabled by default)
 allow_oauth1=true
-````
+```
 
 **Example Request:**
 
