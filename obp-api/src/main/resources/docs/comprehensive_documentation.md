@@ -875,6 +875,88 @@ openid_connect_1.endpoint.discovery=http://localhost:7070/realms/master/.well-kn
 
 ---
 
+### 3.8 Adapters
+
+**Purpose:** Adapters are backend services that receive messages from OBP-API connectors and respond according to Message Doc definitions.
+
+**Overview:**
+
+Adapters act as the bridge between OBP-API and core banking systems:
+
+- **Receive:** Accept messages from OBP-API via message queues (Kafka/RabbitMQ) or remote calls (Akka)
+- **Process:** Interact with core banking systems, databases, or other backend services
+- **Respond:** Return data formatted according to Message Doc specifications
+
+**Architecture:**
+
+```
+OBP-API (Connector) → Message Queue → Adapter → Core Banking System
+                    ←              ←        ←
+```
+
+**Key Characteristics:**
+
+- **Language Agnostic:** Adapters can be written in any programming language
+- **Message Doc Compliance:** Must implement request/response formats defined in Message Docs
+- **Scalability:** Multiple adapter instances can process messages concurrently
+- **Flexibility:** Different adapters can serve different banking systems or functions
+
+**Implementation:**
+
+Adapters listen to message queues or remote calls, parse incoming messages according to Message Doc schemas, execute business logic, and return responses in the required format.
+
+**Example Use Cases:**
+
+- Adapter in Java connecting to legacy mainframe systems
+- Adapter in Python integrating with modern REST APIs
+- Adapter in Go for high-performance transaction processing
+- Adapter in Scala for Akka-based distributed systems
+
+---
+
+### 3.9 Message Docs
+
+**Purpose:** Message Docs define the structure and schema of messages exchanged between OBP-API connectors and backend adapters.
+
+**Overview:**
+
+Message Docs serve as API contracts for connector-adapter communication, specifying:
+
+- Request message format and required fields
+- Response message format and data structure
+- Field types and validation rules
+- Example messages for testing
+
+**Key Features:**
+
+- **Dynamic Definition:** Message Docs can be created dynamically via API without code changes
+- **Version Control:** Different connector versions can have different message formats
+- **Documentation:** Auto-generated documentation for adapter developers
+- **Validation:** Ensures message compatibility between connectors and adapters
+
+**Available Message Docs:**
+
+Message Docs are available for various connectors including Kafka, RabbitMQ, and Akka. Each connector version has its own set of message definitions.
+
+**Example:** [RabbitMQ Message Docs](https://apiexplorer-ii-sandbox.openbankproject.com/message-docs/rabbitmq_vOct2024)
+
+**Configuration:**
+
+```properties
+# Enable message doc endpoints
+connector=rabbitmq_vOct2024
+```
+
+**Related Roles:**
+
+- CanCreateDynamicMessageDoc
+- CanGetDynamicMessageDoc
+- CanGetAllDynamicMessageDocs
+- CanUpdateDynamicMessageDoc
+- CanDeleteDynamicMessageDoc
+
+---
+
 ## 4. Standards Compliance
 
 ### 4.1 Berlin Group NextGenPSD2
