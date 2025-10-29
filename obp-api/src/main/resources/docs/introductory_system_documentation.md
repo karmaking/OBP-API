@@ -9,8 +9,7 @@ For more detailed information or the sources of truths, please refer to the indi
 
 **Version:** 0.5.0
 **Last Updated:** Oct 2025
-**Organization:** TESOBE GmbH
-**License:** AGPL V3 or Commercial License from TESOBE GmbH
+**License:** Copyright TESOBE GmbH 2025 - AGPL V3
 
 ---
 
