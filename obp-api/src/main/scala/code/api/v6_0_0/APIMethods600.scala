@@ -127,7 +127,7 @@ trait APIMethods600 {
               json.extract[CallLimitPostJsonV600]
             }
             _ <- NewStyle.function.getConsumerByConsumerId(consumerId, callContext)
-            rateLimiting <- RateLimitingDI.rateLimiting.vend.createOrUpdateConsumerCallLimits(
+            rateLimiting <- RateLimitingDI.rateLimiting.vend.createConsumerCallLimits(
               consumerId,
               postJson.from_date,
               postJson.to_date,
