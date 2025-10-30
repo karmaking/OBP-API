@@ -1,4 +1,4 @@
-# Open Bank Project — Brief System Documentation
+# Open Bank Project — Brief Documentation
 
 _System Architecture, Workflows, Security, and API Reference_
 

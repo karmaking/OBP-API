@@ -1,6 +1,4 @@
-# Open Bank Project
-
-# Introductory System Documentation
+# Open Bank Project - Introductory Documentation
 
 This document serves as an overview of the Open Bank Project (OBP) technology ecosystem and related tools.
 It provides an introduction to its key components, architecture, deployment and management approaches and capabilities.
@@ -4816,6 +4814,7 @@ PUT /management/consumers/{CONSUMER_ID}/consumer/certificate
 #### Role Naming Convention
 
 Roles follow a consistent naming pattern:
+
 - `Can[Action][Resource][Scope]`
 - **Action:** Create, Get, Update, Delete, Read, Add, Maintain, Search, Enable, Disable, etc.
 - **Resource:** Account, Customer, Bank, Transaction, Product, Card, Branch, ATM, etc.
@@ -4824,16 +4823,19 @@ Roles follow a consistent naming pattern:
 #### Common Role Patterns
 
 **System-Level Roles** (requiresBankId = false):
+
 - Apply across all banks
 - Examples: `CanGetAnyUser`, `CanCreateBank`, `CanReadMetrics`
 
 **Bank-Level Roles** (requiresBankId = true):
+
 - Scoped to a specific bank
 - Examples: `CanCreateCustomer`, `CanCreateBranch`, `CanGetMetricsAtOneBank`
 
 #### Key Role Categories
 
 **Account Management:**
+
 - CanCreateAccount
 - CanUpdateAccount
 - CanGetAccountsHeldAtOneBank
@@ -4853,6 +4855,7 @@ Roles follow a consistent naming pattern:
 - CanSeeAccountAccessForAnyUser
 
 **Customer Management:**
+
 - CanCreateCustomer
 - CanCreateCustomerAtAnyBank
 - CanGetCustomer
@@ -4900,6 +4903,7 @@ Roles follow a consistent naming pattern:
 - CanUseCustomerFirehoseAtAnyBank
 
 **Transaction Management:**
+
 - CanCreateAnyTransactionRequest
 - CanGetTransactionRequestAtAnyBank
 - CanUpdateTransactionRequestStatusAtAnyBank
@@ -4925,6 +4929,7 @@ Roles follow a consistent naming pattern:
 - CanGetDoubleEntryTransactionAtAnyBank
 
 **Bank Resource Management:**
+
 - CanCreateBranch
 - CanCreateBranchAtAnyBank
 - CanUpdateBranch
@@ -4960,6 +4965,7 @@ Roles follow a consistent naming pattern:
 - CanDeleteBankAccountBalance
 
 **User & Entitlement Management:**
+
 - CanCreateUserCustomerLink
 - CanCreateUserCustomerLinkAtAnyBank
 - CanGetUserCustomerLink
@@ -4988,6 +4994,7 @@ Roles follow a consistent naming pattern:
 - CanCreateResetPasswordUrl
 
 **Consumer & API Management:**
+
 - CanCreateConsumer
 - CanGetConsumers
 - CanEnableConsumers
@@ -5011,6 +5018,7 @@ Roles follow a consistent naming pattern:
 - CanGetCallContext
 
 **Dynamic Resources:**
+
 - CanCreateDynamicEndpoint
 - CanGetDynamicEndpoint
 - CanGetDynamicEndpoints
@@ -5082,6 +5090,7 @@ Roles follow a consistent naming pattern:
 - CanReadGlossary
 
 **Consent Management:**
+
 - CanGetConsentsAtOneBank
 - CanGetConsentsAtAnyBank
 - CanUpdateConsentStatusAtOneBank
@@ -5093,6 +5102,7 @@ Roles follow a consistent naming pattern:
 - CanRevokeConsentAtBank
 
 **Security & Compliance:**
+
 - CanAddKycCheck
 - CanGetAnyKycChecks
 - CanAddKycDocument
@@ -5121,6 +5131,7 @@ Roles follow a consistent naming pattern:
 - CanDeleteTaxResidence
 
 **Logging & Monitoring:**
+
 - CanGetTraceLevelLogsAtOneBank
 - CanGetTraceLevelLogsAtAllBanks
 - CanGetDebugLevelLogsAtOneBank
@@ -5135,6 +5146,7 @@ Roles follow a consistent naming pattern:
 - CanGetAllLevelLogsAtAllBanks
 
 **Views & Permissions:**
+
 - CanCreateSystemView
 - CanGetSystemView
 - CanUpdateSystemView
@@ -5143,6 +5155,7 @@ Roles follow a consistent naming pattern:
 - CanDeleteSystemViewPermission
 
 **Cards:**
+
 - CanCreateCardsForBank
 - CanGetCardsForBank
 - CanUpdateCardsForBank
@@ -5152,6 +5165,7 @@ Roles follow a consistent naming pattern:
 - CanDeleteCardAttributeDefinitionAtOneBank
 
 **Products & Fees:**
+
 - CanCreateProduct
 - CanCreateProductAtAnyBank
 - CanCreateProductAttribute
@@ -5169,6 +5183,7 @@ Roles follow a consistent naming pattern:
 - CanMaintainProductCollection
 
 **Webhooks:**
+
 - CanCreateWebhook
 - CanGetWebhooks
 - CanUpdateWebhook
@@ -5176,6 +5191,7 @@ Roles follow a consistent naming pattern:
 - CanCreateAccountNotificationWebhookAtOneBank
 
 **Data Management:**
+
 - CanCreateSandbox
 - CanSearchWarehouse
 - CanSearchWarehouseStatistics
@@ -5193,7 +5209,8 @@ Roles follow a consistent naming pattern:
 - CanGetSocialMediaHandles
 - CanUpdateAgentStatusAtOneBank
 - CanUpdateAgentStatusAtAnyBank
-```
+
+````
 
 **Scopes:**
 
@@ -5214,7 +5231,7 @@ Roles follow a consistent naming pattern:
 ```bash
 GET /obp/v5.1.0/roles
 Authorization: DirectLogin token="TOKEN"
-```
+````
 
 **Via Source Code:**
 The complete list of roles is defined in:
