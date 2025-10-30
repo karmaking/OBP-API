@@ -1825,6 +1825,485 @@ networks:
   obp-network:
 ```
 
+### 5.4 Endpoint and Version Filtering
+
+OBP-API provides powerful configuration options to control which API versions and endpoints are available on a particular instance. This enables different deployment scenarios such as dedicated management instances, API standard-specific instances (Berlin Group, UK Open Banking, etc.), or restricted public-facing APIs.
+
+#### 5.4.1 Configuration Properties
+
+**Version Control:**
+
+```properties
+# Blacklist: Disable specific API versions (high priority)
+# Versions listed here will NOT be available
+api_disabled_versions=[OBPv3.0.0,BGv1.3]
+
+# Whitelist: Enable only specific API versions
+# If empty, all versions (except disabled) are available
+# If populated, ONLY these versions will be available
+api_enabled_versions=[OBPv5.1.0,BGv1.3]
+```
+
+**Endpoint Control:**
+
+```properties
+# Blacklist: Disable specific endpoints (high priority)
+# Use the operationId format: VersionPrefix-endpointName
+api_disabled_endpoints=[OBPv4.0.0-deleteBank,OBPv5.1.0-deleteUser]
+
+# Whitelist: Enable only specific endpoints
+# If empty, all endpoints (except disabled) are available
+# If populated, ONLY these endpoints will be available
+api_enabled_endpoints=[OBPv5.1.0-getBanks,OBPv5.1.0-getBank]
+```
+
+**Important Notes:**
+
+- Disabled endpoints (blacklist) take priority over enabled endpoints (whitelist)
+- Root endpoints and documentation endpoints (Resource Docs, Swagger) cannot be disabled
+- Version format matches ApiVersion enumeration (e.g., `OBPv5.1.0`, `BGv1.3`, `UKv3.1`)
+- Endpoint format: `{VersionPrefix}-{operationId}` (e.g., `OBPv5.1.0-getBanks`)
+
+#### 5.4.2 Finding Endpoint Operation IDs
+
+**Method 1: Using API Explorer**
+
+Navigate to any endpoint in API Explorer and check the `operationId` field in the endpoint documentation.
+
+**Method 2: Using Resource Docs API**
+
+```bash
+# Get all resource docs
+curl https://api.example.com/obp/v5.1.0/resource-docs/v5.1.0/obp
+
+# Filter by tag
+curl https://api.example.com/obp/v5.1.0/resource-docs/v5.1.0/obp?tags=Account
+
+# Extract operation IDs with jq
+curl -s https://api.example.com/obp/v5.1.0/resource-docs/v5.1.0/obp | \
+  jq -r '.resource_docs[].operation_id'
+```
+
+**Method 3: Check Source Code**
+
+Operation IDs are defined in the API implementation files (e.g., `APIMethods510.scala`):
+
+```scala
+lazy val getBanks: OBPEndpoint = {
+  case "banks" :: Nil JsonGet _ => {
+    // operationId will be: OBPv5.1.0-getBanks
+  }
+}
+```
+
+#### 5.4.3 Deployment Scenario: Management Instance
+
+This configuration creates a dedicated instance serving **only** management and administrative endpoints.
+
+**Purpose:**
+
+- Restrict access to sensitive administrative operations
+- Deploy behind additional security layers
+- Separate administrative traffic from public API traffic
+
+**Configuration:**
+
+```properties
+# File: obp-api/src/main/resources/props/default.props
+
+# Enable only OBP versions with management endpoints
+api_enabled_versions=[OBPv5.1.0,OBPv4.0.0,OBPv3.1.0]
+api_disabled_versions=[]
+
+# Enable only management-related endpoints
+api_enabled_endpoints=[
+  OBPv5.1.0-getConsumers,
+  OBPv5.1.0-getConsumer,
+  OBPv5.1.0-createConsumer,
+  OBPv5.1.0-updateConsumerRedirectUrl,
+  OBPv5.1.0-enableDisableConsumers,
+  OBPv5.1.0-deleteConsumer,
+  OBPv4.0.0-getCallsLimit,
+  OBPv4.0.0-callsLimit,
+  OBPv5.1.0-getMetrics,
+  OBPv5.1.0-getAggregateMetrics,
+  OBPv5.1.0-getTopAPIs,
+  OBPv5.1.0-getMetricsTopConsumers,
+  OBPv5.1.0-getConnectorMetrics,
+  OBPv5.1.0-getMethodRoutings,
+  OBPv5.1.0-createMethodRouting,
+  OBPv5.1.0-updateMethodRouting,
+  OBPv5.1.0-deleteMethodRouting,
+  OBPv4.0.0-createDynamicEndpoint,
+  OBPv4.0.0-updateDynamicEndpointHost,
+  OBPv4.0.0-getDynamicEndpoint,
+  OBPv4.0.0-getDynamicEndpoints,
+  OBPv4.0.0-deleteDynamicEndpoint,
+  OBPv4.0.0-createBankLevelDynamicEndpoint,
+  OBPv4.0.0-updateBankLevelDynamicEndpointHost,
+  OBPv4.0.0-getBankLevelDynamicEndpoint,
+  OBPv4.0.0-getBankLevelDynamicEndpoints,
+  OBPv4.0.0-deleteBankLevelDynamicEndpoint,
+  OBPv5.1.0-getAccountWebhooks,
+  OBPv5.1.0-createAccountWebhook,
+  OBPv5.1.0-updateAccountWebhook,
+  OBPv5.1.0-deleteAccountWebhook
+]
+api_disabled_endpoints=[]
+
+# Additional security settings for management instance
+server_mode=apis
+api_hostname=admin-api.example.com
+
+# Restrict to internal network via firewall or IP whitelist
+# (configured at infrastructure level)
+```
+
+**Docker Compose Example:**
+
+```yaml
+version: "3.8"
+
+services:
+  obp-api-management:
+    image: openbankproject/obp-api
+    container_name: obp-api-management
+    ports:
+      - "8081:8080" # Different port for management
+    environment:
+      - OBP_API_ENABLED_VERSIONS=[OBPv5.1.0,OBPv4.0.0]
+      - OBP_API_ENABLED_ENDPOINTS=[OBPv5.1.0-getConsumers,OBPv5.1.0-getMetrics,...]
+      - OBP_SERVER_MODE=apis
+      - OBP_API_HOSTNAME=admin-api.example.com
+      - OBP_DB_URL=jdbc:postgresql://postgres:5432/obpdb
+    networks:
+      - internal-network
+    depends_on:
+      - postgres
+    restart: unless-stopped
+```
+
+**Access Pattern:**
+
+```bash
+# Only management endpoints are available
+curl https://admin-api.example.com/obp/v5.1.0/management/consumers
+# ✓ Success
+
+curl https://admin-api.example.com/obp/v5.1.0/banks
+# ✗ 404 Not Found - Endpoint not enabled on this instance
+```
+
+#### 5.4.4 Deployment Scenario: Berlin Group Instance
+
+This configuration creates an instance serving **only** Berlin Group (NextGenPSD2) endpoints.
+
+**Purpose:**
+
+- Comply with PSD2/XS2A requirements
+- Serve only standardized Berlin Group API
+- Simplify compliance audits and documentation
+
+**Configuration:**
+
+```properties
+# File: obp-api/src/main/resources/props/default.props
+
+# Enable only Berlin Group version
+api_enabled_versions=[BGv1.3]
+api_disabled_versions=[]
+
+# Option 1: Enable all Berlin Group endpoints (leave whitelist empty)
+api_enabled_endpoints=[]
+# Optionally disable specific BG endpoints
+api_disabled_endpoints=[]
+
+# Option 2: Explicitly whitelist Berlin Group endpoints
+api_enabled_endpoints=[
+  BGv1.3-createConsent,
+  BGv1.3-getConsentInformation,
+  BGv1.3-deleteConsent,
+  BGv1.3-getConsentStatus,
+  BGv1.3-getConsentAuthorisation,
+  BGv1.3-startConsentAuthorisation,
+  BGv1.3-updateConsentsPsuData,
+  BGv1.3-getAccountList,
+  BGv1.3-readAccountDetails,
+  BGv1.3-getTransactionList,
+  BGv1.3-getTransactionDetails,
+  BGv1.3-getBalances,
+  BGv1.3-getCardAccountList,
+  BGv1.3-getCardAccountDetails,
+  BGv1.3-getCardAccountBalances,
+  BGv1.3-getCardAccountTransactionList,
+  BGv1.3-initiatePayment,
+  BGv1.3-getPaymentInformation,
+  BGv1.3-getPaymentInitiationStatus,
+  BGv1.3-getPaymentInitiationAuthorisation,
+  BGv1.3-startPaymentAuthorisation,
+  BGv1.3-updatePaymentPsuData,
+  BGv1.3-getPaymentInitiationCancellationAuthorisationInformation,
+  BGv1.3-startPaymentInitiationCancellationAuthorisation,
+  BGv1.3-cancelPayment,
+  BGv1.3-getConfirmationOfFunds
+]
+api_disabled_endpoints=[]
+
+# Berlin Group specific configuration
+berlin_group_version_1_canonical_path=berlin-group/v1.3
+
+# Set base URL for Berlin Group endpoints
+api_hostname=psd2-api.example.com
+
+# Server mode
+server_mode=apis
+```
+
+**Berlin Group Endpoint Structure:**
+
+Berlin Group endpoints follow the PSD2 specification structure:
+
+- **Account Information Service (AIS):**
+  - `/berlin-group/v1.3/accounts`
+  - `/berlin-group/v1.3/accounts/{account-id}/transactions`
+  - `/berlin-group/v1.3/accounts/{account-id}/balances`
+  - `/berlin-group/v1.3/consents`
+
+- **Payment Initiation Service (PIS):**
+  - `/berlin-group/v1.3/payments/{payment-product}/{payment-id}`
+  - `/berlin-group/v1.3/bulk-payments/{payment-product}`
+  - `/berlin-group/v1.3/periodic-payments/{payment-product}`
+
+- **Confirmation of Funds Service (PIIS):**
+  - `/berlin-group/v1.3/funds-confirmations`
+
+**Docker Compose Example:**
+
+```yaml
+version: "3.8"
+
+services:
+  obp-api-berlin-group:
+    image: openbankproject/obp-api
+    container_name: obp-api-berlin-group
+    ports:
+      - "8082:8080" # Berlin Group instance
+    environment:
+      - OBP_API_ENABLED_VERSIONS=[BGv1.3]
+      - OBP_API_DISABLED_VERSIONS=[]
+      - OBP_API_ENABLED_ENDPOINTS=[] # All BG endpoints
+      - OBP_BERLIN_GROUP_VERSION_1_CANONICAL_PATH=berlin-group/v1.3
+      - OBP_API_HOSTNAME=psd2-api.example.com
+      - OBP_SERVER_MODE=apis
+      - OBP_DB_URL=jdbc:postgresql://postgres:5432/obpdb
+    networks:
+      - public-network
+    depends_on:
+      - postgres
+    restart: unless-stopped
+```
+
+**Access Pattern:**
+
+```bash
+# Berlin Group endpoints are available
+curl https://psd2-api.example.com/berlin-group/v1.3/accounts
+# ✓ Success
+
+curl https://psd2-api.example.com/obp/v5.1.0/banks
+# ✗ 404 Not Found - OBP versions not enabled on this instance
+```
+
+#### 5.4.5 Multi-Instance Architecture
+
+Combining different instance types for optimal deployment:
+
+```
+                           ┌─────────────────┐
+                           │  Load Balancer  │
+                           └────────┬────────┘
+                                    │
+                 ┌──────────────────┼──────────────────┐
+                 │                  │                  │
+         ┌───────▼────────┐ ┌──────▼───────┐ ┌───────▼────────┐
+         │  Management    │ │ Berlin Group │ │   Public API   │
+         │   Instance     │ │   Instance   │ │    Instance    │
+         │                │ │              │ │                │
+         │ Port: 8081     │ │ Port: 8082   │ │  Port: 8080    │
+         │ Internal Only  │ │ PSD2/XS2A    │ │  OBP Standard  │
+         └────────────────┘ └──────────────┘ └────────────────┘
+                 │                  │                  │
+                 └──────────────────┼──────────────────┘
+                                    │
+                           ┌────────▼────────┐
+                           │   PostgreSQL    │
+                           │   (Shared DB)   │
+                           └─────────────────┘
+```
+
+**Nginx Configuration Example:**
+
+```nginx
+# Management instance - internal only
+upstream obp_management {
+    server 127.0.0.1:8081;
+}
+
+# Berlin Group instance - public
+upstream obp_berlin_group {
+    server 127.0.0.1:8082;
+}
+
+# Public API instance
+upstream obp_public {
+    server 127.0.0.1:8080;
+}
+
+# Management - internal network only
+server {
+    listen 443 ssl;
+    server_name admin-api.example.com;
+
+    # Restrict to internal IPs
+    allow 10.0.0.0/8;
+    allow 172.16.0.0/12;
+    deny all;
+
+    ssl_certificate /etc/ssl/certs/admin-cert.pem;
+    ssl_certificate_key /etc/ssl/private/admin-key.pem;
+
+    location / {
+        proxy_pass http://obp_management;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}
+
+# Berlin Group - public with stricter security
+server {
+    listen 443 ssl;
+    server_name psd2-api.example.com;
+
+    ssl_certificate /etc/ssl/certs/psd2-cert.pem;
+    ssl_certificate_key /etc/ssl/private/psd2-key.pem;
+
+    # Berlin Group specific paths
+    location /berlin-group/ {
+        proxy_pass http://obp_berlin_group;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+
+        # Additional PSD2 headers
+        proxy_set_header X-Request-ID $request_id;
+        proxy_set_header PSU-IP-Address $remote_addr;
+    }
+}
+
+# Public API
+server {
+    listen 443 ssl;
+    server_name api.example.com;
+
+    ssl_certificate /etc/ssl/certs/api-cert.pem;
+    ssl_certificate_key /etc/ssl/private/api-key.pem;
+
+    location / {
+        proxy_pass http://obp_public;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}
+```
+
+#### 5.4.6 Verification and Testing
+
+**Verify Enabled Versions:**
+
+```bash
+# Check available versions
+curl https://api.example.com/obp/v5.1.0/api/versions
+
+# Response shows only enabled versions
+{
+  "versions": [
+    {
+      "version": "v5.1.0",
+      "status": "STABLE"
+    }
+  ]
+}
+```
+
+**Verify Enabled Endpoints:**
+
+```bash
+# List all resource docs (only enabled endpoints appear)
+curl https://api.example.com/obp/v5.1.0/resource-docs/v5.1.0/obp
+
+# Test specific endpoint
+curl https://api.example.com/obp/v5.1.0/banks
+# Returns 404 if disabled, or data if enabled
+```
+
+**Check Swagger Documentation:**
+
+```bash
+# Swagger only shows enabled endpoints
+curl https://api.example.com/obp/v5.1.0/resource-docs/v5.1.0/swagger
+```
+
+**Testing Script:**
+
+```bash
+#!/bin/bash
+# test-endpoint-config.sh
+
+API_HOST="https://api.example.com"
+VERSION="v5.1.0"
+
+echo "Testing Management Endpoints..."
+curl -s "${API_HOST}/obp/${VERSION}/management/consumers" | \
+  jq -r '.code // "✓ Enabled"'
+
+echo "Testing Public Endpoints..."
+curl -s "${API_HOST}/obp/${VERSION}/banks" | \
+  jq -r '.code // "✓ Enabled"'
+
+echo "Testing Berlin Group Endpoints..."
+curl -s "${API_HOST}/berlin-group/v1.3/accounts" | \
+  jq -r '.code // "✓ Enabled"'
+```
+
+#### 5.4.7 Best Practices
+
+1. **Principle of Least Privilege:**
+   - Enable only the endpoints needed for each instance's purpose
+   - Use whitelisting (enabled list) rather than blacklisting when possible
+
+2. **Documentation:**
+   - Document which endpoints are enabled on each instance
+   - Maintain separate Swagger/Resource Docs per instance type
+
+3. **Security Layers:**
+   - Combine endpoint filtering with network-level restrictions
+   - Use different domains for different instance types
+   - Apply appropriate authentication requirements per instance
+
+4. **Testing:**
+   - Test endpoint configurations in non-production environments first
+   - Verify both positive (enabled) and negative (disabled) cases
+   - Check that documentation endpoints remain accessible
+
+5. **Monitoring:**
+   - Monitor 404 errors to identify misconfigured clients
+   - Track usage patterns per instance type
+   - Alert on unexpected endpoint access attempts
+
+6. **Version Management:**
+   - When enabling new API versions, test thoroughly
+   - Consider gradual rollout of new versions
+   - Maintain backward compatibility where possible
+
 ---
 
 ## 6. Authentication and Security
