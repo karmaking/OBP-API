@@ -690,10 +690,12 @@ super_admin_user_ids=USER_ID1,USER_ID2,
 
 # 1) Absent from here (high priority):
 # Note the default is empty, not the example here.
+# Black List of Versions
 #api_disabled_versions=[OBPv3.0.0,BGv1.3]
 
 # 2) Present here OR this entry must be empty:
 # Note the default is empty, not the example here.
+# White list of Versions
 #api_enabled_versions=[OBPv2.2.0,OBPv3.0.0,UKv2.0]
 
 # Note we use "v" and "." in the name to match the ApiVersions enumeration in ApiUtil.scala
@@ -702,10 +704,12 @@ super_admin_user_ids=USER_ID1,USER_ID2,
 
 # 1) Absent from here:(high priority)
 # Note the default is empty, not the following example
+# Black List of Endpoints
 #api_disabled_endpoints=[OBPv3.0.0-getPermissionForUserForBankAccount]
 
 # 2) Present here OR this list must be empty
 # Note the default is empty, not the following example
+# White List of Endpoints.
 #api_enabled_endpoints=[OBPv3.0.0-getPermissionForUserForBankAccount,OBPv3.0.0-getViewsForBankAccount]
 
 # Note that "root" and also the documentation endpoints (Resource Doc and Swagger) cannot be disabled

@@ -1,6 +1,6 @@
-# Open Bank Project — Technical Documentation Pack (Collated)
+# Open Bank Project — Brief Documentation
 
-_Comprehensive System Architecture, Workflows, Security, and API Reference_
+_System Architecture, Workflows, Security, and API Reference_
 
 ---
 
@@ -55,7 +55,7 @@ _Comprehensive System Architecture, Workflows, Security, and API Reference_
 
 1. TPP/Client registers (with certs if mTLS is used).
 2. User authN via authorisation server; client requests consent (scopes/accounts/permissions).
-3. Bank issues consent resource & access token (optionally JWS‑signed, certificate‑bound).
+3. Consent resource & access token are returned (optionally JWS‑signed, certificate‑bound).
 4. Client calls accounts/balances/transactions/payments with proof (mTLS/JWS), consent id, and token.
 
 ### E. Transaction Requests (PIS)
@@ -70,7 +70,7 @@ _Comprehensive System Architecture, Workflows, Security, and API Reference_
 
 **High-Level System Architecture**
 
-See the detailed architecture diagram in [comprehensive_documentation.md](comprehensive_documentation.md#21-high-level-architecture) (Section 2.1).
+See the detailed architecture diagram in [introductory_system_documentation.md](introductory_system_documentation.md#21-high-level-architecture) (Section 2.1).
 
 **Views & Entitlements**
 
@@ -93,13 +93,13 @@ User ──(has roles/entitlements)──► Bank/System actions
 
 ## 5) Installation, Configuration & Updates
 
-### Option A — Quick local (IntelliJ / `mvn`)
+### Option A — Quick local & development (IntelliJ / `mvn`)
 
 - Clone `OBP-API` → open in IntelliJ (Scala/Java toolchain).
 - Create `default.props` (dev) and choose connector (`mapped` for demo) and DB (H2 or Postgres).
-- `mvn package` → produce `.war`; run with Jetty 9 or use IntelliJ runner.
+- `mvn package` → produce `.war`; run with Jetty or use IntelliJ runner.
 
-### Option B — Docker (recommended for eval)
+### Option B — Docker (recommended for evaluation)
 
 - Pull `openbankproject/obp-api` image.
 - Provide config via env vars: prefix `OBP_`, replace `.` with `_`, uppercase (e.g., `openid_connect.enabled=true` → `OBP_OPENID_CONNECT_ENABLED=true`).
@@ -113,7 +113,8 @@ User ──(has roles/entitlements)──► Bank/System actions
 ### Databases
 
 - **Dev**: H2 (enable web console if needed).
-- **Prod**: PostgreSQL; set SSL if required; grant schema/table privileges for user `obp`.
+- **Prod**: PostgreSQL recommended; set SSL if required; grant schema/table privileges.\
+  Any JDBC-compliant DB is supported (e.g. MS SQL, Oracle DB, etc.)
 
 ### Updating
 
@@ -192,11 +193,11 @@ JAVA_OPTIONS="-Drun.mode=production -Xmx768m -Dobp.resource.dir=$JETTY_HOME/reso
 ```
 
 ```sql
-GRANT USAGE, CREATE ON SCHEMA public TO obp;
-GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO obp;
-GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO obp;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO obp;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO obp;
+GRANT USAGE, CREATE ON SCHEMA public TO obp_user;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO oobp_userbp;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO obobp_userp;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO obp_user;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO obp_user;
 ```
 
 ---
@@ -213,4 +214,4 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO obp;
 
 ---
 
-© TESOBE GmbH 2025
+© TESOBE GmbH 2025 AGPL V3

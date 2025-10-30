@@ -1,9 +1,13 @@
-# Open Bank Project (OBP) - Comprehensive Technical Documentation
+# Open Bank Project - Introductory Documentation
 
-**Version:** 0.0.1
-**Last Updated:** 2025
-**Organization:** TESOBE GmbH
-**License:** AGPL V3 / Commercial License
+This document serves as an overview of the Open Bank Project (OBP) technology ecosystem and related tools.
+It provides an introduction to its key components, architecture, deployment and management approaches and capabilities.
+
+For more detailed information or the sources of truths, please refer to the individual repository READMEs or contact TESOBE for commercial licences and support.
+
+**Version:** 0.5.0
+**Last Updated:** Oct 2025
+**License:** Copyright TESOBE GmbH 2025 - AGPL V3
 
 ---
 
@@ -12,6 +16,18 @@
 1. [Executive Summary](#executive-summary)
 2. [System Architecture](#system-architecture)
 3. [Component Descriptions](#component-descriptions)
+   - 3.1 [OBP-API (Core Server)](#31-obp-api-core-server)
+   - 3.2 [API Explorer](#32-api-explorer)
+   - 3.3 [API Manager](#33-api-manager)
+   - 3.4 [Opey II (AI Agent)](#34-opey-ii-ai-agent)
+   - 3.5 [OBP-OIDC (Development Provider)](#35-obp-oidc-development-provider)
+   - 3.6 [Keycloak Integration (Production Provider)](#36-keycloak-integration-production-provider)
+   - 3.7 [Ory Hydra (Production Provider)](#37-ory-hydra-production-provider)
+   - 3.8 [OBP-Hola](#38-obp-hola)
+   - 3.9 [OBP-SEPA-Adapter](#39-obp-sepa-adapter)
+   - 3.10 [Connectors](#310-connectors)
+   - 3.11 [Adapters](#311-adapters)
+   - 3.12 [Message Docs](#312-message-docs)
 4. [Standards Compliance](#standards-compliance)
 5. [Installation and Configuration](#installation-and-configuration)
 6. [Authentication and Security](#authentication-and-security)
@@ -70,7 +86,7 @@ The Open Bank Project (OBP) is an open-source RESTful API platform for banks tha
 - **Customer-Account Linking**: Associate customers with accounts
 - **KYC Processes**: KYC checks, documents, media uploads, status tracking
 - **CRM Integration**: Customer relationship management features
-- **Meeting Management**: Schedule and manage customer meetings
+- **Consent Management**: PSD2-compliant consent workflows for data access
 
 #### 1.2.4 Card Management
 
@@ -242,6 +258,11 @@ The Open Bank Project (OBP) is an open-source RESTful API platform for banks tha
                    │  └──────────────┬──────────────────┘  │
                    │                 │                     │
                    │  ┌──────────────▼──────────────────┐  │
+                   │  │      OBP Models                 │  │
+                   │  │      (Data Structures)          │  │
+                   │  └──────────────┬──────────────────┘  │
+                   │                 │                     │
+                   │  ┌──────────────▼──────────────────┐  │
                    │  │      Connector Layer            │  │
                    │  │   (Pluggable Adapters)          │  │
                    │  └──────────────┬──────────────────┘  │
@@ -283,9 +304,9 @@ The Open Bank Project (OBP) is an open-source RESTful API platform for banks tha
 #### Single Server Deployment
 
 ```
-┌─────────────────────────────────────┐
-│         Single Server               │
-│                                     │
+┌────────────────────────────────────┐
+│         Single Server              │
+│                                    │
 │  ┌──────────────────────────────┐  │
 │  │       OBP-API (Jetty)        │  │
 │  └──────────────────────────────┘  │
@@ -295,7 +316,7 @@ The Open Bank Project (OBP) is an open-source RESTful API platform for banks tha
 │  ┌──────────────────────────────┐  │
 │  │         Redis                │  │
 │  └──────────────────────────────┘  │
-└─────────────────────────────────────┘
+└────────────────────────────────────┘
 ```
 
 #### Distributed Deployment with Akka Remote (requires extra licence / config)
@@ -320,7 +341,7 @@ The Open Bank Project (OBP) is an open-source RESTful API platform for banks tha
 - Language: Scala 2.12/2.13
 - Framework: Liftweb
 - Build Tool: Maven 3 / SBT
-- Server: Jetty 9
+- Server: Jetty or other Java Application Server
 - Concurrency: Akka
 - JDK: OpenJDK 11, Oracle JDK 1.8/13
 
@@ -441,7 +462,7 @@ super_admin_user_ids=uuid-of-admin-user
 - Build: Vite
 - Testing: Vitest (unit), Playwright (integration)
 
-**Configuration:**
+**Configuration (excerpt):**
 
 ```env
 # .env file
@@ -604,49 +625,10 @@ sudo cp nginx.apimanager.conf /etc/nginx/sites-enabled/
 sudo systemctl reload nginx
 ```
 
-**Directory Structure:**
-
-```
-/OpenBankProject/
-├── API-Manager/
-│   ├── apimanager/
-│   │   ├── apimanager/
-│   │   │   ├── __init__.py
-│   │   │   ├── settings.py
-│   │   │   ├── local_settings.py  # Your config
-│   │   │   ├── urls.py
-│   │   │   └── wsgi.py
-│   │   └── manage.py
-│   ├── apimanager.service
-│   ├── gunicorn.conf.py
-│   ├── nginx.apimanager.conf
-│   ├── supervisor.apimanager.conf
-│   └── requirements.txt
-├── db.sqlite3
-├── logs/
-├── static-collected/
-└── venv/
-```
-
-**PostgreSQL Configuration:**
-
-```python
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'apimanager_db',
-        'USER': 'apimanager_user',
-        'PASSWORD': 'secure_password',
-        'HOST': 'localhost',
-        'PORT': '5432',
-    }
-}
-```
-
 **Management:**
 
 - Super Admin users can manage roles at `/users`
-- Set `super_admin_user_ids` in OBP-API props file
+- Set `super_admin_user_ids` in OBP-API props file (as temporary bootstrap admin user)
 - Users need appropriate roles to execute management functions
 - Entitlement management requires proper permissions
 
@@ -656,11 +638,11 @@ DATABASES = {
 
 **Key Features:**
 
-- Natural language banking queries
-- Account information retrieval
-- Transaction analysis
-- Payment initiation support
+- Natural language OBP API queries
+- Approve / Deny with tracking of Endpoint OperationId per session / once
+- Tool Call inspection
 - Multi-LLM support (Anthropic, OpenAI, Ollama)
+- OBP Resource Docs and Glossary in vector database.
 - Vector-based knowledge retrieval
 - LangSmith tracing integration
 - Consent-based access control
@@ -680,7 +662,7 @@ DATABASES = {
 - OpenAI (GPT-4)
 - Ollama (Local models - Llama, Mistral)
 
-**Configuration:**
+**Configuration .env file (excerpt, see .env-example):**
 
 ```env
 # .env file
@@ -705,7 +687,7 @@ LANGCHAIN_API_KEY=lsv2_pt_xxx
 LANGCHAIN_PROJECT=opey-agent
 ```
 
-**Installation:**
+**Installation (local/development):**
 
 ```bash
 cd OPEY/OBP-Opey-II
@@ -722,18 +704,12 @@ python src/run_service.py  # Backend API (port 8000)
 # Access via OBP Portal frontend
 ```
 
-**Docker Deployment:**
-
-```bash
-docker compose up
-```
-
 **OBP-API Configuration for Opey:**
 
 ```properties
 # In OBP-API props file
 skip_consent_sca_for_consumer_id_pairs=[{ \
-    "grantor_consumer_id": "<api-explorer-consumer-id>",\
+    "grantor_consumer_id": "<api-explorer-consumer-id, or portal-consumer-id>",\
     "grantee_consumer_id": "<opey-consumer-id>" \
 }]
 ```
@@ -758,7 +734,7 @@ skip_consent_sca_for_consumer_id_pairs=[{ \
 - User authentication simulation
 - Development-friendly configuration
 
-**Configuration:**
+**Configuration (excerpt):**
 
 ```properties
 # In OBP-API props
@@ -811,6 +787,508 @@ openid_connect_1.client_secret=your-secret
 openid_connect_1.callback_url=http://localhost:8080/auth/openid-connect/callback
 openid_connect_1.endpoint.discovery=http://localhost:7070/realms/master/.well-known/openid-configuration
 ```
+
+Pre-built Keycloak image with OBP Keycloak provider:
+
+```bash
+docker pull openbankproject/obp-keycloak:main-themed
+```
+
+---
+
+### 3.7 Ory Hydra (Production Provider)
+
+**Purpose:** Cloud-native OAuth2 and OpenID Connect server for production deployments
+
+**Overview:**
+
+Ory Hydra is a hardened, open-source OAuth 2.0 and OpenID Connect server optimized for low-latency, high-throughput, and low resource consumption. It integrates with OBP-API to provide enterprise-grade authentication and authorization.
+
+**Key Features:**
+
+- **OAuth2 & OIDC Compliance:** Full implementation of OAuth 2.0 and OpenID Connect specifications
+- **Cloud Native:** Designed for containerized deployments (Docker, Kubernetes)
+- **Performance:** Low latency and high throughput
+- **Separation of Concerns:** Hydra handles OAuth/OIDC flow; identity management delegated to custom Identity Provider
+- **Security Hardened:** Regular security audits and compliance certifications
+- **Storage Backend:** PostgreSQL, MySQL, CockroachDB support
+
+**Architecture:**
+
+```
+Client → Hydra (OAuth2 Server) → OBP Hydra Identity Provider → OBP-API
+                ↓
+           Database (PostgreSQL)
+```
+
+**Components:**
+
+- **Ory Hydra:** OAuth2/OIDC server
+- **OBP Hydra Identity Provider:** Custom login/consent UI and user management
+- **OBP-API:** Banking API with Hydra integration
+
+**OBP-API Configuration:**
+
+```properties
+# Enable Hydra login
+login_with_hydra=true
+
+# Hydra server URLs
+hydra_public_url=http://127.0.0.1:4444
+hydra_admin_url=http://127.0.0.1:4445
+
+# Consent scopes
+hydra_consents=ReadAccountsBasic,ReadAccountsDetail,ReadBalances,ReadTransactionsBasic,ReadTransactionsDebits,ReadTransactionsDetail
+
+# JWKS validation
+oauth2.jwk_set.url=http://127.0.0.1:4444/.well-known/jwks.json
+
+# Mirror consumers to Hydra clients
+mirror_consumer_in_hydra=true
+```
+
+**Hydra Identity Provider Configuration:**
+
+```properties
+# Server port
+server.port=8086
+
+# OBP-API URL
+obp.base_url=http://localhost:8080
+endpoint.path.prefix=${obp.base_url}/obp/v4.0.0
+
+# Hydra admin URL
+oauth2.admin_url=http://127.0.0.1:4445
+
+# Service account credentials
+identity_provider.user.username=serviceuser
+identity_provider.user.password=password
+consumer_key=your-consumer-key
+
+# mTLS configuration (optional)
+mtls.keyStore.path=file:///path/to/keystore.jks
+mtls.keyStore.password=keystore-password
+mtls.trustStore.path=file:///path/to/truststore.jks
+mtls.trustStore.password=truststore-password
+```
+
+**Docker Deployment:**
+
+```bash
+# Start Hydra with docker-compose
+docker-compose -f quickstart.yml \
+    -f quickstart-postgres.yml \
+    up --build
+
+# Verify Hydra is running
+curl http://127.0.0.1:4444/.well-known/openid-configuration
+```
+
+**Hydra quickstart.yml environment:**
+
+```yaml
+environment:
+  - URLS_CONSENT=http://localhost:8086/consent
+  - URLS_LOGIN=http://localhost:8086/login
+  - URLS_LOGOUT=http://localhost:8086/logout
+```
+
+**Use Cases:**
+
+- High-performance OAuth2/OIDC deployments
+- Microservices architectures requiring centralized authentication
+- Multi-tenant banking platforms
+- Open Banking TPP integrations
+- Cloud-native banking solutions
+
+**Repositories:**
+
+- Ory Hydra: https://github.com/ory/hydra
+- OBP Hydra Identity Provider: https://github.com/OpenBankProject/OBP-Hydra-Identity-Provider
+- Demo OAuth2 Client: https://github.com/OpenBankProject/OBP-Hydra-OAuth2
+
+---
+
+### 3.8 OBP-Hola
+
+**Purpose:** Reference implementation for OAuth2 authentication and consent flow testing
+
+**Overview:**
+
+OBP-Hola is a Java/Spring Boot application that demonstrates and tests OBP authentication, consent creation, and data access via OBP API. It serves as a reference implementation for developers integrating with OBP's consent framework.
+
+**Key Features:**
+
+- **OAuth2 Flow Testing:** Complete OAuth2 authorization code flow implementation
+- **Multi-Standard Support:** UK Open Banking, Berlin Group, and OBP styles
+- **Consent Management:** Create, view, and test consent flows
+- **mTLS Support:** Certificate-based authentication testing
+- **JWS Signing:** Request signing for enhanced security profiles
+- **Interactive UI:** Web interface for testing consent scenarios
+
+**Supported Standards:**
+
+- UK Open Banking (Account Information & Payment Initiation)
+- Berlin Group NextGenPSD2 (AIS/PIS)
+- OBP native consent flows
+
+**Dependencies:**
+
+- **OBP-API:** Core banking API
+- **Ory Hydra:** OAuth2 server
+- **OBP Hydra Identity Provider:** Identity management
+
+**Use Cases:**
+
+- Testing consent creation and authorization flows
+- Validating OAuth2 integration
+- Demonstrating PSD2 compliance workflows
+- Training and reference for TPP developers
+- Automated testing with OBP-Selenium integration
+
+**Configuration:**
+
+```properties
+# OAuth2 Server
+oauth2.public_url=https://oauth2.example.com
+
+# OBP API
+obp.base_url=https://api.example.com
+
+# Client credentials (from OBP consumer registration)
+oauth2.client_id=your-client-id
+oauth2.redirect_uri=http://localhost:8087/callback
+oauth2.client_scope=ReadAccountsDetail ReadBalances ReadTransactionsDetail
+
+# mTLS (if required)
+mtls.keyStore=/path/to/keystore.jks
+mtls.trustStore=/path/to/truststore.jks
+```
+
+**Running Hola:**
+
+```bash
+# Build with Maven
+mvn clean package
+
+# Run locally
+java -jar target/obp-hola-app-0.0.29-SNAPSHOT.jar
+
+# Access at http://localhost:8087
+```
+
+**Docker Deployment:**
+
+```bash
+docker build -t obp-hola .
+docker run -p 8087:8087 \
+  -e OAUTH2_PUBLIC_URL=https://oauth2.example.com \
+  -e OBP_BASE_URL=https://api.example.com \
+  obp-hola
+```
+
+**Repository:** https://github.com/OpenBankProject/OBP-Hola
+
+---
+
+### 3.9 OBP-SEPA-Adapter
+
+**Purpose:** Reference implementation for SEPA payment processing with OBP-API
+
+**Overview:**
+
+OBP-SEPA-Adapter is a Scala/Akka-based adapter that enables SEPA (Single Euro Payments Area) payment processing through OBP-API. It handles incoming and outgoing SEPA messages, storing transactions and transaction requests via the OBP-API.
+
+**Key Features:**
+
+- **SEPA Credit Transfer:** Full support for pacs.008.001.02 messages
+- **Payment Returns:** Handle payment return messages (pacs.004.001.02)
+- **Payment Rejections:** Process rejection messages (pacs.002.001.03)
+- **Payment Recalls:** Support for recall messages (camt.056.001.01)
+- **File Processing:** Generate and process SEPA XML files
+- **PostgreSQL Storage:** Dedicated database for SEPA message management
+- **Akka Connector Integration:** Communicates with OBP-API via Akka remote
+
+**Supported SEPA Messages:**
+
+**Integrated with OBP-API:**
+
+- Credit Transfer (pacs.008.001.02)
+- Payment Return (pacs.004.001.02)
+- Payment Reject (pacs.002.001.03)
+- Payment Recall (camt.056.001.01)
+- Payment Recall Negative Answer (camt.029.001.03)
+
+**Supported but not integrated:**
+
+- Inquiry Claim messages (camt.027, camt.087, camt.029)
+- Request Status Update (pacs.028.001.01)
+
+**Architecture:**
+
+```
+OBP-API (Star Connector) → Akka Remote → SEPA Adapter → PostgreSQL
+                                              ↓
+                                         SEPA Files (in/out)
+```
+
+**Configuration:**
+
+**OBP-API props:**
+
+```properties
+connector=star
+starConnector_supported_types=mapped,akka
+transactionRequests_supported_types=SANDBOX_TAN,COUNTERPARTY,SEPA,ACCOUNT_OTP,ACCOUNT,REFUND
+akka_connector.hostname=127.0.0.1
+akka_connector.port=2662
+```
+
+**SEPA Adapter application.conf:**
+
+```conf
+databaseConfig = {
+  dataSourceClass = "org.postgresql.ds.PGSimpleDataSource"
+  properties = {
+    databaseName = "sepa_db"
+    user = "sepa_user"
+    password = "password"
+  }
+}
+
+obp-api = {
+  authorization = {
+    direct-login-token = "YOUR_DIRECTLOGIN_TOKEN"
+  }
+}
+
+sepa-adapter {
+  bank-id = "THE_DEFAULT_BANK_ID"
+  bank-bic = "OBPBDEB1XXX"
+}
+```
+
+**Method Routing Setup:**
+
+Create method routings to route payment methods through Akka connector:
+
+```json
+{
+  "is_bank_id_exact_match": false,
+  "method_name": "makePaymentv210",
+  "connector_name": "akka_vDec2018",
+  "bank_id_pattern": ".*",
+  "parameters": []
+}
+```
+
+Repeat for: `makePaymentV400`, `notifyTransactionRequest`
+
+**Required Entitlements:**
+
+- CanCreateHistoricalTransaction
+- CanCreateAnyTransactionRequest
+
+**Use Cases:**
+
+- SEPA credit transfer payment processing
+- Payment returns and rejections handling
+- Payment recall workflows
+- SEPA file generation and processing
+- Euro zone payment integration
+
+**Technology Stack:**
+
+- Language: Scala
+- Framework: Akka
+- Database: PostgreSQL with Slick ORM
+- Message Format: SEPA XML (ISO 20022 standard)
+- Code Generation: scalaxb for XSD classes
+
+**ISO 20022 Compliance:**
+
+The SEPA Adapter implements ISO 20022 message standards for financial messaging:
+
+- **pacs.008.001.02** - FIToFICustomerCreditTransfer (Credit Transfer)
+- **pacs.004.001.02** - PaymentReturn (Payment Return)
+- **pacs.002.001.03** - FIToFIPaymentStatusReport (Payment Reject)
+- **pacs.028.001.01** - FIToFIPaymentStatusRequest (Request Status Update)
+- **camt.056.001.01** - FIToFIPaymentCancellationRequest (Payment Recall)
+- **camt.029.001.03** - ResolutionOfInvestigation (Recall Negative Answer)
+- **camt.027.001.06** - ClaimNonReceipt (Inquiry Claim Non Receipt)
+- **camt.087.001.05** - RequestToModifyPayment (Inquiry Claim Value Date Correction)
+- **camt.029.001.08** - ResolutionOfInvestigation (Inquiry Responses)
+
+ISO 20022 provides standardized XML schemas for electronic data interchange between financial institutions, ensuring interoperability across the SEPA payment network.
+
+**Running the Adapter:**
+
+```bash
+# Setup database
+psql -f src/main/scala/model/DatabaseSchema.sql
+
+# Configure application.conf
+# Edit src/main/resources/application.conf
+
+# Run the adapter
+sbt run
+```
+
+**Processing Files:**
+
+```bash
+# Generate outgoing SEPA files
+sbt "runMain sepa.scheduler.ProcessOutgoingFiles"
+# Files created in: src/main/scala/sepa/sct/file/out
+
+# Process incoming SEPA files
+sbt "runMain sepa.scheduler.ProcessIncomingFilesActorSystem"
+```
+
+**Repository:** https://github.com/OpenBankProject/OBP-SEPA-Adapter
+
+---
+
+### 3.10 Connectors
+
+**Purpose:** Connectors provide the integration layer between OBP-API and backend banking systems or data sources.
+
+**Available Connectors:**
+
+**Mapped (Internal)**
+
+- Direct database connector for sandbox/development
+- Stores data in OBP's own database tables
+- No external system required
+- Configuration: `connector=mapped`
+
+**Kafka**
+
+- Message-based connector using Apache Kafka
+- Asynchronous communication with backend systems
+- Supports high-throughput scenarios
+- Configuration: `connector=kafka_vMar2017`
+
+**RabbitMQ**
+
+- Message queue-based connector
+- Alternative to Kafka for message-based integration
+- Supports reliable message delivery
+- Configuration: Configure via props with RabbitMQ connection details
+
+**Akka Remote**
+
+- Actor-based remote connector
+- Separates API layer from data layer
+- Enables distributed deployments
+- Configuration: `connector=akka_vDec2018`
+
+**Cardano**
+
+- Blockchain connector for Cardano network
+- Enables blockchain-based banking operations
+- Supports smart contract integration
+- Configuration: `connector=cardano`
+
+**Ethereum**
+
+- Blockchain connector for Ethereum network
+- Smart contract integration for DeFi applications
+- Web3 compatibility
+- Configuration: `connector=ethereum`
+
+**REST/Stored Procedure**
+
+- Direct REST API or stored procedure connectors
+- Custom integration with existing systems
+- Flexible adapter pattern
+
+**Custom Connectors:**
+
+- Create custom connectors by extending the `Connector` trait
+- See section 11.3 for implementation details
+
+---
+
+### 3.11 Adapters
+
+**Purpose:** Adapters are backend services that receive messages from OBP-API connectors and respond according to Message Doc definitions.
+
+**Overview:**
+
+Adapters act as the bridge between OBP-API and core banking systems:
+
+- **Receive:** Accept messages from OBP-API via message queues (Kafka/RabbitMQ) or remote calls (Akka)
+- **Process:** Interact with core banking systems, databases, or other backend services
+- **Respond:** Return data formatted according to Message Doc specifications
+
+**Architecture:**
+
+```
+OBP-API (Connector) → Message Queue → Adapter → Core Banking System
+                    ←              ←        ←
+```
+
+**Key Characteristics:**
+
+- **Language Agnostic:** Adapters can be written in any programming language
+- **Message Doc Compliance:** Must implement request/response formats defined in Message Docs
+- **Scalability:** Multiple adapter instances can process messages concurrently
+- **Flexibility:** Different adapters can serve different banking systems or functions
+
+**Implementation:**
+
+Adapters listen to message queues or remote calls, parse incoming messages according to Message Doc schemas, execute business logic, and return responses in the required format.
+
+**Example Use Cases:**
+
+- Adapter in Java connecting to legacy mainframe systems
+- Adapter in Python integrating with modern REST APIs
+- Adapter in Go for high-performance transaction processing
+- Adapter in Scala for Akka-based distributed systems
+
+---
+
+### 3.12 Message Docs
+
+**Purpose:** Message Docs define the structure and schema of messages exchanged between OBP-API connectors and backend adapters.
+
+**Overview:**
+
+Message Docs serve as API contracts for connector-adapter communication, specifying:
+
+- Request message format and required fields
+- Response message format and data structure
+- Field types and validation rules
+- Example messages for testing
+
+**Key Features:**
+
+- **Dynamic Definition:** Message Docs can be created dynamically via API without code changes
+- **Version Control:** Different connector versions can have different message formats
+- **Documentation:** Auto-generated documentation for adapter developers
+- **Validation:** Ensures message compatibility between connectors and adapters
+
+**Available Message Docs:**
+
+Message Docs are available for various connectors including Kafka, RabbitMQ, and Akka. Each connector version has its own set of message definitions.
+
+**Example:** [RabbitMQ Message Docs](https://apiexplorer-ii-sandbox.openbankproject.com/message-docs/rabbitmq_vOct2024)
+
+**Configuration:**
+
+```properties
+# Enable message doc endpoints
+connector=rabbitmq_vOct2024
+```
+
+**Related Roles:**
+
+- CanCreateDynamicMessageDoc
+- CanGetDynamicMessageDoc
+- CanGetAllDynamicMessageDocs
+- CanUpdateDynamicMessageDoc
+- CanDeleteDynamicMessageDoc
 
 ---
 
@@ -891,7 +1369,7 @@ POST /open-banking/v3.1/cbpii/funds-confirmation-consents
 - 600+ endpoints
 - Multi-bank support
 - Extended customer data
-- Meeting scheduling
+- Consent management
 - Product management
 - Webhook support
 - Dynamic entity/endpoint creation
@@ -903,7 +1381,7 @@ POST /open-banking/v3.1/cbpii/funds-confirmation-consents
 - v3.0.0, v3.1.0 (STABLE)
 - v4.0.0 (STABLE)
 - v5.0.0, v5.1.0 (STABLE)
-- v6.0.0 (STABLE/BLEEDING-EDGE)
+- v6.0.0 (BLEEDING-EDGE)
 
 **Key Endpoint Categories:**
 
@@ -961,7 +1439,7 @@ POST /open-banking/v3.1/cbpii/funds-confirmation-consents
 
 **Hardware Requirements (Minimum):**
 
-- CPU: 4 cores
+- CPU: 2 cores
 - RAM: 8GB
 - Disk: 50GB
 - Network: 100 Mbps
@@ -1306,6 +1784,485 @@ networks:
   obp-network:
 ```
 
+### 5.4 Endpoint and Version Filtering
+
+OBP-API provides powerful configuration options to control which API versions and endpoints are available on a particular instance. This enables different deployment scenarios such as dedicated management instances, API standard-specific instances (Berlin Group, UK Open Banking, etc.), or restricted public-facing APIs.
+
+#### 5.4.1 Configuration Properties
+
+**Version Control:**
+
+```properties
+# Blacklist: Disable specific API versions (high priority)
+# Versions listed here will NOT be available
+api_disabled_versions=[OBPv3.0.0,BGv1.3]
+
+# Whitelist: Enable only specific API versions
+# If empty, all versions (except disabled) are available
+# If populated, ONLY these versions will be available
+api_enabled_versions=[OBPv5.1.0,BGv1.3]
+```
+
+**Endpoint Control:**
+
+```properties
+# Blacklist: Disable specific endpoints (high priority)
+# Use the operationId format: VersionPrefix-endpointName
+api_disabled_endpoints=[OBPv4.0.0-deleteBank,OBPv5.1.0-deleteUser]
+
+# Whitelist: Enable only specific endpoints
+# If empty, all endpoints (except disabled) are available
+# If populated, ONLY these endpoints will be available
+api_enabled_endpoints=[OBPv5.1.0-getBanks,OBPv5.1.0-getBank]
+```
+
+**Important Notes:**
+
+- Disabled endpoints (blacklist) take priority over enabled endpoints (whitelist)
+- Root endpoints and documentation endpoints (Resource Docs, Swagger) cannot be disabled
+- Version format matches ApiVersion enumeration (e.g., `OBPv5.1.0`, `BGv1.3`, `UKv3.1`)
+- Endpoint format: `{VersionPrefix}-{operationId}` (e.g., `OBPv5.1.0-getBanks`)
+
+#### 5.4.2 Finding Endpoint Operation IDs
+
+**Method 1: Using API Explorer**
+
+Navigate to any endpoint in API Explorer and check the `operationId` field in the endpoint documentation.
+
+**Method 2: Using Resource Docs API**
+
+```bash
+# Get all resource docs
+curl https://api.example.com/obp/v5.1.0/resource-docs/v5.1.0/obp
+
+# Filter by tag
+curl https://api.example.com/obp/v5.1.0/resource-docs/v5.1.0/obp?tags=Account
+
+# Extract operation IDs with jq
+curl -s https://api.example.com/obp/v5.1.0/resource-docs/v5.1.0/obp | \
+  jq -r '.resource_docs[].operation_id'
+```
+
+**Method 3: Check Source Code**
+
+Operation IDs are defined in the API implementation files (e.g., `APIMethods510.scala`):
+
+```scala
+lazy val getBanks: OBPEndpoint = {
+  case "banks" :: Nil JsonGet _ => {
+    // operationId will be: OBPv5.1.0-getBanks
+  }
+}
+```
+
+#### 5.4.3 Deployment Scenario: Management Instance
+
+This configuration creates a dedicated instance serving **only** management and administrative endpoints.
+
+**Purpose:**
+
+- Restrict access to sensitive administrative operations
+- Deploy behind additional security layers
+- Separate administrative traffic from public API traffic
+
+**Configuration:**
+
+```properties
+# File: obp-api/src/main/resources/props/default.props
+
+# Enable only OBP versions with management endpoints
+api_enabled_versions=[OBPv5.1.0,OBPv4.0.0,OBPv3.1.0]
+api_disabled_versions=[]
+
+# Enable only management-related endpoints
+api_enabled_endpoints=[
+  OBPv5.1.0-getConsumers,
+  OBPv5.1.0-getConsumer,
+  OBPv5.1.0-createConsumer,
+  OBPv5.1.0-updateConsumerRedirectUrl,
+  OBPv5.1.0-enableDisableConsumers,
+  OBPv5.1.0-deleteConsumer,
+  OBPv4.0.0-getCallsLimit,
+  OBPv4.0.0-callsLimit,
+  OBPv5.1.0-getMetrics,
+  OBPv5.1.0-getAggregateMetrics,
+  OBPv5.1.0-getTopAPIs,
+  OBPv5.1.0-getMetricsTopConsumers,
+  OBPv5.1.0-getConnectorMetrics,
+  OBPv5.1.0-getMethodRoutings,
+  OBPv5.1.0-createMethodRouting,
+  OBPv5.1.0-updateMethodRouting,
+  OBPv5.1.0-deleteMethodRouting,
+  OBPv4.0.0-createDynamicEndpoint,
+  OBPv4.0.0-updateDynamicEndpointHost,
+  OBPv4.0.0-getDynamicEndpoint,
+  OBPv4.0.0-getDynamicEndpoints,
+  OBPv4.0.0-deleteDynamicEndpoint,
+  OBPv4.0.0-createBankLevelDynamicEndpoint,
+  OBPv4.0.0-updateBankLevelDynamicEndpointHost,
+  OBPv4.0.0-getBankLevelDynamicEndpoint,
+  OBPv4.0.0-getBankLevelDynamicEndpoints,
+  OBPv4.0.0-deleteBankLevelDynamicEndpoint,
+  OBPv5.1.0-getAccountWebhooks,
+  OBPv5.1.0-createAccountWebhook,
+  OBPv5.1.0-updateAccountWebhook,
+  OBPv5.1.0-deleteAccountWebhook
+]
+api_disabled_endpoints=[]
+
+# Additional security settings for management instance
+server_mode=apis
+api_hostname=admin-api.example.com
+
+# Restrict to internal network via firewall or IP whitelist
+# (configured at infrastructure level)
+```
+
+**Docker Compose Example:**
+
+```yaml
+version: "3.8"
+
+services:
+  obp-api-management:
+    image: openbankproject/obp-api
+    container_name: obp-api-management
+    ports:
+      - "8081:8080" # Different port for management
+    environment:
+      - OBP_API_ENABLED_VERSIONS=[OBPv5.1.0,OBPv4.0.0]
+      - OBP_API_ENABLED_ENDPOINTS=[OBPv5.1.0-getConsumers,OBPv5.1.0-getMetrics,...]
+      - OBP_SERVER_MODE=apis
+      - OBP_API_HOSTNAME=admin-api.example.com
+      - OBP_DB_URL=jdbc:postgresql://postgres:5432/obpdb
+    networks:
+      - internal-network
+    depends_on:
+      - postgres
+    restart: unless-stopped
+```
+
+**Access Pattern:**
+
+```bash
+# Only management endpoints are available
+curl https://admin-api.example.com/obp/v5.1.0/management/consumers
+# [SUCCESS]
+
+curl https://admin-api.example.com/obp/v5.1.0/banks
+# [FAIL] 404 Not Found - Endpoint not enabled on this instance
+```
+
+#### 5.4.4 Deployment Scenario: Berlin Group Instance
+
+This configuration creates an instance serving **only** Berlin Group (NextGenPSD2) endpoints.
+
+**Purpose:**
+
+- Comply with PSD2/XS2A requirements
+- Serve only standardized Berlin Group API
+- Simplify compliance audits and documentation
+
+**Configuration:**
+
+```properties
+# File: obp-api/src/main/resources/props/default.props
+
+# Enable only Berlin Group version
+api_enabled_versions=[BGv1.3]
+api_disabled_versions=[]
+
+# Option 1: Enable all Berlin Group endpoints (leave whitelist empty)
+api_enabled_endpoints=[]
+# Optionally disable specific BG endpoints
+api_disabled_endpoints=[]
+
+# Option 2: Explicitly whitelist Berlin Group endpoints
+api_enabled_endpoints=[
+  BGv1.3-createConsent,
+  BGv1.3-getConsentInformation,
+  BGv1.3-deleteConsent,
+  BGv1.3-getConsentStatus,
+  BGv1.3-getConsentAuthorisation,
+  BGv1.3-startConsentAuthorisation,
+  BGv1.3-updateConsentsPsuData,
+  BGv1.3-getAccountList,
+  BGv1.3-readAccountDetails,
+  BGv1.3-getTransactionList,
+  BGv1.3-getTransactionDetails,
+  BGv1.3-getBalances,
+  BGv1.3-getCardAccountList,
+  BGv1.3-getCardAccountDetails,
+  BGv1.3-getCardAccountBalances,
+  BGv1.3-getCardAccountTransactionList,
+  BGv1.3-initiatePayment,
+  BGv1.3-getPaymentInformation,
+  BGv1.3-getPaymentInitiationStatus,
+  BGv1.3-getPaymentInitiationAuthorisation,
+  BGv1.3-startPaymentAuthorisation,
+  BGv1.3-updatePaymentPsuData,
+  BGv1.3-getPaymentInitiationCancellationAuthorisationInformation,
+  BGv1.3-startPaymentInitiationCancellationAuthorisation,
+  BGv1.3-cancelPayment,
+  BGv1.3-getConfirmationOfFunds
+]
+api_disabled_endpoints=[]
+
+# Berlin Group specific configuration
+berlin_group_version_1_canonical_path=berlin-group/v1.3
+
+# Set base URL for Berlin Group endpoints
+api_hostname=psd2-api.example.com
+
+# Server mode
+server_mode=apis
+```
+
+**Berlin Group Endpoint Structure:**
+
+Berlin Group endpoints follow the PSD2 specification structure:
+
+- **Account Information Service (AIS):**
+  - `/berlin-group/v1.3/accounts`
+  - `/berlin-group/v1.3/accounts/{account-id}/transactions`
+  - `/berlin-group/v1.3/accounts/{account-id}/balances`
+  - `/berlin-group/v1.3/consents`
+
+- **Payment Initiation Service (PIS):**
+  - `/berlin-group/v1.3/payments/{payment-product}/{payment-id}`
+  - `/berlin-group/v1.3/bulk-payments/{payment-product}`
+  - `/berlin-group/v1.3/periodic-payments/{payment-product}`
+
+- **Confirmation of Funds Service (PIIS):**
+  - `/berlin-group/v1.3/funds-confirmations`
+
+**Docker Compose Example:**
+
+```yaml
+version: "3.8"
+
+services:
+  obp-api-berlin-group:
+    image: openbankproject/obp-api
+    container_name: obp-api-berlin-group
+    ports:
+      - "8082:8080" # Berlin Group instance
+    environment:
+      - OBP_API_ENABLED_VERSIONS=[BGv1.3]
+      - OBP_API_DISABLED_VERSIONS=[]
+      - OBP_API_ENABLED_ENDPOINTS=[] # All BG endpoints
+      - OBP_BERLIN_GROUP_VERSION_1_CANONICAL_PATH=berlin-group/v1.3
+      - OBP_API_HOSTNAME=psd2-api.example.com
+      - OBP_SERVER_MODE=apis
+      - OBP_DB_URL=jdbc:postgresql://postgres:5432/obpdb
+    networks:
+      - public-network
+    depends_on:
+      - postgres
+    restart: unless-stopped
+```
+
+**Access Pattern:**
+
+```bash
+# Berlin Group endpoints are available
+curl https://psd2-api.example.com/berlin-group/v1.3/accounts
+# [SUCCESS]
+
+curl https://psd2-api.example.com/obp/v5.1.0/banks
+# [FAIL] 404 Not Found - OBP versions not enabled on this instance
+```
+
+#### 5.4.5 Multi-Instance Architecture
+
+Combining different instance types for optimal deployment:
+
+```
+                           ┌─────────────────┐
+                           │  Load Balancer  │
+                           └────────┬────────┘
+                                    │
+                 ┌──────────────────┼──────────────────┐
+                 │                  │                  │
+         ┌───────▼────────┐ ┌──────▼───────┐ ┌───────▼────────┐
+         │  Management    │ │ Berlin Group │ │   Public API   │
+         │   Instance     │ │   Instance   │ │    Instance    │
+         │                │ │              │ │                │
+         │ Port: 8081     │ │ Port: 8082   │ │  Port: 8080    │
+         │ Internal Only  │ │ PSD2/XS2A    │ │  OBP Standard  │
+         └────────────────┘ └──────────────┘ └────────────────┘
+                 │                  │                  │
+                 └──────────────────┼──────────────────┘
+                                    │
+                           ┌────────▼────────┐
+                           │   PostgreSQL    │
+                           │   (Shared DB)   │
+                           └─────────────────┘
+```
+
+**Nginx Configuration Example:**
+
+```nginx
+# Management instance - internal only
+upstream obp_management {
+    server 127.0.0.1:8081;
+}
+
+# Berlin Group instance - public
+upstream obp_berlin_group {
+    server 127.0.0.1:8082;
+}
+
+# Public API instance
+upstream obp_public {
+    server 127.0.0.1:8080;
+}
+
+# Management - internal network only
+server {
+    listen 443 ssl;
+    server_name admin-api.example.com;
+
+    # Restrict to internal IPs
+    allow 10.0.0.0/8;
+    allow 172.16.0.0/12;
+    deny all;
+
+    ssl_certificate /etc/ssl/certs/admin-cert.pem;
+    ssl_certificate_key /etc/ssl/private/admin-key.pem;
+
+    location / {
+        proxy_pass http://obp_management;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}
+
+# Berlin Group - public with stricter security
+server {
+    listen 443 ssl;
+    server_name psd2-api.example.com;
+
+    ssl_certificate /etc/ssl/certs/psd2-cert.pem;
+    ssl_certificate_key /etc/ssl/private/psd2-key.pem;
+
+    # Berlin Group specific paths
+    location /berlin-group/ {
+        proxy_pass http://obp_berlin_group;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+
+        # Additional PSD2 headers
+        proxy_set_header X-Request-ID $request_id;
+        proxy_set_header PSU-IP-Address $remote_addr;
+    }
+}
+
+# Public API
+server {
+    listen 443 ssl;
+    server_name api.example.com;
+
+    ssl_certificate /etc/ssl/certs/api-cert.pem;
+    ssl_certificate_key /etc/ssl/private/api-key.pem;
+
+    location / {
+        proxy_pass http://obp_public;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}
+```
+
+#### 5.4.6 Verification and Testing
+
+**Verify Enabled Versions:**
+
+```bash
+# Check available versions
+curl https://api.example.com/obp/v5.1.0/api/versions
+
+# Response shows only enabled versions
+{
+  "versions": [
+    {
+      "version": "v5.1.0",
+      "status": "STABLE"
+    }
+  ]
+}
+```
+
+**Verify Enabled Endpoints:**
+
+```bash
+# List all resource docs (only enabled endpoints appear)
+curl https://api.example.com/obp/v5.1.0/resource-docs/v5.1.0/obp
+
+# Test specific endpoint
+curl https://api.example.com/obp/v5.1.0/banks
+# Returns 404 if disabled, or data if enabled
+```
+
+**Check Swagger Documentation:**
+
+```bash
+# Swagger only shows enabled endpoints
+curl https://api.example.com/obp/v5.1.0/resource-docs/v5.1.0/swagger
+```
+
+**Testing Script:**
+
+```bash
+#!/bin/bash
+# test-endpoint-config.sh
+
+API_HOST="https://api.example.com"
+VERSION="v5.1.0"
+
+echo "Testing Management Endpoints..."
+curl -s "${API_HOST}/obp/${VERSION}/management/consumers" | \
+  jq -r '.code // "[OK] Enabled"'
+
+echo "Testing Public Endpoints..."
+curl -s "${API_HOST}/obp/${VERSION}/banks" | \
+  jq -r '.code // "[OK] Enabled"'
+
+echo "Testing Berlin Group Endpoints..."
+curl -s "${API_HOST}/berlin-group/v1.3/accounts" | \
+  jq -r '.code // "[OK] Enabled"'
+```
+
+#### 5.4.7 Best Practices
+
+1. **Principle of Least Privilege:**
+   - Enable only the endpoints needed for each instance's purpose
+   - Use whitelisting (enabled list) rather than blacklisting when possible
+
+2. **Documentation:**
+   - Document which endpoints are enabled on each instance
+   - Maintain separate Swagger/Resource Docs per instance type
+
+3. **Security Layers:**
+   - Combine endpoint filtering with network-level restrictions
+   - Use different domains for different instance types
+   - Apply appropriate authentication requirements per instance
+
+4. **Testing:**
+   - Test endpoint configurations in non-production environments first
+   - Verify both positive (enabled) and negative (disabled) cases
+   - Check that documentation endpoints remain accessible
+
+5. **Monitoring:**
+   - Monitor 404 errors to identify misconfigured clients
+   - Track usage patterns per instance type
+   - Alert on unexpected endpoint access attempts
+
+6. **Version Management:**
+   - When enabling new API versions, test thoroughly
+   - Consider gradual rollout of new versions
+   - Maintain backward compatibility where possible
+
 ---
 
 ## 6. Authentication and Security
@@ -1586,7 +2543,7 @@ Authorization: DirectLogin token="TOKEN"
 **Creating a Consent:**
 
 ```bash
-POST /obp/v5.1.0/consumer/consents
+POST /obp/v5.1.0/my/consents/IMPLICIT
 Authorization: Bearer ACCESS_TOKEN
 Content-Type: application/json
 
@@ -1600,6 +2557,8 @@ Content-Type: application/json
   "time_to_live": 7776000,
   "email": "user@example.com"
 }
+
+Note: Replace `IMPLICIT` with `SMS` or `EMAIL` for other SCA methods.
 ```
 
 **Challenge Flow (SCA):**
@@ -2026,6 +2985,7 @@ GET /obp/v5.1.0/management/metrics?
 ```bash
 GET /obp/v5.1.0/development/call-context
 # Returns current request context for debugging
+# Required role: CanGetCallContext
 ```
 
 **Log Cache:**
@@ -2100,9 +3060,35 @@ GET /obp/v5.1.0/root
 }
 ```
 
-### 9.3 Swagger Documentation
+### 9.3 API Documentation Formats
 
-**Accessing Swagger:**
+**Resource Docs (OBP Native Format):**
+
+OBP's native documentation format provides comprehensive endpoint information including roles, example bodies, and implementation details.
+
+```bash
+# OBP Standard
+GET /obp/v5.1.0/resource-docs/v5.1.0/obp
+
+# Berlin Group
+GET /obp/v5.1.0/resource-docs/BGv1.3/obp
+
+# UK Open Banking
+GET /obp/v5.1.0/resource-docs/UKv3.1/obp
+
+# Filter by tags
+GET /obp/v5.1.0/resource-docs/v5.1.0/obp?tags=Account,Bank
+
+# Filter by functions
+GET /obp/v5.1.0/resource-docs/v5.1.0/obp?functions=getBank,getAccounts
+
+# Filter by content type (dynamic/static)
+GET /obp/v5.1.0/resource-docs/v5.1.0/obp?content=dynamic
+```
+
+**Swagger Documentation:**
+
+Swagger/OpenAPI format for integration with standard API tools.
 
 ```bash
 # OBP Standard
@@ -2121,6 +3107,8 @@ GET /obp/v5.1.0/resource-docs/UKv3.1/swagger
 2. Import into API client
 3. Configure authentication
 4. Test endpoints
+
+**Note:** The Swagger format is generated from Resource Docs. Resource Docs contain additional information not available in Swagger format.
 
 ### 9.4 Common API Workflows
 
@@ -2150,7 +3138,7 @@ GET /obp/v5.1.0/banks/gh.29.uk/accounts/ACCOUNT_ID/owner/transactions
 # 1. Authenticate (OAuth2/OIDC recommended)
 
 # 2. Create consent
-POST /obp/v5.1.0/consumer/consents
+POST /obp/v5.1.0/my/consents/IMPLICIT
 {
   "everything": false,
   "account_access": [...],
@@ -2752,160 +3740,37 @@ The Open Bank Project follows an agile roadmap that evolves based on feedback fr
 
 ### 12.2 OBP-API-II (Next Generation API)
 
-**Status:** Under Active Development
+**Status:** Experimental
 
-**Purpose:** A modernized version of the OBP-API with improved architecture, performance, and developer experience.
-
-**Key Improvements:**
+**Purpose:** A modernized version of OBP-API for selected endpoints.
 
 **Architecture Enhancements:**
 
-- Enhanced modular design for better maintainability
-- Improved performance and scalability
-- Better separation of concerns
-- Modern Scala patterns and best practices
-- Enhanced error handling and logging
-
-**Developer Experience:**
-
-- Improved API documentation generation
-- Better test coverage and test utilities
-- Enhanced debugging capabilities
-- Streamlined development workflow
-- Modern build tools and dependency management
-
-**Features:**
-
-- Backward compatibility with existing OBP-API endpoints
-- Gradual migration path from OBP-API to OBP-API-II
-- Enhanced connector architecture
-- Improved dynamic endpoint capabilities
-- Better support for microservices patterns
+- Fewer dependencies including Jetty.
 
 **Technology Stack:**
 
 - Scala 2.13/3.x (upgraded from 2.12)
-- Modern Lift framework versions
-- Enhanced Akka integration
-- Improved database connection pooling
-- Better async/await patterns
-
-**Migration Strategy:**
-
-- Phased rollout alongside existing OBP-API
-- Comprehensive migration documentation
-- Backward compatibility layer
-- Automated migration tools
-- Zero-downtime upgrade path
-
-**Timeline:**
-
-- Alpha: Q1 2024 (Internal testing)
-- Beta: Q2 2024 (Selected bank pilots)
-- Production Ready: Q3-Q4 2024
-- General Availability: 2025
-
-**Benefits:**
-
-- 30-50% performance improvement
-- Reduced memory footprint
-- Better horizontal scaling
-- Improved developer productivity
-- Enhanced maintainability
 
 ### 12.3 OBP-Dispatch (Request Router)
 
-**Status:** Production Ready
+**Status:** In Development
 
-**Purpose:** A lightweight proxy/router to intelligently route API requests to different OBP-API backend instances based on configurable rules.
+**Purpose:** A lightweight proxy/router to route API requests to different OBP-API implementations.
 
 **Key Features:**
 
-**Intelligent Routing:**
+**Routing:**
 
-- Route by bank ID
-- Route by API version
-- Route by endpoint pattern
-- Route by geographic region
-- Custom routing rules via configuration
-
-**Load Balancing:**
-
-- Round-robin distribution
-- Weighted distribution
-- Health check integration
-- Automatic failover
-- Circuit breaker pattern
-
-**Multi-Backend Support:**
-
-- Multiple OBP-API backends
-- Different versions simultaneously
-- Geographic distribution
-- Blue-green deployments
-- Canary releases
-
-**Configuration:**
-
-```conf
-# application.conf example
-dispatch {
-  backends {
-    backend1 {
-      host = "obp-api-1.example.com"
-      port = 8080
-      weight = 50
-      regions = ["EU"]
-    }
-    backend2 {
-      host = "obp-api-2.example.com"
-      port = 8080
-      weight = 50
-      regions = ["US"]
-    }
-  }
-
-  routing {
-    rules = [
-      {
-        pattern = "/obp/v5.*"
-        backends = ["backend1"]
-      },
-      {
-        pattern = "/obp/v4.*"
-        backends = ["backend2"]
-      }
-    ]
-  }
-}
-```
+- Route traffic according to Resouce Docs available on OBP-API-II, OBP-Trading or OBP-API
 
 **Use Cases:**
 
-1. **Version Migration:**
-   - Route v4.0.0 traffic to legacy servers
-   - Route v5.1.0 traffic to new servers
-   - Gradual version rollout
+1. **Implementation Migration:**
+   - Re-Implement an endpoint in OBP-API-II
 
-2. **Geographic Distribution:**
-   - Route EU banks to EU data center
-   - Route US banks to US data center
-   - Compliance with data residency
-
-3. **A/B Testing:**
-   - Test new features with subset of traffic
-   - Compare performance metrics
-   - Gradual feature rollout
-
-4. **High Availability:**
-   - Automatic failover to backup
-   - Health monitoring
-   - Load distribution
-
-5. **Multi-Tenant Isolation:**
-   - Route premium banks to dedicated servers
-   - Isolate high-volume customers
-   - Resource optimization
+2. **New Endpoint implementation:**
+   - Implement a new endpoint in OBP-API-II or OBP-Trading
 
 **Deployment:**
 
@@ -2933,44 +3798,11 @@ docker run -p 8080:8080 \
          ┌───────────────────┼───────────────────┐
          │                   │                   │
     ┌────▼────┐         ┌────▼────┐        ┌────▼────┐
-    │ OBP-API │         │ OBP-API │        │ OBP-API │
+    │ OBP-API │         │ OBP-API-II │     │ OBP-Trading │
     │ v4.0.0  │         │ v5.0.0  │        │ v5.1.0  │
     │ (EU)    │         │ (US)    │        │ (APAC)  │
     └─────────┘         └─────────┘        └─────────┘
 ```
-
-**Benefits:**
-
-- Simplified client configuration
-- Centralized routing logic
-- Easy version migration
-- Geographic optimization
-- High availability
-
-**Monitoring:**
-
-- Request/response metrics
-- Backend health status
-- Routing decision logs
-- Performance analytics
-- Error tracking
-
-### 12.4 Upcoming Features (All Components)
-
-**API Version 6.0.0:**
-
-- Enhanced consent management
-- Improved transaction categorization
-- Advanced analytics endpoints
-- Machine learning integration APIs
-- Real-time notifications via WebSockets
-- GraphQL support (experimental)
-
-**Standards Compliance:**
-
-- PSD3 preparation (European Union)
-- FDX 5.0 support (North America)
-- CDR 2.0 enhancements (Australia
 
 ### 12.1 Glossary
 
@@ -3009,6 +3841,8 @@ docker run -p 8080:8080 \
 **View:** Permission set controlling data visibility
 
 **Webhook:** HTTP callback triggered by events
+
+See the OBP Glossary for a full list of terms.
 
 ### 12.2 Environment Variables Reference
 
@@ -3064,7 +3898,9 @@ LANGCHAIN_TRACING_V2=true
 LANGCHAIN_API_KEY=lsv2_pt_...
 ```
 
-### 12.3 Props File Complete Reference
+### 12.3 OBP API props examples
+
+see sample.props.template for comprehensive list of props
 
 **Core Settings:**
 
@@ -3641,7 +4477,6 @@ GET  /obp/v5.1.0/users                         # List users
 - GitHub: https://github.com/OpenBankProject
 - API Sandbox: https://apisandbox.openbankproject.com
 - API Explorer: https://apiexplorer-ii-sandbox.openbankproject.com
-- Documentation: https://github.com/OpenBankProject/OBP-API/wiki
 
 **Standards:**
 
@@ -3649,12 +4484,12 @@ GET  /obp/v5.1.0/users                         # List users
 - UK Open Banking: https://www.openbanking.org.uk
 - PSD2: https://ec.europa.eu/info/law/payment-services-psd-2-directive-eu-2015-2366_en
 - FAPI: https://openid.net/wg/fapi/
+- Open Bank Project: https://apiexplorer-ii-sandbox.openbankproject.com
 
 **Community:**
 
-- Slack: openbankproject.slack.com
+- RocketChat: https://chat.openbankproject.com
 - Twitter: @openbankproject
-- Mailing List: https://groups.google.com/g/openbankproject
 
 **Support:**
 
@@ -3673,7 +4508,7 @@ GET  /obp/v5.1.0/users                         # List users
 - v3.0.0 (2020) - OAuth 2.0, OIDC support
 - v2.2.0 (2018) - Consent management
 - v2.0.0 (2017) - API standardization
-- v1.4.0 (2016) - First production release
+- v1.4.0 (2016) - Early Release
 
 **Status Definitions:**
 
@@ -3686,46 +4521,11 @@ GET  /obp/v5.1.0/users                         # List users
 
 ## Conclusion
 
-This comprehensive documentation provides a complete reference for deploying, configuring, and managing the Open Bank Project platform. The OBP ecosystem offers a robust, standards-compliant solution for Open Banking implementations with extensive authentication options, security mechanisms, and monitoring capabilities.
-
-For the latest updates and community support, visit the official Open Bank Project GitHub repository and join the community channels.
-
-**Document Version:** 1.0
-**Last Updated:** January 2024
+For the latest updates visit Open Bank Project GitHub or contact TESOBE.
+**This Document Version:** 0.2
+**Last Updated:** October 29 2025
 **Maintained By:** TESOBE GmbH
-**License:** This documentation is released under Creative Commons Attribution 4.0 International License
-
----
-
-**© 2010-2024 TESOBE GmbH. Open Bank Project is licensed under AGPL V3 and commercial licenses.** - OBP_OAUTH2_JWK_SET_URL=http://keycloak:8080/realms/obp/protocol/openid-connect/certs
-depends_on: - postgres - redis
-networks: - obp-network
-
-postgres:
-image: postgres:14
-environment: - POSTGRES_DB=obpdb - POSTGRES_USER=obp - POSTGRES_PASSWORD=xxx
-volumes: - postgres-data:/var/lib/postgresql/data
-networks: - obp-network
-
-redis:
-image: redis:7
-networks: - obp-network
-
-keycloak:
-image: quay.io/keycloak/keycloak:latest
-environment: - KEYCLOAK_ADMIN=admin - KEYCLOAK_ADMIN_PASSWORD=admin
-ports: - "7070:8080"
-networks: - obp-network
-
-networks:
-obp-network:
-
-volumes:
-postgres-data:
-
-````
-
----
+**License:** AGPL V3
 
 ## 6. Authentication and Security
 
@@ -3736,6 +4536,7 @@ postgres-data:
 **Overview:** Legacy OAuth method, still supported for backward compatibility
 
 **Flow:**
+
 1. Request temporary credentials (request token)
 2. Redirect user to authorization endpoint
 3. User grants access
@@ -3743,10 +4544,11 @@ postgres-data:
 5. Use access token for API requests
 
 **Configuration:**
+
 ```properties
 # Enable OAuth 1.0a (enabled by default)
 allow_oauth1=true
-````
+```
 
 **Example Request:**
 
@@ -4009,115 +4811,10 @@ PUT /management/consumers/{CONSUMER_ID}
 PUT /management/consumers/{CONSUMER_ID}/consumer/certificate
 ```
 
-### 6.4 SSL/TLS Configuration
-
-#### 6.4.1 SSL with PostgreSQL
-
-**Generate SSL Certificates:**
-
-```bash
-# Create SSL directory
-sudo mkdir -p /etc/postgresql/ssl
-cd /etc/postgresql/ssl
-
-# Generate private key
-sudo openssl genrsa -out server.key 2048
-
-# Generate certificate signing request
-sudo openssl req -new -key server.key -out server.csr
-
-# Self-sign certificate (or use CA-signed)
-sudo openssl x509 -req -days 365 -in server.csr -signkey server.key -out server.crt
-
-# Set permissions
-sudo chmod 600 server.key
-sudo chown postgres:postgres server.key server.crt
-```
-
-**PostgreSQL Configuration (`postgresql.conf`):**
-
-```ini
-ssl = on
-ssl_cert_file = '/etc/postgresql/ssl/server.crt'
-ssl_key_file = '/etc/postgresql/ssl/server.key'
-ssl_ca_file = '/etc/postgresql/ssl/ca.crt'  # Optional
-ssl_prefer_server_ciphers = on
-ssl_ciphers = 'HIGH:MEDIUM:+3DES:!aNULL'
-```
-
-**OBP-API Props:**
-
-```properties
-db.url=jdbc:postgresql://localhost:5432/obpdb?user=obp&password=xxx&ssl=true&sslmode=require
-```
-
-#### 6.4.2 SSL Encryption with Props File
-
-**Generate Keystore:**
-
-```bash
-# Generate keystore with key pair
-keytool -genkeypair -alias obp-api \
-  -keyalg RSA -keysize 2048 \
-  -keystore /path/to/api.keystore.jks \
-  -validity 365
-
-# Export public certificate
-keytool -export -alias obp-api \
-  -keystore /path/to/api.keystore.jks \
-  -rfc -file apipub.cert
-
-# Extract public key
-openssl x509 -pubkey -noout -in apipub.cert > public_key.pub
-```
-
-**Encrypt Props Values:**
-
-```bash
-#!/bin/bash
-# encrypt_prop.sh
-echo -n "$2" | openssl pkeyutl \
-  -pkeyopt rsa_padding_mode:pkcs1 \
-  -encrypt \
-  -pubin \
-  -inkey "$1" \
-  -out >(base64)
-```
-
-**Usage:**
-
-```bash
-./encrypt_prop.sh /path/to/public_key.pub "my-secret-password"
-# Outputs: BASE64_ENCODED_ENCRYPTED_VALUE
-```
-
-**Props Configuration:**
-
-```properties
-# Enable JWT encryption
-jwt.use.ssl=true
-keystore.path=/path/to/api.keystore.jks
-keystore.alias=obp-api
-
-# Encrypted property
-db.password.is_encrypted=true
-db.password=BASE64_ENCODED_ENCRYPTED_VALUE
-```
-
-#### 6.4.3 Password Obfuscation (Jetty)
-
-**Generate Obfuscated Password:**
-
-```bash
-java -cp /usr/share/jetty9/lib/jetty-util-*.jar \
-  org.eclipse.jetty.util.security.Password \
-### 12.5 Complete API Roles Reference
-
-OBP-API uses a comprehensive role-based access control (RBAC) system with over **334 static roles**. Roles control access to specific API endpoints and operations.
-
 #### Role Naming Convention
 
 Roles follow a consistent naming pattern:
+
 - `Can[Action][Resource][Scope]`
 - **Action:** Create, Get, Update, Delete, Read, Add, Maintain, Search, Enable, Disable, etc.
 - **Resource:** Account, Customer, Bank, Transaction, Product, Card, Branch, ATM, etc.
@@ -4126,220 +4823,411 @@ Roles follow a consistent naming pattern:
 #### Common Role Patterns
 
 **System-Level Roles** (requiresBankId = false):
+
 - Apply across all banks
 - Examples: `CanGetAnyUser`, `CanCreateBank`, `CanReadMetrics`
 
 **Bank-Level Roles** (requiresBankId = true):
+
 - Scoped to a specific bank
 - Examples: `CanCreateCustomer`, `CanCreateBranch`, `CanGetMetricsAtOneBank`
 
 #### Key Role Categories
 
-**Account Management** (35+ roles):
-```
+**Account Management:**
 
-CanCreateAccount
-CanUpdateAccount
-CanGetAccountsHeldAtOneBank
-CanGetAccountsHeldAtAnyBank
-CanCreateAccountAttributeAtOneBank
-CanUpdateAccountAttribute
-CanDeleteAccountCascade
-...
+- CanCreateAccount
+- CanUpdateAccount
+- CanGetAccountsHeldAtOneBank
+- CanGetAccountsHeldAtAnyBank
+- CanCreateAccountAttributeAtOneBank
+- CanUpdateAccountAttribute
+- CanDeleteAccountCascade
+- CanCreateAccountAttributeDefinitionAtOneBank
+- CanDeleteAccountAttributeDefinitionAtOneBank
+- CanGetAccountAttributeDefinitionAtOneBank
+- CanUpdateAccountAttribute
+- CanGetAccountApplications
+- CanUpdateAccountApplications
+- CanGetAccountsMinimalForCustomerAtAnyBank
+- CanUseAccountFirehose
+- CanUseAccountFirehoseAtAnyBank
+- CanSeeAccountAccessForAnyUser
 
-```
+**Customer Management:**
 
-**Customer Management** (40+ roles):
-```
+- CanCreateCustomer
+- CanCreateCustomerAtAnyBank
+- CanGetCustomer
+- CanGetCustomers
+- CanGetCustomersAtAnyBank
+- CanGetCustomersMinimal
+- CanGetCustomersMinimalAtAnyBank
+- CanGetCustomerOverview
+- CanGetCustomerOverviewFlat
+- CanUpdateCustomerEmail
+- CanUpdateCustomerNumber
+- CanUpdateCustomerMobilePhoneNumber
+- CanUpdateCustomerIdentity
+- CanUpdateCustomerBranch
+- CanUpdateCustomerData
+- CanUpdateCustomerCreditLimit
+- CanUpdateCustomerCreditRatingAndSource
+- CanUpdateCustomerCreditRatingAndSourceAtAnyBank
+- CanGetCorrelatedUsersInfo
+- CanGetCorrelatedUsersInfoAtAnyBank
+- CanCreateCustomerAccountLink
+- CanDeleteCustomerAccountLink
+- CanGetCustomerAccountLink
+- CanGetCustomerAccountLinks
+- CanUpdateCustomerAccountLink
+- CanCreateCustomerAttributeAtOneBank
+- CanCreateCustomerAttributeAtAnyBank
+- CanCreateCustomerAttributeDefinitionAtOneBank
+- CanGetCustomerAttributeAtOneBank
+- CanGetCustomerAttributeAtAnyBank
+- CanGetCustomerAttributesAtOneBank
+- CanGetCustomerAttributesAtAnyBank
+- CanGetCustomerAttributeDefinitionAtOneBank
+- CanUpdateCustomerAttributeAtOneBank
+- CanUpdateCustomerAttributeAtAnyBank
+- CanDeleteCustomerAttributeAtOneBank
+- CanDeleteCustomerAttributeAtAnyBank
+- CanDeleteCustomerAttributeDefinitionAtOneBank
+- CanCreateCustomerAddress
+- CanGetCustomerAddress
+- CanDeleteCustomerAddress
+- CanCreateCustomerMessage
+- CanGetCustomerMessages
+- CanDeleteCustomerCascade
+- CanUseCustomerFirehoseAtAnyBank
 
-CanCreateCustomer
-CanCreateCustomerAtAnyBank
-CanGetCustomer
-CanGetCustomersAtAnyBank
-CanUpdateCustomerEmail
-CanUpdateCustomerData
-CanCreateCustomerAccountLink
-CanCreateCustomerAttributeAtOneBank
-...
+**Transaction Management:**
 
-```
+- CanCreateAnyTransactionRequest
+- CanGetTransactionRequestAtAnyBank
+- CanUpdateTransactionRequestStatusAtAnyBank
+- CanCreateTransactionAttributeAtOneBank
+- CanCreateTransactionAttributeDefinitionAtOneBank
+- CanGetTransactionAttributeAtOneBank
+- CanGetTransactionAttributesAtOneBank
+- CanGetTransactionAttributeDefinitionAtOneBank
+- CanUpdateTransactionAttributeAtOneBank
+- CanDeleteTransactionAttributeDefinitionAtOneBank
+- CanCreateTransactionRequestAttributeAtOneBank
+- CanCreateTransactionRequestAttributeDefinitionAtOneBank
+- CanGetTransactionRequestAttributeAtOneBank
+- CanGetTransactionRequestAttributesAtOneBank
+- CanGetTransactionRequestAttributeDefinitionAtOneBank
+- CanUpdateTransactionRequestAttributeAtOneBank
+- CanDeleteTransactionRequestAttributeDefinitionAtOneBank
+- CanCreateHistoricalTransaction
+- CanCreateHistoricalTransactionAtBank
+- CanDeleteTransactionCascade
+- CanCreateTransactionType
+- CanGetDoubleEntryTransactionAtOneBank
+- CanGetDoubleEntryTransactionAtAnyBank
 
-**Transaction Management** (25+ roles):
-```
+**Bank Resource Management:**
 
-CanCreateAnyTransactionRequest
-CanGetTransactionRequestAtAnyBank
-CanUpdateTransactionRequestStatusAtAnyBank
-CanCreateTransactionAttributeAtOneBank
-CanCreateHistoricalTransaction
-...
+- CanCreateBranch
+- CanCreateBranchAtAnyBank
+- CanUpdateBranch
+- CanDeleteBranch
+- CanDeleteBranchAtAnyBank
+- CanCreateAtm
+- CanCreateAtmAtAnyBank
+- CanUpdateAtm
+- CanUpdateAtmAtAnyBank
+- CanDeleteAtm
+- CanDeleteAtmAtAnyBank
+- CanCreateAtmAttribute
+- CanCreateAtmAttributeAtAnyBank
+- CanGetAtmAttribute
+- CanGetAtmAttributeAtAnyBank
+- CanUpdateAtmAttribute
+- CanUpdateAtmAttributeAtAnyBank
+- CanDeleteAtmAttribute
+- CanDeleteAtmAttributeAtAnyBank
+- CanCreateFxRate
+- CanCreateFxRateAtAnyBank
+- CanReadFx
+- CanDeleteBankCascade
+- CanCreateBankAttribute
+- CanGetBankAttribute
+- CanUpdateBankAttribute
+- CanDeleteBankAttribute
+- CanCreateBankAttributeDefinitionAtOneBank
+- CanCreateBankAccountBalance
+- CanGetBankAccountBalance
+- CanGetBankAccountBalances
+- CanUpdateBankAccountBalance
+- CanDeleteBankAccountBalance
 
-```
+**User & Entitlement Management:**
 
-**Bank Resource Management** (50+ roles):
-```
+- CanCreateUserCustomerLink
+- CanCreateUserCustomerLinkAtAnyBank
+- CanGetUserCustomerLink
+- CanGetUserCustomerLinkAtAnyBank
+- CanDeleteUserCustomerLink
+- CanDeleteUserCustomerLinkAtAnyBank
+- CanCreateEntitlementAtOneBank
+- CanCreateEntitlementAtAnyBank
+- CanDeleteEntitlementAtOneBank
+- CanDeleteEntitlementAtAnyBank
+- CanGetEntitlementsForOneBank
+- CanGetEntitlementsForAnyBank
+- CanGetEntitlementsForAnyUserAtOneBank
+- CanGetEntitlementsForAnyUserAtAnyBank
+- CanGetEntitlementRequestsAtAnyBank
+- CanDeleteEntitlementRequestsAtAnyBank
+- CanCreateUserAuthContext
+- CanCreateUserAuthContextUpdate
+- CanGetUserAuthContext
+- CanDeleteUserAuthContext
+- CanCreateUserInvitation
+- CanGetUserInvitation
+- CanRefreshUser
+- CanSyncUser
+- CanReadUserLockedStatus
+- CanCreateResetPasswordUrl
 
-CanCreateBank
-CanCreateBranch
-CanCreateAtm
-CanCreateProduct
-CanCreateFxRate
-CanDeleteBranchAtAnyBank
-CanUpdateAtm
-...
+**Consumer & API Management:**
 
-```
+- CanCreateConsumer
+- CanGetConsumers
+- CanEnableConsumers
+- CanDisableConsumers
+- CanUpdateConsumerName
+- CanUpdateConsumerRedirectUrl
+- CanUpdateConsumerLogoUrl
+- CanUpdateConsumerCertificate
+- CanSetCallLimits
+- CanReadCallLimits
+- CanDeleteRateLimiting
+- CanReadMetrics
+- CanGetMetricsAtOneBank
+- CanSearchMetrics
+- CanGetConfig
+- CanGetConnectorMetrics
+- CanGetAdapterInfo
+- CanGetAdapterInfoAtOneBank
+- CanGetDatabaseInfo
+- CanGetSystemIntegrity
+- CanGetCallContext
 
-**User & Entitlement Management** (30+ roles):
-```
+**Dynamic Resources:**
 
-CanGetAnyUser
-CanCreateEntitlementAtOneBank
-CanCreateEntitlementAtAnyBank
-CanDeleteEntitlementAtAnyBank
-CanGetEntitlementsForAnyUserAtAnyBank
-CanCreateUserCustomerLink
-...
+- CanCreateDynamicEndpoint
+- CanGetDynamicEndpoint
+- CanGetDynamicEndpoints
+- CanUpdateDynamicEndpoint
+- CanDeleteDynamicEndpoint
+- CanCreateBankLevelDynamicEndpoint
+- CanGetBankLevelDynamicEndpoint
+- CanGetBankLevelDynamicEndpoints
+- CanUpdateBankLevelDynamicEndpoint
+- CanDeleteBankLevelDynamicEndpoint
+- CanCreateSystemLevelDynamicEntity
+- CanGetSystemLevelDynamicEntities
+- CanUpdateSystemLevelDynamicEntity
+- CanDeleteSystemLevelDynamicEntity
+- CanCreateBankLevelDynamicEntity
+- CanGetBankLevelDynamicEntities
+- CanUpdateBankLevelDynamicEntity
+- CanDeleteBankLevelDynamicEntity
+- CanCreateDynamicResourceDoc
+- CanGetDynamicResourceDoc
+- CanGetAllDynamicResourceDocs
+- CanUpdateDynamicResourceDoc
+- CanDeleteDynamicResourceDoc
+- CanReadDynamicResourceDocsAtOneBank
+- CanCreateBankLevelDynamicResourceDoc
+- CanGetBankLevelDynamicResourceDoc
+- CanGetAllBankLevelDynamicResourceDocs
+- CanUpdateBankLevelDynamicResourceDoc
+- CanDeleteBankLevelDynamicResourceDoc
+- CanCreateDynamicMessageDoc
+- CanGetDynamicMessageDoc
+- CanGetAllDynamicMessageDocs
+- CanUpdateDynamicMessageDoc
+- CanDeleteDynamicMessageDoc
+- CanCreateBankLevelDynamicMessageDoc
+- CanGetBankLevelDynamicMessageDoc
+- CanDeleteBankLevelDynamicMessageDoc
+- CanCreateEndpointMapping
+- CanGetEndpointMapping
+- CanGetAllEndpointMappings
+- CanUpdateEndpointMapping
+- CanDeleteEndpointMapping
+- CanCreateBankLevelEndpointMapping
+- CanGetBankLevelEndpointMapping
+- CanGetAllBankLevelEndpointMappings
+- CanUpdateBankLevelEndpointMapping
+- CanDeleteBankLevelEndpointMapping
+- CanCreateMethodRouting
+- CanGetMethodRoutings
+- CanUpdateMethodRouting
+- CanDeleteMethodRouting
+- CanCreateConnectorMethod
+- CanGetConnectorMethod
+- CanGetAllConnectorMethods
+- CanUpdateConnectorMethod
+- CanGetConnectorEndpoint
+- CanCreateSystemLevelEndpointTag
+- CanGetSystemLevelEndpointTag
+- CanUpdateSystemLevelEndpointTag
+- CanDeleteSystemLevelEndpointTag
+- CanCreateBankLevelEndpointTag
+- CanGetBankLevelEndpointTag
+- CanUpdateBankLevelEndpointTag
+- CanDeleteBankLevelEndpointTag
+- CanGetAllApiCollections
+- CanGetApiCollectionsForUser
+- CanReadResourceDoc
+- CanReadStaticResourceDoc
+- CanReadGlossary
 
-```
+**Consent Management:**
 
-**Consumer & API Management** (20+ roles):
-```
+- CanGetConsentsAtOneBank
+- CanGetConsentsAtAnyBank
+- CanUpdateConsentStatusAtOneBank
+- CanUpdateConsentStatusAtAnyBank
+- CanUpdateConsentAccountAccessAtOneBank
+- CanUpdateConsentAccountAccessAtAnyBank
+- CanUpdateConsentUserAtOneBank
+- CanUpdateConsentUserAtAnyBank
+- CanRevokeConsentAtBank
 
-CanCreateConsumer
-CanGetConsumers
-CanEnableConsumers
-CanDisableConsumers
-CanSetCallLimits
-CanReadCallLimits
-CanReadMetrics
-CanGetConfig
-...
+**Security & Compliance:**
 
-```
+- CanAddKycCheck
+- CanGetAnyKycChecks
+- CanAddKycDocument
+- CanGetAnyKycDocuments
+- CanAddKycMedia
+- CanGetAnyKycMedia
+- CanAddKycStatus
+- CanGetAnyKycStatuses
+- CanCreateRegulatedEntity
+- CanDeleteRegulatedEntity
+- CanCreateRegulatedEntityAttribute
+- CanGetRegulatedEntityAttribute
+- CanGetRegulatedEntityAttributes
+- CanUpdateRegulatedEntityAttribute
+- CanDeleteRegulatedEntityAttribute
+- CanCreateAuthenticationTypeValidation
+- CanGetAuthenticationTypeValidation
+- CanUpdateAuthenticationTypeValidation
+- CanDeleteAuthenticationValidation
+- CanCreateJsonSchemaValidation
+- CanGetJsonSchemaValidation
+- CanUpdateJsonSchemaValidation
+- CanDeleteJsonSchemaValidation
+- CanCreateTaxResidence
+- CanGetTaxResidence
+- CanDeleteTaxResidence
 
-**Dynamic Resources** (40+ roles):
-```
+**Logging & Monitoring:**
 
-CanCreateDynamicEntity
-CanCreateBankLevelDynamicEntity
-CanCreateDynamicEndpoint
-CanCreateBankLevelDynamicEndpoint
-CanCreateDynamicResourceDoc
-CanCreateBankLevelDynamicResourceDoc
-CanCreateDynamicMessageDoc
-CanGetMethodRoutings
-CanCreateMethodRouting
-...
+- CanGetTraceLevelLogsAtOneBank
+- CanGetTraceLevelLogsAtAllBanks
+- CanGetDebugLevelLogsAtOneBank
+- CanGetDebugLevelLogsAtAllBanks
+- CanGetInfoLevelLogsAtOneBank
+- CanGetInfoLevelLogsAtAllBanks
+- CanGetWarningLevelLogsAtOneBank
+- CanGetWarningLevelLogsAtAllBanks
+- CanGetErrorLevelLogsAtOneBank
+- CanGetErrorLevelLogsAtAllBanks
+- CanGetAllLevelLogsAtOneBank
+- CanGetAllLevelLogsAtAllBanks
 
-```
+**Views & Permissions:**
 
-**Consent Management** (10+ roles):
-```
+- CanCreateSystemView
+- CanGetSystemView
+- CanUpdateSystemView
+- CanDeleteSystemView
+- CanCreateSystemViewPermission
+- CanDeleteSystemViewPermission
 
-CanUpdateConsentStatusAtOneBank
-CanUpdateConsentStatusAtAnyBank
-CanUpdateConsentAccountAccessAtOneBank
-CanRevokeConsentAtBank
-CanGetConsentsAtOneBank
-...
+**Cards:**
 
-```
+- CanCreateCardsForBank
+- CanGetCardsForBank
+- CanUpdateCardsForBank
+- CanDeleteCardsForBank
+- CanCreateCardAttributeDefinitionAtOneBank
+- CanGetCardAttributeDefinitionAtOneBank
+- CanDeleteCardAttributeDefinitionAtOneBank
 
-**Security & Compliance** (20+ roles):
-```
+**Products & Fees:**
 
-CanAddKycCheck
-CanAddKycDocument
-CanGetAnyKycChecks
-CanCreateRegulatedEntity
-CanDeleteRegulatedEntity
-CanCreateAuthenticationTypeValidation
-CanCreateJsonSchemaValidation
-...
+- CanCreateProduct
+- CanCreateProductAtAnyBank
+- CanCreateProductAttribute
+- CanGetProductAttribute
+- CanUpdateProductAttribute
+- CanDeleteProductAttribute
+- CanCreateProductAttributeDefinitionAtOneBank
+- CanGetProductAttributeDefinitionAtOneBank
+- CanDeleteProductAttributeDefinitionAtOneBank
+- CanCreateProductFee
+- CanGetProductFee
+- CanUpdateProductFee
+- CanDeleteProductFee
+- CanDeleteProductCascade
+- CanMaintainProductCollection
 
-```
+**Webhooks:**
 
-**Logging & Monitoring** (15+ roles):
-```
+- CanCreateWebhook
+- CanGetWebhooks
+- CanUpdateWebhook
+- CanCreateSystemAccountNotificationWebhook
+- CanCreateAccountNotificationWebhookAtOneBank
 
-CanGetTraceLevelLogsAtOneBank
-CanGetDebugLevelLogsAtAllBanks
-CanGetInfoLevelLogsAtOneBank
-CanGetErrorLevelLogsAtAllBanks
-CanGetAllLevelLogsAtAllBanks
-CanGetConnectorMetrics
-...
+**Data Management:**
 
-```
-
-**Views & Permissions** (15+ roles):
-```
-
-CanCreateSystemView
-CanUpdateSystemView
-CanDeleteSystemView
-CanCreateSystemViewPermission
-CanDeleteSystemViewPermission
-...
-
-```
-
-**Cards** (10+ roles):
-```
-
-CanCreateCardsForBank
-CanUpdateCardsForBank
-CanDeleteCardsForBank
-CanGetCardsForBank
-CanCreateCardAttributeDefinitionAtOneBank
-...
-
-```
-
-**Products & Fees** (15+ roles):
-```
-
-CanCreateProduct
-CanCreateProductAtAnyBank
-CanCreateProductFee
-CanUpdateProductFee
-CanDeleteProductFee
-CanGetProductFee
-CanMaintainProductCollection
-...
-
-```
-
-**Webhooks** (5+ roles):
-```
-
-CanCreateWebhook
-CanUpdateWebhook
-CanGetWebhooks
-CanCreateSystemAccountNotificationWebhook
-CanCreateAccountNotificationWebhookAtOneBank
-
-```
-
-**Data Management** (20+ roles):
-```
-
-CanCreateSandbox
-CanCreateHistoricalTransaction
-CanUseAccountFirehoseAtAnyBank
-CanUseCustomerFirehoseAtAnyBank
-CanDeleteTransactionCascade
-CanDeleteBankCascade
-CanDeleteProductCascade
-CanDeleteCustomerCascade
-...
+- CanCreateSandbox
+- CanSearchWarehouse
+- CanSearchWarehouseStatistics
+- CanCreateDirectDebitAtOneBank
+- CanCreateStandingOrderAtOneBank
+- CanCreateCounterparty
+- CanCreateCounterpartyAtAnyBank
+- CanGetCounterparty
+- CanGetCounterpartyAtAnyBank
+- CanGetCounterparties
+- CanGetCounterpartiesAtAnyBank
+- CanDeleteCounterparty
+- CanDeleteCounterpartyAtAnyBank
+- CanAddSocialMediaHandle
+- CanGetSocialMediaHandles
+- CanUpdateAgentStatusAtOneBank
+- CanUpdateAgentStatusAtAnyBank
 
 ````
+
+**Scopes:**
+
+- CanCreateScopeAtOneBank
+- CanCreateScopeAtAnyBank
+- CanDeleteScopeAtAnyBank
+
+**Web UI:**
+
+- CanCreateWebUiProps
+- CanGetWebUiProps
+- CanDeleteWebUiProps
 
 #### Viewing All Roles
 
 **Via API:**
+
 ```bash
 GET /obp/v5.1.0/roles
 Authorization: DirectLogin token="TOKEN"
@@ -4417,17 +5305,17 @@ OBP-API-II is a leaner tech stack for future Open Bank Project API versions with
 **Status:** Experimental/Beta
 
 **Overview:**
-OBP-Dispatch is a lightweight proxy/gateway service designed to route requests to different OBP API backends.
-It is designed to route traffic to OBP-API or OBP-API-II or OBP-Trading instances.
+OBP-Dispatch is a lightweight proxy/gateway service designed to route requests
+to OBP-API or OBP-API-II or OBP-Trading instances.
 
 **Key Features:**
 
-- **Request Routing:** Intelligent routing based on configurable rules and discovery
+- **Request Routing:** Routing based on Endpoint implementation.
 
 **Use Cases:**
 
 1. **API Version Management:**
-   - Gradual rollout of new API versions on different code bases.
+   - Routing to new OBP implementations.
 
 **Architecture:**
 
@@ -4449,12 +5337,6 @@ Client Request
 └──────┘ └──────┘ └──────┘ └──────┘
 ```
 
-**Configuration:**
-
-- Config file: `application.conf`
-- Routing rules: Based on headers, paths, or custom logic
-- Backend definitions: Multiple OBP-API endpoints
-
 **Deployment:**
 
 ```bash
@@ -4465,40 +5347,3 @@ mvn clean package
 # Run
 java -jar target/OBP-API-Dispatch-1.0-SNAPSHOT-jar-with-dependencies.jar
 ```
-
-**Configuration Example:**
-
-```hocon
-# application.conf
-dispatch {
-  backends = [
-    {
-      name = "primary"
-      url = "http://obp-api-primary:8080"
-      weight = 80
-    },
-    {
-      name = "secondary"
-      url = "http://obp-api-secondary:8080"
-      weight = 20
-    }
-  ]
-
-  routing {
-    rules = [
-      {
-        pattern = "/obp/v5.*"
-        backend = "primary"
-      },
-      {
-        pattern = "/obp/v4.*"
-        backend = "secondary"
-      }
-    ]
-  }
-}
-```
-
-**Status & Maturity:**
-
-- Currently in experimental phase
