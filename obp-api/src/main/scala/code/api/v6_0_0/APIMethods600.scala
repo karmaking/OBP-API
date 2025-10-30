@@ -4,12 +4,14 @@ import code.api.{APIFailureNewStyle, DirectLogin, ObpApiFailure}
 import code.api.v6_0_0.JSONFactory600
 import code.api.ResourceDocs1_4_0.SwaggerDefinitionsJSON._
 import code.api.util.APIUtil._
-import code.api.util.ApiRole.{CanCreateEntitlementAtOneBank, CanReadDynamicResourceDocsAtOneBank, canCreateBank, canDeleteRateLimits, canReadCallLimits, canCreateRateLimits}
+import code.api.util.ApiRole.{CanCreateEntitlementAtOneBank, CanReadDynamicResourceDocsAtOneBank, canCreateBank, canCreateRateLimits, canDeleteRateLimits, canReadCallLimits, canUpdateRateLimits}
 import code.api.util.ApiTag._
 import code.api.util.ErrorMessages.{$UserNotLoggedIn, InvalidDateFormat, InvalidJsonFormat, UnknownError, _}
 import code.api.util.FutureUtil.EndpointContext
 import code.api.util.{APIUtil, ErrorMessages, NewStyle, RateLimitingUtil}
 import code.api.util.NewStyle.HttpCode
+import code.api.v4_0_0.CallLimitPostJsonV400
+import code.api.v4_0_0.JSONFactory400.createCallsLimitJson
 import code.api.v5_0_0.{JSONFactory500, PostBankJson500}
 import code.api.v6_0_0.JSONFactory600.{createActiveCallLimitsJsonV600, createCallLimitJsonV600, createCurrentUsageJson}
 import code.bankconnectors.LocalMappedConnectorInternal
@@ -147,6 +149,75 @@ trait APIMethods600 {
               case _ => (UnknownError, HttpCode.`400`(callContext))
             }
           }
+    }
+
+
+    staticResourceDocs += ResourceDoc(
+      callsLimit,
+      implementedInApiVersion,
+      nameOf(callsLimit),
+      "PUT",
+      "/management/consumers/CONSUMER_ID/consumer/rate-limits/RATE_LIMITING_ID",
+      "Set Rate Limits / Call Limits per Consumer",
+      s"""
+         |Set the API rate limits / call limits for a Consumer:
+         |
+         |Rate limiting can be set:
+         |
+         |Per Second
+         |Per Minute
+         |Per Hour
+         |Per Week
+         |Per Month
+         |
+         |
+         |${userAuthenticationMessage(true)}
+         |
+         |""".stripMargin,
+      callLimitPostJsonV400,
+      callLimitPostJsonV400,
+      List(
+        UserNotLoggedIn,
+        InvalidJsonFormat,
+        InvalidConsumerId,
+        ConsumerNotFoundByConsumerId,
+        UserHasMissingRoles,
+        UpdateConsumerError,
+        UnknownError
+      ),
+      List(apiTagConsumer, apiTagRateLimits),
+      Some(List(canUpdateRateLimits)))
+
+    lazy val callsLimit: OBPEndpoint = {
+      case "management" :: "consumers" :: consumerId :: "consumer" :: "rate-limits" :: rateLimitingId :: Nil JsonPut json -> _ => {
+        cc =>
+          implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(u), callContext) <- authenticatedAccess(cc)
+            _ <- NewStyle.function.handleEntitlementsAndScopes("", u.userId, List(canUpdateRateLimits), callContext)
+            postJson <- NewStyle.function.tryons(s"$InvalidJsonFormat The Json body should be the $CallLimitPostJsonV400 ", 400, callContext) {
+              json.extract[CallLimitPostJsonV400]
+            }
+            _ <- NewStyle.function.getConsumerByConsumerId(consumerId, callContext)
+            rateLimiting <- RateLimitingDI.rateLimiting.vend.updateConsumerCallLimits(
+              rateLimitingId,
+              postJson.from_date,
+              postJson.to_date,
+              postJson.api_version,
+              postJson.api_name,
+              postJson.bank_id,
+              Some(postJson.per_second_call_limit),
+              Some(postJson.per_minute_call_limit),
+              Some(postJson.per_hour_call_limit),
+              Some(postJson.per_day_call_limit),
+              Some(postJson.per_week_call_limit),
+              Some(postJson.per_month_call_limit)) map {
+              unboxFullOrFail(_, callContext, UpdateConsumerError)
+            }
+          } yield {
+            (createCallsLimitJson(rateLimiting), HttpCode.`200`(callContext))
+          }
+      }
     }
 
 

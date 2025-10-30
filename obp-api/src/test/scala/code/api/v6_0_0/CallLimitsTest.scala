@@ -46,6 +46,7 @@ class CallLimitsTest extends V600ServerSetup {
   object VersionOfApi extends Tag(ApiVersion.v6_0_0.toString)
   object ApiEndpoint1 extends Tag(nameOf(Implementations6_0_0.createCallLimits))
   object ApiEndpoint2 extends Tag(nameOf(Implementations6_0_0.deleteCallLimits))
+  object UpdateCallLimits extends Tag(nameOf(Implementations6_0_0.updateCallLimits))
   object ApiEndpoint3 extends Tag(nameOf(Implementations6_0_0.getActiveCallLimitsAtDate))
 
   lazy val postCallLimitJsonV600 = CallLimitPostJsonV600(

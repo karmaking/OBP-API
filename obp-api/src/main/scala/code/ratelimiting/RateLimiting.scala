@@ -30,6 +30,18 @@ trait RateLimitingProviderTrait {
                                        perDay: Option[String],
                                        perWeek: Option[String],
                                        perMonth: Option[String]): Future[Box[RateLimiting]]
+    def updateConsumerCallLimits(rateLimitingId: String,
+                                 fromDate: Date,
+                                 toDate: Date,
+                                 apiVersion: Option[String],
+                                 apiName: Option[String],
+                                 bankId: Option[String],
+                                 perSecond: Option[String],
+                                 perMinute: Option[String],
+                                 perHour: Option[String],
+                                 perDay: Option[String],
+                                 perWeek: Option[String],
+                                 perMonth: Option[String]): Future[Box[RateLimiting]]
   def createConsumerCallLimits(consumerId: String,
                                fromDate: Date,
                                toDate: Date,
