@@ -627,45 +627,6 @@ sudo cp nginx.apimanager.conf /etc/nginx/sites-enabled/
 sudo systemctl reload nginx
 ```
 
-**Directory Structure:**
-
-```
-/OpenBankProject/
-├── API-Manager/
-│   ├── apimanager/
-│   │   ├── apimanager/
-│   │   │   ├── __init__.py
-│   │   │   ├── settings.py
-│   │   │   ├── local_settings.py  # Your config
-│   │   │   ├── urls.py
-│   │   │   └── wsgi.py
-│   │   └── manage.py
-│   ├── apimanager.service
-│   ├── gunicorn.conf.py
-│   ├── nginx.apimanager.conf
-│   ├── supervisor.apimanager.conf
-│   └── requirements.txt
-├── db.sqlite3
-├── logs/
-├── static-collected/
-└── venv/
-```
-
-**PostgreSQL Configuration:**
-
-```python
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'apimanager_db',
-        'USER': 'apimanager_user',
-        'PASSWORD': 'secure_password',
-        'HOST': 'localhost',
-        'PORT': '5432',
-    }
-}
-```
-
 **Management:**
 
 - Super Admin users can manage roles at `/users`
@@ -3939,7 +3900,9 @@ LANGCHAIN_TRACING_V2=true
 LANGCHAIN_API_KEY=lsv2_pt_...
 ```
 
-### 12.3 Props File Complete Reference
+### 12.3 OBP API props examples
+
+see sample.props.template for comprehensive list of props
 
 **Core Settings:**
 
@@ -4849,116 +4812,6 @@ PUT /management/consumers/{CONSUMER_ID}
 # Update consumer certificate (for MTLS)
 PUT /management/consumers/{CONSUMER_ID}/consumer/certificate
 ```
-
-### 6.4 SSL/TLS Configuration
-
-#### 6.4.1 SSL with PostgreSQL
-
-**Generate SSL Certificates:**
-
-```bash
-# Create SSL directory
-sudo mkdir -p /etc/postgresql/ssl
-cd /etc/postgresql/ssl
-
-# Generate private key
-sudo openssl genrsa -out server.key 2048
-
-# Generate certificate signing request
-sudo openssl req -new -key server.key -out server.csr
-
-# Self-sign certificate (or use CA-signed)
-sudo openssl x509 -req -days 365 -in server.csr -signkey server.key -out server.crt
-
-# Set permissions
-sudo chmod 600 server.key
-sudo chown postgres:postgres server.key server.crt
-```
-
-**PostgreSQL Configuration (`postgresql.conf`):**
-
-```ini
-ssl = on
-ssl_cert_file = '/etc/postgresql/ssl/server.crt'
-ssl_key_file = '/etc/postgresql/ssl/server.key'
-ssl_ca_file = '/etc/postgresql/ssl/ca.crt'  # Optional
-ssl_prefer_server_ciphers = on
-ssl_ciphers = 'HIGH:MEDIUM:+3DES:!aNULL'
-```
-
-**OBP-API Props:**
-
-```properties
-db.url=jdbc:postgresql://localhost:5432/obpdb?user=obp&password=xxx&ssl=true&sslmode=require
-```
-
-#### 6.4.2 SSL Encryption with Props File
-
-**Generate Keystore:**
-
-```bash
-# Generate keystore with key pair
-keytool -genkeypair -alias obp-api \
-  -keyalg RSA -keysize 2048 \
-  -keystore /path/to/api.keystore.jks \
-  -validity 365
-
-# Export public certificate
-keytool -export -alias obp-api \
-  -keystore /path/to/api.keystore.jks \
-  -rfc -file apipub.cert
-
-# Extract public key
-openssl x509 -pubkey -noout -in apipub.cert > public_key.pub
-```
-
-**Encrypt Props Values:**
-
-```bash
-#!/bin/bash
-# encrypt_prop.sh
-echo -n "$2" | openssl pkeyutl \
-  -pkeyopt rsa_padding_mode:pkcs1 \
-  -encrypt \
-  -pubin \
-  -inkey "$1" \
-  -out >(base64)
-```
-
-**Usage:**
-
-```bash
-./encrypt_prop.sh /path/to/public_key.pub "my-secret-password"
-# Outputs: BASE64_ENCODED_ENCRYPTED_VALUE
-```
-
-**Props Configuration:**
-
-```properties
-# Enable JWT encryption
-jwt.use.ssl=true
-keystore.path=/path/to/api.keystore.jks
-keystore.alias=obp-api
-
-# Encrypted property
-db.password.is_encrypted=true
-db.password=BASE64_ENCODED_ENCRYPTED_VALUE
-```
-
-#### 6.4.3 Password Obfuscation (Jetty)
-
-**Generate Obfuscated Password:**
-
-```bash
-java -cp /usr/share/jetty9/lib/jetty-util-*.jar \
-  org.eclipse.jetty.util.security.Password \
-### 12.5 Complete API Roles Reference
-
-OBP-API uses a comprehensive role-based access control (RBAC) system with over **334 static roles**. Roles control access to specific API endpoints and operations.
-
-**Note:** All roles can be dynamically listed using the `/obp/v5.1.0/roles` endpoint.
-
-**Last Updated:** 2025-10-29
 
 #### Role Naming Convention
 
