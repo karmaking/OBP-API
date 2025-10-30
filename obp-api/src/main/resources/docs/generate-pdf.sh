@@ -9,7 +9,7 @@
 # - Font: DejaVu Sans (for compatibility)
 # - Colors: OBP Green (#1BA563), Dark Green (#0A281E), Light Green (#5F8E82)
 
-set -e
+# Note: Not using 'set -e' to allow batch processing to continue on errors
 
 # Check if pandoc is installed
 if ! command -v pandoc &> /dev/null; then
@@ -46,7 +46,7 @@ LATEX_HEADER=$(cat <<'EOF'
 \fancyhf{}
 \fancyhead[L]{\textcolor{OBPDarkGreen}{\small\leftmark}}
 \fancyhead[R]{\textcolor{OBPDarkGreen}{\small\thepage}}
-\fancyfoot[C]{\textcolor{OBPLightGreen}{\footnotesize Copyright © TESOBE GmbH 2025}}
+\fancyfoot[C]{\textcolor{OBPLightGreen}{\tiny Copyright © TESOBE GmbH 2025, License: AGPLv3}}
 \renewcommand{\headrulewidth}{0.5pt}
 \renewcommand{\footrulewidth}{0.5pt}
 \renewcommand{\headrule}{\hbox to\headwidth{\color{OBPGreen}\leaders\hrule height \headrulewidth\hfill}}
@@ -105,7 +105,7 @@ generate_pdf() {
       -V toccolor="[HTML]{$OBP_DARK_GREEN}" \
       -V header-includes="$LATEX_HEADER" \
       --metadata title="$DOC_TITLE" \
-      --metadata author="Open Bank Project / TESOBE GmbH" \
+      --metadata author="TESOBE GmbH" \
       --metadata date="$(date +%Y-%m-%d)" \
       2>&1 | grep -v "^$" || true
 
@@ -175,7 +175,7 @@ if [ $# -eq 0 ]; then
     fi
 
     echo "PDF styling:"
-    echo "  - Font: DejaVu Sans (professional, compatible)"
+    echo "  - Font: DejaVu Sans"
     echo "  - Colors: OBP brand palette"
     echo "    * Links: OBP Green (#$OBP_GREEN)"
     echo "    * Headers: Dark Green (#$OBP_DARK_GREEN)"
