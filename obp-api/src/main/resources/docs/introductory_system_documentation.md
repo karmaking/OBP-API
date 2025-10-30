@@ -1988,10 +1988,10 @@ services:
 ```bash
 # Only management endpoints are available
 curl https://admin-api.example.com/obp/v5.1.0/management/consumers
-# ✓ Success
+# [SUCCESS]
 
 curl https://admin-api.example.com/obp/v5.1.0/banks
-# ✗ 404 Not Found - Endpoint not enabled on this instance
+# [FAIL] 404 Not Found - Endpoint not enabled on this instance
 ```
 
 #### 5.4.4 Deployment Scenario: Berlin Group Instance
@@ -2108,10 +2108,10 @@ services:
 ```bash
 # Berlin Group endpoints are available
 curl https://psd2-api.example.com/berlin-group/v1.3/accounts
-# ✓ Success
+# [SUCCESS]
 
 curl https://psd2-api.example.com/obp/v5.1.0/banks
-# ✗ 404 Not Found - OBP versions not enabled on this instance
+# [FAIL] 404 Not Found - OBP versions not enabled on this instance
 ```
 
 #### 5.4.5 Multi-Instance Architecture
@@ -2263,15 +2263,15 @@ VERSION="v5.1.0"
 
 echo "Testing Management Endpoints..."
 curl -s "${API_HOST}/obp/${VERSION}/management/consumers" | \
-  jq -r '.code // "✓ Enabled"'
+  jq -r '.code // "[OK] Enabled"'
 
 echo "Testing Public Endpoints..."
 curl -s "${API_HOST}/obp/${VERSION}/banks" | \
-  jq -r '.code // "✓ Enabled"'
+  jq -r '.code // "[OK] Enabled"'
 
 echo "Testing Berlin Group Endpoints..."
 curl -s "${API_HOST}/berlin-group/v1.3/accounts" | \
-  jq -r '.code // "✓ Enabled"'
+  jq -r '.code // "[OK] Enabled"'
 ```
 
 #### 5.4.7 Best Practices
