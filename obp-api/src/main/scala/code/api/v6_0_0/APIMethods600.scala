@@ -153,9 +153,9 @@ trait APIMethods600 {
 
 
     staticResourceDocs += ResourceDoc(
-      callsLimit,
+      updateRateLimits,
       implementedInApiVersion,
-      nameOf(callsLimit),
+      nameOf(updateRateLimits),
       "PUT",
       "/management/consumers/CONSUMER_ID/consumer/rate-limits/RATE_LIMITING_ID",
       "Set Rate Limits / Call Limits per Consumer",
@@ -188,7 +188,7 @@ trait APIMethods600 {
       List(apiTagConsumer, apiTagRateLimits),
       Some(List(canUpdateRateLimits)))
 
-    lazy val callsLimit: OBPEndpoint = {
+    lazy val updateRateLimits: OBPEndpoint = {
       case "management" :: "consumers" :: consumerId :: "consumer" :: "rate-limits" :: rateLimitingId :: Nil JsonPut json -> _ => {
         cc =>
           implicit val ec = EndpointContext(Some(cc))
