@@ -128,6 +128,12 @@ case class TransactionRequestBodyEthSendRawTransactionJsonV600(
   description: String
 )
 
+// ---------------- HOLD models (V600) ----------------
+case class TransactionRequestBodyHoldJsonV600(
+  value: AmountOfMoneyJsonV121,
+  description: String
+) extends TransactionRequestCommonBodyJSON
+
 case class UserJsonV600(
                          user_id: String,
                          email : String,

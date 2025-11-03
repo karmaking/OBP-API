@@ -102,6 +102,7 @@ object TransactionRequestTypes extends  OBPEnumeration[TransactionRequestTypes]{
   object SEPA extends Value
   object FREE_FORM extends Value
   object SIMPLE extends Value
+  object HOLD extends Value
   object CARD extends Value
   object TRANSFER_TO_PHONE extends Value
   object TRANSFER_TO_ATM extends Value
