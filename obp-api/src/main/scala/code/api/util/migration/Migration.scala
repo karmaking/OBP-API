@@ -81,6 +81,7 @@ object Migration extends MdcLoggable {
       populateTheFieldDeletedAtResourceUser(startedBeforeSchemifier)
       populateTheFieldIsActiveAtProductAttribute(startedBeforeSchemifier)
       alterColumnUsernameProviderFirstnameAndLastnameAtAuthUser(startedBeforeSchemifier)
+      populateMissingProviderAtAuthUser(startedBeforeSchemifier)
       alterColumnEmailAtResourceUser(startedBeforeSchemifier)
       alterColumnNameAtProductFee(startedBeforeSchemifier)
       addFastFirehoseAccountsView(startedBeforeSchemifier)
@@ -344,6 +345,17 @@ object Migration extends MdcLoggable {
         val name = nameOf(alterColumnUsernameProviderFirstnameAndLastnameAtAuthUser(startedBeforeSchemifier))
         runOnce(name) {
           MigrationOfAuthUser.alterColumnUsernameProviderEmailFirstnameAndLastname(name)
+        }
+      }
+    }
+    private def populateMissingProviderAtAuthUser(startedBeforeSchemifier: Boolean): Boolean = {
+      if(startedBeforeSchemifier == true) {
+        logger.warn(s"Migration.database.populateMissingProviderAtAuthUser(true) cannot be run before Schemifier.")
+        true
+      } else {
+        val name = nameOf(populateMissingProviderAtAuthUser(startedBeforeSchemifier))
+        runOnce(name) {
+          MigrationOfAuthUser.populateMissingProviderWithLocalIdentity(name)
         }
       }
     }
