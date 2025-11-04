@@ -517,7 +517,7 @@ object PrivateKeyConstants {
 
 object JedisMethod extends Enumeration {
   type JedisMethod = Value
-  val GET, SET, EXISTS, DELETE, TTL, INCR, FLUSHDB= Value
+  val GET, SET, EXISTS, DELETE, TTL, INCR, FLUSHDB, EXPIREAT = Value
 }
 
 

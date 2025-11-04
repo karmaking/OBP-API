@@ -140,6 +140,13 @@ object Redis extends MdcLoggable {
           jedisConnection.head.ttl(key).toString
         }else if (method == JedisMethod.DELETE) {
           jedisConnection.head.del(key).toString
+        }else if (method == JedisMethod.EXPIREAT) {
+          // ttlSeconds is treated as Unix timestamp for EXPIREAT
+          if (ttlSeconds.isDefined) {
+            jedisConnection.head.expireAt(key, ttlSeconds.get.toLong).toString
+          } else {
+            throw new RuntimeException("EXPIREAT requires a timestamp in ttlSeconds parameter")
+          }
         }else if (method ==JedisMethod.GET) {
           jedisConnection.head.get(key)
         } else if(method ==JedisMethod.SET && value.isDefined){
@@ -160,7 +167,20 @@ object Redis extends MdcLoggable {
         if (jedisConnection.isDefined && jedisConnection.get != null)
           jedisConnection.map(_.close())
       }
-    } 
+    }
+  }
+
+  /**
+   * Overloaded method for setting expiration using Unix timestamp
+   * 
+   * @param method JedisMethod
+   * @param key the cache key
+   * @param timestampSeconds Unix timestamp in seconds when key should expire
+   * @param value the cache value
+   * @return
+   */
+  def useWithTimestamp(method: JedisMethod.Value, key: String, timestampSeconds: Long, value: Option[String] = None): Option[String] = {
+    use(method, key, Some(timestampSeconds.toInt), value)
   }
 
   implicit val scalaCache = ScalaCache(RedisCache(url, port))
