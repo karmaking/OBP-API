@@ -96,10 +96,10 @@ object AfterApiAuth extends MdcLoggable{
    * Please note that first source is the table RateLimiting and second is the table Consumer
    */
   def checkRateLimiting(userIsLockedOrDeleted: Future[(Box[User], Option[CallContext])]): Future[(Box[User], Option[CallContext])] = {
-    def getActiveLimits(consumerId: String): Future[List[RateLimiting]] = {
+    def getRateLimiting(consumerId: String, version: String, name: String): Future[Box[RateLimiting]] = {
       RateLimitingUtil.useConsumerLimits match {
-        case true => RateLimitingDI.rateLimiting.vend.getActiveCallLimitsByConsumerIdAtDate(consumerId, new Date())
-        case false => Future(List.empty)
+        case true => RateLimitingDI.rateLimiting.vend.getByConsumerId(consumerId, version, name, Some(new Date()))
+        case false => Future(Empty)
       }
     }
     for {
@@ -111,48 +111,34 @@ object AfterApiAuth extends MdcLoggable{
       name = cc.flatMap(_.resourceDocument.map(_.partialFunctionName)) // 1st try: function name at resource doc
         .orElse(operationId) // 2nd try: In case of Dynamic Endpoint we can only use operationId
         .getOrElse("None") // Not found any unique identifier
-      activeLimits <- getActiveLimits(consumer.map(_.consumerId.get).getOrElse(""))
+      rateLimiting <- getRateLimiting(consumer.map(_.consumerId.get).getOrElse(""), version, name)
     } yield {
-      // Find the most specific rate limiting record for this request
-      def findBestMatch(limits: List[RateLimiting], version: String, name: String): Option[RateLimiting] = {
-        limits.find(rl => rl.apiVersion.contains(version) && rl.apiName.contains(name)) // 1st try: exact match
-          .orElse(limits.find(rl => rl.apiName.contains(name))) // 2nd try: match by name only
-          .orElse(limits.find(rl => rl.apiVersion.contains(version))) // 3rd try: match by version only
-          .orElse(limits.find(rl => rl.apiName.isEmpty && rl.apiVersion.isEmpty)) // 4th try: general consumer limit
-          .orElse(limits.headOption) // 5th try: any limit
-      }
-
-      val limit: Option[CallLimit] = if (activeLimits.nonEmpty) {
-        findBestMatch(activeLimits, version, name) match {
-          case Some(rl) => Some(CallLimit(
-            Some(rl.rateLimitingId),
-            rl.consumerId,
-            rl.apiName,
-            rl.apiVersion,
-            rl.bankId,
-            rl.perSecondCallLimit,
-            rl.perMinuteCallLimit,
-            rl.perHourCallLimit,
-            rl.perDayCallLimit,
-            rl.perWeekCallLimit,
-            rl.perMonthCallLimit))
-          case None => None
-        }
-      } else {
-        // Fallback to consumer limits if no database records found
-        consumer.map(c => CallLimit(
-          None,
-          c.consumerId.get,
-          None,
-          None,
-          None,
-          c.perSecondCallLimit.get,
-          c.perMinuteCallLimit.get,
-          c.perHourCallLimit.get,
-          c.perDayCallLimit.get,
-          c.perWeekCallLimit.get,
-          c.perMonthCallLimit.get
-        ))
+      val limit: Option[CallLimit] = rateLimiting match {
+        case Full(rl) => Some(CallLimit(
+          rl.consumerId,
+          rl.apiName,
+          rl.apiVersion,
+          rl.bankId,
+          rl.perSecondCallLimit,
+          rl.perMinuteCallLimit,
+          rl.perHourCallLimit,
+          rl.perDayCallLimit,
+          rl.perWeekCallLimit,
+          rl.perMonthCallLimit))
+        case Empty =>
+          Some(CallLimit(
+            consumer.map(_.consumerId.get).getOrElse(""),
+            None,
+            None,
+            None,
+            consumer.map(_.perSecondCallLimit.get).getOrElse(-1),
+            consumer.map(_.perMinuteCallLimit.get).getOrElse(-1),
+            consumer.map(_.perHourCallLimit.get).getOrElse(-1),
+            consumer.map(_.perDayCallLimit.get).getOrElse(-1),
+            consumer.map(_.perWeekCallLimit.get).getOrElse(-1),
+            consumer.map(_.perMonthCallLimit.get).getOrElse(-1)
+          ))
+        case _ => None
       }
       (user, cc.map(_.copy(rateLimiting = limit)))
     }

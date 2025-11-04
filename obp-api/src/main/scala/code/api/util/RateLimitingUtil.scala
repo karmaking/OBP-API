@@ -8,7 +8,7 @@ import code.api.util.RateLimitingJson.CallLimit
 import code.util.Helper.MdcLoggable
 import com.openbankproject.commons.model.User
 import net.liftweb.common.{Box, Empty}
-
+import redis.clients.jedis.Jedis
 
 import scala.collection.immutable
 import scala.collection.immutable.{List, Nil}
@@ -56,7 +56,6 @@ object RateLimitingPeriod extends Enumeration {
 
 object RateLimitingJson {
   case class CallLimit(
-                  rate_limiting_id : Option[String],
                   consumer_id : String,
                   api_name : Option[String],
                   api_version : Option[String],
@@ -76,42 +75,6 @@ object RateLimitingUtil extends MdcLoggable {
   def useConsumerLimits = APIUtil.getPropsAsBoolValue("use_consumer_limits", false)
 
   private def createUniqueKey(consumerKey: String, period: LimitCallPeriod) = consumerKey + RateLimitingPeriod.toString(period)
-  
-  private def createUniqueKeyWithId(rateLimitingId: Option[String], consumerKey: String, period: LimitCallPeriod) = {
-    rateLimitingId match {
-      case Some(id) => s"${consumerKey}_${id}_${RateLimitingPeriod.toString(period)}"
-      case None => consumerKey + RateLimitingPeriod.toString(period)
-    }
-  }
-
-  private def underConsumerLimitsWithId(rateLimitingId: Option[String], consumerKey: String, period: LimitCallPeriod, limit: Long): Boolean = {
-    if (useConsumerLimits) {
-      try {
-        (limit) match {
-          case l if l > 0 => // Redis is available and limit is set
-            val key = createUniqueKeyWithId(rateLimitingId, consumerKey, period)
-            val exists = Redis.use(JedisMethod.EXISTS,key).map(_.toBoolean).get
-            exists match {
-              case true =>
-                val underLimit = Redis.use(JedisMethod.GET,key).get.toLong + 1 <= limit // +1 means we count the current call as well. We increment later i.e after successful call.
-                underLimit
-              case false => // In case that key does not exist we return successful result
-                true
-            }
-          case _ =>
-            // Rate Limiting for a Consumer <= 0 implies successful result
-            // Or any other unhandled case implies successful result
-            true
-        }
-      } catch {
-        case e : Throwable =>
-          logger.error(s"Redis issue: $e")
-          true
-      }
-    } else {
-      true // Rate Limiting disabled implies successful result
-    }
-  }
 
   private def underConsumerLimits(consumerKey: String, period: LimitCallPeriod, limit: Long): Boolean = {
     if (useConsumerLimits) {
@@ -142,40 +105,13 @@ object RateLimitingUtil extends MdcLoggable {
     }
   }
 
-  private def incrementConsumerCountersWithId(rateLimitingId: Option[String], consumerKey: String, period: LimitCallPeriod, limit: Long): (Long, Long) = {
-    if (useConsumerLimits) {
-      try {
-        (limit) match {
-          case -1 => // Limit is not set for the period - skip processing
-            (-1, -1)
-          case _ => // Redis is available and limit is set
-            val key = createUniqueKeyWithId(rateLimitingId, consumerKey, period)
-            val ttl =  Redis.use(JedisMethod.TTL, key).get.toInt
-            ttl match {
-              case -2 => // if the Key does not exists, -2 is returned
-                val seconds =  RateLimitingPeriod.toSeconds(period).toInt
-                Redis.use(JedisMethod.SET,key, Some(seconds), Some("1"))
-                (seconds, 1)
-              case _ => // otherwise increment the counter
-                val cnt = Redis.use(JedisMethod.INCR,key).get.toInt
-                (ttl, cnt)
-            }
-        }
-      } catch {
-        case e : Throwable =>
-          logger.error(s"Redis issue: $e")
-          (-1, -1)
-      }
-    } else {
-      (-1, -1)
-    }
-  }
-
   private def incrementConsumerCounters(consumerKey: String, period: LimitCallPeriod, limit: Long): (Long, Long) = {
     if (useConsumerLimits) {
       try {
         (limit) match {
-          case -1 => // Limit is not set for the period - skip processing
+          case -1 => // Limit is not set for the period
+            val key = createUniqueKey(consumerKey, period)
+            Redis.use(JedisMethod.DELETE, key)
             (-1, -1)
           case _ => // Redis is available and limit is set
             val key = createUniqueKey(consumerKey, period)
@@ -211,128 +147,29 @@ object RateLimitingUtil extends MdcLoggable {
     }
   }
 
-  private def ttlWithId(rateLimitingId: Option[String], consumerKey: String, period: LimitCallPeriod): Long = {
-    val key = createUniqueKeyWithId(rateLimitingId, consumerKey, period)
-    val ttl = Redis.use(JedisMethod.TTL, key).get.toInt
-    ttl match {
-      case -2 => // if the Key does not exists, -2 is returned
-        0
-      case _ => // otherwise increment the counter
-        ttl
-    }
-  }
-
 
 
   def consumerRateLimitState(consumerKey: String): immutable.Seq[((Option[Long], Option[Long]), LimitCallPeriod)] = {
-    import code.ratelimiting.RateLimitingDI
-    import java.util.Date
-    import scala.concurrent.Await
-    import scala.concurrent.duration._
 
-    def getAggregatedInfo(consumerKey: String, period: LimitCallPeriod): ((Option[Long], Option[Long]), LimitCallPeriod) = {
-      try {
-        // Get all active rate limiting records for this consumer
-        val allActiveLimits = Await.result(
-          RateLimitingDI.rateLimiting.vend.getActiveCallLimitsByConsumerIdAtDate(consumerKey, new Date()), 
-          5.seconds
-        )
+    def getInfo(consumerKey: String, period: LimitCallPeriod): ((Option[Long], Option[Long]), LimitCallPeriod) = {
+      val key = createUniqueKey(consumerKey, period)
 
-        // Collect all Redis keys for this period across all rate limiting records
-        val allKeys = allActiveLimits.map { rateLimitRecord =>
-          createUniqueKeyWithId(Some(rateLimitRecord.rateLimitingId), consumerKey, period)
-        } :+ createUniqueKey(consumerKey, period) // Also include legacy key format
+      // get TTL
+      val ttlOpt: Option[Long] = Redis.use(JedisMethod.TTL, key).map(_.toLong)
 
-        // Get values and TTLs for all keys and aggregate
-        val allValues = allKeys.flatMap { key =>
-          try {
-            val valueOpt = Redis.use(JedisMethod.GET, key).map(_.toLong)
-            valueOpt
-          } catch {
-            case _: Throwable => None
-          }
-        }
+      // get value (assuming string storage)
+      val valueOpt: Option[Long] = Redis.use(JedisMethod.GET, key).map(_.toLong)
 
-        val allTTLs = allKeys.flatMap { key =>
-          try {
-            val ttlOpt = Redis.use(JedisMethod.TTL, key).map(_.toLong)
-            ttlOpt.filter(_ > -2) // Filter out non-existent keys (-2)
-          } catch {
-            case _: Throwable => None
-          }
-        }
-
-        // Sum all values and take the maximum TTL (longest remaining time)
-        val aggregatedValue = if (allValues.nonEmpty) Some(allValues.sum) else None
-        val aggregatedTTL = if (allTTLs.nonEmpty) Some(allTTLs.max) else None
-
-        ((aggregatedValue, aggregatedTTL), period)
-      } catch {
-        case _: Throwable =>
-          // Fallback to legacy behavior if there's any error
-          val key = createUniqueKey(consumerKey, period)
-          val ttlOpt: Option[Long] = Redis.use(JedisMethod.TTL, key).map(_.toLong)
-          val valueOpt: Option[Long] = Redis.use(JedisMethod.GET, key).map(_.toLong)
-          ((valueOpt, ttlOpt), period)
-      }
+      ((valueOpt, ttlOpt), period)
     }
 
-    getAggregatedInfo(consumerKey, RateLimitingPeriod.PER_SECOND) ::
-    getAggregatedInfo(consumerKey, RateLimitingPeriod.PER_MINUTE) ::
-    getAggregatedInfo(consumerKey, RateLimitingPeriod.PER_HOUR) ::
-    getAggregatedInfo(consumerKey, RateLimitingPeriod.PER_DAY) ::
-    getAggregatedInfo(consumerKey, RateLimitingPeriod.PER_WEEK) ::
-    getAggregatedInfo(consumerKey, RateLimitingPeriod.PER_MONTH) ::
+    getInfo(consumerKey, RateLimitingPeriod.PER_SECOND) ::
+    getInfo(consumerKey, RateLimitingPeriod.PER_MINUTE) ::
+    getInfo(consumerKey, RateLimitingPeriod.PER_HOUR) ::
+    getInfo(consumerKey, RateLimitingPeriod.PER_DAY) ::
+    getInfo(consumerKey, RateLimitingPeriod.PER_WEEK) ::
+    getInfo(consumerKey, RateLimitingPeriod.PER_MONTH) ::
       Nil
-  }
-
-  /**
-    * This function provides detailed rate limiting state for a consumer, showing information for each individual rate limiting record
-    * @param consumerKey The consumer key to check
-    * @return A sequence of detailed rate limiting information for each active record
-    */
-  def detailedConsumerRateLimitState(consumerKey: String): immutable.Seq[(String, String, immutable.Seq[((Option[Long], Option[Long]), LimitCallPeriod)])] = {
-    import code.ratelimiting.RateLimitingDI
-    import java.util.Date
-    import scala.concurrent.Await
-    import scala.concurrent.duration._
-
-    try {
-      // Get all active rate limiting records for this consumer
-      val allActiveLimits = Await.result(
-        RateLimitingDI.rateLimiting.vend.getActiveCallLimitsByConsumerIdAtDate(consumerKey, new Date()), 
-        5.seconds
-      )
-
-      allActiveLimits.map { rateLimitRecord =>
-        def getInfoForRecord(period: LimitCallPeriod): ((Option[Long], Option[Long]), LimitCallPeriod) = {
-          val key = createUniqueKeyWithId(Some(rateLimitRecord.rateLimitingId), consumerKey, period)
-          
-          try {
-            val ttlOpt: Option[Long] = Redis.use(JedisMethod.TTL, key).map(_.toLong).filter(_ > -2)
-            val valueOpt: Option[Long] = Redis.use(JedisMethod.GET, key).map(_.toLong)
-            ((valueOpt, ttlOpt), period)
-          } catch {
-            case _: Throwable => ((None, None), period)
-          }
-        }
-
-        val recordInfo = 
-          getInfoForRecord(RateLimitingPeriod.PER_SECOND) ::
-          getInfoForRecord(RateLimitingPeriod.PER_MINUTE) ::
-          getInfoForRecord(RateLimitingPeriod.PER_HOUR) ::
-          getInfoForRecord(RateLimitingPeriod.PER_DAY) ::
-          getInfoForRecord(RateLimitingPeriod.PER_WEEK) ::
-          getInfoForRecord(RateLimitingPeriod.PER_MONTH) ::
-          Nil
-
-        val description = s"API: ${rateLimitRecord.apiName.getOrElse("*")} v${rateLimitRecord.apiVersion.getOrElse("*")} Bank: ${rateLimitRecord.bankId.getOrElse("*")}"
-        
-        (rateLimitRecord.rateLimitingId, description, recordInfo)
-      }
-    } catch {
-      case _: Throwable => List.empty
-    }
   }
 
   /**
@@ -358,22 +195,22 @@ object RateLimitingUtil extends MdcLoggable {
         case PER_MONTH  => c.per_month
         case PER_YEAR   => -1
       }
-      userAndCallContext._2.map { cc: CallContext =>
-        cc.copy(xRateLimitLimit = limit, xRateLimitReset = z._1, xRateLimitRemaining = limit - z._2)
-      }
+      userAndCallContext._2.map(_.copy(xRateLimitLimit = limit))
+        .map(_.copy(xRateLimitReset = z._1))
+        .map(_.copy(xRateLimitRemaining = limit - z._2))
     }
     def setXRateLimitsAnonymous(id: String, z: (Long, Long), period: LimitCallPeriod): Option[CallContext] = {
       val limit = period match {
         case PER_HOUR   => perHourLimitAnonymous
         case _   => -1
       }
-      userAndCallContext._2.map { cc: CallContext =>
-        cc.copy(xRateLimitLimit = limit, xRateLimitReset = z._1, xRateLimitRemaining = limit - z._2)
-      }
+      userAndCallContext._2.map(_.copy(xRateLimitLimit = limit))
+        .map(_.copy(xRateLimitReset = z._1))
+        .map(_.copy(xRateLimitRemaining = limit - z._2))
     }
 
     def exceededRateLimit(c: CallLimit, period: LimitCallPeriod): Option[CallContextLight] = {
-      val remain = ttlWithId(c.rate_limiting_id, c.consumer_id, period)
+      val remain = ttl(c.consumer_id, period)
       val limit = period match {
         case PER_SECOND => c.per_second
         case PER_MINUTE => c.per_minute
@@ -383,9 +220,9 @@ object RateLimitingUtil extends MdcLoggable {
         case PER_MONTH  => c.per_month
         case PER_YEAR   => -1
       }
-      userAndCallContext._2.map { cc: CallContext =>
-        cc.copy(xRateLimitLimit = limit, xRateLimitReset = remain, xRateLimitRemaining = 0).toLight
-      }
+      userAndCallContext._2.map(_.copy(xRateLimitLimit = limit))
+        .map(_.copy(xRateLimitReset = remain))
+        .map(_.copy(xRateLimitRemaining = 0)).map(_.toLight)
     }
 
     def exceededRateLimitAnonymous(id: String, period: LimitCallPeriod): Option[CallContextLight] = {
@@ -394,119 +231,64 @@ object RateLimitingUtil extends MdcLoggable {
         case PER_HOUR   => perHourLimitAnonymous
         case _   => -1
       }
-      userAndCallContext._2.map { cc: CallContext =>
-        cc.copy(xRateLimitLimit = limit, xRateLimitReset = remain, xRateLimitRemaining = 0).toLight
-      }
+      userAndCallContext._2.map(_.copy(xRateLimitLimit = limit))
+        .map(_.copy(xRateLimitReset = remain))
+        .map(_.copy(xRateLimitRemaining = 0)).map(_.toLight)
     }
 
     userAndCallContext._2 match {
       case Some(cc) =>
         cc.rateLimiting match {
           case Some(rl) => // Authorized access
-            // Get all active rate limiting records for this consumer
-            import code.ratelimiting.RateLimitingDI
-            import java.util.Date
-            import scala.concurrent.Await
-            import scala.concurrent.duration._
-            
-            val consumerId = rl.consumer_id
-            val allActiveLimits = try {
-              Await.result(
-                RateLimitingDI.rateLimiting.vend.getActiveCallLimitsByConsumerIdAtDate(consumerId, new Date()), 
-                5.seconds
-              )
-            } catch {
-              case _: Throwable => List.empty
-            }
-            
-            // Group rate limiting records by period and combine limits
-            val periodLimits = allActiveLimits.flatMap { rateLimitRecord =>
-              List(
-                (PER_SECOND, rateLimitRecord.perSecondCallLimit),
-                (PER_MINUTE, rateLimitRecord.perMinuteCallLimit),
-                (PER_HOUR, rateLimitRecord.perHourCallLimit),
-                (PER_DAY, rateLimitRecord.perDayCallLimit),
-                (PER_WEEK, rateLimitRecord.perWeekCallLimit),
-                (PER_MONTH, rateLimitRecord.perMonthCallLimit)
-              ).filter(_._2 > 0).map { case (period, limit) =>
-                (period, rateLimitRecord, limit)
-              }
-            }.groupBy(_._1) // Group by period
-            
-            // Check combined usage for each period
-            val combinedLimitChecks = periodLimits.map { case (period, recordsForPeriod) =>
-              val combinedLimit = recordsForPeriod.map(_._3).sum // Sum all limits for this period
-              val currentUsage = recordsForPeriod.map { case (_, rateLimitRecord, individualLimit) =>
-                val rateLimitingKey = 
-                  rateLimitRecord.consumerId + 
-                  rateLimitRecord.apiName.getOrElse("") + 
-                  rateLimitRecord.apiVersion.getOrElse("") + 
-                  rateLimitRecord.bankId.getOrElse("")
-                
-                // Get current usage for this specific record
-                try {
-                  val key = createUniqueKeyWithId(Some(rateLimitRecord.rateLimitingId), rateLimitingKey, period)
-                  Redis.use(JedisMethod.GET, key).map(_.toLong).getOrElse(0L)
-                } catch {
-                  case _: Throwable => 0L
-                }
-              }.sum
-              
-              (period, combinedLimit, currentUsage + 1, recordsForPeriod) // +1 for current request
-            }
-            
-            // Check if any combined limit is exceeded
-            val exceededCombinedLimit = combinedLimitChecks.find { case (_, combinedLimit, totalUsage, _) =>
-              totalUsage > combinedLimit
-            }
-            
-            exceededCombinedLimit match {
-              case Some((period, combinedLimit, _, recordsForPeriod)) =>
-                // Use the first record for error response
-                val firstRecord = recordsForPeriod.head._2
-                val callLimit = CallLimit(
-                  Some(firstRecord.rateLimitingId),
-                  firstRecord.consumerId,
-                  firstRecord.apiName,
-                  firstRecord.apiVersion,
-                  firstRecord.bankId,
-                  firstRecord.perSecondCallLimit,
-                  firstRecord.perMinuteCallLimit,
-                  firstRecord.perHourCallLimit,
-                  firstRecord.perDayCallLimit,
-                  firstRecord.perWeekCallLimit,
-                  firstRecord.perMonthCallLimit
+            val rateLimitingKey = 
+              rl.consumer_id + 
+              rl.api_name.getOrElse("") + 
+              rl.api_version.getOrElse("") + 
+              rl.bank_id.getOrElse("")
+            val checkLimits = List(
+              underConsumerLimits(rateLimitingKey, PER_SECOND, rl.per_second),
+              underConsumerLimits(rateLimitingKey, PER_MINUTE, rl.per_minute),
+              underConsumerLimits(rateLimitingKey, PER_HOUR, rl.per_hour),
+              underConsumerLimits(rateLimitingKey, PER_DAY, rl.per_day),
+              underConsumerLimits(rateLimitingKey, PER_WEEK, rl.per_week),
+              underConsumerLimits(rateLimitingKey, PER_MONTH, rl.per_month)
+            )
+            checkLimits match {
+              case x1 :: x2 :: x3 :: x4 :: x5 :: x6 :: Nil if x1 == false =>
+                (fullBoxOrException(Empty ~> APIFailureNewStyle(composeMsgAuthorizedAccess(PER_SECOND, rl.per_second), 429, exceededRateLimit(rl, PER_SECOND))), userAndCallContext._2)
+              case x1 :: x2 :: x3 :: x4 :: x5 :: x6 :: Nil if x2 == false =>
+                (fullBoxOrException(Empty ~> APIFailureNewStyle(composeMsgAuthorizedAccess(PER_MINUTE, rl.per_minute), 429, exceededRateLimit(rl, PER_MINUTE))), userAndCallContext._2)
+              case x1 :: x2 :: x3 :: x4 :: x5 :: x6 :: Nil if x3 == false =>
+                (fullBoxOrException(Empty ~> APIFailureNewStyle(composeMsgAuthorizedAccess(PER_HOUR, rl.per_hour), 429, exceededRateLimit(rl, PER_HOUR))), userAndCallContext._2)
+              case x1 :: x2 :: x3 :: x4 :: x5 :: x6 :: Nil if x4 == false =>
+                (fullBoxOrException(Empty ~> APIFailureNewStyle(composeMsgAuthorizedAccess(PER_DAY, rl.per_day), 429, exceededRateLimit(rl, PER_DAY))), userAndCallContext._2)
+              case x1 :: x2 :: x3 :: x4 :: x5 :: x6 :: Nil if x5 == false =>
+                (fullBoxOrException(Empty ~> APIFailureNewStyle(composeMsgAuthorizedAccess(PER_WEEK, rl.per_week), 429, exceededRateLimit(rl, PER_WEEK))), userAndCallContext._2)
+              case x1 :: x2 :: x3 :: x4 :: x5 :: x6 :: Nil if x6 == false =>
+                (fullBoxOrException(Empty ~> APIFailureNewStyle(composeMsgAuthorizedAccess(PER_MONTH, rl.per_month), 429, exceededRateLimit(rl, PER_MONTH))), userAndCallContext._2)
+              case _ =>
+                val incrementCounters = List (
+                  incrementConsumerCounters(rateLimitingKey, PER_SECOND, rl.per_second),  // Responses other than the 429 status code MUST be stored by a cache.
+                  incrementConsumerCounters(rateLimitingKey, PER_MINUTE, rl.per_minute),  // Responses other than the 429 status code MUST be stored by a cache.
+                  incrementConsumerCounters(rateLimitingKey, PER_HOUR, rl.per_hour),  // Responses other than the 429 status code MUST be stored by a cache.
+                  incrementConsumerCounters(rateLimitingKey, PER_DAY, rl.per_day),  // Responses other than the 429 status code MUST be stored by a cache.
+                  incrementConsumerCounters(rateLimitingKey, PER_WEEK, rl.per_week),  // Responses other than the 429 status code MUST be stored by a cache.
+                  incrementConsumerCounters(rateLimitingKey, PER_MONTH, rl.per_month)  // Responses other than the 429 status code MUST be stored by a cache.
                 )
-                val errorMsg = composeMsgAuthorizedAccess(period, combinedLimit)
-                (fullBoxOrException(Empty ~> APIFailureNewStyle(errorMsg, 429, exceededRateLimit(callLimit, period))), userAndCallContext._2)
-              case None =>
-                // Increment counters for all active limits
-                val allIncrementCounters = periodLimits.flatMap { case (period, recordsForPeriod) =>
-                  recordsForPeriod.map { case (_, rateLimitRecord, limit) =>
-                    val rateLimitingKey = 
-                      rateLimitRecord.consumerId + 
-                      rateLimitRecord.apiName.getOrElse("") + 
-                      rateLimitRecord.apiVersion.getOrElse("") + 
-                      rateLimitRecord.bankId.getOrElse("")
-                    (period, incrementConsumerCountersWithId(Some(rateLimitRecord.rateLimitingId), rateLimitingKey, period, limit))
-                  }
-                }
-                
-                // Find the first active counter to set rate limit headers
-                allIncrementCounters.find(_._2._1 > 0) match {
-                  case Some((period, counter)) =>
-                    // Create a combined limit for headers
-                    val combinedLimitForPeriod = periodLimits.get(period).map(_.map(_._3).sum).getOrElse(0L)
-                    val modifiedRl = rl.copy(
-                      per_second = if (period == PER_SECOND) combinedLimitForPeriod else rl.per_second,
-                      per_minute = if (period == PER_MINUTE) combinedLimitForPeriod else rl.per_minute,
-                      per_hour = if (period == PER_HOUR) combinedLimitForPeriod else rl.per_hour,
-                      per_day = if (period == PER_DAY) combinedLimitForPeriod else rl.per_day,
-                      per_week = if (period == PER_WEEK) combinedLimitForPeriod else rl.per_week,
-                      per_month = if (period == PER_MONTH) combinedLimitForPeriod else rl.per_month
-                    )
-                    (userAndCallContext._1, setXRateLimits(modifiedRl, counter, period))
-                  case None =>
+                incrementCounters match {
+                  case first :: _ :: _ :: _ :: _ :: _ :: Nil if first._1 > 0 =>
+                    (userAndCallContext._1, setXRateLimits(rl, first, PER_SECOND))
+                  case _ :: second :: _ :: _ :: _ :: _ :: Nil if second._1 > 0 =>
+                    (userAndCallContext._1, setXRateLimits(rl, second, PER_MINUTE))
+                  case _ :: _ :: third :: _ :: _ :: _ :: Nil if third._1 > 0 =>
+                    (userAndCallContext._1, setXRateLimits(rl, third, PER_HOUR))
+                  case _ :: _ :: _ :: fourth :: _ :: _ :: Nil if fourth._1 > 0 =>
+                    (userAndCallContext._1, setXRateLimits(rl, fourth, PER_DAY))
+                  case _ :: _ :: _ :: _ :: fifth :: _ :: Nil if fifth._1 > 0 =>
+                    (userAndCallContext._1, setXRateLimits(rl, fifth, PER_WEEK))
+                  case _ :: _ :: _ :: _ :: _ :: sixth :: Nil if sixth._1 > 0 =>
+                    (userAndCallContext._1, setXRateLimits(rl, sixth, PER_MONTH))
+                  case _  =>
                     (userAndCallContext._1, userAndCallContext._2)
                 }
             }
