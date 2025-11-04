@@ -8,8 +8,6 @@ import code.api.util.RateLimitingJson.CallLimit
 import code.util.Helper.MdcLoggable
 import com.openbankproject.commons.model.User
 import net.liftweb.common.{Box, Empty}
-import java.time.{LocalDateTime, ZoneId, ZonedDateTime}
-import java.time.temporal.{ChronoUnit, TemporalAdjusters}
 
 
 import scala.collection.immutable
@@ -86,37 +84,6 @@ object RateLimitingUtil extends MdcLoggable {
     }
   }
 
-  /**
-   * Calculate the next calendar boundary for rate limiting periods
-   * @param period the rate limiting period
-   * @return Unix timestamp in seconds when the period should expire
-   */
-  private def getNextCalendarBoundary(period: LimitCallPeriod): Long = {
-    val now = ZonedDateTime.now(ZoneId.systemDefault())
-    val nextBoundary = period match {
-      case PER_SECOND => now.plus(1, ChronoUnit.SECONDS).truncatedTo(ChronoUnit.SECONDS)
-      case PER_MINUTE => now.plus(1, ChronoUnit.MINUTES).truncatedTo(ChronoUnit.MINUTES)
-      case PER_HOUR => now.plus(1, ChronoUnit.HOURS).truncatedTo(ChronoUnit.HOURS)
-      case PER_DAY => now.plus(1, ChronoUnit.DAYS).truncatedTo(ChronoUnit.DAYS)
-      case PER_WEEK => now.`with`(TemporalAdjusters.nextOrSame(java.time.DayOfWeek.MONDAY)).truncatedTo(ChronoUnit.DAYS)
-      case PER_MONTH => now.`with`(TemporalAdjusters.firstDayOfNextMonth()).truncatedTo(ChronoUnit.DAYS)
-      case PER_YEAR => now.`with`(TemporalAdjusters.firstDayOfNextYear()).truncatedTo(ChronoUnit.DAYS)
-    }
-    nextBoundary.toEpochSecond
-  }
-
-  /**
-   * Determine if a period should use calendar boundaries or fixed TTL
-   * @param period the rate limiting period
-   * @return true if calendar boundaries should be used
-   */
-  private def shouldUseCalendarBoundary(period: LimitCallPeriod): Boolean = {
-    period match {
-      case PER_DAY | PER_WEEK | PER_MONTH | PER_YEAR => true
-      case _ => false
-    }
-  }
-
   private def underConsumerLimitsWithId(rateLimitingId: Option[String], consumerKey: String, period: LimitCallPeriod, limit: Long): Boolean = {
     if (useConsumerLimits) {
       try {
@@ -186,19 +153,9 @@ object RateLimitingUtil extends MdcLoggable {
             val ttl =  Redis.use(JedisMethod.TTL, key).get.toInt
             ttl match {
               case -2 => // if the Key does not exists, -2 is returned
-                if (shouldUseCalendarBoundary(period)) {
-                  // Use calendar boundary expiration
-                  val expirationTimestamp = getNextCalendarBoundary(period)
-                  Redis.use(JedisMethod.SET, key, None, Some("1"))
-                  Redis.use(JedisMethod.EXPIREAT, key, Some(expirationTimestamp.toInt), None)
-                  val remainingSeconds = (expirationTimestamp - System.currentTimeMillis() / 1000).toInt
-                  (remainingSeconds, 1)
-                } else {
-                  // Use fixed TTL for shorter periods
-                  val seconds = RateLimitingPeriod.toSeconds(period).toInt
-                  Redis.use(JedisMethod.SET, key, Some(seconds), Some("1"))
-                  (seconds, 1)
-                }
+                val seconds =  RateLimitingPeriod.toSeconds(period).toInt
+                Redis.use(JedisMethod.SET,key, Some(seconds), Some("1"))
+                (seconds, 1)
               case _ => // otherwise increment the counter
                 val cnt = Redis.use(JedisMethod.INCR,key).get.toInt
                 (ttl, cnt)
@@ -225,19 +182,9 @@ object RateLimitingUtil extends MdcLoggable {
             val ttl =  Redis.use(JedisMethod.TTL, key).get.toInt
             ttl match {
               case -2 => // if the Key does not exists, -2 is returned
-                if (shouldUseCalendarBoundary(period)) {
-                  // Use calendar boundary expiration
-                  val expirationTimestamp = getNextCalendarBoundary(period)
-                  Redis.use(JedisMethod.SET, key, None, Some("1"))
-                  Redis.use(JedisMethod.EXPIREAT, key, Some(expirationTimestamp.toInt), None)
-                  val remainingSeconds = (expirationTimestamp - System.currentTimeMillis() / 1000).toInt
-                  (remainingSeconds, 1)
-                } else {
-                  // Use fixed TTL for shorter periods
-                  val seconds = RateLimitingPeriod.toSeconds(period).toInt
-                  Redis.use(JedisMethod.SET, key, Some(seconds), Some("1"))
-                  (seconds, 1)
-                }
+                val seconds =  RateLimitingPeriod.toSeconds(period).toInt
+                Redis.use(JedisMethod.SET,key, Some(seconds), Some("1"))
+                (seconds, 1)
               case _ => // otherwise increment the counter
                 val cnt = Redis.use(JedisMethod.INCR,key).get.toInt
                 (ttl, cnt)
@@ -291,20 +238,15 @@ object RateLimitingUtil extends MdcLoggable {
           5.seconds
         )
 
-        // Collect all Redis keys for this specific period across all rate limiting records
+        // Collect all Redis keys for this period across all rate limiting records
         val allKeys = allActiveLimits.map { rateLimitRecord =>
           createUniqueKeyWithId(Some(rateLimitRecord.rateLimitingId), consumerKey, period)
         } :+ createUniqueKey(consumerKey, period) // Also include legacy key format
 
-        // Debug logging for troubleshooting
-        logger.debug(s"Getting aggregated info for period: $period, consumer: $consumerKey")
-        logger.debug(s"All keys for this period: $allKeys")
-
-        // Get values and TTLs for all keys for this specific period
+        // Get values and TTLs for all keys and aggregate
         val allValues = allKeys.flatMap { key =>
           try {
             val valueOpt = Redis.use(JedisMethod.GET, key).map(_.toLong)
-            logger.debug(s"Key: $key, Value: $valueOpt")
             valueOpt
           } catch {
             case _: Throwable => None
@@ -314,78 +256,24 @@ object RateLimitingUtil extends MdcLoggable {
         val allTTLs = allKeys.flatMap { key =>
           try {
             val ttlOpt = Redis.use(JedisMethod.TTL, key).map(_.toLong)
-            val filteredTtl = ttlOpt.filter(_ > -2) // Filter out non-existent keys (-2)
-            
-            // Additional bounds checking - TTL should not exceed the period's maximum
-            val maxExpectedTTL = RateLimitingPeriod.toSeconds(period)
-            val boundedTtl = filteredTtl.filter { ttl =>
-              if (ttl > maxExpectedTTL) {
-                logger.warn(s"Key $key has TTL ($ttl) exceeding expected maximum ($maxExpectedTTL) for period $period. Ignoring this TTL.")
-                false
-              } else {
-                true
-              }
-            }
-            
-            logger.debug(s"Key: $key, TTL: $ttlOpt, Filtered TTL: $filteredTtl, Bounded TTL: $boundedTtl")
-            boundedTtl
+            ttlOpt.filter(_ > -2) // Filter out non-existent keys (-2)
           } catch {
-            case e: Throwable =>
-              logger.debug(s"Error getting TTL for key $key: $e")
-              None
+            case _: Throwable => None
           }
         }
 
-        // Sum all values and take the maximum TTL for this specific period only
+        // Sum all values and take the maximum TTL (longest remaining time)
         val aggregatedValue = if (allValues.nonEmpty) Some(allValues.sum) else None
         val aggregatedTTL = if (allTTLs.nonEmpty) Some(allTTLs.max) else None
 
-        logger.debug(s"Period: $period, Aggregated value: $aggregatedValue, Aggregated TTL: $aggregatedTTL")
-
-        // Final validation: ensure TTL is reasonable for this period
-        val validatedTTL = aggregatedTTL.filter { ttl =>
-          val maxExpected = RateLimitingPeriod.toSeconds(period)
-          if (ttl > maxExpected) {
-            logger.warn(s"Aggregated TTL ($ttl) exceeds maximum for $period ($maxExpected). Clearing inconsistent keys.")
-            // Clear potentially corrupted keys
-            allKeys.foreach { key =>
-              try {
-                val keyTTL = Redis.use(JedisMethod.TTL, key).map(_.toLong).getOrElse(-1L)
-                if (keyTTL > maxExpected) {
-                  Redis.use(JedisMethod.DELETE, key)
-                  logger.info(s"Deleted inconsistent key: $key (TTL was $keyTTL)")
-                }
-              } catch {
-                case e: Throwable => logger.error(s"Error cleaning key $key: $e")
-              }
-            }
-            false
-          } else {
-            true
-          }
-        }
-
-        ((aggregatedValue, validatedTTL), period)
+        ((aggregatedValue, aggregatedTTL), period)
       } catch {
         case _: Throwable =>
           // Fallback to legacy behavior if there's any error
           val key = createUniqueKey(consumerKey, period)
           val ttlOpt: Option[Long] = Redis.use(JedisMethod.TTL, key).map(_.toLong)
           val valueOpt: Option[Long] = Redis.use(JedisMethod.GET, key).map(_.toLong)
-          
-          // Validate legacy key TTL as well
-          val validatedLegacyTTL = ttlOpt.filter { ttl =>
-            val maxExpected = RateLimitingPeriod.toSeconds(period)
-            if (ttl > maxExpected) {
-              logger.warn(s"Legacy key $key has invalid TTL ($ttl) for $period. Deleting.")
-              Redis.use(JedisMethod.DELETE, key)
-              false
-            } else {
-              true
-            }
-          }
-          
-          ((valueOpt, validatedLegacyTTL), period)
+          ((valueOpt, ttlOpt), period)
       }
     }
 
@@ -396,83 +284,6 @@ object RateLimitingUtil extends MdcLoggable {
     getAggregatedInfo(consumerKey, RateLimitingPeriod.PER_WEEK) ::
     getAggregatedInfo(consumerKey, RateLimitingPeriod.PER_MONTH) ::
       Nil
-  }
-
-  /**
-    * Diagnostic method to validate rate limiting logic and boundaries
-    * This method helps debug issues with TTL calculation
-    * @param consumerKey The consumer key to test
-    * @param period The period to test
-    * @return Debug information about the rate limiting logic
-    */
-  def debugRateLimitingLogic(consumerKey: String, period: LimitCallPeriod): String = {
-    val debugInfo = StringBuilder.newBuilder
-    debugInfo.append(s"=== Debug Rate Limiting Logic for $consumerKey, $period ===\n")
-    
-    // Test calendar boundary logic
-    val usesCalendarBoundary = shouldUseCalendarBoundary(period)
-    debugInfo.append(s"Uses calendar boundary: $usesCalendarBoundary\n")
-    
-    if (usesCalendarBoundary) {
-      val boundary = getNextCalendarBoundary(period)
-      val currentTime = System.currentTimeMillis() / 1000
-      val remainingSeconds = boundary - currentTime
-      debugInfo.append(s"Calendar boundary timestamp: $boundary\n")
-      debugInfo.append(s"Current timestamp: $currentTime\n")
-      debugInfo.append(s"Remaining seconds to boundary: $remainingSeconds\n")
-    } else {
-      val fixedTTL = RateLimitingPeriod.toSeconds(period)
-      debugInfo.append(s"Fixed TTL seconds: $fixedTTL\n")
-    }
-    
-    // Test key creation
-    val legacyKey = createUniqueKey(consumerKey, period)
-    debugInfo.append(s"Legacy key: $legacyKey\n")
-    
-    // Check what's actually in Redis
-    try {
-      val ttlValue = Redis.use(JedisMethod.TTL, legacyKey)
-      val keyValue = Redis.use(JedisMethod.GET, legacyKey)
-      debugInfo.append(s"Redis TTL for legacy key: $ttlValue\n")
-      debugInfo.append(s"Redis value for legacy key: $keyValue\n")
-    } catch {
-      case e: Throwable =>
-        debugInfo.append(s"Error accessing Redis: $e\n")
-    }
-    
-    // Test the actual aggregation logic
-    try {
-      import code.ratelimiting.RateLimitingDI
-      import java.util.Date
-      import scala.concurrent.Await
-      import scala.concurrent.duration._
-      
-      val allActiveLimits = Await.result(
-        RateLimitingDI.rateLimiting.vend.getActiveCallLimitsByConsumerIdAtDate(consumerKey, new Date()), 
-        5.seconds
-      )
-      
-      debugInfo.append(s"Active rate limits count: ${allActiveLimits.length}\n")
-      
-      allActiveLimits.foreach { limit =>
-        val keyWithId = createUniqueKeyWithId(Some(limit.rateLimitingId), consumerKey, period)
-        debugInfo.append(s"Rate limit ID: ${limit.rateLimitingId}, Key: $keyWithId\n")
-        
-        try {
-          val ttl = Redis.use(JedisMethod.TTL, keyWithId)
-          val value = Redis.use(JedisMethod.GET, keyWithId)
-          debugInfo.append(s"  TTL: $ttl, Value: $value\n")
-        } catch {
-          case e: Throwable =>
-            debugInfo.append(s"  Error: $e\n")
-        }
-      }
-    } catch {
-      case e: Throwable =>
-        debugInfo.append(s"Error getting active limits: $e\n")
-    }
-    
-    debugInfo.toString()
   }
 
   /**
