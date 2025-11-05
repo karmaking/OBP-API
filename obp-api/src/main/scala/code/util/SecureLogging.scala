@@ -40,9 +40,6 @@ object SecureLogging {
       conditionalPattern("securelogging_mask_client_secret") {
         (Pattern.compile("(?i)(client_secret\\s*->\\s*)([^,\\s&\\)]+)"), "$1***")
       },
-      conditionalPattern("securelogging_mask_client_secret") {
-        (Pattern.compile("(?i)(client_secret->)([^,\\s&\\)]+)"), "$1***")
-      },
 
       // Authorization / Tokens
       conditionalPattern("securelogging_mask_authorization") {
@@ -54,17 +51,11 @@ object SecureLogging {
       conditionalPattern("securelogging_mask_access_token") {
         (Pattern.compile("(?i)(access_token\\s*->\\s*)([^,\\s&\\)]+)"), "$1***")
       },
-      conditionalPattern("securelogging_mask_access_token") {
-        (Pattern.compile("(?i)(access_token->)([^,\\s&\\)]+)"), "$1***")
-      },
       conditionalPattern("securelogging_mask_refresh_token") {
         (Pattern.compile("(?i)(refresh_token[\"']?\\s*[:=]\\s*[\"']?)([^\"',\\s&]+)"), "$1***")
       },
       conditionalPattern("securelogging_mask_refresh_token") {
         (Pattern.compile("(?i)(refresh_token\\s*->\\s*)([^,\\s&\\)]+)"), "$1***")
-      },
-      conditionalPattern("securelogging_mask_refresh_token") {
-        (Pattern.compile("(?i)(refresh_token->)([^,\\s&\\)]+)"), "$1***")
       },
       conditionalPattern("securelogging_mask_id_token") {
         (Pattern.compile("(?i)(id_token[\"']?\\s*[:=]\\s*[\"']?)([^\"',\\s&]+)"), "$1***")
@@ -72,17 +63,11 @@ object SecureLogging {
       conditionalPattern("securelogging_mask_id_token") {
         (Pattern.compile("(?i)(id_token\\s*->\\s*)([^,\\s&\\)]+)"), "$1***")
       },
-      conditionalPattern("securelogging_mask_id_token") {
-        (Pattern.compile("(?i)(id_token->)([^,\\s&\\)]+)"), "$1***")
-      },
       conditionalPattern("securelogging_mask_token") {
         (Pattern.compile("(?i)(token[\"']?\\s*[:=]\\s*[\"']?)([^\"',\\s&]+)"), "$1***")
       },
       conditionalPattern("securelogging_mask_token") {
         (Pattern.compile("(?i)(token\\s*->\\s*)([^,\\s&\\)]+)"), "$1***")
-      },
-      conditionalPattern("securelogging_mask_token") {
-        (Pattern.compile("(?i)(token->)([^,\\s&\\)]+)"), "$1***")
       },
 
       // Passwords
@@ -92,9 +77,6 @@ object SecureLogging {
       conditionalPattern("securelogging_mask_password") {
         (Pattern.compile("(?i)(password\\s*->\\s*)([^,\\s&\\)]+)"), "$1***")
       },
-      conditionalPattern("securelogging_mask_password") {
-        (Pattern.compile("(?i)(password->)([^,\\s&\\)]+)"), "$1***")
-      },
 
       // API keys
       conditionalPattern("securelogging_mask_api_key") {
@@ -103,26 +85,17 @@ object SecureLogging {
       conditionalPattern("securelogging_mask_api_key") {
         (Pattern.compile("(?i)(api_key\\s*->\\s*)([^,\\s&\\)]+)"), "$1***")
       },
-      conditionalPattern("securelogging_mask_api_key") {
-        (Pattern.compile("(?i)(api_key->)([^,\\s&\\)]+)"), "$1***")
-      },
       conditionalPattern("securelogging_mask_key") {
         (Pattern.compile("(?i)(key[\"']?\\s*[:=]\\s*[\"']?)([^\"',\\s&]+)"), "$1***")
       },
       conditionalPattern("securelogging_mask_key") {
         (Pattern.compile("(?i)(key\\s*->\\s*)([^,\\s&\\)]+)"), "$1***")
       },
-      conditionalPattern("securelogging_mask_key") {
-        (Pattern.compile("(?i)(key->)([^,\\s&\\)]+)"), "$1***")
-      },
       conditionalPattern("securelogging_mask_private_key") {
         (Pattern.compile("(?i)(private_key[\"']?\\s*[:=]\\s*[\"']?)([^\"',\\s&]+)"), "$1***")
       },
       conditionalPattern("securelogging_mask_private_key") {
         (Pattern.compile("(?i)(private_key\\s*->\\s*)([^,\\s&\\)]+)"), "$1***")
-      },
-      conditionalPattern("securelogging_mask_private_key") {
-        (Pattern.compile("(?i)(private_key->)([^,\\s&\\)]+)"), "$1***")
       },
 
       // Database
