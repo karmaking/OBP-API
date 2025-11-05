@@ -11,6 +11,8 @@ import code.api.util.FutureUtil.EndpointContext
 import code.api.util.NewStyle.HttpCode
 import code.api.util.{APIUtil, ErrorMessages, NewStyle, RateLimitingUtil}
 import code.api.v3_0_0.JSONFactory300
+import code.api.v4_0_0.CallLimitPostJsonV400
+import code.api.v4_0_0.JSONFactory400.createCallsLimitJson
 import code.api.v5_0_0.JSONFactory500
 import code.api.v6_0_0.JSONFactory600.{createActiveCallLimitsJsonV600, createCallLimitJsonV600, createCurrentUsageJson}
 import code.bankconnectors.LocalMappedConnectorInternal
@@ -145,16 +147,16 @@ trait APIMethods600 {
             (accountsJson, HttpCode.`200`(callContext))
           }
     }
-    
+
     staticResourceDocs += ResourceDoc(
       getCurrentCallsLimit,
       implementedInApiVersion,
       nameOf(getCurrentCallsLimit),
       "GET",
       "/management/consumers/CONSUMER_ID/consumer/current-usage",
-      "Get Call Limits for a Consumer Usage",
+      "Get Rate Limits for a Consumer Usage",
       s"""
-         |Get Call Limits for a Consumer Usage.
+         |Get Rate Limits for a Consumer Usage.
          |${userAuthenticationMessage(true)}
          |
          |""".stripMargin,
@@ -191,10 +193,10 @@ trait APIMethods600 {
       implementedInApiVersion,
       nameOf(createCallLimits),
       "POST",
-      "/management/consumers/CONSUMER_ID/consumer/call-limits",
-      "Create Call Limits for a Consumer",
+      "/management/consumers/CONSUMER_ID/consumer/rate-limits",
+      "Create Rate Limits for a Consumer",
       s"""
-         |Create Call Limits for a Consumer
+         |Create Rate Limits for a Consumer
          |
          |${userAuthenticationMessage(true)}
          |
@@ -210,21 +212,21 @@ trait APIMethods600 {
         UnknownError
       ),
       List(apiTagConsumer),
-      Some(List(canSetCallLimits)))
+      Some(List(canCreateRateLimits)))
 
 
     lazy val createCallLimits: OBPEndpoint = {
-      case "management" :: "consumers" :: consumerId :: "consumer" :: "call-limits" :: Nil JsonPost json -> _ =>
+      case "management" :: "consumers" :: consumerId :: "consumer" :: "rate-limits" :: Nil JsonPost json -> _ =>
         cc =>
           implicit val ec = EndpointContext(Some(cc))
           for {
             (Full(u), callContext) <- authenticatedAccess(cc)
-            _ <- NewStyle.function.hasEntitlement("", u.userId, canSetCallLimits, callContext)
+            _ <- NewStyle.function.hasEntitlement("", u.userId, canCreateRateLimits, callContext)
             postJson <- NewStyle.function.tryons(s"$InvalidJsonFormat The Json body should be the $CallLimitPostJsonV600 ", 400, callContext) {
               json.extract[CallLimitPostJsonV600]
             }
             _ <- NewStyle.function.getConsumerByConsumerId(consumerId, callContext)
-            rateLimiting <- RateLimitingDI.rateLimiting.vend.createOrUpdateConsumerCallLimits(
+            rateLimiting <- RateLimitingDI.rateLimiting.vend.createConsumerCallLimits(
               consumerId,
               postJson.from_date,
               postJson.to_date,
@@ -248,14 +250,83 @@ trait APIMethods600 {
 
 
     staticResourceDocs += ResourceDoc(
+      updateRateLimits,
+      implementedInApiVersion,
+      nameOf(updateRateLimits),
+      "PUT",
+      "/management/consumers/CONSUMER_ID/consumer/rate-limits/RATE_LIMITING_ID",
+      "Set Rate Limits / Call Limits per Consumer",
+      s"""
+         |Set the API rate limits / call limits for a Consumer:
+         |
+         |Rate limiting can be set:
+         |
+         |Per Second
+         |Per Minute
+         |Per Hour
+         |Per Week
+         |Per Month
+         |
+         |
+         |${userAuthenticationMessage(true)}
+         |
+         |""".stripMargin,
+      callLimitPostJsonV400,
+      callLimitPostJsonV400,
+      List(
+        UserNotLoggedIn,
+        InvalidJsonFormat,
+        InvalidConsumerId,
+        ConsumerNotFoundByConsumerId,
+        UserHasMissingRoles,
+        UpdateConsumerError,
+        UnknownError
+      ),
+      List(apiTagConsumer, apiTagRateLimits),
+      Some(List(canUpdateRateLimits)))
+
+    lazy val updateRateLimits: OBPEndpoint = {
+      case "management" :: "consumers" :: consumerId :: "consumer" :: "rate-limits" :: rateLimitingId :: Nil JsonPut json -> _ => {
+        cc =>
+          implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(u), callContext) <- authenticatedAccess(cc)
+            _ <- NewStyle.function.handleEntitlementsAndScopes("", u.userId, List(canUpdateRateLimits), callContext)
+            postJson <- NewStyle.function.tryons(s"$InvalidJsonFormat The Json body should be the $CallLimitPostJsonV400 ", 400, callContext) {
+              json.extract[CallLimitPostJsonV400]
+            }
+            _ <- NewStyle.function.getConsumerByConsumerId(consumerId, callContext)
+            rateLimiting <- RateLimitingDI.rateLimiting.vend.updateConsumerCallLimits(
+              rateLimitingId,
+              postJson.from_date,
+              postJson.to_date,
+              postJson.api_version,
+              postJson.api_name,
+              postJson.bank_id,
+              Some(postJson.per_second_call_limit),
+              Some(postJson.per_minute_call_limit),
+              Some(postJson.per_hour_call_limit),
+              Some(postJson.per_day_call_limit),
+              Some(postJson.per_week_call_limit),
+              Some(postJson.per_month_call_limit)) map {
+              unboxFullOrFail(_, callContext, UpdateConsumerError)
+            }
+          } yield {
+            (createCallsLimitJson(rateLimiting), HttpCode.`200`(callContext))
+          }
+      }
+    }
+
+
+    staticResourceDocs += ResourceDoc(
       deleteCallLimits,
       implementedInApiVersion,
       nameOf(deleteCallLimits),
       "DELETE",
-      "/management/consumers/CONSUMER_ID/consumer/call-limits/RATE_LIMITING_ID",
-      "Delete Call Limit by Rate Limiting ID",
+      "/management/consumers/CONSUMER_ID/consumer/rate-limits/RATE_LIMITING_ID",
+      "Delete Rate Limit by Rate Limiting ID",
       s"""
-         |Delete a specific Call Limit by Rate Limiting ID
+         |Delete a specific Rate Limit by Rate Limiting ID
          |
          |${userAuthenticationMessage(true)}
          |
@@ -270,16 +341,16 @@ trait APIMethods600 {
         UnknownError
       ),
       List(apiTagConsumer),
-      Some(List(canDeleteRateLimiting)))
+      Some(List(canDeleteRateLimits)))
 
 
     lazy val deleteCallLimits: OBPEndpoint = {
-      case "management" :: "consumers" :: consumerId :: "consumer" :: "call-limits" :: rateLimitingId :: Nil JsonDelete _ =>
+      case "management" :: "consumers" :: consumerId :: "consumer" :: "rate-limits" :: rateLimitingId :: Nil JsonDelete _ =>
         cc =>
           implicit val ec = EndpointContext(Some(cc))
           for {
             (Full(u), callContext) <- authenticatedAccess(cc)
-            _ <- NewStyle.function.hasEntitlement("", u.userId, canDeleteRateLimiting, callContext)
+            _ <- NewStyle.function.hasEntitlement("", u.userId, canDeleteRateLimits, callContext)
             _ <- NewStyle.function.getConsumerByConsumerId(consumerId, callContext)
             rateLimiting <- RateLimitingDI.rateLimiting.vend.getByRateLimitingId(rateLimitingId)
             _ <- rateLimiting match {
@@ -305,10 +376,10 @@ trait APIMethods600 {
       implementedInApiVersion,
       nameOf(getActiveCallLimitsAtDate),
       "GET",
-      "/management/consumers/CONSUMER_ID/consumer/call-limits/active-at-date/DATE",
-      "Get Active Call Limits at Date",
+      "/management/consumers/CONSUMER_ID/consumer/rate-limits/active-at-date/DATE",
+      "Get Active Rate Limits at Date",
       s"""
-         |Get the sum of call limits at a certain date time. This returns a SUM of all the records that span that time.
+         |Get the sum of rate limits at a certain date time. This returns a SUM of all the records that span that time.
          |
          |Date format: YYYY-MM-DDTHH:MM:SSZ (e.g. 1099-12-31T23:00:00Z)
          |
@@ -330,7 +401,7 @@ trait APIMethods600 {
 
 
     lazy val getActiveCallLimitsAtDate: OBPEndpoint = {
-      case "management" :: "consumers" :: consumerId :: "consumer" :: "call-limits" :: "active-at-date" :: dateString :: Nil JsonGet _ =>
+      case "management" :: "consumers" :: consumerId :: "consumer" :: "rate-limits" :: "active-at-date" :: dateString :: Nil JsonGet _ =>
         cc =>
           implicit val ec = EndpointContext(Some(cc))
           for {
@@ -520,13 +591,14 @@ trait APIMethods600 {
          |The user creating this will be automatically assigned the Role CanCreateEntitlementAtOneBank.
          |Thus the User can manage the bank they create and assign Roles to other Users.
          |
-         |Only SANDBOX mode
-         |The settlement accounts are created specified by the bank in the POST body.
+         Only SANDBOX mode (i.e. when connector=mapped in properties file)
+         |The settlement accounts are automatically created by the system when the bank is created.
          |Name and account id are created in accordance to the next rules:
          |  - Incoming account (name: Default incoming settlement account, Account ID: OBP_DEFAULT_INCOMING_ACCOUNT_ID, currency: EUR)
          |  - Outgoing account (name: Default outgoing settlement account, Account ID: OBP_DEFAULT_OUTGOING_ACCOUNT_ID, currency: EUR)
          |
          |""",
+
       postBankJson600,
       bankJson500,
       List(
@@ -617,7 +689,7 @@ trait APIMethods600 {
          |DirectLogin is a simple authentication flow. You POST your credentials (username, password, and consumer key) 
          |to the DirectLogin endpoint and receive a token in return.
          |
-         |This is an alias to the legacy DirectLogin endpoint that includes the standard API versioning prefix.
+         |This is an alias to the DirectLogin endpoint that includes the standard API versioning prefix.
          |
          |This endpoint requires the following headers:
          |- DirectLogin: username=YOUR_USERNAME, password=YOUR_PASSWORD, consumer_key=YOUR_CONSUMER_KEY

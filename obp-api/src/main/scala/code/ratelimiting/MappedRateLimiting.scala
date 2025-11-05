@@ -123,6 +123,44 @@ object MappedRateLimitingProvider extends RateLimitingProviderTrait {
     ).headOption
   }
 
+  def createConsumerCallLimits(consumerId: String,
+                               fromDate: Date,
+                               toDate: Date,
+                               apiVersion: Option[String],
+                               apiName: Option[String],
+                               bankId: Option[String],
+                               perSecond: Option[String],
+                               perMinute: Option[String],
+                               perHour: Option[String],
+                               perDay: Option[String],
+                               perWeek: Option[String],
+                               perMonth: Option[String]): Future[Box[RateLimiting]] = Future {
+
+    def createRateLimit(c: RateLimiting): Box[RateLimiting] = {
+      tryo {
+        c.FromDate(fromDate)
+        c.ToDate(toDate)
+
+        perSecond.foreach(v => c.PerSecondCallLimit(v.toLong))
+        perMinute.foreach(v => c.PerMinuteCallLimit(v.toLong))
+        perHour.foreach(v => c.PerHourCallLimit(v.toLong))
+        perDay.foreach(v => c.PerDayCallLimit(v.toLong))
+        perWeek.foreach(v => c.PerWeekCallLimit(v.toLong))
+        perMonth.foreach(v => c.PerMonthCallLimit(v.toLong))
+
+        c.BankId(bankId.orNull)
+        c.ApiName(apiName.orNull)
+        c.ApiVersion(apiVersion.orNull)
+        c.ConsumerId(consumerId)
+
+        c.updatedAt(new Date())
+
+        c.saveMe()
+      }
+    }
+    val result = createRateLimit(RateLimiting.create)
+    result
+  }
   def createOrUpdateConsumerCallLimits(consumerId: String,
                                        fromDate: Date,
                                        toDate: Date,
@@ -153,7 +191,6 @@ object MappedRateLimitingProvider extends RateLimitingProviderTrait {
         c.ApiVersion(apiVersion.orNull)
         c.ConsumerId(consumerId)
 
-        // 👇 bump timestamp for last-write-wins
         c.updatedAt(new Date())
 
         c.saveMe()
@@ -166,6 +203,40 @@ object MappedRateLimitingProvider extends RateLimitingProviderTrait {
     }
 
     result
+  }
+  def updateConsumerCallLimits(rateLimitingId: String,
+                               fromDate: Date,
+                               toDate: Date,
+                               apiVersion: Option[String],
+                               apiName: Option[String],
+                               bankId: Option[String],
+                               perSecond: Option[String],
+                               perMinute: Option[String],
+                               perHour: Option[String],
+                               perDay: Option[String],
+                               perWeek: Option[String],
+                               perMonth: Option[String]): Future[Box[RateLimiting]] = Future {
+    RateLimiting.find(
+      By(RateLimiting.RateLimitingId, rateLimitingId)
+    ) map { c =>
+      c.FromDate(fromDate)
+      c.ToDate(toDate)
+
+      perSecond.foreach(v => c.PerSecondCallLimit(v.toLong))
+      perMinute.foreach(v => c.PerMinuteCallLimit(v.toLong))
+      perHour.foreach(v => c.PerHourCallLimit(v.toLong))
+      perDay.foreach(v => c.PerDayCallLimit(v.toLong))
+      perWeek.foreach(v => c.PerWeekCallLimit(v.toLong))
+      perMonth.foreach(v => c.PerMonthCallLimit(v.toLong))
+
+      c.BankId(bankId.orNull)
+      c.ApiName(apiName.orNull)
+      c.ApiVersion(apiVersion.orNull)
+
+      c.updatedAt(new Date())
+
+      c.saveMe()
+    }
   }
 
   def deleteByRateLimitingId(rateLimitingId: String): Future[Box[Boolean]] = Future {

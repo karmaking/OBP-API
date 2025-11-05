@@ -3329,8 +3329,8 @@ trait APIMethods510 {
       implementedInApiVersion,
       nameOf(getCallsLimit),
       "GET",
-      "/management/consumers/CONSUMER_ID/consumer/call-limits",
-      "Get Call Limits for a Consumer",
+      "/management/consumers/CONSUMER_ID/consumer/rate-limits",
+      "Get Rate Limits for a Consumer",
       s"""
          |Get Calls limits per Consumer.
          |${userAuthenticationMessage(true)}
@@ -3352,7 +3352,7 @@ trait APIMethods510 {
 
 
     lazy val getCallsLimit: OBPEndpoint = {
-      case "management" :: "consumers" :: consumerId :: "consumer" :: "call-limits" :: Nil JsonGet _ =>
+      case "management" :: "consumers" :: consumerId :: "consumer" :: "rate-limits" :: Nil JsonGet _ =>
         cc =>
           implicit val ec = EndpointContext(Some(cc))
           for {

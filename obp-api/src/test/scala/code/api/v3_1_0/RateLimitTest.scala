@@ -32,7 +32,7 @@ import java.time.{ZoneId, ZonedDateTime}
 import java.util.Date
 import code.api.util.APIUtil.OAuth._
 import code.api.util.{ApiRole, RateLimitingUtil}
-import code.api.util.ApiRole.{CanReadCallLimits, CanSetCallLimits}
+import code.api.util.ApiRole.{CanReadCallLimits, CanUpdateRateLimits}
 import code.api.util.ErrorMessages.{UserHasMissingRoles, UserNotLoggedIn}
 import code.api.v3_1_0.OBPAPI3_1_0.Implementations3_1_0
 import code.consumer.Consumers
@@ -155,22 +155,22 @@ class RateLimitTest extends V310ServerSetup with PropsReset {
       And("error should be " + UserNotLoggedIn)
       response310.body.extract[ErrorMessage].message should equal (UserNotLoggedIn)
     }
-    scenario("We will try to set calls limit per minute without a proper Role " + ApiRole.canSetCallLimits, ApiEndpoint, VersionOfApi) {
-      When("We make a request v3.1.0 without a Role " + ApiRole.canSetCallLimits)
+    scenario("We will try to set calls limit per minute without a proper Role " + ApiRole.canUpdateRateLimits, ApiEndpoint, VersionOfApi) {
+      When("We make a request v3.1.0 without a Role " + ApiRole.canUpdateRateLimits)
       val Some((c, _)) = user1
       val consumerId = Consumers.consumers.vend.getConsumerByConsumerKey(c.key).map(_.consumerId.get).getOrElse("")
       val request310 = (v3_1_0_Request / "management" / "consumers" / consumerId / "consumer" / "call-limits").PUT <@(user1)
       val response310 = makePutRequest(request310, write(callLimitJson1))
       Then("We should get a 403")
       response310.code should equal(403)
-      And("error should be " + UserHasMissingRoles + CanSetCallLimits)
-      response310.body.extract[ErrorMessage].message should equal (UserHasMissingRoles + CanSetCallLimits)
+      And("error should be " + UserHasMissingRoles + CanUpdateRateLimits)
+      response310.body.extract[ErrorMessage].message should equal (UserHasMissingRoles + CanUpdateRateLimits)
     }
-    scenario("We will try to set calls limit per minute with a proper Role " + ApiRole.canSetCallLimits, ApiEndpoint, VersionOfApi) {
-      When("We make a request v3.1.0 with a Role " + ApiRole.canSetCallLimits)
+    scenario("We will try to set calls limit per minute with a proper Role " + ApiRole.canUpdateRateLimits, ApiEndpoint, VersionOfApi) {
+      When("We make a request v3.1.0 with a Role " + ApiRole.canUpdateRateLimits)
       val Some((c, _)) = user1
       val consumerId = Consumers.consumers.vend.getConsumerByConsumerKey(c.key).map(_.consumerId.get).getOrElse("")
-      Entitlement.entitlement.vend.addEntitlement("", resourceUser1.userId, ApiRole.CanSetCallLimits.toString)
+      Entitlement.entitlement.vend.addEntitlement("", resourceUser1.userId, ApiRole.CanUpdateRateLimits.toString)
       val request310 = (v3_1_0_Request / "management" / "consumers" / consumerId / "consumer" / "call-limits").PUT <@(user1)
       val response310 = makePutRequest(request310, write(callLimitJson1))
       Then("We should get a 200")
@@ -179,11 +179,11 @@ class RateLimitTest extends V310ServerSetup with PropsReset {
     }
     scenario("We will set calls limit per second for a Consumer", ApiEndpoint, VersionOfApi) {
      
-      When("We make a request v3.1.0 with a Role " + ApiRole.canSetCallLimits)
+      When("We make a request v3.1.0 with a Role " + ApiRole.canUpdateRateLimits)
         val Some((c, _)) = user1
         val consumerId = Consumers.consumers.vend.getConsumerByConsumerKey(c.key).map(_.consumerId.get).getOrElse("")
         val id: Long = Consumers.consumers.vend.getConsumerByConsumerKey(c.key).map(_.id.get).getOrElse(0)
-        Entitlement.entitlement.vend.addEntitlement("", resourceUser1.userId, ApiRole.CanSetCallLimits.toString)
+        Entitlement.entitlement.vend.addEntitlement("", resourceUser1.userId, ApiRole.CanUpdateRateLimits.toString)
         val request310 = (v3_1_0_Request / "management" / "consumers" / consumerId / "consumer" / "call-limits").PUT <@(user1)
         val response01 = makePutRequest(request310, write(callLimitSecondJson))
         Then("We should get a 200")
@@ -204,11 +204,11 @@ class RateLimitTest extends V310ServerSetup with PropsReset {
     }
     scenario("We will set calls limit per minute for a Consumer", ApiEndpoint, VersionOfApi) {
      
-      When("We make a request v3.1.0 with a Role " + ApiRole.canSetCallLimits)
+      When("We make a request v3.1.0 with a Role " + ApiRole.canUpdateRateLimits)
         val Some((c, _)) = user1
         val consumerId = Consumers.consumers.vend.getConsumerByConsumerKey(c.key).map(_.consumerId.get).getOrElse("")
         val id: Long = Consumers.consumers.vend.getConsumerByConsumerKey(c.key).map(_.id.get).getOrElse(0)
-        Entitlement.entitlement.vend.addEntitlement("", resourceUser1.userId, ApiRole.CanSetCallLimits.toString)
+        Entitlement.entitlement.vend.addEntitlement("", resourceUser1.userId, ApiRole.CanUpdateRateLimits.toString)
         val request310 = (v3_1_0_Request / "management" / "consumers" / consumerId / "consumer" / "call-limits").PUT <@(user1)
         val response01 = makePutRequest(request310, write(callLimitMinuteJson))
         Then("We should get a 200")
@@ -229,11 +229,11 @@ class RateLimitTest extends V310ServerSetup with PropsReset {
     }
     scenario("We will set calls limit per hour for a Consumer", ApiEndpoint, VersionOfApi) {
      
-      When("We make a request v3.1.0 with a Role " + ApiRole.canSetCallLimits)
+      When("We make a request v3.1.0 with a Role " + ApiRole.canUpdateRateLimits)
         val Some((c, _)) = user1
         val consumerId = Consumers.consumers.vend.getConsumerByConsumerKey(c.key).map(_.consumerId.get).getOrElse("")
         val id: Long = Consumers.consumers.vend.getConsumerByConsumerKey(c.key).map(_.id.get).getOrElse(0)
-        Entitlement.entitlement.vend.addEntitlement("", resourceUser1.userId, ApiRole.CanSetCallLimits.toString)
+        Entitlement.entitlement.vend.addEntitlement("", resourceUser1.userId, ApiRole.CanUpdateRateLimits.toString)
         val request310 = (v3_1_0_Request / "management" / "consumers" / consumerId / "consumer" / "call-limits").PUT <@(user1)
         val response01 = makePutRequest(request310, write(callLimitHourJson))
         Then("We should get a 200")
@@ -254,11 +254,11 @@ class RateLimitTest extends V310ServerSetup with PropsReset {
     }
     scenario("We will set calls limit per day for a Consumer", ApiEndpoint, VersionOfApi) {
      
-      When("We make a request v3.1.0 with a Role " + ApiRole.canSetCallLimits)
+      When("We make a request v3.1.0 with a Role " + ApiRole.canUpdateRateLimits)
         val Some((c, _)) = user1
         val consumerId = Consumers.consumers.vend.getConsumerByConsumerKey(c.key).map(_.consumerId.get).getOrElse("")
         val id: Long = Consumers.consumers.vend.getConsumerByConsumerKey(c.key).map(_.id.get).getOrElse(0)
-        Entitlement.entitlement.vend.addEntitlement("", resourceUser1.userId, ApiRole.CanSetCallLimits.toString)
+        Entitlement.entitlement.vend.addEntitlement("", resourceUser1.userId, ApiRole.CanUpdateRateLimits.toString)
         val request310 = (v3_1_0_Request / "management" / "consumers" / consumerId / "consumer" / "call-limits").PUT <@(user1)
         val response01 = makePutRequest(request310, write(callLimitDayJson))
         Then("We should get a 200")
@@ -279,11 +279,11 @@ class RateLimitTest extends V310ServerSetup with PropsReset {
     }
     scenario("We will set calls limit per week for a Consumer", ApiEndpoint, VersionOfApi) {
      
-      When("We make a request v3.1.0 with a Role " + ApiRole.canSetCallLimits)
+      When("We make a request v3.1.0 with a Role " + ApiRole.canUpdateRateLimits)
         val Some((c, _)) = user1
         val consumerId = Consumers.consumers.vend.getConsumerByConsumerKey(c.key).map(_.consumerId.get).getOrElse("")
         val id: Long = Consumers.consumers.vend.getConsumerByConsumerKey(c.key).map(_.id.get).getOrElse(0)
-        Entitlement.entitlement.vend.addEntitlement("", resourceUser1.userId, ApiRole.CanSetCallLimits.toString)
+        Entitlement.entitlement.vend.addEntitlement("", resourceUser1.userId, ApiRole.CanUpdateRateLimits.toString)
         val request310 = (v3_1_0_Request / "management" / "consumers" / consumerId / "consumer" / "call-limits").PUT <@(user1)
         val response01 = makePutRequest(request310, write(callLimitWeekJson))
         Then("We should get a 200")
@@ -304,11 +304,11 @@ class RateLimitTest extends V310ServerSetup with PropsReset {
     }
     scenario("We will set calls limit per month for a Consumer", ApiEndpoint, VersionOfApi) {
      
-      When("We make a request v3.1.0 with a Role " + ApiRole.canSetCallLimits)
+      When("We make a request v3.1.0 with a Role " + ApiRole.canUpdateRateLimits)
         val Some((c, _)) = user1
         val consumerId = Consumers.consumers.vend.getConsumerByConsumerKey(c.key).map(_.consumerId.get).getOrElse("")
         val id: Long = Consumers.consumers.vend.getConsumerByConsumerKey(c.key).map(_.id.get).getOrElse(0)
-        Entitlement.entitlement.vend.addEntitlement("", resourceUser1.userId, ApiRole.CanSetCallLimits.toString)
+        Entitlement.entitlement.vend.addEntitlement("", resourceUser1.userId, ApiRole.CanUpdateRateLimits.toString)
         val request310 = (v3_1_0_Request / "management" / "consumers" / consumerId / "consumer" / "call-limits").PUT <@(user1)
         val response01 = makePutRequest(request310, write(callLimitMonthJson))
         Then("We should get a 200")

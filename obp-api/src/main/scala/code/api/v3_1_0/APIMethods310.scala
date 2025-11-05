@@ -509,11 +509,11 @@ trait APIMethods310 {
       nameOf(callsLimit),
       "PUT",
       "/management/consumers/CONSUMER_ID/consumer/call-limits",
-      "Set Rate Limiting (call limits) per Consumer",
+      "Set Rate Limits (call limits) per Consumer",
       s"""
          |Set the API rate limiting (call limits) per Consumer:
          |
-         |Call limits can be set:
+         |Rate limits can be set:
          |
          |Per Second
          |Per Minute
@@ -537,14 +537,14 @@ trait APIMethods310 {
         UnknownError
       ),
       List(apiTagConsumer),
-      Some(List(canSetCallLimits)))
+      Some(List(canUpdateRateLimits)))
 
     lazy val callsLimit : OBPEndpoint = {
       case "management" :: "consumers" :: consumerId :: "consumer" :: "call-limits" :: Nil JsonPut json -> _ => {
         cc => implicit val ec = EndpointContext(Some(cc))
           for {
             (Full(u), callContext) <-  authenticatedAccess(cc)
-            _ <- NewStyle.function.hasEntitlement("", u.userId, canSetCallLimits, callContext)
+            _ <- NewStyle.function.hasEntitlement("", u.userId, canUpdateRateLimits, callContext)
             postJson <- NewStyle.function.tryons(s"$InvalidJsonFormat The Json body should be the $CallLimitPostJson ", 400, callContext) {
               json.extract[CallLimitPostJson]
             }
@@ -578,9 +578,9 @@ trait APIMethods310 {
       nameOf(getCallsLimit),
       "GET",
       "/management/consumers/CONSUMER_ID/consumer/call-limits",
-      "Get Call Limits for a Consumer",
+      "Get Rate Limits for a Consumer",
       s"""
-         |Get Calls limits per Consumer.
+         |Get Rate Limits per Consumer.
          |${userAuthenticationMessage(true)}
          |
          |""".stripMargin,
@@ -596,7 +596,7 @@ trait APIMethods310 {
         UnknownError
       ),
       List(apiTagConsumer),
-      Some(List(canSetCallLimits)))
+      Some(List(canUpdateRateLimits)))
 
 
     
