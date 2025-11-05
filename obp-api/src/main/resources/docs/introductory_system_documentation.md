@@ -30,14 +30,15 @@ For more detailed information or the sources of truths, please refer to the indi
    - 3.12 [Message Docs](#312-message-docs)
 4. [Standards Compliance](#standards-compliance)
 5. [Installation and Configuration](#installation-and-configuration)
-6. [Authentication and Security](#authentication-and-security)
-7. [Access Control and Security Mechanisms](#access-control-and-security-mechanisms)
-8. [Monitoring, Logging, and Troubleshooting](#monitoring-logging-and-troubleshooting)
-9. [API Documentation and Service Guides](#api-documentation-and-service-guides)
-10. [Deployment Workflows](#deployment-workflows)
-11. [Development Guide](#development-guide)
-12. [Roadmap and Future Development](#roadmap-and-future-development)
-13. [Appendices](#appendices)
+6. [Migration Scripts and Migration Script Logs](#migration-scripts-and-migration-script-logs)
+7. [Authentication and Security](#authentication-and-security)
+8. [Access Control and Security Mechanisms](#access-control-and-security-mechanisms)
+9. [Monitoring, Logging, and Troubleshooting](#monitoring-logging-and-troubleshooting)
+10. [API Documentation and Service Guides](#api-documentation-and-service-guides)
+11. [Deployment Workflows](#deployment-workflows)
+12. [Development Guide](#development-guide)
+13. [Roadmap and Future Development](#roadmap-and-future-development)
+14. [Appendices](#appendices)
 
 ---
 
@@ -2265,13 +2266,175 @@ curl -s "${API_HOST}/berlin-group/v1.3/accounts" | \
 
 ---
 
-## 6. Authentication and Security
+## 6. Migration Scripts and Migration Script Logs
 
-### 6.1 Authentication Methods
+### 6.1 Overview
+
+Migration scripts in OBP-API are used to perform database schema changes, data migrations, and other one-time operations that need to be executed when upgrading the system. The migration system ensures that each migration runs only once and tracks its execution status in the `migrationscriptlog` table.
+
+### 6.2 Migration Script Log Table
+
+All migration executions are tracked in the **`migrationscriptlog`** database table, which contains:
+
+| Field                  | Type          | Description                                       |
+| ---------------------- | ------------- | ------------------------------------------------- |
+| `migrationscriptlogid` | UUID          | Unique identifier for the log entry               |
+| `name`                 | String (100)  | Name of the migration script                      |
+| `commitid`             | String (100)  | Git commit ID associated with the migration       |
+| `issuccessful`         | Boolean       | Indicates if the migration completed successfully |
+| `startdate`            | Long          | Timestamp when the migration started              |
+| `enddate`              | Long          | Timestamp when the migration ended                |
+| `remark`               | String (1024) | Comments or error messages about the migration    |
+
+The table has a unique index on `(name, issuccessful)` to prevent duplicate successful executions of the same migration.
+
+### 6.3 Configuration Properties
+
+Migration scripts are **disabled by default** and must be explicitly enabled via configuration properties.
+
+#### Required Property
+
+```properties
+# Enable migration script execution (default: false)
+migration_scripts.execute=true
+
+# Alternative property name (alias)
+migration_scripts.enabled=true
+```
+
+#### Optional Properties
+
+**Option 1: Execute All Migrations**
+
+```properties
+migration_scripts.execute=true
+migration_scripts.execute_all=true
+```
+
+**Option 2: Execute Specific Migrations**
+
+```properties
+migration_scripts.execute=true
+list_of_migration_scripts_to_execute=populateTableViewDefinition,populateTableAccountAccess,alterColumnUrlLength
+```
+
+### 6.4 How Migration Scripts Work
+
+The migration system follows this workflow:
+
+1. **Check if migrations are enabled**: The system checks if `migration_scripts.execute` or `migration_scripts.enabled` is set to `true`
+2. **Determine which migrations to run**:
+   - If `migration_scripts.execute_all=true`, all migrations are candidates
+   - Otherwise, only migrations listed in `list_of_migration_scripts_to_execute` are candidates
+3. **Check execution history**: The system queries the `migrationscriptlog` table to see if the migration has already been successfully executed
+4. **Execute if needed**: If the migration is enabled and hasn't been successfully executed, it runs
+5. **Log the result**: Success or failure is recorded in the `migrationscriptlog` table with execution details
+
+### 6.5 Common Migration Scripts
+
+Example migration scripts available in OBP-API include:
+
+- `populateTableViewDefinition` - Populates the view definition table
+- `populateTableAccountAccess` - Migrates data to the account access table
+- `alterColumnUrlLength` - Adjusts URL column length in metrics table
+- `alterColumnCorrelationidLength` - Adjusts correlation ID column length
+- `alterTableMappedUserAuthContext` - Modifies user auth context table structure
+- `dropIndexAtColumnUsernameAtTableAuthUser` - Removes specific index from auth user table
+
+### 6.6 Viewing Migration Status
+
+To check which migrations have been executed, query the `migrationscriptlog` table:
+
+```sql
+-- View all successful migrations
+SELECT name, commitid, startdate, enddate, remark
+FROM migrationscriptlog
+WHERE issuccessful = true
+ORDER BY startdate DESC;
+
+-- Check if a specific migration has run
+SELECT * FROM migrationscriptlog
+WHERE name = 'populateTableViewDefinition'
+AND issuccessful = true;
+
+-- View failed migrations
+SELECT name, remark, startdate
+FROM migrationscriptlog
+WHERE issuccessful = false;
+```
+
+### 6.7 Best Practices
+
+1. **Always backup before migrations**: Create database backups before enabling migration scripts in production
+2. **Test in non-production first**: Run migrations in development/staging environments before production
+3. **Review migration logs**: Check the `migrationscriptlog` table and application logs after migrations
+4. **Use specific migration lists**: Instead of `execute_all=true`, list specific migrations needed for your upgrade
+5. **Monitor execution time**: Some migrations can be time-consuming on large datasets
+6. **Check backup tables**: Some migrations create backup tables (e.g., `accountaccess_backup_2019_05_17_11_16_32_134`)
+
+### 6.8 Example Configuration for Upgrades
+
+When upgrading OBP-API to a new version that requires migrations:
+
+```properties
+# In default.props or production.default.props
+
+# Enable migrations for this upgrade
+migration_scripts.execute=true
+
+# Specify only the migrations needed for this version
+list_of_migration_scripts_to_execute=populateTableViewDefinition,populateTableAccountAccess
+
+# Other required settings
+db.driver=org.postgresql.Driver
+db.url=jdbc:postgresql://localhost:5432/obp_db
+```
+
+After the upgrade completes successfully:
+
+1. Verify migrations in `migrationscriptlog` table
+2. Test critical functionality
+3. Optionally disable migrations or remove from the list for future restarts:
+   ```properties
+   migration_scripts.execute=false
+   ```
+
+### 6.9 Troubleshooting
+
+**Problem**: Migration doesn't run even though enabled
+
+**Solution**:
+
+- Check that the migration name is spelled correctly in `list_of_migration_scripts_to_execute`
+- Verify the migration hasn't already run successfully (check `migrationscriptlog` table)
+- Ensure `migration_scripts.execute=true` is set
+
+**Problem**: Migration fails with an error
+
+**Solution**:
+
+- Check the `remark` field in `migrationscriptlog` for error details
+- Review application logs for full stack traces
+- Verify database permissions are sufficient
+- Check for data integrity issues that might prevent the migration
+
+**Problem**: Want to re-run a failed migration
+
+**Solution**:
+
+- Failed migrations (where `issuccessful=false`) can be re-run automatically
+- Simply restart the application with the migration still enabled
+- Successful migrations will not re-run unless you manually delete the success record from `migrationscriptlog`
+
+---
+
+## 7. Authentication and Security
+
+### 7.1 Authentication Methods
 
 OBP-API supports multiple authentication methods to accommodate different use cases and integration scenarios.
 
-#### 6.1.1 OAuth 1.0a
+#### 7.1.1 OAuth 1.0a
 
 **Overview:** Traditional three-legged OAuth flow for third-party applications
 
@@ -2307,7 +2470,7 @@ GET /obp/v5.1.0/banks
 Authorization: OAuth oauth_token="ACCESS_TOKEN", oauth_signature="..."
 ```
 
-#### 6.1.2 OAuth 2.0
+#### 7.1.2 OAuth 2.0
 
 **Overview:** Modern authorization framework supporting various grant types
 
@@ -2350,7 +2513,7 @@ GET /obp/v5.1.0/users/current
 Authorization: Bearer ACCESS_TOKEN
 ```
 
-#### 6.1.3 OpenID Connect (OIDC)
+#### 7.1.3 OpenID Connect (OIDC)
 
 **Overview:** Identity layer on top of OAuth 2.0 providing user authentication
 
@@ -2399,7 +2562,7 @@ openid_connect_2.access_type_offline=true
 oauth2.jwk_set.url=http://keycloak:7070/realms/obp/protocol/openid-connect/certs
 ```
 
-#### 6.1.4 Direct Login
+#### 7.1.4 Direct Login
 
 **Overview:** Simplified username/password authentication for trusted applications
 
@@ -2436,7 +2599,7 @@ Authorization: DirectLogin token="TOKEN"
 - Use strong passwords
 - Token expiration and refresh
 
-### 6.2 JWT Token Structure
+### 7.2 JWT Token Structure
 
 **Standard Claims:**
 
@@ -2463,9 +2626,9 @@ Authorization: DirectLogin token="TOKEN"
 
 ---
 
-## 7. Access Control and Security Mechanisms
+## 8. Access Control and Security Mechanisms
 
-### 7.1 Role-Based Access Control (RBAC)
+### 8.1 Role-Based Access Control (RBAC)
 
 **Overview:** OBP uses an entitlement-based system where users are granted specific roles that allow them to perform certain operations.
 
@@ -2516,7 +2679,7 @@ GET /obp/v5.1.0/users/USER_ID/entitlements
 Authorization: DirectLogin token="TOKEN"
 ```
 
-### 7.2 Consent Management
+### 8.2 Consent Management
 
 **Overview:** PSD2-compliant consent mechanism for controlled data access
 
@@ -2584,7 +2747,7 @@ skip_consent_sca_for_consumer_id_pairs=[{
 }]
 ```
 
-### 7.3 Views System
+### 8.3 Views System
 
 **Overview:** Fine-grained control over what data is visible to different actors
 
@@ -2613,7 +2776,7 @@ POST /obp/v5.1.0/banks/BANK_ID/accounts/ACCOUNT_ID/views
 }
 ```
 
-### 7.4 Rate Limiting
+### 8.4 Rate Limiting
 
 **Overview:** Protect API resources from abuse and ensure fair usage
 
@@ -2658,7 +2821,7 @@ X-Rate-Limit-Reset: 45
 }
 ```
 
-### 7.5 Security Best Practices
+### 8.5 Security Best Practices
 
 **Password Security:**
 
@@ -2704,9 +2867,9 @@ db.password=OBF:1v2j1uum1xtv1zej1zer1xtn1uvk1v1v
 
 ---
 
-## 8. Monitoring, Logging, and Troubleshooting
+## 9. Monitoring, Logging, and Troubleshooting
 
-### 8.1 Logging Configuration
+### 9.1 Logging Configuration
 
 **Logback Configuration (`logback.xml`):**
 
@@ -2754,7 +2917,7 @@ db.password=OBF:1v2j1uum1xtv1zej1zer1xtn1uvk1v1v
 <logger name="code.api.util.RateLimiting" level="DEBUG"/>
 ```
 
-### 8.2 API Metrics
+### 9.2 API Metrics
 
 **Metrics Endpoint:**
 
@@ -2804,7 +2967,7 @@ es.metrics.index=obp-metrics
 POST /obp/v5.1.0/search/metrics
 ```
 
-### 8.3 Monitoring Endpoints
+### 9.3 Monitoring Endpoints
 
 **Health Check:**
 
@@ -2853,9 +3016,9 @@ GET /obp/v5.1.0/rate-limiting
 }
 ```
 
-### 8.4 Common Issues and Troubleshooting
+### 9.4 Common Issues and Troubleshooting
 
-#### 8.4.1 Authentication Issues
+#### 9.4.1 Authentication Issues
 
 **Problem:** OBP-20208: Cannot match the issuer and JWKS URI
 
@@ -2882,7 +3045,7 @@ curl -X GET http://localhost:8080/obp/v5.1.0/users/current \
 - Ensure timestamp is current
 - Verify signature base string construction
 
-#### 8.4.2 Database Connection Issues
+#### 9.4.2 Database Connection Issues
 
 **Problem:** Connection timeout to PostgreSQL
 
@@ -2913,7 +3076,7 @@ db.url=jdbc:postgresql://localhost:5432/obpdb?...&maxPoolSize=50
 tail -f logs/obp-api.log | grep -i migration
 ```
 
-#### 8.4.3 Redis Connection Issues
+#### 9.4.3 Redis Connection Issues
 
 **Problem:** Rate limiting not working
 
@@ -2934,7 +3097,7 @@ cache.redis.port=6379
 use_consumer_limits=true
 ```
 
-#### 8.4.4 Memory Issues
+#### 9.4.4 Memory Issues
 
 **Problem:** OutOfMemoryError
 
@@ -2951,7 +3114,7 @@ JAVA_OPTIONS="-Xmx4096m -Xms2048m"
 jconsole  # Connect to JVM process
 ```
 
-#### 8.4.5 Performance Issues
+#### 9.4.5 Performance Issues
 
 **Problem:** Slow API responses
 
@@ -2978,7 +3141,7 @@ GET /obp/v5.1.0/management/metrics?
 - Use Akka remote for distributed setup
 - Enable HTTP/2
 
-### 8.5 Debug Tools
+### 9.5 Debug Tools
 
 **API Call Context:**
 
@@ -3007,9 +3170,9 @@ GET /obp/v5.1.0/rate-limiting
 
 ---
 
-## 9. API Documentation and Service Guides
+## 10. API Documentation and Service Guides
 
-### 9.1 API Explorer Usage
+### 10.1 API Explorer Usage
 
 **Accessing API Explorer:**
 
@@ -3035,7 +3198,7 @@ https://apiexplorer.yourdomain.com  # Production
 4. Grant permissions
 5. Redirected back with access token
 
-### 9.2 API Versioning
+### 10.2 API Versioning
 
 **Accessing Different Versions:**
 
@@ -3060,7 +3223,7 @@ GET /obp/v5.1.0/root
 }
 ```
 
-### 9.3 API Documentation Formats
+### 10.3 API Documentation Formats
 
 **Resource Docs (OBP Native Format):**
 
@@ -3110,7 +3273,7 @@ GET /obp/v5.1.0/resource-docs/UKv3.1/swagger
 
 **Note:** The Swagger format is generated from Resource Docs. Resource Docs contain additional information not available in Swagger format.
 
-### 9.4 Common API Workflows
+### 10.4 Common API Workflows
 
 #### Workflow 1: Account Information Retrieval
 
@@ -3196,9 +3359,9 @@ GET /obp/v5.1.0/management/metrics?consumer_id=CONSUMER_ID
 
 ---
 
-## 10. Deployment Workflows
+## 11. Deployment Workflows
 
-### 10.1 Development Workflow
+### 11.1 Development Workflow
 
 ```bash
 # 1. Clone and setup
@@ -3222,7 +3385,7 @@ mvn jetty:run -pl obp-api
 # API Explorer: http://localhost:5173 (separate repo)
 ```
 
-### 10.2 Staging Deployment
+### 11.2 Staging Deployment
 
 ```bash
 # 1. Setup PostgreSQL
@@ -3252,7 +3415,7 @@ npm run build
 # Deploy dist/ to web server
 ```
 
-### 10.3 Production Deployment (High Availability)
+### 11.3 Production Deployment (High Availability)
 
 **Architecture:**
 
@@ -3350,7 +3513,7 @@ done
 watch -n 5 'curl -s http://lb-endpoint/obp/v5.1.0/root | jq .version'
 ```
 
-### 10.4 Docker/Kubernetes Deployment
+### 11.4 Docker/Kubernetes Deployment
 
 **Kubernetes Manifests:**
 
@@ -3429,7 +3592,7 @@ kubectl create secret generic obp-secrets \
   --from-literal=oauth-consumer-secret='secret'
 ```
 
-### 10.5 Backup and Disaster Recovery
+### 11.5 Backup and Disaster Recovery
 
 **Database Backup:**
 
@@ -3473,9 +3636,9 @@ sudo systemctl start jetty9
 
 ---
 
-## 11. Development Guide
+## 12. Development Guide
 
-### 11.1 Setting Up Development Environment
+### 12.1 Setting Up Development Environment
 
 **Prerequisites:**
 
@@ -3528,7 +3691,7 @@ mvn -DwildcardSuites=code.api.directloginTest test
 mvn -Pdev clean install
 ```
 
-### 11.2 Running Tests
+### 12.2 Running Tests
 
 **Unit Tests:**
 
@@ -3585,7 +3748,7 @@ class AccountTest extends ServerSetup {
 }
 ```
 
-### 11.3 Creating Custom Connectors
+### 12.3 Creating Custom Connectors
 
 **Connector Structure:**
 
@@ -3624,7 +3787,7 @@ object CustomConnector extends Connector {
 connector=custom_connector_2024
 ```
 
-### 11.4 Creating Dynamic Endpoints
+### 12.4 Creating Dynamic Endpoints
 
 **Define Dynamic Endpoint:**
 
@@ -3663,7 +3826,7 @@ POST /obp/v5.1.0/management/dynamic-entities
 }
 ```
 
-### 11.5 Code Style and Conventions
+### 12.5 Code Style and Conventions
 
 **Scala Code Style:**
 
@@ -3702,7 +3865,7 @@ class AccountService {
 }
 ```
 
-### 11.6 Contributing to OBP
+### 12.6 Contributing to OBP
 
 **Contribution Workflow:**
 
@@ -3732,13 +3895,13 @@ class AccountService {
 
 ---
 
-## 12. Roadmap and Future Development
+## 13. Roadmap and Future Development
 
-### 12.1 Overview
+### 13.1 Overview
 
 The Open Bank Project follows an agile roadmap that evolves based on feedback from banks, regulators, developers, and the community. This section outlines current and future developments across the OBP ecosystem.
 
-### 12.2 OBP-API-II (Next Generation API)
+### 13.2 OBP-API-II (Next Generation API)
 
 **Status:** Experimental
 
@@ -3752,7 +3915,7 @@ The Open Bank Project follows an agile roadmap that evolves based on feedback fr
 
 - Scala 2.13/3.x (upgraded from 2.12)
 
-### 12.3 OBP-Dispatch (Request Router)
+### 13.3 OBP-Dispatch (Request Router)
 
 **Status:** In Development
 
@@ -3804,7 +3967,7 @@ docker run -p 8080:8080 \
     └─────────┘         └─────────┘        └─────────┘
 ```
 
-### 12.1 Glossary
+### 14.1 Glossary
 
 **Account:** Bank account holding funds
 
@@ -3844,7 +4007,7 @@ docker run -p 8080:8080 \
 
 See the OBP Glossary for a full list of terms.
 
-### 12.2 Environment Variables Reference
+### 14.2 Environment Variables Reference
 
 **OBP-API Environment Variables:**
 
@@ -3898,7 +4061,7 @@ LANGCHAIN_TRACING_V2=true
 LANGCHAIN_API_KEY=lsv2_pt_...
 ```
 
-### 12.3 OBP API props examples
+### 14.3 OBP API props examples
 
 see sample.props.template for comprehensive list of props
 
@@ -3975,7 +4138,7 @@ allow_cors=true
 allowed_origins=http://localhost:5173
 ```
 
-### 12.4 Complete Error Codes Reference
+### 14.4 Complete Error Codes Reference
 
 #### Infrastructure / Config Level (OBP-00XXX)
 
@@ -4425,7 +4588,7 @@ allowed_origins=http://localhost:5173
 
 | OBP-
 
-### 12.5 Useful API Endpoints Reference
+### 14.5 Useful API Endpoints Reference
 
 **System Information:**
 
@@ -4469,7 +4632,7 @@ POST /obp/v5.1.0/users/USER_ID/entitlements   # Grant role
 GET  /obp/v5.1.0/users                         # List users
 ```
 
-### 12.8 Resources and Links
+### 14.8 Resources and Links
 
 **Official Resources:**
 
@@ -4497,7 +4660,7 @@ GET  /obp/v5.1.0/users                         # List users
 - Email: contact@tesobe.com
 - Commercial Support: https://www.tesobe.com
 
-### 12.9 Version History
+### 14.9 Version History
 
 **Major Releases:**
 
@@ -5275,7 +5438,7 @@ POST /obp/v5.1.0/users/USER_ID/entitlements
 
 **Note:** The complete list of 334 roles provides fine-grained access control for every operation in the OBP ecosystem. Roles can be combined to create custom permission sets tailored to specific use cases.
 
-### 12.6 Roadmap and Future Development
+### 14.6 Roadmap and Future Development
 
 #### OBP-API-II (Next Generation API)
 
