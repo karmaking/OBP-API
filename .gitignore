@@ -39,3 +39,4 @@ marketing_diagram_generation/outputs/*
 .specstory
 project/project
 coursier
+metals.sbt
