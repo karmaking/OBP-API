@@ -153,7 +153,6 @@ object MappedRateLimitingProvider extends RateLimitingProviderTrait {
         c.ApiVersion(apiVersion.orNull)
         c.ConsumerId(consumerId)
 
-        // 👇 bump timestamp for last-write-wins
         c.updatedAt(new Date())
 
         c.saveMe()
@@ -192,7 +191,6 @@ object MappedRateLimitingProvider extends RateLimitingProviderTrait {
         c.ApiVersion(apiVersion.orNull)
         c.ConsumerId(consumerId)
 
-        // 👇 bump timestamp for last-write-wins
         c.updatedAt(new Date())
 
         c.saveMe()
