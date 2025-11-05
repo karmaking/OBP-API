@@ -137,7 +137,7 @@ class RateLimitingTest extends V400ServerSetup with PropsReset {
         response03.code should equal(429)
 
         // Revert to initial state
-        val response04 = setRateLimiting(user1, callLimitJsonInitial)
+        val response04 = setRateLimiting2(user1, callLimitJsonInitial)
         Then("We should get a 200")
         response04.code should equal(200)
     }
@@ -159,7 +159,7 @@ class RateLimitingTest extends V400ServerSetup with PropsReset {
         response03.code should equal(429)
 
         // Revert to initial state
-        val response04 = setRateLimiting(user1, callLimitJsonInitial)
+        val response04 = setRateLimiting2(user1, callLimitJsonInitial)
         Then("We should get a 200")
         response04.code should equal(200)
     }
@@ -181,7 +181,7 @@ class RateLimitingTest extends V400ServerSetup with PropsReset {
         response03.code should equal(429)
 
         // Revert to initial state
-        val response04 = setRateLimiting(user1, callLimitJsonInitial)
+        val response04 = setRateLimiting2(user1, callLimitJsonInitial)
         Then("We should get a 200")
         response04.code should equal(200)
     }
@@ -203,7 +203,7 @@ class RateLimitingTest extends V400ServerSetup with PropsReset {
         response03.code should equal(429)
 
         // Revert to initial state
-        val response04 = setRateLimiting(user1, callLimitJsonInitial)
+        val response04 = setRateLimiting2(user1, callLimitJsonInitial)
         Then("We should get a 200")
         response04.code should equal(200)
     }
@@ -225,7 +225,7 @@ class RateLimitingTest extends V400ServerSetup with PropsReset {
         response03.code should equal(429)
 
         // Revert to initial state
-        val response04 = setRateLimiting(user1, callLimitJsonInitial)
+        val response04 = setRateLimiting2(user1, callLimitJsonInitial)
         Then("We should get a 200")
         response04.code should equal(200)
     }
@@ -248,7 +248,7 @@ class RateLimitingTest extends V400ServerSetup with PropsReset {
         val operationId = "dynamicEndpoint_GET_accounts_ACCOUNT_ID"
         val apiName = "dynamicEndpoint_GET_accounts_ACCOUNT_ID"
         val apiVersion = ApiVersion.`dynamic-endpoint`.toString()
-        val response01 = setRateLimiting(user1, callLimitJsonHour.copy(api_name = Some(apiName), api_version = Some(apiVersion)))
+        val response01 = setRateLimiting2(user1, callLimitJsonHour.copy(api_name = Some(apiName), api_version = Some(apiVersion)))
         Then("We should get a 200")
         response01.code should equal(200)
 
@@ -263,7 +263,7 @@ class RateLimitingTest extends V400ServerSetup with PropsReset {
         makeGetRequest(requestDynamicEndpoint.GET <@(user1)).code  should equal(429)
 
         // Revert Rate Limiting to initial state in case of a Dynamic Endpoint
-        val response02 = setRateLimiting(user1, callLimitJsonInitial.copy(api_name = Some(apiName), api_version = Some(apiVersion)))
+        val response02 = setRateLimiting2(user1, callLimitJsonInitial.copy(api_name = Some(apiName), api_version = Some(apiVersion)))
         Then("We should get a 200")
         response02.code should equal(200)
 
