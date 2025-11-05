@@ -720,6 +720,8 @@ super_admin_user_ids=USER_ID1,USER_ID2,
 
 ## Open Id Connect (OIDC) can be used to retrieve User information from an
 ## external OpenID Connect server.
+## This will enable authentication of an external user stored in an external db,
+## and will create a local OBP resource user in the OBP DB.
 ## To use an external OpenID Connect server,
 ## you will need to change these values.
 ## The following values provided for a temp test account.
