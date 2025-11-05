@@ -148,7 +148,7 @@ class RateLimitTest extends V310ServerSetup with PropsReset {
       When("We make a request v3.1.0")
       val Some((c, _)) = user1
       val consumerId = Consumers.consumers.vend.getConsumerByConsumerKey(c.key).map(_.consumerId.get).getOrElse("")
-      val request310 = (v3_1_0_Request / "management" / "consumers" / consumerId / "consumer" / "rate-limits").PUT
+      val request310 = (v3_1_0_Request / "management" / "consumers" / consumerId / "consumer" / "call-limits").PUT
       val response310 = makePutRequest(request310, write(callLimitJson1))
       Then("We should get a 401")
       response310.code should equal(401)
@@ -159,7 +159,7 @@ class RateLimitTest extends V310ServerSetup with PropsReset {
       When("We make a request v3.1.0 without a Role " + ApiRole.canUpdateRateLimits)
       val Some((c, _)) = user1
       val consumerId = Consumers.consumers.vend.getConsumerByConsumerKey(c.key).map(_.consumerId.get).getOrElse("")
-      val request310 = (v3_1_0_Request / "management" / "consumers" / consumerId / "consumer" / "rate-limits").PUT <@(user1)
+      val request310 = (v3_1_0_Request / "management" / "consumers" / consumerId / "consumer" / "call-limits").PUT <@(user1)
       val response310 = makePutRequest(request310, write(callLimitJson1))
       Then("We should get a 403")
       response310.code should equal(403)
@@ -171,7 +171,7 @@ class RateLimitTest extends V310ServerSetup with PropsReset {
       val Some((c, _)) = user1
       val consumerId = Consumers.consumers.vend.getConsumerByConsumerKey(c.key).map(_.consumerId.get).getOrElse("")
       Entitlement.entitlement.vend.addEntitlement("", resourceUser1.userId, ApiRole.CanUpdateRateLimits.toString)
-      val request310 = (v3_1_0_Request / "management" / "consumers" / consumerId / "consumer" / "rate-limits").PUT <@(user1)
+      val request310 = (v3_1_0_Request / "management" / "consumers" / consumerId / "consumer" / "call-limits").PUT <@(user1)
       val response310 = makePutRequest(request310, write(callLimitJson1))
       Then("We should get a 200")
       response310.code should equal(200)
@@ -184,7 +184,7 @@ class RateLimitTest extends V310ServerSetup with PropsReset {
         val consumerId = Consumers.consumers.vend.getConsumerByConsumerKey(c.key).map(_.consumerId.get).getOrElse("")
         val id: Long = Consumers.consumers.vend.getConsumerByConsumerKey(c.key).map(_.id.get).getOrElse(0)
         Entitlement.entitlement.vend.addEntitlement("", resourceUser1.userId, ApiRole.CanUpdateRateLimits.toString)
-        val request310 = (v3_1_0_Request / "management" / "consumers" / consumerId / "consumer" / "rate-limits").PUT <@(user1)
+        val request310 = (v3_1_0_Request / "management" / "consumers" / consumerId / "consumer" / "call-limits").PUT <@(user1)
         val response01 = makePutRequest(request310, write(callLimitSecondJson))
         Then("We should get a 200")
         response01.code should equal(200)
@@ -209,7 +209,7 @@ class RateLimitTest extends V310ServerSetup with PropsReset {
         val consumerId = Consumers.consumers.vend.getConsumerByConsumerKey(c.key).map(_.consumerId.get).getOrElse("")
         val id: Long = Consumers.consumers.vend.getConsumerByConsumerKey(c.key).map(_.id.get).getOrElse(0)
         Entitlement.entitlement.vend.addEntitlement("", resourceUser1.userId, ApiRole.CanUpdateRateLimits.toString)
-        val request310 = (v3_1_0_Request / "management" / "consumers" / consumerId / "consumer" / "rate-limits").PUT <@(user1)
+        val request310 = (v3_1_0_Request / "management" / "consumers" / consumerId / "consumer" / "call-limits").PUT <@(user1)
         val response01 = makePutRequest(request310, write(callLimitMinuteJson))
         Then("We should get a 200")
         response01.code should equal(200)
@@ -234,7 +234,7 @@ class RateLimitTest extends V310ServerSetup with PropsReset {
         val consumerId = Consumers.consumers.vend.getConsumerByConsumerKey(c.key).map(_.consumerId.get).getOrElse("")
         val id: Long = Consumers.consumers.vend.getConsumerByConsumerKey(c.key).map(_.id.get).getOrElse(0)
         Entitlement.entitlement.vend.addEntitlement("", resourceUser1.userId, ApiRole.CanUpdateRateLimits.toString)
-        val request310 = (v3_1_0_Request / "management" / "consumers" / consumerId / "consumer" / "rate-limits").PUT <@(user1)
+        val request310 = (v3_1_0_Request / "management" / "consumers" / consumerId / "consumer" / "call-limits").PUT <@(user1)
         val response01 = makePutRequest(request310, write(callLimitHourJson))
         Then("We should get a 200")
         response01.code should equal(200)
@@ -259,7 +259,7 @@ class RateLimitTest extends V310ServerSetup with PropsReset {
         val consumerId = Consumers.consumers.vend.getConsumerByConsumerKey(c.key).map(_.consumerId.get).getOrElse("")
         val id: Long = Consumers.consumers.vend.getConsumerByConsumerKey(c.key).map(_.id.get).getOrElse(0)
         Entitlement.entitlement.vend.addEntitlement("", resourceUser1.userId, ApiRole.CanUpdateRateLimits.toString)
-        val request310 = (v3_1_0_Request / "management" / "consumers" / consumerId / "consumer" / "rate-limits").PUT <@(user1)
+        val request310 = (v3_1_0_Request / "management" / "consumers" / consumerId / "consumer" / "call-limits").PUT <@(user1)
         val response01 = makePutRequest(request310, write(callLimitDayJson))
         Then("We should get a 200")
         response01.code should equal(200)
@@ -284,7 +284,7 @@ class RateLimitTest extends V310ServerSetup with PropsReset {
         val consumerId = Consumers.consumers.vend.getConsumerByConsumerKey(c.key).map(_.consumerId.get).getOrElse("")
         val id: Long = Consumers.consumers.vend.getConsumerByConsumerKey(c.key).map(_.id.get).getOrElse(0)
         Entitlement.entitlement.vend.addEntitlement("", resourceUser1.userId, ApiRole.CanUpdateRateLimits.toString)
-        val request310 = (v3_1_0_Request / "management" / "consumers" / consumerId / "consumer" / "rate-limits").PUT <@(user1)
+        val request310 = (v3_1_0_Request / "management" / "consumers" / consumerId / "consumer" / "call-limits").PUT <@(user1)
         val response01 = makePutRequest(request310, write(callLimitWeekJson))
         Then("We should get a 200")
         response01.code should equal(200)
@@ -309,7 +309,7 @@ class RateLimitTest extends V310ServerSetup with PropsReset {
         val consumerId = Consumers.consumers.vend.getConsumerByConsumerKey(c.key).map(_.consumerId.get).getOrElse("")
         val id: Long = Consumers.consumers.vend.getConsumerByConsumerKey(c.key).map(_.id.get).getOrElse(0)
         Entitlement.entitlement.vend.addEntitlement("", resourceUser1.userId, ApiRole.CanUpdateRateLimits.toString)
-        val request310 = (v3_1_0_Request / "management" / "consumers" / consumerId / "consumer" / "rate-limits").PUT <@(user1)
+        val request310 = (v3_1_0_Request / "management" / "consumers" / consumerId / "consumer" / "call-limits").PUT <@(user1)
         val response01 = makePutRequest(request310, write(callLimitMonthJson))
         Then("We should get a 200")
         response01.code should equal(200)
@@ -335,7 +335,7 @@ class RateLimitTest extends V310ServerSetup with PropsReset {
       When("We make a request v3.1.0")
       val Some((c, _)) = user1
       val consumerId = Consumers.consumers.vend.getConsumerByConsumerKey(c.key).map(_.consumerId.get).getOrElse("")
-      val request310 = (v3_1_0_Request / "management" / "consumers" / consumerId / "consumer" / "rate-limits").GET
+      val request310 = (v3_1_0_Request / "management" / "consumers" / consumerId / "consumer" / "call-limits").GET
       val response310 = makeGetRequest(request310)
       Then("We should get a 401")
       response310.code should equal(401)
@@ -346,7 +346,7 @@ class RateLimitTest extends V310ServerSetup with PropsReset {
       When("We make a request v3.1.0 without a Role " + ApiRole.canReadCallLimits)
       val Some((c, _)) = user1
       val consumerId = Consumers.consumers.vend.getConsumerByConsumerKey(c.key).map(_.consumerId.get).getOrElse("")
-      val request310 = (v3_1_0_Request / "management" / "consumers" / consumerId / "consumer" / "rate-limits").GET <@(user1)
+      val request310 = (v3_1_0_Request / "management" / "consumers" / consumerId / "consumer" / "call-limits").GET <@(user1)
       val response310 = makeGetRequest(request310)
       Then("We should get a 403")
       response310.code should equal(403)
@@ -358,7 +358,7 @@ class RateLimitTest extends V310ServerSetup with PropsReset {
       val Some((c, _)) = user1
       val consumerId = Consumers.consumers.vend.getConsumerByConsumerKey(c.key).map(_.consumerId.get).getOrElse("")
       Entitlement.entitlement.vend.addEntitlement("", resourceUser1.userId, ApiRole.CanReadCallLimits.toString)
-      val request310 = (v3_1_0_Request / "management" / "consumers" / consumerId / "consumer" / "rate-limits").GET <@(user1)
+      val request310 = (v3_1_0_Request / "management" / "consumers" / consumerId / "consumer" / "call-limits").GET <@(user1)
       val response310 = makeGetRequest(request310)
       Then("We should get a 200")
       response310.code should equal(200)

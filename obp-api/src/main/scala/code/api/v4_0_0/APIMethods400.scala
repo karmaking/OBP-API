@@ -173,7 +173,7 @@ trait APIMethods400 extends MdcLoggable {
       implementedInApiVersion,
       nameOf(callsLimit),
       "PUT",
-      "/management/consumers/CONSUMER_ID/consumer/rate-limits",
+      "/management/consumers/CONSUMER_ID/consumer/call-limits",
       "Set Rate Limits / Call Limits per Consumer",
       s"""
          |Set the API rate limits / call limits for a Consumer:
@@ -205,7 +205,7 @@ trait APIMethods400 extends MdcLoggable {
       Some(List(canUpdateRateLimits)))
 
     lazy val callsLimit : OBPEndpoint = {
-      case "management" :: "consumers" :: consumerId :: "consumer" :: "rate-limits" :: Nil JsonPut json -> _ => {
+      case "management" :: "consumers" :: consumerId :: "consumer" :: "call-limits" :: Nil JsonPut json -> _ => {
         cc => implicit val ec = EndpointContext(Some(cc))
           for {
             (Full(u), callContext) <-  authenticatedAccess(cc)
