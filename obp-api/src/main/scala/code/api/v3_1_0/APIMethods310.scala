@@ -10,6 +10,7 @@ import code.api.util.ApiRole._
 import code.api.util.ApiTag._
 import code.api.util.ErrorMessages.{BankAccountNotFound, _}
 import code.api.util.ExampleValue._
+import code.api.util.Glossary
 import code.api.util.FutureUtil.EndpointContext
 import code.api.util.NewStyle.HttpCode
 import code.api.util._
@@ -5775,6 +5776,8 @@ trait APIMethods310 {
       |
       |Get database props combined with defaults:
       |${getObpApiRoot}/v3.1.0/management/webui_props?active=true
+      |
+      |For more details about WebUI Props, including how to set config file defaults and precedence order, see ${Glossary.getGlossaryItemLink("webui_props")}.
       |
       |""",
       EmptyBody,
