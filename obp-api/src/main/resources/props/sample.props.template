@@ -66,6 +66,9 @@ starConnector_supported_types=mapped,internal
 #this cache is used in api level, will cache whole endpoint : v121.getTransactionsForBankAccount
 #api.cache.ttl.seconds.APIMethods121.getTransactions=0
 
+## Rate Limiting cache time-to-live in seconds, caches rate limiting configurations per consumer per hour
+#ratelimiting.cache.ttl.seconds=3600
+
 ## MethodRouting cache time-to-live in seconds
 #methodRouting.cache.ttl.seconds=30
 
