@@ -2469,9 +2469,25 @@ trait APIMethods510 {
       "Get User by USERNAME",
       s"""Get user by PROVIDER and USERNAME
          |
+         |Get a User by their authentication provider and username.
+         |
+         |**URL Parameters:**
+         |
+         |* PROVIDER - The authentication provider (e.g., http://127.0.0.1:8080, google.com, OBP)
+         |* USERNAME - The username at that provider (e.g., obpstripe, john.doe)
+         |
+         |**Important:** The PROVIDER parameter can contain special characters like slashes and colons.
+         |For example, if the provider is "http://127.0.0.1:8080", the full URL would be:
+         |
+         |`GET /obp/v5.1.0/users/provider/http://127.0.0.1:8080/username/obpstripe`
+         |
+         |The API will correctly parse the provider value even with these special characters.
+         |
+         |**To find valid providers**, use the GET /providers endpoint.
+         |
          |${userAuthenticationMessage(true)}
          |
-         |CanGetAnyUser entitlement is required,
+         |CanGetAnyUser entitlement is required.
          |
       """.stripMargin,
       EmptyBody,
