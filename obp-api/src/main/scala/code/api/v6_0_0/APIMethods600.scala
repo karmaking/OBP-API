@@ -677,6 +677,48 @@ trait APIMethods600 {
     }
 
 
+
+    staticResourceDocs += ResourceDoc(
+      getProviders,
+      implementedInApiVersion,
+      nameOf(getProviders),
+      "GET",
+      "/providers",
+      "Get Providers",
+      s"""Get the list of authentication providers that have been used to create users on this OBP instance.
+         |
+         |This endpoint returns a distinct list of provider values from the resource_user table.
+         |
+         |Providers may include:
+         |* Local OBP provider (e.g., "http://127.0.0.1:8080")
+         |* OAuth 2.0 / OpenID Connect providers (e.g., "google.com", "microsoft.com")
+         |* Custom authentication providers
+         |
+         |${authenticationRequiredMessage(true)}
+         |
+         |""".stripMargin,
+      EmptyBody,
+      JSONFactory600.createProvidersJson(List("http://127.0.0.1:8080", "OBP", "google.com")),
+      List(
+        $UserNotLoggedIn,
+        UserHasMissingRoles,
+        UnknownError
+      ),
+      List(apiTagUser),
+      Some(List(canGetProviders))
+    )
+
+    lazy val getProviders: OBPEndpoint = {
+      case "providers" :: Nil JsonGet _ =>
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(u), callContext) <- authenticatedAccess(cc)
+            _ <- NewStyle.function.hasEntitlement("", u.userId, canGetProviders, callContext)
+            providers <- Future { code.model.dataAccess.ResourceUser.getDistinctProviders }
+          } yield {
+            (JSONFactory600.createProvidersJson(providers), HttpCode.`200`(callContext))
+          }
+    }
     staticResourceDocs += ResourceDoc(
       directLoginEndpoint,
       implementedInApiVersion,

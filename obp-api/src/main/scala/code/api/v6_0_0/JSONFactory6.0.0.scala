@@ -157,6 +157,8 @@ case class PostBankJson600(
                             bank_routings: Option[List[BankRoutingJsonV121]]
                           )
 
+case class ProvidersJsonV600(providers: List[String])
+
 object JSONFactory600 extends CustomJsonFormats with MdcLoggable{
 
   def createCurrentUsageJson(rateLimits: List[((Option[Long], Option[Long]), LimitCallPeriod)]): Option[RedisCallLimitJson] = {
@@ -244,4 +246,11 @@ object JSONFactory600 extends CustomJsonFormats with MdcLoggable{
   def createTokenJSON(token: String): TokenJSON = {
     TokenJSON(token)
   }
+  
+  def createProvidersJson(providers: List[String]): ProvidersJsonV600 = {
+    ProvidersJsonV600(providers)
+  }
+
+case class ProvidersJsonV600(providers: List[String])
+
 }

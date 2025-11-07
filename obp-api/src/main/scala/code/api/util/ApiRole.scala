@@ -1099,6 +1099,8 @@ object ApiRole extends MdcLoggable{
 
   case class CanGetSystemIntegrity(requiresBankId: Boolean = false) extends ApiRole
   lazy val canGetSystemIntegrity = CanGetSystemIntegrity()
+  case class CanGetProviders(requiresBankId: Boolean = false) extends ApiRole
+  lazy val canGetProviders = CanGetProviders()
 
   private val dynamicApiRoles = new ConcurrentHashMap[String, ApiRole]
 
