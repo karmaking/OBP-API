@@ -2826,7 +2826,7 @@ object Glossary extends MdcLoggable  {
 
 
 	glossaryItems += GlossaryItem(
-		title = "Dynamic Entity Intro",
+		title = "Dynamic-Entity-Intro",
 		description =
 			s"""
 |
@@ -2877,7 +2877,7 @@ object Glossary extends MdcLoggable  {
 """.stripMargin)
 
 	glossaryItems += GlossaryItem(
-		title = "Dynamic Entities",
+		title = "Dynamic-Entities",
 		description =
 			s"""
 |
@@ -2936,7 +2936,7 @@ object Glossary extends MdcLoggable  {
 |   * PUT /CustomerPreferences/ID
 |   * DELETE /CustomerPreferences/ID
 |
-|2. **Personal 'my' endpoints** - User-scoped access (see ${getGlossaryItemLink("My Dynamic Entities")})
+|2. **Personal 'my' endpoints** - User-scoped access (see ${getGlossaryItemLink("My-Dynamic-Entities")})
 |   * POST /my/CustomerPreferences
 |   * GET /my/CustomerPreferences
 |   * GET /my/CustomerPreferences/ID
@@ -2983,14 +2983,14 @@ object Glossary extends MdcLoggable  {
 |* Rapid prototyping of new features
 |* Extension of core banking data model
 |
-|For user-scoped Dynamic Entities, see ${getGlossaryItemLink("My Dynamic Entities")}
+|For user-scoped Dynamic Entities, see ${getGlossaryItemLink("My-Dynamic-Entities")}
 |
-|For more detailed information about managing Dynamic Entities, see ${getGlossaryItemLink("Dynamic Entity Intro")}
+|For more detailed information about managing Dynamic Entities, see ${getGlossaryItemLink("Dynamic-Entity-Intro")}
 |
 """.stripMargin)
 
 	glossaryItems += GlossaryItem(
-		title = "My Dynamic Entities",
+		title = "My-Dynamic-Entities",
 		description =
 			s"""
 |
@@ -3054,7 +3054,7 @@ object Glossary extends MdcLoggable  {
 |* CanCreateSystemLevelDynamicEntity - To create system level dynamic entities
 |* CanCreateBankLevelDynamicEntity - To create bank level dynamic entities
 |
-|For general information about Dynamic Entities, see ${getGlossaryItemLink("Dynamic Entities")}
+|For general information about Dynamic Entities, see ${getGlossaryItemLink("Dynamic-Entities")}
 |
 """.stripMargin)
 

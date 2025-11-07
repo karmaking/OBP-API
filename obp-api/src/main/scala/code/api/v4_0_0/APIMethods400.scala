@@ -1535,7 +1535,9 @@ trait APIMethods400 extends MdcLoggable {
       "GET",
       "/management/system-dynamic-entities",
       "Get System Dynamic Entities",
-      s"""Get all System Dynamic Entities """,
+      s"""Get all System Dynamic Entities.
+         |
+         |For more information see ${Glossary.getGlossaryItemLink("Dynamic-Entities")} """,
       EmptyBody,
       ListResult(
         "dynamic_entities",
@@ -1570,7 +1572,9 @@ trait APIMethods400 extends MdcLoggable {
       "GET",
       "/management/banks/BANK_ID/dynamic-entities",
       "Get Bank Level Dynamic Entities",
-      s"""Get all the bank level Dynamic Entities for one bank.""",
+      s"""Get all the bank level Dynamic Entities for one bank.
+         |
+         |For more information see ${Glossary.getGlossaryItemLink("Dynamic-Entities")}""",
       EmptyBody,
       ListResult(
         "dynamic_entities",
@@ -1625,6 +1629,8 @@ trait APIMethods400 extends MdcLoggable {
       "Create System Level Dynamic Entity",
       s"""Create a system level Dynamic Entity.
          |
+         |For more information about Dynamic Entities see ${Glossary.getGlossaryItemLink("Dynamic-Entities")}
+         |
          |
          |${userAuthenticationMessage(true)}
          |
@@ -1670,6 +1676,8 @@ trait APIMethods400 extends MdcLoggable {
       "/management/banks/BANK_ID/dynamic-entities",
       "Create Bank Level Dynamic Entity",
       s"""Create a Bank Level DynamicEntity.
+         |
+         |For more information about Dynamic Entities see ${Glossary.getGlossaryItemLink("Dynamic-Entities")}
          |
          |${userAuthenticationMessage(true)}
          |
@@ -1736,6 +1744,8 @@ trait APIMethods400 extends MdcLoggable {
       "Update System Level Dynamic Entity",
       s"""Update a System Level Dynamic Entity.
          |
+         |For more information see ${Glossary.getGlossaryItemLink("Dynamic-Entities")}
+         |
          |
          |${userAuthenticationMessage(true)}
          |
@@ -1778,6 +1788,8 @@ trait APIMethods400 extends MdcLoggable {
       "/management/banks/BANK_ID/dynamic-entities/DYNAMIC_ENTITY_ID",
       "Update Bank Level Dynamic Entity",
       s"""Update a Bank Level DynamicEntity.
+         |
+         |For more information see ${Glossary.getGlossaryItemLink("Dynamic-Entities")}
          |
          |
          |${userAuthenticationMessage(true)}
@@ -1822,6 +1834,8 @@ trait APIMethods400 extends MdcLoggable {
       "Delete System Level Dynamic Entity",
       s"""Delete a DynamicEntity specified by DYNAMIC_ENTITY_ID.
          |
+         |For more information see ${Glossary.getGlossaryItemLink("Dynamic-Entities")}/
+         |
          |""",
       EmptyBody,
       EmptyBody,
@@ -1863,6 +1877,8 @@ trait APIMethods400 extends MdcLoggable {
       "Delete Bank Level Dynamic Entity",
       s"""Delete a Bank Level DynamicEntity specified by DYNAMIC_ENTITY_ID.
          |
+         |For more information see ${Glossary.getGlossaryItemLink("Dynamic-Entities")}/
+         |
          |""",
       EmptyBody,
       EmptyBody,
@@ -1888,7 +1904,9 @@ trait APIMethods400 extends MdcLoggable {
       "GET",
       "/my/dynamic-entities",
       "Get My Dynamic Entities",
-      s"""Get all my Dynamic Entities.""",
+      s"""Get all my Dynamic Entities (definitions I created).
+         |
+         |For more information see ${Glossary.getGlossaryItemLink("My-Dynamic-Entities")}""",
       EmptyBody,
       ListResult(
         "dynamic_entities",
@@ -1922,6 +1940,8 @@ trait APIMethods400 extends MdcLoggable {
       "/my/dynamic-entities/DYNAMIC_ENTITY_ID",
       "Update My Dynamic Entity",
       s"""Update my DynamicEntity.
+         |
+         |For more information see ${Glossary.getGlossaryItemLink("My-Dynamic-Entities")}/
          |
          |
          |${userAuthenticationMessage(true)}
@@ -1984,6 +2004,7 @@ trait APIMethods400 extends MdcLoggable {
       "Delete My Dynamic Entity",
       s"""Delete my DynamicEntity specified by DYNAMIC_ENTITY_ID.
          |
+         |For more information see ${Glossary.getGlossaryItemLink("My-Dynamic-Entities")}
          |""",
       EmptyBody,
       EmptyBody,
