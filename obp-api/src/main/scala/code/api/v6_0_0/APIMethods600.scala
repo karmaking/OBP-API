@@ -694,7 +694,7 @@ trait APIMethods600 {
          |* OAuth 2.0 / OpenID Connect providers (e.g., "google.com", "microsoft.com")
          |* Custom authentication providers
          |
-         |${authenticationRequiredMessage(true)}
+         |${userAuthenticationMessage(true)}
          |
          |""".stripMargin,
       EmptyBody,
