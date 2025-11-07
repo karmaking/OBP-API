@@ -2483,7 +2483,7 @@ trait APIMethods510 {
          |
          |The API will correctly parse the provider value even with these special characters.
          |
-         |**To find valid providers**, use the GET /providers endpoint.
+         |**To find valid providers**, use the GET /obp/v6.0.0/providers endpoint (available in API version 6.0.0).
          |
          |${userAuthenticationMessage(true)}
          |
