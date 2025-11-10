@@ -2173,6 +2173,10 @@ trait APIMethods400 extends MdcLoggable {
       "Create System Level Dynamic Entity",
       s"""Create a system level Dynamic Entity.
          |
+         |Note: To see DynamicEntity in API Explorer II, find OBPdynamic-entity or similar in the list of API versions.
+         |
+         |FYI Dynamic Entities and Dynamic Endpoints are listed in the Resource Doc endpoints by adding content=dynamic to the path. They are cached differently to static endpoints.
+         |
          |For more information about Dynamic Entities see ${Glossary
           .getGlossaryItemLink("Dynamic-Entities")}
          |
@@ -2341,7 +2345,11 @@ trait APIMethods400 extends MdcLoggable {
       "/management/banks/BANK_ID/dynamic-entities",
       "Create Bank Level Dynamic Entity",
       s"""Create a Bank Level DynamicEntity.
-         |
+      |
+      |Note: Once you have created a DynamicEntity to see it in the API Explorer II, find OBPdynamic-entity or similar in the list of API versions.
+      |
+      |FYI Dynamic Entities and Dynamic Endpoints are listed in the Resource Doc endpoints by adding content=dynamic to the path. They are cached differently to static endpoints.
+      |
          |For more information about Dynamic Entities see ${Glossary
           .getGlossaryItemLink("Dynamic-Entities")}
          |
