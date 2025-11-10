@@ -190,32 +190,34 @@ object Glossary extends MdcLoggable  {
 
 
 	glossaryItems += GlossaryItem(
-		title = "API-Explorer-II-Help",
-		description =
-			s"""
-				 |## API Explorer II - How to Use
-				 |
-				 |API Explorer II is an interactive Swagger/OpenAPI interface for discovering and testing OBP and other standard endpoints.
-				 |
-				 |### Key Features
-				 |
-				 |* Browse and search all available API endpoints
-				 |* Execute API calls directly from your browser
-				 |* View request and response examples
-				 |* Test authentication and authorization flows
-				 |
-				 |### Finding Dynamic Entities
-				 |
-				 |Dynamic Entities can be found under the **More** list of API Versions. Look for versions starting with `OBPdynamic-entity` or similar in the version selector.
-				 |
-				 |For more information about Dynamic Entities see ${getGlossaryItemLink("Dynamic-Entities")}
-				 |
-""")
-
-
-
-
-
+    title = "API-Explorer-II-Help",
+    description = s"""
+			 |## API Explorer II - How to Use
+			 |
+			 |API Explorer II is an interactive Swagger/OpenAPI interface for discovering and testing OBP and other standard endpoints.
+			 |
+			 |### Key Features
+			 |
+			 |* Browse and search all available API endpoints
+			 |* Execute API calls directly from your browser
+			 |* View request and response examples
+			 |* Test authentication and authorization flows
+			 |
+			 |### Finding Dynamic Entities
+			 |
+			 |Dynamic Entities can be found under the **More** list of API Versions. Look for versions starting with `OBPdynamic-entity` or similar in the version selector.
+			 |
+			 |For more information about Dynamic Entities see ${getGlossaryItemLink("Dynamic-Entities")}
+			 |
+			|### Creating Favorites
+		|
+		|If you click the star icon next to an endpoint, it will be added to your favorites list.
+		|
+		|Favorites appear in the Collections section in the left panel interface.
+		|
+		|Note: Favorites are a special type of collection. You can create other collections using endpoints.
+"""
+  )
 
 
 
