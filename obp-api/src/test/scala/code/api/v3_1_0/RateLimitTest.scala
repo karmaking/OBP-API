@@ -196,8 +196,8 @@ class RateLimitTest extends V310ServerSetup with PropsReset {
 
         When("We make the second call after update")
         val response03 = makePutRequest(request310, write(callLimitSecondJson))
-        Then("We should get a 429")
-        response03.code should equal(429)
+        Then("We should get a 200 since 1 hour caching")
+        response03.code should equal(200)
 
         // Revert to initial state
         Consumers.consumers.vend.updateConsumerCallLimits(id, Some("-1"), Some("-1"), Some("-1"), Some("-1"), Some("-1"), Some("-1"))
@@ -221,8 +221,8 @@ class RateLimitTest extends V310ServerSetup with PropsReset {
 
         When("We make the second call after update")
         val response03 = makePutRequest(request310, write(callLimitMinuteJson))
-        Then("We should get a 429")
-        response03.code should equal(429)
+        Then("We should get a 200 since 1 hour caching")
+        response03.code should equal(200)
 
         // Revert to initial state
         Consumers.consumers.vend.updateConsumerCallLimits(id, Some("-1"), Some("-1"), Some("-1"), Some("-1"), Some("-1"), Some("-1"))
@@ -246,8 +246,8 @@ class RateLimitTest extends V310ServerSetup with PropsReset {
 
         When("We make the second call after update")
         val response03 = makePutRequest(request310, write(callLimitHourJson))
-        Then("We should get a 429")
-        response03.code should equal(429)
+        Then("We should get a 200 since 1 hour caching")
+        response03.code should equal(200)
 
         // Revert to initial state
         Consumers.consumers.vend.updateConsumerCallLimits(id, Some("-1"), Some("-1"), Some("-1"), Some("-1"), Some("-1"), Some("-1"))
@@ -271,8 +271,8 @@ class RateLimitTest extends V310ServerSetup with PropsReset {
 
         When("We make the second call after update")
         val response03 = makePutRequest(request310, write(callLimitDayJson))
-        Then("We should get a 429")
-        response03.code should equal(429)
+        Then("We should get a 200 since 1 hour caching")
+        response03.code should equal(200)
 
         // Revert to initial state
         Consumers.consumers.vend.updateConsumerCallLimits(id, Some("-1"), Some("-1"), Some("-1"), Some("-1"), Some("-1"), Some("-1"))
@@ -296,8 +296,8 @@ class RateLimitTest extends V310ServerSetup with PropsReset {
 
         When("We make the second call after update")
         val response03 = makePutRequest(request310, write(callLimitWeekJson))
-        Then("We should get a 429")
-        response03.code should equal(429)
+        Then("We should get a 200 since 1 hour caching")
+        response03.code should equal(200)
 
         // Revert to initial state
         Consumers.consumers.vend.updateConsumerCallLimits(id, Some("-1"), Some("-1"), Some("-1"), Some("-1"), Some("-1"), Some("-1"))
@@ -321,8 +321,8 @@ class RateLimitTest extends V310ServerSetup with PropsReset {
 
         When("We make the second call after update")
         val response03 = makePutRequest(request310, write(callLimitMonthJson))
-        Then("We should get a 429")
-        response03.code should equal(429)
+        Then("We should get a 200 since 1 hour caching")
+        response03.code should equal(200)
 
         // Revert to initial state
         Consumers.consumers.vend.updateConsumerCallLimits(id, Some("-1"), Some("-1"), Some("-1"), Some("-1"), Some("-1"), Some("-1"))
