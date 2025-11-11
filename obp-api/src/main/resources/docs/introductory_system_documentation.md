@@ -1883,8 +1883,8 @@ api_enabled_endpoints=[
   OBPv5.1.0-updateConsumerRedirectUrl,
   OBPv5.1.0-enableDisableConsumers,
   OBPv5.1.0-deleteConsumer,
-  OBPv4.0.0-getCallsLimit,
-  OBPv4.0.0-callsLimit,
+  OBPv6.0.0-getActiveCallLimitsAtDate,
+  OBPv6.0.0-updateRateLimits,
   OBPv5.1.0-getMetrics,
   OBPv5.1.0-getAggregateMetrics,
   OBPv5.1.0-getTopAPIs,
@@ -2797,7 +2797,7 @@ user_consumer_limit_anonymous_access=60
 **Setting Consumer Limits:**
 
 ```bash
-PUT /obp/v5.1.0/management/consumers/CONSUMER_ID/consumer/call-limits
+PUT /obp/v6.0.0/management/consumers/CONSUMER_ID/consumer/rate-limits/RATE_LIMITING_ID
 {
   "per_second_call_limit": "10",
   "per_minute_call_limit": "100",
@@ -3347,7 +3347,7 @@ POST /obp/v5.1.0/management/consumers
 }
 
 # 3. Set rate limits
-PUT /obp/v5.1.0/management/consumers/CONSUMER_ID/consumer/call-limits
+PUT /obp/v6.0.0/management/consumers/CONSUMER_ID/consumer/rate-limits/RATE_LIMITING_ID
 {
   "per_minute_call_limit": "100",
   "per_hour_call_limit": "1000"

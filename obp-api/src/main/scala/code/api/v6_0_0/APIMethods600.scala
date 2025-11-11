@@ -9,12 +9,12 @@ import code.api.util.ApiTag._
 import code.api.util.ErrorMessages.{$UserNotLoggedIn, InvalidDateFormat, InvalidJsonFormat, UnknownError, _}
 import code.api.util.FutureUtil.EndpointContext
 import code.api.util.NewStyle.HttpCode
-import code.api.util.{APIUtil, ErrorMessages, NewStyle, RateLimitingUtil}
+import code.api.util.{APIUtil, DiagnosticDynamicEntityCheck, ErrorMessages, NewStyle, RateLimitingUtil}
 import code.api.v3_0_0.JSONFactory300
 import code.api.v4_0_0.CallLimitPostJsonV400
 import code.api.v4_0_0.JSONFactory400.createCallsLimitJson
 import code.api.v5_0_0.JSONFactory500
-import code.api.v6_0_0.JSONFactory600.{createActiveCallLimitsJsonV600, createCallLimitJsonV600, createCurrentUsageJson}
+import code.api.v6_0_0.JSONFactory600.{DynamicEntityDiagnosticsJsonV600, DynamicEntityIssueJsonV600, createActiveCallLimitsJsonV600, createCallLimitJsonV600, createCurrentUsageJson}
 import code.bankconnectors.LocalMappedConnectorInternal
 import code.bankconnectors.LocalMappedConnectorInternal._
 import code.entitlement.Entitlement
@@ -29,6 +29,8 @@ import com.openbankproject.commons.model._
 import com.openbankproject.commons.util.{ApiVersion, ScannedApiVersion}
 import net.liftweb.common.{Empty, Full}
 import net.liftweb.http.rest.RestHelper
+import net.liftweb.json.{Extraction, JsonParser}
+import net.liftweb.json.JsonAST.JValue
 
 import java.text.SimpleDateFormat
 import scala.collection.immutable.{List, Nil}
@@ -46,7 +48,7 @@ trait APIMethods600 {
     val implementedInApiVersion: ScannedApiVersion = ApiVersion.v6_0_0
 
     private val staticResourceDocs = ArrayBuffer[ResourceDoc]()
-    def resourceDocs = staticResourceDocs 
+    def resourceDocs = staticResourceDocs
 
     val apiRelations = ArrayBuffer[ApiRelation]()
     val codeContext = CodeContext(staticResourceDocs, apiRelations)
@@ -354,11 +356,11 @@ trait APIMethods600 {
             _ <- NewStyle.function.getConsumerByConsumerId(consumerId, callContext)
             rateLimiting <- RateLimitingDI.rateLimiting.vend.getByRateLimitingId(rateLimitingId)
             _ <- rateLimiting match {
-              case Full(rl) if rl.consumerId == consumerId => 
+              case Full(rl) if rl.consumerId == consumerId =>
                 Future.successful(Full(rl))
-              case Full(_) => 
+              case Full(_) =>
                 Future.successful(ObpApiFailure(s"Rate limiting ID $rateLimitingId does not belong to consumer $consumerId", 400, callContext))
-              case _ => 
+              case _ =>
                 Future.successful(ObpApiFailure(s"Rate limiting ID $rateLimitingId not found", 404, callContext))
             }
             deleteResult <- RateLimitingDI.rateLimiting.vend.deleteByRateLimitingId(rateLimitingId)
@@ -416,6 +418,109 @@ trait APIMethods600 {
           } yield {
             (createActiveCallLimitsJsonV600(activeCallLimits, date), HttpCode.`200`(callContext))
           }
+    }
+
+    staticResourceDocs += ResourceDoc(
+      getDynamicEntityDiagnostics,
+      implementedInApiVersion,
+      nameOf(getDynamicEntityDiagnostics),
+      "GET",
+      "/management/diagnostics/dynamic-entities",
+      "Get Dynamic Entity Diagnostics",
+      s"""Get diagnostic information about Dynamic Entities to help troubleshoot Swagger generation issues.
+         |
+         |**Use Case:**
+         |This endpoint is particularly useful when:
+         |* The Swagger endpoint (`/obp/v6.0.0/resource-docs/OBPv6.0.0/swagger?content=dynamic`) fails with errors like "expected boolean"
+         |* The OBP endpoint (`/obp/v6.0.0/resource-docs/OBPv6.0.0/obp?content=dynamic`) works fine
+         |* You need to identify which dynamic entity has malformed field definitions
+         |
+         |**What It Checks:**
+         |This endpoint analyzes all dynamic entities (both system and bank level) for:
+         |* Boolean fields with invalid example values (e.g., `"{"tok"` instead of `"true"` or `"false"`)
+         |* Malformed JSON in field definitions
+         |* Fields that cannot be converted to their declared types
+         |* Other validation issues that cause Swagger generation to fail
+         |
+         |**Response Format:**
+         |The response contains:
+         |* `issues` - List of issues found, each with:
+         |  * `entity_name` - Name of the problematic entity
+         |  * `bank_id` - Bank ID (or "SYSTEM_LEVEL" for system entities)
+         |  * `field_name` - Name of the problematic field
+         |  * `example_value` - The current (invalid) example value
+         |  * `error_message` - Description of what's wrong and how to fix it
+         |* `total_issues` - Count of total issues found
+         |* `scanned_entities` - List of all dynamic entities that were scanned (format: "EntityName (BANK_ID)" or "EntityName (SYSTEM)")
+         |
+         |**How to Fix Issues:**
+         |1. Identify the problematic entity from the diagnostic output
+         |2. Update the entity definition using PUT `/management/system-dynamic-entities/DYNAMIC_ENTITY_ID` or PUT `/management/banks/BANK_ID/dynamic-entities/DYNAMIC_ENTITY_ID`
+         |3. For boolean fields, ensure the example value is either `"true"` or `"false"` (as strings)
+         |4. Re-run this diagnostic to verify the fix
+         |5. Check that the Swagger endpoint now works
+         |
+         |**Example Issue:**
+         |```
+         |{
+         |  "entity_name": "Customer",
+         |  "bank_id": "gh.29.uk",
+         |  "field_name": "is_active",
+         |  "example_value": "{"tok",
+         |  "error_message": "Boolean field has invalid example value. Expected 'true' or 'false', got: '{"tok'"
+         |}
+         |```
+         |
+         |${userAuthenticationMessage(true)}
+         |
+         |**Required Role:** `CanGetDynamicEntityDiagnostics`
+         |
+         |If no issues are found, the response will contain an empty issues list with `total_issues: 0`, but `scanned_entities` will show which entities were checked.
+         |""",
+      EmptyBody,
+      DynamicEntityDiagnosticsJsonV600(
+        scanned_entities = List("MyEntity (gh.29.uk)", "AnotherEntity (SYSTEM)"),
+        issues = List(
+          DynamicEntityIssueJsonV600(
+            entity_name = "MyEntity",
+            bank_id = "gh.29.uk",
+            field_name = "is_active",
+            example_value = "{\"tok",
+            error_message = "Boolean field has invalid example value. Expected 'true' or 'false', got: '{\"tok'"
+          )
+        ),
+        total_issues = 1
+      ),
+      List(
+        $UserNotLoggedIn,
+        UserHasMissingRoles,
+        UnknownError
+      ),
+      List(apiTagDynamicEntity, apiTagApi),
+      Some(List(canGetDynamicEntityDiagnostics))
+    )
+
+    lazy val getDynamicEntityDiagnostics: OBPEndpoint = {
+      case "management" :: "diagnostics" :: "dynamic-entities" :: Nil JsonGet _ => {
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(u), callContext) <- authenticatedAccess(cc)
+            _ <- NewStyle.function.hasEntitlement("", u.userId, canGetDynamicEntityDiagnostics, callContext)
+          } yield {
+            val result = DiagnosticDynamicEntityCheck.checkAllDynamicEntities()
+            val issuesJson = result.issues.map { issue =>
+              DynamicEntityIssueJsonV600(
+                entity_name = issue.entityName,
+                bank_id = issue.bankId.getOrElse("SYSTEM_LEVEL"),
+                field_name = issue.fieldName,
+                example_value = issue.exampleValue,
+                error_message = issue.errorMessage
+              )
+            }
+            val response = DynamicEntityDiagnosticsJsonV600(result.scannedEntities, issuesJson, result.issues.length)
+            (response, HttpCode.`200`(callContext))
+          }
+      }
     }
 
 
@@ -490,7 +595,7 @@ trait APIMethods600 {
       ),
       List(apiTagTransactionRequest, apiTagPSD2PIS, apiTagPsd2)
     )
-    
+
     lazy val createTransactionRequestCardano: OBPEndpoint = {
       case "banks" :: BankId(bankId) :: "accounts" :: AccountId(accountId) :: ViewId(viewId) :: "transaction-request-types" ::
         "CARDANO" :: "transaction-requests" :: Nil JsonPost json -> _ =>
@@ -677,6 +782,48 @@ trait APIMethods600 {
     }
 
 
+
+    staticResourceDocs += ResourceDoc(
+      getProviders,
+      implementedInApiVersion,
+      nameOf(getProviders),
+      "GET",
+      "/providers",
+      "Get Providers",
+      s"""Get the list of authentication providers that have been used to create users on this OBP instance.
+         |
+         |This endpoint returns a distinct list of provider values from the resource_user table.
+         |
+         |Providers may include:
+         |* Local OBP provider (e.g., "http://127.0.0.1:8080")
+         |* OAuth 2.0 / OpenID Connect providers (e.g., "google.com", "microsoft.com")
+         |* Custom authentication providers
+         |
+         |${userAuthenticationMessage(true)}
+         |
+         |""".stripMargin,
+      EmptyBody,
+      JSONFactory600.createProvidersJson(List("http://127.0.0.1:8080", "OBP", "google.com")),
+      List(
+        $UserNotLoggedIn,
+        UserHasMissingRoles,
+        UnknownError
+      ),
+      List(apiTagUser),
+      Some(List(canGetProviders))
+    )
+
+    lazy val getProviders: OBPEndpoint = {
+      case "providers" :: Nil JsonGet _ =>
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(u), callContext) <- authenticatedAccess(cc)
+            _ <- NewStyle.function.hasEntitlement("", u.userId, canGetProviders, callContext)
+            providers <- Future { code.model.dataAccess.ResourceUser.getDistinctProviders }
+          } yield {
+            (JSONFactory600.createProvidersJson(providers), HttpCode.`200`(callContext))
+          }
+    }
     staticResourceDocs += ResourceDoc(
       directLoginEndpoint,
       implementedInApiVersion,
@@ -686,7 +833,7 @@ trait APIMethods600 {
       "Direct Login",
       s"""This endpoint allows users to create a DirectLogin token to access the API.
          |
-         |DirectLogin is a simple authentication flow. You POST your credentials (username, password, and consumer key) 
+         |DirectLogin is a simple authentication flow. You POST your credentials (username, password, and consumer key)
          |to the DirectLogin endpoint and receive a token in return.
          |
          |This is an alias to the DirectLogin endpoint that includes the standard API versioning prefix.
@@ -728,7 +875,7 @@ trait APIMethods600 {
             }
           }
     }
-    
+
   }
 }
 
@@ -739,4 +886,3 @@ object APIMethods600 extends RestHelper with APIMethods600 {
     rd => (rd.partialFunctionName, rd.implementedInApiVersion.toString())
   }.toList
 }
-

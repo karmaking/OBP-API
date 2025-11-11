@@ -688,6 +688,9 @@ object ApiRole extends MdcLoggable{
   case class CanGetBankLevelDynamicEntities(requiresBankId: Boolean = true) extends ApiRole
   lazy val canGetBankLevelDynamicEntities = CanGetBankLevelDynamicEntities()
 
+  case class CanGetDynamicEntityDiagnostics(requiresBankId: Boolean = false) extends ApiRole
+  lazy val canGetDynamicEntityDiagnostics = CanGetDynamicEntityDiagnostics()
+
   case class CanGetDynamicEndpoint(requiresBankId: Boolean = false) extends ApiRole
   lazy val canGetDynamicEndpoint = CanGetDynamicEndpoint()
 
@@ -1099,6 +1102,8 @@ object ApiRole extends MdcLoggable{
 
   case class CanGetSystemIntegrity(requiresBankId: Boolean = false) extends ApiRole
   lazy val canGetSystemIntegrity = CanGetSystemIntegrity()
+  case class CanGetProviders(requiresBankId: Boolean = false) extends ApiRole
+  lazy val canGetProviders = CanGetProviders()
 
   private val dynamicApiRoles = new ConcurrentHashMap[String, ApiRole]
 

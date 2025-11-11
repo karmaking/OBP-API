@@ -109,14 +109,14 @@ case class ActiveCallLimitsJsonV600(
 case class TransactionRequestBodyCardanoJsonV600(
   to: CardanoPaymentJsonV600,
   value: AmountOfMoneyJsonV121,
-  passphrase: String, 
+  passphrase: String,
   description: String,
   metadata: Option[Map[String, CardanoMetadataStringJsonV600]] = None
 ) extends TransactionRequestCommonBodyJSON
 
 // ---------------- Ethereum models (V600) ----------------
 case class TransactionRequestBodyEthereumJsonV600(
-  params: Option[String] = None,// This is for eth_sendRawTransaction 
+  params: Option[String] = None,// This is for eth_sendRawTransaction
   to: String, // this is for eth_sendTransaction eg: 0x addressk
   value: AmountOfMoneyJsonV121,   // currency should be "ETH"; amount string (decimal)
   description: String
@@ -156,6 +156,8 @@ case class PostBankJson600(
                             website: Option[String],
                             bank_routings: Option[List[BankRoutingJsonV121]]
                           )
+
+case class ProvidersJsonV600(providers: List[String])
 
 object JSONFactory600 extends CustomJsonFormats with MdcLoggable{
 
@@ -244,4 +246,25 @@ object JSONFactory600 extends CustomJsonFormats with MdcLoggable{
   def createTokenJSON(token: String): TokenJSON = {
     TokenJSON(token)
   }
+
+  def createProvidersJson(providers: List[String]): ProvidersJsonV600 = {
+    ProvidersJsonV600(providers)
+  }
+
+case class ProvidersJsonV600(providers: List[String])
+
+case class DynamicEntityIssueJsonV600(
+  entity_name: String,
+  bank_id: String,
+  field_name: String,
+  example_value: String,
+  error_message: String
+)
+
+case class DynamicEntityDiagnosticsJsonV600(
+  scanned_entities: List[String],
+  issues: List[DynamicEntityIssueJsonV600],
+  total_issues: Int
+)
+
 }
