@@ -1,17 +1,26 @@
 package code.ratelimiting
 
 import code.api.util.APIUtil
+import code.api.cache.Caching
 
 import java.util.Date
+import java.util.UUID.randomUUID
 import code.util.{MappedUUID, UUIDString}
 import net.liftweb.common.{Box, Full}
 import net.liftweb.mapper._
 import net.liftweb.util.Helpers.tryo
 import com.openbankproject.commons.ExecutionContext.Implicits.global
+import com.tesobe.CacheKeyFromArguments
+
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 import scala.concurrent.Future
+import scala.concurrent.duration._
+import scala.language.postfixOps
 
 object MappedRateLimitingProvider extends RateLimitingProviderTrait {
+  
   def getAll(): Future[List[RateLimiting]] = Future(RateLimiting.findAll())
   def getAllByConsumerId(consumerId: String, date: Option[Date] = None): Future[List[RateLimiting]] = Future {
     date match {
@@ -252,12 +261,39 @@ object MappedRateLimitingProvider extends RateLimitingProviderTrait {
     RateLimiting.find(By(RateLimiting.RateLimitingId, rateLimitingId))
   }
 
+  private def getActiveCallLimitsByConsumerIdAtDateCached(consumerId: String, currentDateWithHour: String): List[RateLimiting] = {
+    /**
+      * Please note that "var cacheKey = (randomUUID().toString, randomUUID().toString, randomUUID().toString)"
+      * is just a temporary value field with UUID values in order to prevent any ambiguity.
+      * The real value will be assigned by Macro during compile time at this line of a code:
+      * https://github.com/OpenBankProject/scala-macros/blob/master/macros/src/main/scala/com/tesobe/CacheKeyFromArgumentsMacro.scala#L49
+      */
+    // Create a proper Date object from the date_with_hour string (assuming 0 mins and 0 seconds)
+    val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd-HH")
+    val localDateTime = LocalDateTime.parse(currentDateWithHour, formatter).withMinute(0).withSecond(0)
+    // Convert LocalDateTime to java.util.Date
+    val instant = localDateTime.atZone(java.time.ZoneId.systemDefault()).toInstant()
+    val date = Date.from(instant)
+    
+    var cacheKey = (randomUUID().toString, randomUUID().toString, randomUUID().toString)
+    CacheKeyFromArguments.buildCacheKey {
+      Caching.memoizeSyncWithProvider(Some(cacheKey.toString()))(3600 second) {
+        RateLimiting.findAll(
+          By(RateLimiting.ConsumerId, consumerId),
+          By_<=(RateLimiting.FromDate, date),
+          By_>=(RateLimiting.ToDate, date)
+        )
+      }
+    }
+  }
+
   def getActiveCallLimitsByConsumerIdAtDate(consumerId: String, date: Date): Future[List[RateLimiting]] = Future {
-    RateLimiting.findAll(
-      By(RateLimiting.ConsumerId, consumerId),
-      By_<=(RateLimiting.FromDate, date),
-      By_>=(RateLimiting.ToDate, date)
-    )
+    def currentDateWithHour: String = {
+      val now = LocalDateTime.now()
+      val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd-HH")
+      now.format(formatter)
+    }
+    getActiveCallLimitsByConsumerIdAtDateCached(consumerId, currentDateWithHour)
   }
 
 }
