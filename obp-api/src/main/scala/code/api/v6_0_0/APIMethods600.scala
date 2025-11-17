@@ -11,6 +11,7 @@ import code.api.util.FutureUtil.EndpointContext
 import code.api.util.NewStyle.HttpCode
 import code.api.util.{APIUtil, DiagnosticDynamicEntityCheck, ErrorMessages, NewStyle, RateLimitingUtil}
 import code.api.v3_0_0.JSONFactory300
+import code.api.v3_1_0.JSONFactory310
 import code.api.v4_0_0.CallLimitPostJsonV400
 import code.api.v4_0_0.JSONFactory400.createCallsLimitJson
 import code.api.v5_0_0.JSONFactory500
@@ -36,6 +37,7 @@ import java.text.SimpleDateFormat
 import scala.collection.immutable.{List, Nil}
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
+import scala.util.Random
 
 
 trait APIMethods600 {
@@ -824,6 +826,150 @@ trait APIMethods600 {
             (JSONFactory600.createProvidersJson(providers), HttpCode.`200`(callContext))
           }
     }
+    staticResourceDocs += ResourceDoc(
+      createCustomer,
+      implementedInApiVersion,
+      nameOf(createCustomer),
+      "POST",
+      "/banks/BANK_ID/customers",
+      "Create Customer",
+      s"""
+         |The Customer resource stores the customer number, legal name, email, phone number, date of birth, relationship status,
+         |education attained, a url for a profile image, KYC status, credit rating, credit limit, and other customer information.
+         |
+         |**Required Fields:**
+         |- legal_name: The customer's full legal name
+         |- mobile_phone_number: The customer's mobile phone number
+         |
+         |**Optional Fields:**
+         |- customer_number: If not provided, a random number will be generated
+         |- email: Customer's email address
+         |- face_image: Customer's face image (url and date)
+         |- date_of_birth: Customer's date of birth in YYYY-MM-DD format
+         |- relationship_status: Customer's relationship status
+         |- dependants: Number of dependants (must match the length of dob_of_dependants array)
+         |- dob_of_dependants: Array of dependant birth dates in YYYY-MM-DD format
+         |- credit_rating: Customer's credit rating (rating and source)
+         |- credit_limit: Customer's credit limit (currency and amount)
+         |- highest_education_attained: Customer's highest education level
+         |- employment_status: Customer's employment status
+         |- kyc_status: Know Your Customer verification status (true/false)
+         |- last_ok_date: Last verification date
+         |- title: Customer's title (e.g., Mr., Mrs., Dr.)
+         |- branch_id: Associated branch identifier
+         |- name_suffix: Customer's name suffix (e.g., Jr., Sr.)
+         |
+         |**Date Format:**
+         |In v6.0.0, date_of_birth and dob_of_dependants must be provided in ISO 8601 date format: **YYYY-MM-DD** (e.g., "1990-05-15", "2010-03-20").
+         |The dates are strictly validated and must be valid calendar dates.
+         |Dates are stored with time set to midnight (00:00:00) UTC for consistency.
+         |
+         |**Validations:**
+         |- customer_number cannot contain `::::` characters
+         |- customer_number must be unique for the bank
+         |- The number of dependants must equal the length of the dob_of_dependants array
+         |- date_of_birth must be in valid YYYY-MM-DD format if provided
+         |- Each date in dob_of_dependants must be in valid YYYY-MM-DD format
+         |
+         |Note: If you need to set a specific customer number, use the Update Customer Number endpoint after this call.
+         |
+         |${userAuthenticationMessage(true)}
+         |""",
+      postCustomerJsonV600,
+      customerJsonV600,
+      List(
+        $UserNotLoggedIn,
+        $BankNotFound,
+        InvalidJsonFormat,
+        InvalidJsonContent,
+        InvalidDateFormat,
+        CustomerNumberAlreadyExists,
+        UserNotFoundById,
+        CustomerAlreadyExistsForUser,
+        CreateConsumerError,
+        UnknownError
+      ),
+      List(apiTagCustomer, apiTagPerson),
+      Some(List(canCreateCustomer,canCreateCustomerAtAnyBank))
+    )
+    lazy val createCustomer : OBPEndpoint = {
+      case "banks" :: BankId(bankId) :: "customers" :: Nil JsonPost json -> _ => {
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            postedData <- NewStyle.function.tryons(s"$InvalidJsonFormat The Json body should be the $PostCustomerJsonV600 ", 400, cc.callContext) {
+              json.extract[PostCustomerJsonV600]
+            }
+            _ <- Helper.booleanToFuture(failMsg =  InvalidJsonContent + s" The field dependants(${postedData.dependants.getOrElse(0)}) not equal the length(${postedData.dob_of_dependants.getOrElse(Nil).length }) of dob_of_dependants array", 400, cc.callContext) {
+              postedData.dependants.getOrElse(0) == postedData.dob_of_dependants.getOrElse(Nil).length
+            }
+
+            // Validate and parse date_of_birth (YYYY-MM-DD format)
+            dateOfBirth <- Future {
+              postedData.date_of_birth.map { dateStr =>
+                try {
+                  val formatter = new java.text.SimpleDateFormat("yyyy-MM-dd")
+                  formatter.setTimeZone(java.util.TimeZone.getTimeZone("UTC"))
+                  formatter.setLenient(false)
+                  formatter.parse(dateStr)
+                } catch {
+                  case _: Exception =>
+                    throw new Exception(s"$InvalidJsonFormat date_of_birth must be in YYYY-MM-DD format (e.g., 1990-05-15), got: $dateStr")
+                }
+              }.orNull
+            }
+
+            // Validate and parse dob_of_dependants (YYYY-MM-DD format)
+            dobOfDependants <- Future {
+              postedData.dob_of_dependants.getOrElse(Nil).map { dateStr =>
+                try {
+                  val formatter = new java.text.SimpleDateFormat("yyyy-MM-dd")
+                  formatter.setTimeZone(java.util.TimeZone.getTimeZone("UTC"))
+                  formatter.setLenient(false)
+                  formatter.parse(dateStr)
+                } catch {
+                  case _: Exception =>
+                    throw new Exception(s"$InvalidJsonFormat dob_of_dependants must contain dates in YYYY-MM-DD format (e.g., 2010-03-20), got: $dateStr")
+                }
+              }
+            }
+
+            customerNumber = postedData.customer_number.getOrElse(Random.nextInt(Integer.MAX_VALUE).toString)
+
+            _ <- Helper.booleanToFuture(failMsg = s"$InvalidJsonFormat customer_number can not contain `::::` characters", cc=cc.callContext) {
+              !`checkIfContains::::` (customerNumber)
+            }
+            (_, callContext) <- NewStyle.function.checkCustomerNumberAvailable(bankId, customerNumber, cc.callContext)
+            (customer, callContext) <- NewStyle.function.createCustomerC2(
+              bankId,
+              postedData.legal_name,
+              customerNumber,
+              postedData.mobile_phone_number,
+              postedData.email.getOrElse(""),
+              CustomerFaceImage(
+                postedData.face_image.map(_.date).getOrElse(null),
+                postedData.face_image.map(_.url).getOrElse("")
+              ),
+              dateOfBirth,
+              postedData.relationship_status.getOrElse(""),
+              postedData.dependants.getOrElse(0),
+              dobOfDependants,
+              postedData.highest_education_attained.getOrElse(""),
+              postedData.employment_status.getOrElse(""),
+              postedData.kyc_status.getOrElse(false),
+              postedData.last_ok_date.getOrElse(null),
+              postedData.credit_rating.map(i => CreditRating(i.rating, i.source)),
+              postedData.credit_limit.map(i => CreditLimit(i.currency, i.amount)),
+              postedData.title.getOrElse(""),
+              postedData.branch_id.getOrElse(""),
+              postedData.name_suffix.getOrElse(""),
+              callContext,
+            )
+          } yield {
+            (JSONFactory600.createCustomerJson(customer), HttpCode.`201`(callContext))
+          }
+      }
+    }
+
     staticResourceDocs += ResourceDoc(
       directLoginEndpoint,
       implementedInApiVersion,
