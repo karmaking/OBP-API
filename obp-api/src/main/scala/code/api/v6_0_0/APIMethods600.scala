@@ -1100,6 +1100,53 @@ trait APIMethods600 {
     }
 
     staticResourceDocs += ResourceDoc(
+      getCustomersAtAllBanks,
+      implementedInApiVersion,
+      nameOf(getCustomersAtAllBanks),
+      "GET",
+      "/customers",
+      "Get Customers at All Banks",
+      s"""Get Customers at All Banks.
+         |
+         |Returns a list of all customers across all banks.
+         |
+         |**Date Format:**
+         |In v6.0.0, date_of_birth and dob_of_dependants are returned in ISO 8601 date format: **YYYY-MM-DD** (e.g., "1990-05-15", "2010-03-20").
+         |
+         |**Query Parameters:**
+         |- limit: Maximum number of customers to return (optional)
+         |- offset: Number of customers to skip for pagination (optional)
+         |- sort_direction: Sort direction - ASC or DESC (optional)
+         |
+         |${userAuthenticationMessage(true)}
+         |
+         |""",
+      EmptyBody,
+      customerJSONsV600,
+      List(
+        $UserNotLoggedIn,
+        UserCustomerLinksNotFoundForUser,
+        UnknownError
+      ),
+      List(apiTagCustomer, apiTagUser),
+      Some(List(canGetCustomersAtAllBanks))
+    )
+
+    lazy val getCustomersAtAllBanks : OBPEndpoint = {
+      case "customers" :: Nil JsonGet _ => {
+        cc => {
+          implicit val ec = EndpointContext(Some(cc))
+          for {
+            (requestParams, callContext) <- extractQueryParams(cc.url, List("limit","offset","sort_direction"), cc.callContext)
+            (customers, callContext) <- NewStyle.function.getCustomersAtAllBanks(callContext, requestParams)
+          } yield {
+            (JSONFactory600.createCustomersJson(customers.sortBy(_.bankId)), HttpCode.`200`(callContext))
+          }
+        }
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
       getCustomersAtOneBank,
       implementedInApiVersion,
       nameOf(getCustomersAtOneBank),
