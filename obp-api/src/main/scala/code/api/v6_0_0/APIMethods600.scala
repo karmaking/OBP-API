@@ -16,6 +16,7 @@ import code.api.v3_1_0.{JSONFactory310, PostCustomerNumberJsonV310}
 import code.api.v4_0_0.CallLimitPostJsonV400
 import code.api.v4_0_0.JSONFactory400.createCallsLimitJson
 import code.api.v5_0_0.JSONFactory500
+import code.api.v5_1_0.PostCustomerLegalNameJsonV510
 import code.api.v6_0_0.JSONFactory600.{DynamicEntityDiagnosticsJsonV600, DynamicEntityIssueJsonV600, ReferenceTypeJsonV600, ReferenceTypesJsonV600, createActiveCallLimitsJsonV600, createCallLimitJsonV600, createCurrentUsageJson}
 import code.bankconnectors.LocalMappedConnectorInternal
 import code.bankconnectors.LocalMappedConnectorInternal._
@@ -1143,6 +1144,53 @@ trait APIMethods600 {
             (JSONFactory600.createCustomersJson(customers.sortBy(_.bankId)), HttpCode.`200`(callContext))
           }
         }
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
+      getCustomersByLegalName,
+      implementedInApiVersion,
+      nameOf(getCustomersByLegalName),
+      "POST",
+      "/banks/BANK_ID/customers/legal-name",
+      "Get Customers by Legal Name",
+      s"""Gets the Customers specified by Legal Name.
+         |
+         |Returns a list of customers that match the provided legal name.
+         |
+         |**Date Format:**
+         |In v6.0.0, date_of_birth and dob_of_dependants are returned in ISO 8601 date format: **YYYY-MM-DD** (e.g., "1990-05-15", "2010-03-20").
+         |
+         |${userAuthenticationMessage(true)}
+         |
+         |""",
+      PostCustomerLegalNameJsonV510(legal_name = "John Smith"),
+      customerJSONsV600,
+      List(
+        $UserNotLoggedIn,
+        UserCustomerLinksNotFoundForUser,
+        UnknownError
+      ),
+      List(apiTagCustomer, apiTagKyc),
+      Some(List(canGetCustomersAtOneBank))
+    )
+
+    lazy val getCustomersByLegalName: OBPEndpoint = {
+      case "banks" :: BankId(bankId) :: "customers" :: "legal-name" :: Nil JsonPost json -> _ => {
+        cc =>
+          implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(u), callContext) <- authenticatedAccess(cc)
+            (bank, callContext) <- NewStyle.function.getBank(bankId, callContext)
+            _ <- NewStyle.function.hasEntitlement(bankId.value, u.userId, canGetCustomersAtOneBank, callContext)
+            failMsg = s"$InvalidJsonFormat The Json body should be the $PostCustomerLegalNameJsonV510 "
+            postedData <- NewStyle.function.tryons(failMsg, 400, callContext) {
+              json.extract[PostCustomerLegalNameJsonV510]
+            }
+            (customers, callContext) <- NewStyle.function.getCustomersByCustomerLegalName(bank.bankId, postedData.legal_name, callContext)
+          } yield {
+            (JSONFactory600.createCustomersJson(customers), HttpCode.`200`(callContext))
+          }
       }
     }
 
