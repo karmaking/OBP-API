@@ -208,8 +208,16 @@ object DiagnosticDynamicEntityCheck {
                         )
                     }
 
-                  case JBool(_) =>
-                    // This is fine - proper boolean
+                  case JBool(boolValue) =>
+                    // Boolean examples MUST be strings "true" or "false", not actual JSON booleans
+                    // The code expects JString and calls .toBoolean on it
+                    issues += BooleanFieldIssue(
+                      entityName,
+                      bankId,
+                      fieldName,
+                      boolValue.toString,
+                      s"""Boolean field has JSON boolean value ($boolValue) instead of string. Expected string "true" or "false", got JSON boolean $boolValue. This will cause Swagger generation to fail with 'expected boolean' error. Update the entity definition to use string examples."""
+                    )
 
                   case JNothing | JNull =>
                     issues += BooleanFieldIssue(
