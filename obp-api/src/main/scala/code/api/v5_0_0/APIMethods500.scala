@@ -1609,7 +1609,7 @@ trait APIMethods500 {
         UnknownError
       ),
       List(apiTagCustomer, apiTagUser),
-      Some(List(canGetCustomers))
+      Some(List(canGetCustomersAtOneBank))
     )
 
     lazy val getCustomersAtOneBank : OBPEndpoint = {

@@ -91,14 +91,14 @@ class CustomerTest extends V400ServerSetup  with PropsReset{
       val response = makeGetRequest(request)
       Then("We should get a 403")
       response.code should equal(403)
-      val errorMsg = UserHasMissingRoles + canGetCustomersAtAnyBank
+      val errorMsg = UserHasMissingRoles + canGetCustomersAtAllBanks
       And("error should be " + errorMsg)
       val errorMessage = response.body.extract[ErrorMessage].message
       errorMessage contains (UserHasMissingRoles) should be (true)
-      errorMessage contains (canGetCustomersAtAnyBank.toString()) should be (true)
+      errorMessage contains (canGetCustomersAtAllBanks.toString()) should be (true)
     }
     scenario("We will call the endpoint with a user credentials and a proper role", ApiEndpoint1, VersionOfApi) {
-      Entitlement.entitlement.vend.addEntitlement("", resourceUser1.userId, CanGetCustomersAtAnyBank.toString)
+      Entitlement.entitlement.vend.addEntitlement("", resourceUser1.userId, CanGetCustomersAtAllBanks.toString)
       When(s"We make a request $VersionOfApi")
       val request = (v4_0_0_Request / "customers").GET <@(user1)
       val response = makeGetRequest(request)

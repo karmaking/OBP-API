@@ -84,14 +84,14 @@ object ApiRole extends MdcLoggable{
   case class CanSearchMetrics(requiresBankId: Boolean = false) extends ApiRole
   lazy val canSearchMetrics = CanSearchMetrics()
 
-  case class CanGetCustomersAtAnyBank(requiresBankId: Boolean = false) extends ApiRole
-  lazy val canGetCustomersAtAnyBank = CanGetCustomersAtAnyBank()
+  case class CanGetCustomersAtAllBanks(requiresBankId: Boolean = false) extends ApiRole
+  lazy val canGetCustomersAtAllBanks = CanGetCustomersAtAllBanks()
   
   case class CanGetCustomersMinimalAtAnyBank(requiresBankId: Boolean = false) extends ApiRole
   lazy val canGetCustomersMinimalAtAnyBank = CanGetCustomersMinimalAtAnyBank()
   
-  case class CanGetCustomers(requiresBankId: Boolean = true) extends ApiRole
-  lazy val canGetCustomers = CanGetCustomers()
+  case class CanGetCustomersAtOneBank(requiresBankId: Boolean = true) extends ApiRole
+  lazy val canGetCustomersAtOneBank = CanGetCustomersAtOneBank()
   
   case class CanGetCustomersMinimal(requiresBankId: Boolean = true) extends ApiRole
   lazy val canGetCustomersMinimal = CanGetCustomersMinimal()

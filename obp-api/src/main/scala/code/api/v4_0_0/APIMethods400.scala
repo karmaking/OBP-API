@@ -6857,7 +6857,7 @@ trait APIMethods400 extends MdcLoggable {
         UnknownError
       ),
       List(apiTagCustomer, apiTagUser),
-      Some(List(canGetCustomersAtAnyBank))
+      Some(List(canGetCustomersAtAllBanks))
     )
     lazy val getCustomersAtAnyBank: OBPEndpoint = {
       case "customers" :: Nil JsonGet _ => { cc =>

@@ -4656,7 +4656,7 @@ object SwaggerDefinitionsJSON {
     bank_id =  bankIdExample.value
   )
 
-  lazy val canGetCustomersJson = ApiRole.canGetCustomers
+  lazy val canGetCustomersJson = ApiRole.canGetCustomersAtOneBank
   
   lazy val cardAttributeCommons = CardAttributeCommons(
     bankId = Some(BankId(bankIdExample.value)),
