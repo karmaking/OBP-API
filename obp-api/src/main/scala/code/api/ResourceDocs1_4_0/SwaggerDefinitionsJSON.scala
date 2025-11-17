@@ -2507,6 +2507,77 @@ object SwaggerDefinitionsJSON {
     name_suffix = ExampleValue.nameSuffixExample.value
   )
 
+  lazy val postCustomerJsonV600 =
+    PostCustomerJsonV600(
+      legal_name = ExampleValue.legalNameExample.value,
+      customer_number = Some(ExampleValue.customerNumberExample.value),
+      mobile_phone_number = ExampleValue.mobilePhoneNumberExample.value,
+      email = Some(ExampleValue.emailExample.value),
+      face_image = Some(customerFaceImageJson),
+      date_of_birth = Some("1990-05-15"),
+      relationship_status = Some(ExampleValue.relationshipStatusExample.value),
+      dependants = Some(ExampleValue.dependantsExample.value.toInt),
+      dob_of_dependants = Some(List("2015-03-20", "2018-07-10")),
+      credit_rating = Some(customerCreditRatingJSON),
+      credit_limit = Some(amountOfMoneyJsonV121),
+      highest_education_attained = Some(ExampleValue.highestEducationAttainedExample.value),
+      employment_status = Some(ExampleValue.employmentStatusExample.value),
+      kyc_status = Some(ExampleValue.kycStatusExample.value.toBoolean),
+      last_ok_date = Some(oneYearAgoDate),
+      title  = Some(ExampleValue.titleExample.value),
+      branch_id = Some(ExampleValue.branchIdExample.value),
+      name_suffix = Some(ExampleValue.nameSuffixExample.value)
+    )
+  
+  lazy val customerJsonV600 = CustomerJsonV600(
+    bank_id = bankIdExample.value,
+    customer_id = ExampleValue.customerIdExample.value,
+    customer_number = ExampleValue.customerNumberExample.value,
+    legal_name = ExampleValue.legalNameExample.value,
+    mobile_phone_number = ExampleValue.mobileNumberExample.value,
+    email = ExampleValue.emailExample.value,
+    face_image = customerFaceImageJson,
+    date_of_birth = "1990-05-15",
+    relationship_status = ExampleValue.relationshipStatusExample.value,
+    dependants = ExampleValue.dependantsExample.value.toInt,
+    dob_of_dependants = List("2015-03-20", "2018-07-10"),
+    credit_rating = Option(customerCreditRatingJSON),
+    credit_limit = Option(amountOfMoneyJsonV121),
+    highest_education_attained = ExampleValue.highestEducationAttainedExample.value,
+    employment_status = ExampleValue.employmentStatusExample.value,
+    kyc_status = ExampleValue.kycStatusExample.value.toBoolean,
+    last_ok_date = oneYearAgoDate,
+    title  = ExampleValue.titleExample.value,
+    branch_id = ExampleValue.branchIdExample.value,
+    name_suffix = ExampleValue.nameSuffixExample.value
+  )
+
+  lazy val customerJSONsV600 = CustomerJSONsV600(List(customerJsonV600))
+
+  lazy val customerWithAttributesJsonV600 = CustomerWithAttributesJsonV600(
+    bank_id = bankIdExample.value,
+    customer_id = ExampleValue.customerIdExample.value,
+    customer_number = ExampleValue.customerNumberExample.value,
+    legal_name = ExampleValue.legalNameExample.value,
+    mobile_phone_number = ExampleValue.mobileNumberExample.value,
+    email = ExampleValue.emailExample.value,
+    face_image = customerFaceImageJson,
+    date_of_birth = "1990-05-15",
+    relationship_status = ExampleValue.relationshipStatusExample.value,
+    dependants = ExampleValue.dependantsExample.value.toInt,
+    dob_of_dependants = List("2015-03-20", "2018-07-10"),
+    credit_rating = Option(customerCreditRatingJSON),
+    credit_limit = Option(amountOfMoneyJsonV121),
+    highest_education_attained = ExampleValue.highestEducationAttainedExample.value,
+    employment_status = ExampleValue.employmentStatusExample.value,
+    kyc_status = ExampleValue.kycStatusExample.value.toBoolean,
+    last_ok_date = oneYearAgoDate,
+    title  = ExampleValue.titleExample.value,
+    branch_id = ExampleValue.branchIdExample.value,
+    name_suffix = ExampleValue.nameSuffixExample.value,
+    customer_attributes = List(customerAttributeResponseJson)
+  )
+
   lazy val customerAttributeResponseJson = CustomerAttributeResponseJsonV300 (
     customer_attribute_id = customerAttributeIdExample.value,
     name = customerAttributeNameExample.value,

@@ -9,9 +9,10 @@ import code.api.util.ApiTag._
 import code.api.util.ErrorMessages.{$UserNotLoggedIn, InvalidDateFormat, InvalidJsonFormat, UnknownError, _}
 import code.api.util.FutureUtil.EndpointContext
 import code.api.util.NewStyle.HttpCode
-import code.api.util.{APIUtil, DiagnosticDynamicEntityCheck, ErrorMessages, NewStyle, RateLimitingUtil}
+import code.api.util.{APIUtil, CallContext, DiagnosticDynamicEntityCheck, ErrorMessages, NewStyle, RateLimitingUtil}
+import code.api.util.NewStyle.function.extractQueryParams
 import code.api.v3_0_0.JSONFactory300
-import code.api.v3_1_0.JSONFactory310
+import code.api.v3_1_0.{JSONFactory310, PostCustomerNumberJsonV310}
 import code.api.v4_0_0.CallLimitPostJsonV400
 import code.api.v4_0_0.JSONFactory400.createCallsLimitJson
 import code.api.v5_0_0.JSONFactory500
@@ -26,7 +27,7 @@ import code.util.Helper.SILENCE_IS_GOLDEN
 import code.views.Views
 import com.github.dwickern.macros.NameOf.nameOf
 import com.openbankproject.commons.ExecutionContext.Implicits.global
-import com.openbankproject.commons.model._
+import com.openbankproject.commons.model.{CustomerAttribute, _}
 import com.openbankproject.commons.util.{ApiVersion, ScannedApiVersion}
 import net.liftweb.common.{Empty, Full}
 import net.liftweb.http.rest.RestHelper
@@ -966,6 +967,145 @@ trait APIMethods600 {
             )
           } yield {
             (JSONFactory600.createCustomerJson(customer), HttpCode.`201`(callContext))
+          }
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
+      getCustomersAtOneBank,
+      implementedInApiVersion,
+      nameOf(getCustomersAtOneBank),
+      "GET",
+      "/banks/BANK_ID/customers",
+      "Get Customers at Bank",
+      s"""Get Customers at Bank.
+         |
+         |Returns a list of all customers at the specified bank.
+         |
+         |**Date Format:**
+         |In v6.0.0, date_of_birth and dob_of_dependants are returned in ISO 8601 date format: **YYYY-MM-DD** (e.g., "1990-05-15", "2010-03-20").
+         |
+         |**Query Parameters:**
+         |- limit: Maximum number of customers to return (optional)
+         |- offset: Number of customers to skip for pagination (optional)
+         |- sort_direction: Sort direction - ASC or DESC (optional)
+         |
+         |${userAuthenticationMessage(true)}
+         |
+         |""",
+      EmptyBody,
+      customerJSONsV600,
+      List(
+        $UserNotLoggedIn,
+        UserCustomerLinksNotFoundForUser,
+        UnknownError
+      ),
+      List(apiTagCustomer, apiTagUser),
+      Some(List(canGetCustomers))
+    )
+
+    lazy val getCustomersAtOneBank : OBPEndpoint = {
+      case "banks" :: BankId(bankId) :: "customers" :: Nil JsonGet _ => {
+        cc => {
+          implicit val ec = EndpointContext(Some(cc))
+          for {
+            (requestParams, callContext) <- extractQueryParams(cc.url, List("limit","offset","sort_direction"), cc.callContext)
+            customers <- NewStyle.function.getCustomers(bankId, callContext, requestParams)
+          } yield {
+            (JSONFactory600.createCustomersJson(customers.sortBy(_.bankId)), HttpCode.`200`(callContext))
+          }
+        }
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
+      getCustomerByCustomerId,
+      implementedInApiVersion,
+      nameOf(getCustomerByCustomerId),
+      "GET",
+      "/banks/BANK_ID/customers/CUSTOMER_ID",
+      "Get Customer by CUSTOMER_ID",
+      s"""Gets the Customer specified by CUSTOMER_ID.
+         |
+         |**Date Format:**
+         |In v6.0.0, date_of_birth and dob_of_dependants are returned in ISO 8601 date format: **YYYY-MM-DD** (e.g., "1990-05-15", "2010-03-20").
+         |
+         |${userAuthenticationMessage(true)}
+         |
+         |""",
+      EmptyBody,
+      customerWithAttributesJsonV600,
+      List(
+        $UserNotLoggedIn,
+        UserHasMissingRoles,
+        UserCustomerLinksNotFoundForUser,
+        UnknownError
+      ),
+      List(apiTagCustomer),
+      Some(List(canGetCustomer)))
+
+    lazy val getCustomerByCustomerId : OBPEndpoint = {
+      case "banks" :: BankId(bankId) :: "customers" :: customerId ::  Nil JsonGet _ => {
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(u), callContext) <- authenticatedAccess(cc)
+            (_, callContext) <- NewStyle.function.getBank(bankId, callContext)
+            _ <- NewStyle.function.hasEntitlement(bankId.value, u.userId, canGetCustomer, callContext)
+            (customer, callContext) <- NewStyle.function.getCustomerByCustomerId(customerId, callContext)
+            (customerAttributes, callContext) <- NewStyle.function.getCustomerAttributes(
+              bankId,
+              CustomerId(customerId),
+              callContext: Option[CallContext])
+          } yield {
+            (JSONFactory600.createCustomerWithAttributesJson(customer, customerAttributes), HttpCode.`200`(callContext))
+          }
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
+      getCustomerByCustomerNumber,
+      implementedInApiVersion,
+      nameOf(getCustomerByCustomerNumber),
+      "POST",
+      "/banks/BANK_ID/customers/customer-number",
+      "Get Customer by CUSTOMER_NUMBER",
+      s"""Gets the Customer specified by CUSTOMER_NUMBER.
+         |
+         |**Date Format:**
+         |In v6.0.0, date_of_birth and dob_of_dependants are returned in ISO 8601 date format: **YYYY-MM-DD** (e.g., "1990-05-15", "2010-03-20").
+         |
+         |${userAuthenticationMessage(true)}
+         |
+         |""",
+      postCustomerNumberJsonV310,
+      customerWithAttributesJsonV600,
+      List(
+        $UserNotLoggedIn,
+        UserCustomerLinksNotFoundForUser,
+        UnknownError
+      ),
+      List(apiTagCustomer, apiTagKyc),
+      Some(List(canGetCustomer))
+    )
+
+    lazy val getCustomerByCustomerNumber : OBPEndpoint = {
+      case "banks" :: BankId(bankId) :: "customers" :: "customer-number" ::  Nil JsonPost  json -> _ => {
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(u), callContext) <- authenticatedAccess(cc)
+            (bank, callContext) <- NewStyle.function.getBank(bankId, callContext)
+            _ <- NewStyle.function.hasEntitlement(bankId.value, u.userId, canGetCustomer, callContext)
+            failMsg = s"$InvalidJsonFormat The Json body should be the $PostCustomerNumberJsonV310 "
+            postedData <- NewStyle.function.tryons(failMsg, 400, callContext) {
+              json.extract[PostCustomerNumberJsonV310]
+            }
+            (customer, callContext) <- NewStyle.function.getCustomerByCustomerNumber(postedData.customer_number, bank.bankId, callContext)
+            (customerAttributes, callContext) <- NewStyle.function.getCustomerAttributes(
+              bankId,
+              CustomerId(customer.customerId),
+              callContext: Option[CallContext])
+          } yield {
+            (JSONFactory600.createCustomerWithAttributesJson(customer, customerAttributes), HttpCode.`200`(callContext))
           }
       }
     }
