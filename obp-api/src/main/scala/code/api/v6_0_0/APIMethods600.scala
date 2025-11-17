@@ -440,7 +440,7 @@ trait APIMethods600 {
          |
          |**What It Checks:**
          |This endpoint analyzes all dynamic entities (both system and bank level) for:
-         |* Boolean fields with invalid example values (e.g., `"{"tok"` instead of `"true"` or `"false"`)
+         |* Boolean fields with invalid example values (e.g., actual JSON booleans or invalid strings instead of `"true"` or `"false"`)
          |* Malformed JSON in field definitions
          |* Fields that cannot be converted to their declared types
          |* Other validation issues that cause Swagger generation to fail
@@ -469,8 +469,8 @@ trait APIMethods600 {
          |  "entity_name": "Customer",
          |  "bank_id": "gh.29.uk",
          |  "field_name": "is_active",
-         |  "example_value": "{"tok",
-         |  "error_message": "Boolean field has invalid example value. Expected 'true' or 'false', got: '{"tok'"
+         |  "example_value": "malformed_value",
+         |  "error_message": "Boolean field has invalid example value. Expected 'true' or 'false', got: 'malformed_value'"
          |}
          |```
          |
@@ -488,8 +488,8 @@ trait APIMethods600 {
             entity_name = "MyEntity",
             bank_id = "gh.29.uk",
             field_name = "is_active",
-            example_value = "{\"tok",
-            error_message = "Boolean field has invalid example value. Expected 'true' or 'false', got: '{\"tok'"
+            example_value = "malformed_value",
+            error_message = "Boolean field has invalid example value. Expected 'true' or 'false', got: 'malformed_value'"
           )
         ),
         total_issues = 1
