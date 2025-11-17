@@ -407,4 +407,14 @@ case class DynamicEntityDiagnosticsJsonV600(
   total_issues: Int
 )
 
+case class ReferenceTypeJsonV600(
+  type_name: String,
+  example_value: String,
+  description: String
+)
+
+case class ReferenceTypesJsonV600(
+  reference_types: List[ReferenceTypeJsonV600]
+)
+
 }

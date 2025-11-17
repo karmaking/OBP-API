@@ -16,7 +16,7 @@ import code.api.v3_1_0.{JSONFactory310, PostCustomerNumberJsonV310}
 import code.api.v4_0_0.CallLimitPostJsonV400
 import code.api.v4_0_0.JSONFactory400.createCallsLimitJson
 import code.api.v5_0_0.JSONFactory500
-import code.api.v6_0_0.JSONFactory600.{DynamicEntityDiagnosticsJsonV600, DynamicEntityIssueJsonV600, createActiveCallLimitsJsonV600, createCallLimitJsonV600, createCurrentUsageJson}
+import code.api.v6_0_0.JSONFactory600.{DynamicEntityDiagnosticsJsonV600, DynamicEntityIssueJsonV600, ReferenceTypeJsonV600, ReferenceTypesJsonV600, createActiveCallLimitsJsonV600, createCallLimitJsonV600, createCurrentUsageJson}
 import code.bankconnectors.LocalMappedConnectorInternal
 import code.bankconnectors.LocalMappedConnectorInternal._
 import code.entitlement.Entitlement
@@ -521,6 +521,134 @@ trait APIMethods600 {
               )
             }
             val response = DynamicEntityDiagnosticsJsonV600(result.scannedEntities, issuesJson, result.issues.length)
+            (response, HttpCode.`200`(callContext))
+          }
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
+      getReferenceTypes,
+      implementedInApiVersion,
+      nameOf(getReferenceTypes),
+      "GET",
+      "/management/dynamic-entities/reference-types",
+      "Get Reference Types for Dynamic Entities",
+      s"""Get a list of all available reference types that can be used in Dynamic Entity field definitions.
+         |
+         |Reference types allow Dynamic Entity fields to reference other entities (similar to foreign keys).
+         |This endpoint returns both:
+         |* **Static reference types** - Built-in reference types for core OBP entities (e.g., Customer, Account, Transaction)
+         |* **Dynamic reference types** - Reference types for Dynamic Entities that have been created
+         |
+         |Each reference type includes:
+         |* `type_name` - The full reference type string to use in entity definitions (e.g., "reference:Customer")
+         |* `example_value` - An example value showing the correct format
+         |* `description` - Description of what the reference type represents
+         |
+         |**Use Case:**
+         |When creating a Dynamic Entity with a field that references another entity, you need to know:
+         |1. What reference types are available
+         |2. The correct format for the type name
+         |3. The correct format for example values
+         |
+         |This endpoint provides all that information.
+         |
+         |**Example Usage:**
+         |If you want to create a Dynamic Entity with a field that references a Customer, you would:
+         |1. Call this endpoint to see that "reference:Customer" is available
+         |2. Use it in your entity definition like:
+         |```json
+         |{
+         |  "customer_id": {
+         |    "type": "reference:Customer",
+         |    "example": "a8770fca-3d1d-47af-b6d0-7a6c3f124388"
+         |  }
+         |}
+         |```
+         |
+         |${userAuthenticationMessage(true)}
+         |
+         |**Required Role:** `CanGetDynamicEntityReferenceTypes`
+         |""",
+      EmptyBody,
+      ReferenceTypesJsonV600(
+        reference_types = List(
+          ReferenceTypeJsonV600(
+            type_name = "reference:Customer",
+            example_value = "a8770fca-3d1d-47af-b6d0-7a6c3f124388",
+            description = "Reference to a Customer entity"
+          ),
+          ReferenceTypeJsonV600(
+            type_name = "reference:Account:BANK_ID&ACCOUNT_ID",
+            example_value = "BANK_ID=b9881ecb-4e2e-58bg-c7e1-8b7d4e235499&ACCOUNT_ID=c0992fdb-5f3f-69ch-d8f2-9c8e5f346600",
+            description = "Composite reference to an Account by bank ID and account ID"
+          ),
+          ReferenceTypeJsonV600(
+            type_name = "reference:MyDynamicEntity",
+            example_value = "d1aa3gec-6g4g-70di-e9g3-0d9f6g457711",
+            description = "Reference to MyDynamicEntity (dynamic entity)"
+          )
+        )
+      ),
+      List(
+        $UserNotLoggedIn,
+        UserHasMissingRoles,
+        UnknownError
+      ),
+      List(apiTagDynamicEntity, apiTagApi),
+      Some(List(canGetDynamicEntityReferenceTypes))
+    )
+
+    lazy val getReferenceTypes: OBPEndpoint = {
+      case "management" :: "dynamic-entities" :: "reference-types" :: Nil JsonGet _ => {
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(u), callContext) <- authenticatedAccess(cc)
+            _ <- NewStyle.function.hasEntitlement("", u.userId, canGetDynamicEntityReferenceTypes, callContext)
+          } yield {
+            val referenceTypeNames = code.dynamicEntity.ReferenceType.referenceTypeNames
+            
+            // Get list of dynamic entity names to distinguish from static references
+            val dynamicEntityNames = NewStyle.function.getDynamicEntities(None, true)
+              .map(entity => s"reference:${entity.entityName}")
+              .toSet
+            
+            val exampleId1 = APIUtil.generateUUID()
+            val exampleId2 = APIUtil.generateUUID()
+            val exampleId3 = APIUtil.generateUUID()
+            val exampleId4 = APIUtil.generateUUID()
+            
+            val reg1 = """reference:([^:]+)""".r
+            val reg2 = """reference:(?:[^:]+):([^&]+)&([^&]+)""".r
+            val reg3 = """reference:(?:[^:]+):([^&]+)&([^&]+)&([^&]+)""".r
+            val reg4 = """reference:(?:[^:]+):([^&]+)&([^&]+)&([^&]+)&([^&]+)""".r
+            
+            val referenceTypes = referenceTypeNames.map { refTypeName =>
+              val example = refTypeName match {
+                case reg1(entityName) => 
+                  val description = if (dynamicEntityNames.contains(refTypeName)) {
+                    s"Reference to $entityName (dynamic entity)"
+                  } else {
+                    s"Reference to $entityName entity"
+                  }
+                  (exampleId1, description)
+                case reg2(a, b) => 
+                  (s"$a=$exampleId1&$b=$exampleId2", s"Composite reference with $a and $b")
+                case reg3(a, b, c) => 
+                  (s"$a=$exampleId1&$b=$exampleId2&$c=$exampleId3", s"Composite reference with $a, $b and $c")
+                case reg4(a, b, c, d) => 
+                  (s"$a=$exampleId1&$b=$exampleId2&$c=$exampleId3&$d=$exampleId4", s"Composite reference with $a, $b, $c and $d")
+                case _ => (exampleId1, "Reference type")
+              }
+              
+              ReferenceTypeJsonV600(
+                type_name = refTypeName,
+                example_value = example._1,
+                description = example._2
+              )
+            }
+            
+            val response = ReferenceTypesJsonV600(referenceTypes)
             (response, HttpCode.`200`(callContext))
           }
       }
