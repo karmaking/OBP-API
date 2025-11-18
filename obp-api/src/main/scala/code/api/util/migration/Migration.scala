@@ -103,6 +103,7 @@ object Migration extends MdcLoggable {
       alterCounterpartyLimitFieldType()
       populateMigrationOfViewPermissions(startedBeforeSchemifier)
       changeTypeOfAudFieldAtConsumerTable()
+      renameCustomerRoleNames()
     }
     
     private def dummyScript(): Boolean = {
@@ -519,6 +520,13 @@ object Migration extends MdcLoggable {
       val name = nameOf(alterCounterpartyLimitFieldType)
       runOnce(name) {
         MigrationOfCounterpartyLimitFieldType.alterCounterpartyLimitFieldType(name)
+      }
+    }
+
+    private def renameCustomerRoleNames(): Boolean = {
+      val name = nameOf(renameCustomerRoleNames)
+      runOnce(name) {
+        MigrationOfCustomerRoleNames.renameCustomerRoles(name)
       }
     }
   }
