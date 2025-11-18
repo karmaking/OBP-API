@@ -90,26 +90,11 @@ object ApiRole extends MdcLoggable{
   case class CanGetCustomersMinimalAtAllBanks(requiresBankId: Boolean = false) extends ApiRole
   lazy val canGetCustomersMinimalAtAllBanks = CanGetCustomersMinimalAtAllBanks()
   
-  // DEPRECATED: Use CanGetCustomersMinimalAtAllBanks instead (renamed for consistency with "AtAllBanks" pattern)
-  // Note: Case class removed to avoid duplicate role registration. Lazy val provides backward compatibility.
-  @deprecated("Use canGetCustomersMinimalAtAllBanks instead", "18/11/2025")
-  lazy val canGetCustomersMinimalAtAnyBank = CanGetCustomersMinimalAtAllBanks()
-  
   case class CanGetCustomersAtOneBank(requiresBankId: Boolean = true) extends ApiRole
   lazy val canGetCustomersAtOneBank = CanGetCustomersAtOneBank()
   
   case class CanGetCustomersMinimalAtOneBank(requiresBankId: Boolean = true) extends ApiRole
   lazy val canGetCustomersMinimalAtOneBank = CanGetCustomersMinimalAtOneBank()
-  
-  // DEPRECATED: Use CanGetCustomersMinimalAtOneBank instead (renamed for consistency with "AtOneBank" pattern)
-  // Note: Case class removed to avoid duplicate role registration. Lazy val provides backward compatibility.
-  @deprecated("Use canGetCustomersMinimalAtOneBank instead", "18/11/2025")
-  lazy val canGetCustomersMinimal = CanGetCustomersMinimalAtOneBank()
-  
-  // DEPRECATED: Use CanGetCustomersAtOneBank instead. Singular and plural should use the same role.
-  // Note: Case class removed to avoid duplicate role registration. Lazy val provides backward compatibility.
-  @deprecated("Use canGetCustomersAtOneBank instead", "18/11/2025")
-  lazy val canGetCustomer = CanGetCustomersAtOneBank()
   
   case class CanGetCustomerOverview(requiresBankId: Boolean = true) extends ApiRole
   lazy val canGetCustomerOverview = CanGetCustomerOverview()
