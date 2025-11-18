@@ -4435,7 +4435,7 @@ object SwaggerDefinitionsJSON {
   lazy val postConsentEmailJsonV310 = PostConsentEmailJsonV310(
     everything = false,
     views = List(PostConsentViewJsonV310(bankIdExample.value, accountIdExample.value, viewIdExample.value)),
-    entitlements = List(PostConsentEntitlementJsonV310(bankIdExample.value, "CanGetCustomer")),
+    entitlements = List(PostConsentEntitlementJsonV310(bankIdExample.value, "CanGetCustomersAtOneBank")),
     consumer_id = Some(consumerIdExample.value),
     email = emailExample.value,
     valid_from = Some(new Date()),
@@ -4445,7 +4445,7 @@ object SwaggerDefinitionsJSON {
   lazy val postConsentPhoneJsonV310 = PostConsentPhoneJsonV310(
     everything = false,
     views = List(PostConsentViewJsonV310(bankIdExample.value, accountIdExample.value, viewIdExample.value)),
-    entitlements = List(PostConsentEntitlementJsonV310(bankIdExample.value, "CanGetCustomer")),
+    entitlements = List(PostConsentEntitlementJsonV310(bankIdExample.value, "CanGetCustomersAtOneBank")),
     consumer_id = Some(consumerIdExample.value),
     phone_number = mobileNumberExample.value,
     valid_from = Some(new Date()),
@@ -4455,7 +4455,7 @@ object SwaggerDefinitionsJSON {
   lazy val postConsentImplicitJsonV310 = PostConsentImplicitJsonV310(
     everything = false,
     views = List(PostConsentViewJsonV310(bankIdExample.value, accountIdExample.value, viewIdExample.value)),
-    entitlements = List(PostConsentEntitlementJsonV310(bankIdExample.value, "CanGetCustomer")),
+    entitlements = List(PostConsentEntitlementJsonV310(bankIdExample.value, "CanGetCustomersAtOneBank")),
     consumer_id = Some(consumerIdExample.value),
     valid_from = Some(new Date()),
     time_to_live = Some(3600)
@@ -5448,7 +5448,7 @@ object SwaggerDefinitionsJSON {
       account_routing = accountRoutingJsonV121,
       view_id = viewIdExample.value
       )),
-    entitlements = Some(List(PostConsentEntitlementJsonV310(bankIdExample.value, "CanGetCustomer"))),
+    entitlements = Some(List(PostConsentEntitlementJsonV310(bankIdExample.value, "CanGetCustomersAtOneBank"))),
     consumer_id = Some(consumerIdExample.value),
     phone_number = Some(mobileNumberExample.value),
     email =  Some(emailExample.value),

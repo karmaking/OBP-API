@@ -3,6 +3,10 @@
 ### Most recent changes at top of file
 ```
 Date          Commit        Action
+18/11/2025    TBD           Breaking Role Name changes. 
+                            CanGetCustomer -> CanGetCustomersAtOneBank (singular and plural now use same role)
+                            CanGetCustomersMinimal -> CanGetCustomersMinimalAtOneBank
+                            CanGetCustomersMinimalAtAnyBank -> CanGetCustomersMinimalAtAllBanks
 18/11/2025    0dec2832      Breaking Role Name changes. 
                             CanGetCustomersAtAnyBank -> CanGetCustomersAtAllBanks 
                             and 

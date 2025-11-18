@@ -87,20 +87,35 @@ object ApiRole extends MdcLoggable{
   case class CanGetCustomersAtAllBanks(requiresBankId: Boolean = false) extends ApiRole
   lazy val canGetCustomersAtAllBanks = CanGetCustomersAtAllBanks()
   
+  case class CanGetCustomersMinimalAtAllBanks(requiresBankId: Boolean = false) extends ApiRole
+  lazy val canGetCustomersMinimalAtAllBanks = CanGetCustomersMinimalAtAllBanks()
+  
+  // DEPRECATED: Use CanGetCustomersMinimalAtAllBanks instead (renamed for consistency with "AtAllBanks" pattern)
+  @deprecated("Use CanGetCustomersMinimalAtAllBanks instead", "18/11/2025")
   case class CanGetCustomersMinimalAtAnyBank(requiresBankId: Boolean = false) extends ApiRole
-  lazy val canGetCustomersMinimalAtAnyBank = CanGetCustomersMinimalAtAnyBank()
+  @deprecated("Use canGetCustomersMinimalAtAllBanks instead", "18/11/2025")
+  lazy val canGetCustomersMinimalAtAnyBank = CanGetCustomersMinimalAtAllBanks()
   
   case class CanGetCustomersAtOneBank(requiresBankId: Boolean = true) extends ApiRole
   lazy val canGetCustomersAtOneBank = CanGetCustomersAtOneBank()
   
-  case class CanGetCustomersMinimal(requiresBankId: Boolean = true) extends ApiRole
-  lazy val canGetCustomersMinimal = CanGetCustomersMinimal()
+  case class CanGetCustomersMinimalAtOneBank(requiresBankId: Boolean = true) extends ApiRole
+  lazy val canGetCustomersMinimalAtOneBank = CanGetCustomersMinimalAtOneBank()
   
+  // DEPRECATED: Use CanGetCustomersMinimalAtOneBank instead (renamed for consistency with "AtOneBank" pattern)
+  @deprecated("Use CanGetCustomersMinimalAtOneBank instead", "18/11/2025")
+  case class CanGetCustomersMinimal(requiresBankId: Boolean = true) extends ApiRole
+  @deprecated("Use canGetCustomersMinimalAtOneBank instead", "18/11/2025")
+  lazy val canGetCustomersMinimal = CanGetCustomersMinimalAtOneBank()
+  
+  // DEPRECATED: Use CanGetCustomersAtOneBank instead. Singular and plural should use the same role.
+  @deprecated("Use CanGetCustomersAtOneBank instead", "18/11/2025")
   case class CanGetCustomer(requiresBankId: Boolean = true) extends ApiRole
-  lazy val canGetCustomer = CanGetCustomer()
+  @deprecated("Use canGetCustomersAtOneBank instead", "18/11/2025")
+  lazy val canGetCustomer = CanGetCustomersAtOneBank()
   
   case class CanGetCustomerOverview(requiresBankId: Boolean = true) extends ApiRole
-  lazy val canGetCustomerOverview = CanGetCustomerOverview()  
+  lazy val canGetCustomerOverview = CanGetCustomerOverview()
   
   case class CanGetCustomerOverviewFlat(requiresBankId: Boolean = true) extends ApiRole
   lazy val canGetCustomerOverviewFlat = CanGetCustomerOverviewFlat()

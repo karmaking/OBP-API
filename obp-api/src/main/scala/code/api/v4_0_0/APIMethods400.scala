@@ -4353,7 +4353,7 @@ trait APIMethods400 extends MdcLoggable {
         UnknownError
       ),
       List(apiTagCustomer, apiTagKyc),
-      Some(List(canGetCustomer))
+      Some(List(canGetCustomersAtOneBank))
     )
 
     lazy val getCustomersByCustomerPhoneNumber: OBPEndpoint = {
@@ -6160,7 +6160,7 @@ trait APIMethods400 extends MdcLoggable {
         UnknownError
       ),
       List(apiTagCustomer),
-      Some(List(canGetCustomer))
+      Some(List(canGetCustomersAtOneBank))
     )
 
     lazy val getCustomersByAttributes: OBPEndpoint = {
@@ -6904,7 +6904,7 @@ trait APIMethods400 extends MdcLoggable {
         UnknownError
       ),
       List(apiTagCustomer, apiTagUser),
-      Some(List(canGetCustomersMinimalAtAnyBank))
+      Some(List(canGetCustomersMinimalAtAllBanks))
     )
     lazy val getCustomersMinimalAtAnyBank: OBPEndpoint = {
       case "customers-minimal" :: Nil JsonGet _ => { cc =>
