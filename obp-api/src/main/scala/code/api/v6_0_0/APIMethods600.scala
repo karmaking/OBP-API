@@ -1180,9 +1180,7 @@ trait APIMethods600 {
         cc =>
           implicit val ec = EndpointContext(Some(cc))
           for {
-            (Full(u), callContext) <- authenticatedAccess(cc)
-            (bank, callContext) <- NewStyle.function.getBank(bankId, callContext)
-            _ <- NewStyle.function.hasEntitlement(bankId.value, u.userId, canGetCustomersAtOneBank, callContext)
+            (bank, callContext) <- NewStyle.function.getBank(bankId, cc.callContext)
             failMsg = s"$InvalidJsonFormat The Json body should be the $PostCustomerLegalNameJsonV510 "
             postedData <- NewStyle.function.tryons(failMsg, 400, callContext) {
               json.extract[PostCustomerLegalNameJsonV510]
@@ -1271,9 +1269,7 @@ trait APIMethods600 {
       case "banks" :: BankId(bankId) :: "customers" :: customerId ::  Nil JsonGet _ => {
         cc => implicit val ec = EndpointContext(Some(cc))
           for {
-            (Full(u), callContext) <- authenticatedAccess(cc)
-            (_, callContext) <- NewStyle.function.getBank(bankId, callContext)
-            _ <- NewStyle.function.hasEntitlement(bankId.value, u.userId, canGetCustomersAtOneBank, callContext)
+            (_, callContext) <- NewStyle.function.getBank(bankId, cc.callContext)
             (customer, callContext) <- NewStyle.function.getCustomerByCustomerId(customerId, callContext)
             (customerAttributes, callContext) <- NewStyle.function.getCustomerAttributes(
               bankId,
@@ -1315,9 +1311,7 @@ trait APIMethods600 {
       case "banks" :: BankId(bankId) :: "customers" :: "customer-number" ::  Nil JsonPost  json -> _ => {
         cc => implicit val ec = EndpointContext(Some(cc))
           for {
-            (Full(u), callContext) <- authenticatedAccess(cc)
-            (bank, callContext) <- NewStyle.function.getBank(bankId, callContext)
-            _ <- NewStyle.function.hasEntitlement(bankId.value, u.userId, canGetCustomersAtOneBank, callContext)
+            (bank, callContext) <- NewStyle.function.getBank(bankId, cc.callContext)
             failMsg = s"$InvalidJsonFormat The Json body should be the $PostCustomerNumberJsonV310 "
             postedData <- NewStyle.function.tryons(failMsg, 400, callContext) {
               json.extract[PostCustomerNumberJsonV310]
