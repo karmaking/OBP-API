@@ -30,12 +30,14 @@ import code.api.util.APIUtil.stringOrNull
 import code.api.util.RateLimitingPeriod.LimitCallPeriod
 import code.api.util._
 import code.api.v1_2_1.BankRoutingJsonV121
+import code.api.v1_4_0.JSONFactory1_4_0.CustomerFaceImageJson
 import code.api.v2_0_0.{EntitlementJSONs, JSONFactory200}
-import code.api.v3_0_0.{UserJsonV300, ViewJSON300, ViewsJSON300}
+import code.api.v2_1_0.CustomerCreditRatingJSON
+import code.api.v3_0_0.{CustomerAttributeResponseJsonV300, UserJsonV300, ViewJSON300, ViewsJSON300}
 import code.api.v3_1_0.{RateLimit, RedisCallLimitJson}
 import code.entitlement.Entitlement
 import code.util.Helper.MdcLoggable
-import com.openbankproject.commons.model._
+import com.openbankproject.commons.model.{AmountOfMoneyJsonV121, CustomerAttribute, _}
 
 import java.util.Date
 
@@ -159,6 +161,76 @@ case class PostBankJson600(
 
 case class ProvidersJsonV600(providers: List[String])
 
+case class PostCustomerJsonV600(
+   legal_name: String,
+   customer_number: Option[String] = None,
+   mobile_phone_number: String,
+   email: Option[String] = None,
+   face_image: Option[CustomerFaceImageJson] = None,
+   date_of_birth: Option[String] = None, // YYYY-MM-DD format
+   relationship_status: Option[String] = None,
+   dependants: Option[Int] = None,
+   dob_of_dependants: Option[List[String]] = None, // YYYY-MM-DD format
+   credit_rating: Option[CustomerCreditRatingJSON] = None,
+   credit_limit: Option[AmountOfMoneyJsonV121] = None,
+   highest_education_attained: Option[String] = None,
+   employment_status: Option[String] = None,
+   kyc_status: Option[Boolean] = None,
+   last_ok_date: Option[Date] = None,
+   title: Option[String] = None,
+   branch_id: Option[String] = None,
+   name_suffix: Option[String] = None
+)
+
+case class CustomerJsonV600(
+  bank_id: String,
+  customer_id: String,
+  customer_number : String,
+  legal_name : String,
+  mobile_phone_number : String,
+  email : String,
+  face_image : CustomerFaceImageJson,
+  date_of_birth: String, // YYYY-MM-DD format
+  relationship_status: String,
+  dependants: Integer,
+  dob_of_dependants: List[String], // YYYY-MM-DD format
+  credit_rating: Option[CustomerCreditRatingJSON],
+  credit_limit: Option[AmountOfMoneyJsonV121],
+  highest_education_attained: String,
+  employment_status: String,
+  kyc_status: java.lang.Boolean,
+  last_ok_date: Date,
+  title: String,
+  branch_id: String,
+  name_suffix: String
+)
+
+case class CustomerJSONsV600(customers: List[CustomerJsonV600])
+
+case class CustomerWithAttributesJsonV600(
+  bank_id: String,
+  customer_id: String,
+  customer_number : String,
+  legal_name : String,
+  mobile_phone_number : String,
+  email : String,
+  face_image : CustomerFaceImageJson,
+  date_of_birth: String, // YYYY-MM-DD format
+  relationship_status: String,
+  dependants: Integer,
+  dob_of_dependants: List[String], // YYYY-MM-DD format
+  credit_rating: Option[CustomerCreditRatingJSON],
+  credit_limit: Option[AmountOfMoneyJsonV121],
+  highest_education_attained: String,
+  employment_status: String,
+  kyc_status: java.lang.Boolean,
+  last_ok_date: Date,
+  title: String,
+  branch_id: String,
+  name_suffix: String,
+  customer_attributes: List[CustomerAttributeResponseJsonV300]
+)
+
 object JSONFactory600 extends CustomJsonFormats with MdcLoggable{
 
   def createCurrentUsageJson(rateLimits: List[((Option[Long], Option[Long]), LimitCallPeriod)]): Option[RedisCallLimitJson] = {
@@ -251,6 +323,74 @@ object JSONFactory600 extends CustomJsonFormats with MdcLoggable{
     ProvidersJsonV600(providers)
   }
 
+  def createCustomerJson(cInfo : Customer) : CustomerJsonV600 = {
+    import java.text.SimpleDateFormat
+    val dateFormat = new SimpleDateFormat("yyyy-MM-dd")
+    
+    CustomerJsonV600(
+      bank_id = cInfo.bankId.toString,
+      customer_id = cInfo.customerId,
+      customer_number = cInfo.number,
+      legal_name = cInfo.legalName,
+      mobile_phone_number = cInfo.mobileNumber,
+      email = cInfo.email,
+      face_image = CustomerFaceImageJson(url = cInfo.faceImage.url,
+        date = cInfo.faceImage.date),
+      date_of_birth = if (cInfo.dateOfBirth != null) dateFormat.format(cInfo.dateOfBirth) else "",
+      relationship_status = cInfo.relationshipStatus,
+      dependants = cInfo.dependents,
+      dob_of_dependants = cInfo.dobOfDependents.map(d => dateFormat.format(d)),
+      credit_rating = Option(CustomerCreditRatingJSON(rating = cInfo.creditRating.rating, source = cInfo.creditRating.source)),
+      credit_limit = Option(AmountOfMoneyJsonV121(currency = cInfo.creditLimit.currency, amount = cInfo.creditLimit.amount)),
+      highest_education_attained = cInfo.highestEducationAttained,
+      employment_status = cInfo.employmentStatus,
+      kyc_status = cInfo.kycStatus,
+      last_ok_date = cInfo.lastOkDate,
+      title = cInfo.title,
+      branch_id = cInfo.branchId,
+      name_suffix = cInfo.nameSuffix
+    )
+  }
+
+  def createCustomersJson(customers : List[Customer]) : CustomerJSONsV600 = {
+    CustomerJSONsV600(customers.map(createCustomerJson))
+  }
+
+  def createCustomerWithAttributesJson(cInfo : Customer, customerAttributes: List[CustomerAttribute]) : CustomerWithAttributesJsonV600 = {
+    import java.text.SimpleDateFormat
+    val dateFormat = new SimpleDateFormat("yyyy-MM-dd")
+    
+    CustomerWithAttributesJsonV600(
+      bank_id = cInfo.bankId.toString,
+      customer_id = cInfo.customerId,
+      customer_number = cInfo.number,
+      legal_name = cInfo.legalName,
+      mobile_phone_number = cInfo.mobileNumber,
+      email = cInfo.email,
+      face_image = CustomerFaceImageJson(url = cInfo.faceImage.url,
+        date = cInfo.faceImage.date),
+      date_of_birth = if (cInfo.dateOfBirth != null) dateFormat.format(cInfo.dateOfBirth) else "",
+      relationship_status = cInfo.relationshipStatus,
+      dependants = cInfo.dependents,
+      dob_of_dependants = cInfo.dobOfDependents.map(d => dateFormat.format(d)),
+      credit_rating = Option(CustomerCreditRatingJSON(rating = cInfo.creditRating.rating, source = cInfo.creditRating.source)),
+      credit_limit = Option(AmountOfMoneyJsonV121(currency = cInfo.creditLimit.currency, amount = cInfo.creditLimit.amount)),
+      highest_education_attained = cInfo.highestEducationAttained,
+      employment_status = cInfo.employmentStatus,
+      kyc_status = cInfo.kycStatus,
+      last_ok_date = cInfo.lastOkDate,
+      title = cInfo.title,
+      branch_id = cInfo.branchId,
+      name_suffix = cInfo.nameSuffix,
+      customer_attributes = customerAttributes.map(customerAttribute => CustomerAttributeResponseJsonV300(
+        customer_attribute_id = customerAttribute.customerAttributeId,
+        name = customerAttribute.name,
+        `type` = customerAttribute.attributeType.toString,
+        value = customerAttribute.value
+      ))
+    )
+  }
+
 case class ProvidersJsonV600(providers: List[String])
 
 case class DynamicEntityIssueJsonV600(
@@ -265,6 +405,16 @@ case class DynamicEntityDiagnosticsJsonV600(
   scanned_entities: List[String],
   issues: List[DynamicEntityIssueJsonV600],
   total_issues: Int
+)
+
+case class ReferenceTypeJsonV600(
+  type_name: String,
+  example_value: String,
+  description: String
+)
+
+case class ReferenceTypesJsonV600(
+  reference_types: List[ReferenceTypeJsonV600]
 )
 
 }

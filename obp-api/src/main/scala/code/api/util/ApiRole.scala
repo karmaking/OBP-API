@@ -84,23 +84,20 @@ object ApiRole extends MdcLoggable{
   case class CanSearchMetrics(requiresBankId: Boolean = false) extends ApiRole
   lazy val canSearchMetrics = CanSearchMetrics()
 
-  case class CanGetCustomersAtAnyBank(requiresBankId: Boolean = false) extends ApiRole
-  lazy val canGetCustomersAtAnyBank = CanGetCustomersAtAnyBank()
+  case class CanGetCustomersAtAllBanks(requiresBankId: Boolean = false) extends ApiRole
+  lazy val canGetCustomersAtAllBanks = CanGetCustomersAtAllBanks()
   
-  case class CanGetCustomersMinimalAtAnyBank(requiresBankId: Boolean = false) extends ApiRole
-  lazy val canGetCustomersMinimalAtAnyBank = CanGetCustomersMinimalAtAnyBank()
+  case class CanGetCustomersMinimalAtAllBanks(requiresBankId: Boolean = false) extends ApiRole
+  lazy val canGetCustomersMinimalAtAllBanks = CanGetCustomersMinimalAtAllBanks()
   
-  case class CanGetCustomers(requiresBankId: Boolean = true) extends ApiRole
-  lazy val canGetCustomers = CanGetCustomers()
+  case class CanGetCustomersAtOneBank(requiresBankId: Boolean = true) extends ApiRole
+  lazy val canGetCustomersAtOneBank = CanGetCustomersAtOneBank()
   
-  case class CanGetCustomersMinimal(requiresBankId: Boolean = true) extends ApiRole
-  lazy val canGetCustomersMinimal = CanGetCustomersMinimal()
-  
-  case class CanGetCustomer(requiresBankId: Boolean = true) extends ApiRole
-  lazy val canGetCustomer = CanGetCustomer()
+  case class CanGetCustomersMinimalAtOneBank(requiresBankId: Boolean = true) extends ApiRole
+  lazy val canGetCustomersMinimalAtOneBank = CanGetCustomersMinimalAtOneBank()
   
   case class CanGetCustomerOverview(requiresBankId: Boolean = true) extends ApiRole
-  lazy val canGetCustomerOverview = CanGetCustomerOverview()  
+  lazy val canGetCustomerOverview = CanGetCustomerOverview()
   
   case class CanGetCustomerOverviewFlat(requiresBankId: Boolean = true) extends ApiRole
   lazy val canGetCustomerOverviewFlat = CanGetCustomerOverviewFlat()
@@ -690,6 +687,9 @@ object ApiRole extends MdcLoggable{
 
   case class CanGetDynamicEntityDiagnostics(requiresBankId: Boolean = false) extends ApiRole
   lazy val canGetDynamicEntityDiagnostics = CanGetDynamicEntityDiagnostics()
+
+  case class CanGetDynamicEntityReferenceTypes(requiresBankId: Boolean = false) extends ApiRole
+  lazy val canGetDynamicEntityReferenceTypes = CanGetDynamicEntityReferenceTypes()
 
   case class CanGetDynamicEndpoint(requiresBankId: Boolean = false) extends ApiRole
   lazy val canGetDynamicEndpoint = CanGetDynamicEndpoint()

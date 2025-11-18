@@ -2090,7 +2090,7 @@ trait APIMethods510 {
          |  "entitlements": [
          |    {
          |      "bank_id": "GENODEM1GLS",
-         |      "role_name": "CanGetCustomer"
+         |      "role_name": "CanGetCustomersAtOneBank"
          |    }
          |  ],
          |  "consumer_id": "7uy8a7e4-6d02-40e3-a129-0b2bf89de8uh",
@@ -2159,7 +2159,7 @@ trait APIMethods510 {
          |  "entitlements": [
          |    {
          |      "bank_id": "GENODEM1GLS",
-         |      "role_name": "CanGetCustomer"
+         |      "role_name": "CanGetCustomersAtOneBank"
          |    }
          |  ],
          |  "consumer_id": "7uy8a7e4-6d02-40e3-a129-0b2bf89de8uh",
@@ -2902,7 +2902,7 @@ trait APIMethods510 {
         UnknownError
       ),
       List(apiTagCustomer, apiTagKyc),
-      Some(List(canGetCustomer))
+      Some(List(canGetCustomersAtOneBank))
     )
 
     lazy val getCustomersByLegalName: OBPEndpoint = {
@@ -2912,7 +2912,7 @@ trait APIMethods510 {
           for {
             (Full(u), callContext) <- authenticatedAccess(cc)
             (bank, callContext) <- NewStyle.function.getBank(bankId, callContext)
-            _ <- NewStyle.function.hasEntitlement(bankId.value, u.userId, canGetCustomer, callContext)
+            _ <- NewStyle.function.hasEntitlement(bankId.value, u.userId, canGetCustomersAtOneBank, callContext)
             failMsg = s"$InvalidJsonFormat The Json body should be the $PostCustomerLegalNameJsonV510 "
             postedData <- NewStyle.function.tryons(failMsg, 400, callContext) {
               json.extract[PostCustomerLegalNameJsonV510]

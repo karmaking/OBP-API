@@ -1609,7 +1609,7 @@ trait APIMethods500 {
         UnknownError
       ),
       List(apiTagCustomer, apiTagUser),
-      Some(List(canGetCustomers))
+      Some(List(canGetCustomersAtOneBank))
     )
 
     lazy val getCustomersAtOneBank : OBPEndpoint = {
@@ -1645,7 +1645,7 @@ trait APIMethods500 {
         UnknownError
       ),
       List(apiTagCustomer, apiTagUser),
-      Some(List(canGetCustomersMinimal))
+      Some(List(canGetCustomersMinimalAtOneBank))
     )
     lazy val getCustomersMinimalAtOneBank : OBPEndpoint = {
       case "banks" :: BankId(bankId) :: "customers-minimal" :: Nil JsonGet _ => {

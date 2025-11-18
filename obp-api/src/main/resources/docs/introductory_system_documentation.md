@@ -5021,11 +5021,10 @@ Roles follow a consistent naming pattern:
 
 - CanCreateCustomer
 - CanCreateCustomerAtAnyBank
-- CanGetCustomer
-- CanGetCustomers
-- CanGetCustomersAtAnyBank
-- CanGetCustomersMinimal
-- CanGetCustomersMinimalAtAnyBank
+- CanGetCustomersAtOneBank
+- CanGetCustomersAtAllBanks
+- CanGetCustomersMinimalAtOneBank
+- CanGetCustomersMinimalAtAllBanks
 - CanGetCustomerOverview
 - CanGetCustomerOverviewFlat
 - CanUpdateCustomerEmail

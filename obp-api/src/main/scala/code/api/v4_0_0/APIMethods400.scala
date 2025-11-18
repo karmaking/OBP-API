@@ -2192,11 +2192,12 @@ trait APIMethods400 extends MdcLoggable {
          |
          |The ${DynamicEntityFieldType.DATE_WITH_DAY} format is: ${DynamicEntityFieldType.DATE_WITH_DAY.dateFormat}
          |
-         |Reference types are like foreign keys and composite foreign keys are supported. The value you need to supply as the (composite) foreign key is a UUID (or several UUIDs in the case of a composite key) that match value in another Entity..
-         |See the following list of currently available reference types and examples of how to construct key values correctly. Note: As more Dynamic Entities are created on this instance, this list will grow:
-         |```
-         |${ReferenceType.referenceTypeAndExample.mkString("\n")}
-         |```
+         |Reference types are like foreign keys and composite foreign keys are supported. The value you need to supply as the (composite) foreign key is a UUID (or several UUIDs in the case of a composite key) that match value in another Entity.
+         |
+         |To see the complete list of available reference types and their correct formats, call:
+         |**GET /obp/v6.0.0/management/dynamic-entities/reference-types**
+         |
+         |This endpoint returns all available reference types (both static OBP entities and dynamic entities) with example values showing the correct format.
          |
          |Note: if you set `hasPersonalEntity` = false, then OBP will not generate the CRUD my FooBar endpoints.
          |
@@ -2364,12 +2365,10 @@ trait APIMethods400 extends MdcLoggable {
          |
          |The ${DynamicEntityFieldType.DATE_WITH_DAY} format is: ${DynamicEntityFieldType.DATE_WITH_DAY.dateFormat}
          |
-         |Reference types are like foreign keys and composite foreign keys are supported. The value you need to supply as the (composite) foreign key is a UUID (or several UUIDs in the case of a composite key) that match value in another Entity..
-         |The following list shows all the possible reference types in the system with corresponding examples values so you can see how to construct each reference type value.
-         |```
-         |${ReferenceType.referenceTypeAndExample.mkString("\n")}
-         |```
-         | Note: if you set `hasPersonalEntity` = false, then OBP will not generate the CRUD my FooBar endpoints.
+         |To see all available reference types and their correct formats, call:
+         |**GET /obp/v6.0.0/management/dynamic-entities/reference-types**
+         |
+         |Note: if you set `hasPersonalEntity` = false, then OBP will not generate the CRUD my FooBar endpoints.
          |""",
       dynamicEntityRequestBodyExample.copy(bankId = None),
       dynamicEntityResponseBodyExample,
@@ -2474,13 +2473,10 @@ trait APIMethods400 extends MdcLoggable {
           .map(_.toString)
           .mkString("[", ", ", ", reference]")}
          |
-         |${DynamicEntityFieldType.DATE_WITH_DAY} format: ${DynamicEntityFieldType.DATE_WITH_DAY.dateFormat}
+         |The ${DynamicEntityFieldType.DATE_WITH_DAY} format is: ${DynamicEntityFieldType.DATE_WITH_DAY.dateFormat}
          |
-         |Reference types are like foreign keys and composite foreign keys are supported. The value you need to supply as the (composite) foreign key is a UUID (or several UUIDs in the case of a composite key) that match value in another Entity..
-         |The following list shows all the possible reference types in the system with corresponding examples values so you can see how to construct each reference type value.
-         |```
-         |${ReferenceType.referenceTypeAndExample.mkString("\n")}
-         |```
+         |To see all available reference types and their correct formats, call:
+         |**GET /obp/v6.0.0/management/dynamic-entities/reference-types**
          |""",
       dynamicEntityRequestBodyExample.copy(bankId = None),
       dynamicEntityResponseBodyExample.copy(bankId = None),
@@ -2525,13 +2521,10 @@ trait APIMethods400 extends MdcLoggable {
           .map(_.toString)
           .mkString("[", ", ", ", reference]")}
          |
-         |${DynamicEntityFieldType.DATE_WITH_DAY} format: ${DynamicEntityFieldType.DATE_WITH_DAY.dateFormat}
+         |The ${DynamicEntityFieldType.DATE_WITH_DAY} format is: ${DynamicEntityFieldType.DATE_WITH_DAY.dateFormat}
          |
-         |Reference types are like foreign keys and composite foreign keys are supported. The value you need to supply as the (composite) foreign key is a UUID (or several UUIDs in the case of a composite key) that match value in another Entity..
-         |The following list shows all the possible reference types in the system with corresponding examples values so you can see how to construct each reference type value.
-         |```
-         |${ReferenceType.referenceTypeAndExample.mkString("\n")}
-         |```
+         |To see all available reference types and their correct formats, call:
+         |**GET /obp/v6.0.0/management/dynamic-entities/reference-types**
          |""",
       dynamicEntityRequestBodyExample.copy(bankId = None),
       dynamicEntityResponseBodyExample,
@@ -2725,13 +2718,10 @@ trait APIMethods400 extends MdcLoggable {
           .map(_.toString)
           .mkString("[", ", ", ", reference]")}
          |
-         |${DynamicEntityFieldType.DATE_WITH_DAY} format: ${DynamicEntityFieldType.DATE_WITH_DAY.dateFormat}
+         |The ${DynamicEntityFieldType.DATE_WITH_DAY} format is: ${DynamicEntityFieldType.DATE_WITH_DAY.dateFormat}
          |
-         |Reference types are like foreign keys and composite foreign keys are supported. The value you need to supply as the (composite) foreign key is a UUID (or several UUIDs in the case of a composite key) that match value in another Entity..
-         |The following list shows all the possible reference types in the system with corresponding examples values so you can see how to construct each reference type value.
-         |```
-         |${ReferenceType.referenceTypeAndExample.mkString("\n")}
-         |```
+         |To see all available reference types and their correct formats, call:
+         |**GET /obp/v6.0.0/management/dynamic-entities/reference-types**
          |""",
       dynamicEntityRequestBodyExample.copy(bankId = None),
       dynamicEntityResponseBodyExample,
@@ -4363,7 +4353,7 @@ trait APIMethods400 extends MdcLoggable {
         UnknownError
       ),
       List(apiTagCustomer, apiTagKyc),
-      Some(List(canGetCustomer))
+      Some(List(canGetCustomersAtOneBank))
     )
 
     lazy val getCustomersByCustomerPhoneNumber: OBPEndpoint = {
@@ -6170,7 +6160,7 @@ trait APIMethods400 extends MdcLoggable {
         UnknownError
       ),
       List(apiTagCustomer),
-      Some(List(canGetCustomer))
+      Some(List(canGetCustomersAtOneBank))
     )
 
     lazy val getCustomersByAttributes: OBPEndpoint = {
@@ -6867,7 +6857,7 @@ trait APIMethods400 extends MdcLoggable {
         UnknownError
       ),
       List(apiTagCustomer, apiTagUser),
-      Some(List(canGetCustomersAtAnyBank))
+      Some(List(canGetCustomersAtAllBanks))
     )
     lazy val getCustomersAtAnyBank: OBPEndpoint = {
       case "customers" :: Nil JsonGet _ => { cc =>
@@ -6914,7 +6904,7 @@ trait APIMethods400 extends MdcLoggable {
         UnknownError
       ),
       List(apiTagCustomer, apiTagUser),
-      Some(List(canGetCustomersMinimalAtAnyBank))
+      Some(List(canGetCustomersMinimalAtAllBanks))
     )
     lazy val getCustomersMinimalAtAnyBank: OBPEndpoint = {
       case "customers-minimal" :: Nil JsonGet _ => { cc =>
