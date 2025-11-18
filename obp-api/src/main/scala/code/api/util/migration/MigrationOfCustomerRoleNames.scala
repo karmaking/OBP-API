@@ -5,6 +5,7 @@ import code.api.util.migration.Migration.{DbFunction, saveLog}
 import code.entitlement.MappedEntitlement
 import code.scope.MappedScope
 import net.liftweb.mapper.By
+import net.liftweb.common.{Box, Empty, Full}
 
 object MigrationOfCustomerRoleNames {
 
@@ -58,13 +59,13 @@ object MigrationOfCustomerRoleNames {
               )
 
               existingNewEntitlement match {
-                case Some(_) =>
+                case Full(_) =>
                   // New role already exists, delete the old one to avoid duplicates
                   detailedLog.append(s"  Entitlement already exists for user=$userId, bank=$bankId, role=$newRoleName - deleting old entitlement\n")
                   MappedEntitlement.delete_!(oldEntitlement)
                   totalEntitlementsDeleted += 1
 
-                case None =>
+                case Empty | _ =>
                   // New role doesn't exist, rename the old one
                   detailedLog.append(s"  Renaming entitlement for user=$userId, bank=$bankId: $oldRoleName -> $newRoleName\n")
                   oldEntitlement.mRoleName(newRoleName).saveMe()
@@ -89,13 +90,13 @@ object MigrationOfCustomerRoleNames {
                 )
 
                 existingNewScope match {
-                  case Some(_) =>
+                  case Full(_) =>
                     // New role already exists, delete the old one to avoid duplicates
                     detailedLog.append(s"  Scope already exists for consumer=$consumerId, bank=$bankId, role=$newRoleName - deleting old scope\n")
                     MappedScope.delete_!(oldScope)
                     totalScopesDeleted += 1
 
-                  case None =>
+                  case Empty | _ =>
                     // New role doesn't exist, rename the old one
                     detailedLog.append(s"  Renaming scope for consumer=$consumerId, bank=$bankId: $oldRoleName -> $newRoleName\n")
                     oldScope.mRoleName(newRoleName).saveMe()
