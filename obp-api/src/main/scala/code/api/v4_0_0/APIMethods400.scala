@@ -11546,7 +11546,9 @@ trait APIMethods400 extends MdcLoggable {
         implicit val ec = EndpointContext(Some(cc))
         Future {
           val versions: List[ScannedApiVersion] =
-            ApiVersion.allScannedApiVersion.asScala.toList
+            ApiVersion.allScannedApiVersion.asScala.toList.filter { version =>
+              version.urlPrefix.trim.nonEmpty
+            }
           (
             ListResult("scanned_api_versions", versions),
             HttpCode.`200`(cc.callContext)
