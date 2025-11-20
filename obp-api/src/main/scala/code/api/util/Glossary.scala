@@ -2943,7 +2943,7 @@ object Glossary extends MdcLoggable  {
 |      },
 |      "notifications_enabled": {
 |        "type": "boolean",
-|        "example": true
+|        "example": "true"
 |      }
 |    }
 |  }
