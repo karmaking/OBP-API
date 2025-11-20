@@ -983,7 +983,7 @@ trait APIMethods600 {
          |- credit_limit: Customer's credit limit (currency and amount)
          |- highest_education_attained: Customer's highest education level
          |- employment_status: Customer's employment status
-         |- kyc_status: Know Your Customer verification status (true/false)
+         |- kyc_status: Know Your Customer verification status (true/false). Default: false
          |- last_ok_date: Last verification date
          |- title: Customer's title (e.g., Mr., Mrs., Dr.)
          |- branch_id: Associated branch identifier
