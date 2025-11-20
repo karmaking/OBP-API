@@ -2305,12 +2305,31 @@ trait APIMethods400 extends MdcLoggable {
          |```
          |
          |**Important Notes:**
-         |- The entity name (e.g., "AgentConversation") is the top-level key in the JSON
+         |- The entity name (e.g., "AgentConversation") MUST be a direct top-level key in the JSON root object
+         |- Do NOT wrap the entity in an "entity" field - this is a common mistake
          |- Do NOT include "entityName" as a separate field
+         |- The JSON root can contain at most TWO fields: your entity name and optionally "hasPersonalEntity"
          |- The "properties" object contains all field definitions
          |- Each property must have "type" and "example" fields. The "description" field is optional
          |- For boolean fields, the example must be the STRING "true" or "false" (not boolean values)
          |- The "hasPersonalEntity" field is optional (defaults to true) and goes at the root level
+         |
+         |**WRONG (will fail validation):**
+         |```json
+         |{
+         |  "entity": {
+         |    "AgentConversation": { ... }
+         |  }
+         |}
+         |```
+         |
+         |**CORRECT:**
+         |```json
+         |{
+         |  "AgentConversation": { ... },
+         |  "hasPersonalEntity": true
+         |}
+         |```
          |""",
       dynamicEntityRequestBodyExample.copy(bankId = None),
       dynamicEntityResponseBodyExample.copy(bankId = None),
