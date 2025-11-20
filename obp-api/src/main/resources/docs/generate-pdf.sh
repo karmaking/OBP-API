@@ -93,7 +93,6 @@ generate_pdf() {
       --pdf-engine=xelatex \
       --toc \
       --toc-depth=3 \
-      --number-sections \
       --highlight-style=tango \
       -V geometry:margin=1in \
       -V fontsize=11pt \
@@ -181,7 +180,7 @@ if [ $# -eq 0 ]; then
     echo "    * Headers: Dark Green (#$OBP_DARK_GREEN)"
     echo "    * Accents: Light Green (#$OBP_LIGHT_GREEN)"
     echo "  - Table of contents: 3 levels"
-    echo "  - Section numbering: Enabled"
+    echo "  - Section numbering: From source markdown"
     echo "  - Headers/footers: OBP branded"
     echo ""
 
