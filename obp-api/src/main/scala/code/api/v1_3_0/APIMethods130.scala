@@ -95,7 +95,8 @@ trait APIMethods130 {
       EmptyBody,
       physicalCardsJSON,
       List(UserNotLoggedIn,BankNotFound, UnknownError),
-      List(apiTagCard))
+      List(apiTagCard),
+      Some(List(canGetCardsForBank)))
 
     lazy val getCardsForBank : OBPEndpoint = {
       case "banks" :: BankId(bankId) :: "cards" :: Nil JsonGet _ => {
