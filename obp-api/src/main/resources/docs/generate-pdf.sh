@@ -105,7 +105,7 @@ generate_pdf() {
       -V header-includes="$LATEX_HEADER" \
       --metadata title="$DOC_TITLE" \
       --metadata author="TESOBE GmbH" \
-      --metadata date="$(date +%Y-%m-%d)" \
+      --metadata date="Generated: $(date '+%Y-%m-%d %H:%M:%S %Z')" \
       2>&1 | grep -v "^$" || true
 
     if [ -f "$OUTPUT_FILE" ]; then
