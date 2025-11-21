@@ -35,7 +35,7 @@ import code.api.v2_0_0.{EntitlementJSONs, JSONFactory200}
 import code.api.v2_1_0.CustomerCreditRatingJSON
 import code.api.v3_0_0.{CustomerAttributeResponseJsonV300, UserJsonV300, ViewJSON300, ViewsJSON300}
 import code.api.v3_1_0.{RateLimit, RedisCallLimitJson}
-import code.api.v4_0_0.JSONFactory4_0_0.BankAttributeBankResponseJsonV400
+import code.api.v4_0_0.JSONFactory4_0_0._
 import code.entitlement.Entitlement
 import code.util.Helper.MdcLoggable
 import com.openbankproject.commons.model.{AmountOfMoneyJsonV121, CustomerAttribute, _}
