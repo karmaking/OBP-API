@@ -91,8 +91,6 @@ generate_pdf() {
     pandoc "$INPUT_FILE" \
       -o "$OUTPUT_FILE" \
       --pdf-engine=xelatex \
-      --toc \
-      --toc-depth=3 \
       --highlight-style=tango \
       -V geometry:margin=1in \
       -V fontsize=11pt \
