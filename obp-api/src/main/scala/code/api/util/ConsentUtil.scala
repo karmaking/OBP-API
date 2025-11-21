@@ -251,7 +251,11 @@ object Consent extends MdcLoggable {
         if (!tppIsConsentHolder(c.mConsumerId.get, callContext)) { // Always check TPP first
           val consentConsumerId = c.mConsumerId.get
           val requestConsumerId = callContext.consumer.map(_.consumerId.get).getOrElse("NONE")
-          logger.info(s"ConsentNotFound: TPP/Consumer mismatch. Consent holder consumer_id=$consentConsumerId, Request consumer_id=$requestConsumerId, consent_id=${consent.jti}")
+          val consumerValidationMethodForConsent = APIUtil.getPropsValue("consumer_validation_method_for_consent").openOr("")
+          if(requestConsumerId == "NONE" || consumerValidationMethodForConsent.isEmpty) {
+            logger.warn(s"consumer_validation_method_for_consent is empty while request consumer_id=NONE - consent_id=${consent.jti}, aud=${consent.aud}")
+          }
+          logger.debug(s"ConsentNotFound: TPP/Consumer mismatch. Consent holder consumer_id=$consentConsumerId, Request consumer_id=$requestConsumerId, consent_id=${consent.jti}")
           ErrorUtil.apiFailureToBox(ErrorMessages.ConsentNotFound, 401)(Some(callContext))
         } else if (!verifyHmacSignedJwt(consentIdAsJwt, c)) { // verify signature
           Failure(ErrorMessages.ConsentVerificationIssue)
