@@ -141,6 +141,45 @@ trait APIMethods400 extends MdcLoggable {
          |- Each property must have "type" and "example" fields. The "description" field is optional
          |- For boolean fields, the example must be the STRING "true" or "false" (not boolean values)
          |- The "hasPersonalEntity" field is optional (defaults to true) and goes at the root level""".stripMargin
+    
+    private val dynamicEntityPianoExample = 
+      """
+         |**Example 3: Piano Entity Demonstrating Different Field Types**
+         |```json
+         |{
+         |  "Piano": {
+         |    "description": "Piano entity with make, year, number of keys, and type",
+         |    "required": ["make", "year", "number_of_keys", "is_grand", "date_purchased", "weight_in_kg"],
+         |    "properties": {
+         |      "make": {
+         |        "type": "string",
+         |        "example": "Steinway"
+         |      },
+         |      "year": {
+         |        "type": "string",
+         |        "example": "2023"
+         |      },
+         |      "number_of_keys": {
+         |        "type": "integer",
+         |        "example": 88
+         |      },
+         |      "is_grand": {
+         |        "type": "boolean",
+         |        "example": "true"
+         |      },
+         |      "date_purchased": {
+         |        "type": "DATE_WITH_DAY",
+         |        "example": "2023-06-15"
+         |      },
+         |      "weight_in_kg": {
+         |        "type": "number",
+         |        "example": 480.5
+         |      }
+         |    }
+         |  },
+         |  "hasPersonalEntity": true
+         |}
+         |```""".stripMargin
 
     private val staticResourceDocs = ArrayBuffer[ResourceDoc]()
     // createDynamicEntityDoc and updateDynamicEntityDoc are dynamic, So here dynamic create resourceDocs
@@ -2326,6 +2365,8 @@ trait APIMethods400 extends MdcLoggable {
          |
          |$dynamicEntityImportantNotes
          |
+         |$dynamicEntityPianoExample
+         |
          |**WRONG (will fail validation):**
          |```json
          |{
@@ -2511,6 +2552,8 @@ trait APIMethods400 extends MdcLoggable {
          |```
          |
          |$dynamicEntityImportantNotes
+         |
+         |$dynamicEntityPianoExample
          |
          |**WRONG (will fail validation):**
          |```json
