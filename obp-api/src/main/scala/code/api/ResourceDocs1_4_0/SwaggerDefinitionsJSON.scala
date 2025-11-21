@@ -1080,6 +1080,16 @@ object SwaggerDefinitionsJSON {
     bank_routings = Some(List(bankRoutingJsonV121))
   )
 
+  lazy val bankJson600 = BankJson600(
+    bank_id = bankIdExample.value,
+    bank_code = bankCodeExample.value,
+    full_name = bankFullNameExample.value,
+    logo = bankLogoUrlExample.value,
+    website = bankLogoUrlExample.value,
+    bank_routings = List(bankRoutingJsonV121),
+    attributes = Some(List(bankAttributeBankResponseJsonV400))
+  )
+
   lazy val banksJSON400 = BanksJson400(
     banks = List(bankJson400)
   )

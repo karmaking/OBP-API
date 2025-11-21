@@ -837,7 +837,7 @@ trait APIMethods600 {
          |""",
 
       postBankJson600,
-      bankJson500,
+      bankJson600,
       List(
         InvalidJsonFormat,
         $UserNotLoggedIn,
@@ -908,7 +908,7 @@ trait APIMethods600 {
                 Future(Entitlement.entitlement.vend.addEntitlement(postJson.bank_id, cc.userId, CanReadDynamicResourceDocsAtOneBank.toString()))
             }
           } yield {
-            (JSONFactory500.createBankJSON500(success), HttpCode.`201`(callContext))
+            (JSONFactory600.createBankJSON600(success), HttpCode.`201`(callContext))
           }
       }
     }

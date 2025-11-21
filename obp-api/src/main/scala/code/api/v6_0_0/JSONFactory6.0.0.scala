@@ -35,6 +35,7 @@ import code.api.v2_0_0.{EntitlementJSONs, JSONFactory200}
 import code.api.v2_1_0.CustomerCreditRatingJSON
 import code.api.v3_0_0.{CustomerAttributeResponseJsonV300, UserJsonV300, ViewJSON300, ViewsJSON300}
 import code.api.v3_1_0.{RateLimit, RedisCallLimitJson}
+import code.api.v4_0_0.JSONFactory4_0_0.BankAttributeBankResponseJsonV400
 import code.entitlement.Entitlement
 import code.util.Helper.MdcLoggable
 import com.openbankproject.commons.model.{AmountOfMoneyJsonV121, CustomerAttribute, _}
@@ -158,6 +159,16 @@ case class PostBankJson600(
                             website: Option[String],
                             bank_routings: Option[List[BankRoutingJsonV121]]
                           )
+
+case class BankJson600(
+    bank_id: String,
+    bank_code: String,
+    full_name: String,
+    logo: String,
+    website: String,
+    bank_routings: List[BankRoutingJsonV121],
+    attributes: Option[List[BankAttributeBankResponseJsonV400]]
+)
 
 case class ProvidersJsonV600(providers: List[String])
 
@@ -321,6 +332,30 @@ object JSONFactory600 extends CustomJsonFormats with MdcLoggable{
 
   def createProvidersJson(providers: List[String]): ProvidersJsonV600 = {
     ProvidersJsonV600(providers)
+  }
+
+  def createBankJSON600(bank: Bank, attributes: List[BankAttributeTrait] = Nil): BankJson600 = {
+    val obp = BankRoutingJsonV121("OBP", bank.bankId.value)
+    val bic = BankRoutingJsonV121("BIC", bank.swiftBic)
+    val routings = bank.bankRoutingScheme match {
+      case "OBP" => bic :: BankRoutingJsonV121(bank.bankRoutingScheme, bank.bankRoutingAddress) :: Nil
+      case "BIC" => obp :: BankRoutingJsonV121(bank.bankRoutingScheme, bank.bankRoutingAddress) :: Nil
+      case _ => obp :: bic :: BankRoutingJsonV121(bank.bankRoutingScheme, bank.bankRoutingAddress) :: Nil
+    }
+    new BankJson600(
+      stringOrNull(bank.bankId.value),
+      stringOrNull(bank.shortName),
+      stringOrNull(bank.fullName),
+      stringOrNull(bank.logoUrl),
+      stringOrNull(bank.websiteUrl),
+      routings,
+      Option(
+        attributes.filter(_.isActive == Some(true)).map(a => BankAttributeBankResponseJsonV400(
+          name = a.name,
+          value = a.value)
+        )
+      )
+    )
   }
 
   def createCustomerJson(cInfo : Customer) : CustomerJsonV600 = {
