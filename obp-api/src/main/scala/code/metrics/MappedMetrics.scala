@@ -207,7 +207,7 @@ object MappedMetrics extends APIMetrics with MdcLoggable{
       */
     var cacheKey = (randomUUID().toString, randomUUID().toString, randomUUID().toString)
       CacheKeyFromArguments.buildCacheKey { 
-        Caching.memoizeSyncWithProvider(Some(cacheKey.toString()))(cachedAllMetrics days){
+        Caching.memoizeSyncWithProvider(Some(cacheKey.toString()))(cachedAllMetrics seconds){
           val optionalParams = getQueryParams(queryParams)
           MappedMetric.findAll(optionalParams: _*)
       }
