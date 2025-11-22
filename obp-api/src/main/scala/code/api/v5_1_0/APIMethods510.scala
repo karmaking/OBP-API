@@ -2757,6 +2757,32 @@ trait APIMethods510 {
          |
          |require CanReadMetrics role
          |
+         |**IMPORTANT: Smart Caching & Performance**
+         |
+         |This endpoint uses intelligent two-tier caching to optimize performance:
+         |
+         |**Stable Data Cache (Long TTL):**
+         |- Metrics older than ${APIUtil.getPropsValue("MappedMetrics.stable.boundary.seconds", "600")} seconds (${APIUtil.getPropsValue("MappedMetrics.stable.boundary.seconds", "600").toInt / 60} minutes) are considered immutable/stable
+         |- These are cached for ${APIUtil.getPropsValue("MappedMetrics.cache.ttl.seconds.getStableMetrics", "86400")} seconds (${APIUtil.getPropsValue("MappedMetrics.cache.ttl.seconds.getStableMetrics", "86400").toInt / 3600} hours)
+         |- Used when your query's from_date is older than the stable boundary
+         |
+         |**Recent Data Cache (Short TTL):**
+         |- Recent metrics (within the stable boundary) are cached for ${APIUtil.getPropsValue("MappedMetrics.cache.ttl.seconds.getAllMetrics", "7")} seconds
+         |- Used when your query includes recent data or has no from_date
+         |
+         |**STRONGLY RECOMMENDED: Always specify from_date in your queries!**
+         |
+         |**Why from_date matters:**
+         |- Queries WITH from_date older than ${APIUtil.getPropsValue("MappedMetrics.stable.boundary.seconds", "600").toInt / 60} mins → cached for ${APIUtil.getPropsValue("MappedMetrics.cache.ttl.seconds.getStableMetrics", "86400").toInt / 3600} hours (fast!)
+         |- Queries WITHOUT from_date → cached for only ${APIUtil.getPropsValue("MappedMetrics.cache.ttl.seconds.getAllMetrics", "7")} seconds (slower)
+         |
+         |**Examples:**
+         |- `from_date=2025-01-01` → Uses ${APIUtil.getPropsValue("MappedMetrics.cache.ttl.seconds.getStableMetrics", "86400").toInt / 3600} hours cache (historical data)
+         |- `from_date=5 minutes ago` → Uses ${APIUtil.getPropsValue("MappedMetrics.cache.ttl.seconds.getAllMetrics", "7")} seconds cache (recent data)
+         |- No from_date (e.g., `?limit=50`) → Uses ${APIUtil.getPropsValue("MappedMetrics.cache.ttl.seconds.getAllMetrics", "7")} seconds cache (assumes recent data)
+         |
+         |For best performance on historical/reporting queries, always include a from_date parameter!
+         |
          |Filters Part 1.*filtering* (no wilde cards etc.) parameters to GET /management/metrics
          |
          |You can filter by the following fields by applying url parameters
@@ -2764,11 +2790,9 @@ trait APIMethods510 {
          |eg: /management/metrics?from_date=$DateWithMsExampleString&to_date=$DateWithMsExampleString&limit=50&offset=2
          |
          |1 from_date e.g.:from_date=$DateWithMsExampleString Defaults to the Unix Epoch i.e. ${theEpochTime}
+         |   **IMPORTANT**: Including from_date enables long-term caching for historical data queries!
          |
          |2 to_date e.g.:to_date=$DateWithMsExampleString Defaults to a far future date i.e. ${APIUtil.ToDateInFuture}
-         |
-         |Note: it is recommended you send a valid from_date (e.g. 5 seconds ago) and to_date (now + 1 second) if you want to get the latest records
-         | Otherwise you may receive stale cached results.
          |
          |3 limit (for pagination: defaults to 50)  eg:limit=200
          |

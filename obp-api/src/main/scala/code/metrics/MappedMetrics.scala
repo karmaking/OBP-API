@@ -25,10 +25,80 @@ import scala.concurrent.duration._
 
 object MappedMetrics extends APIMetrics with MdcLoggable{
 
+  /**
+   * Smart Caching Strategy for Metrics:
+   * 
+   * Metrics data becomes stable/immutable after a certain time period (default: 10 minutes).
+   * We leverage this to use different cache TTLs based on the age of the data being queried.
+   * 
+   * Configuration:
+   * - MappedMetrics.cache.ttl.seconds.getAllMetrics: Short TTL for queries including recent data (default: 7 seconds)
+   * - MappedMetrics.cache.ttl.seconds.getStableMetrics: Long TTL for queries with only stable/old data (default: 86400 seconds = 24 hours)
+   * - MappedMetrics.stable.boundary.seconds: Age threshold after which metrics are stable (default: 600 seconds = 10 minutes)
+   * 
+   * Examples:
+   * - Query with from_date=2025-01-01 (> 10 mins ago): Uses 24 hour cache (stable data)
+   * - Query with from_date=5 mins ago: Uses 7 second cache (regular)
+   * - Query with no from_date: Uses 7 second cache (regular, safe default)
+   * 
+   * This dramatically reduces database load for historical/reporting queries while keeping recent data fresh.
+   */
   val cachedAllMetrics = APIUtil.getPropsValue(s"MappedMetrics.cache.ttl.seconds.getAllMetrics", "7").toInt
+  val cachedStableMetrics = APIUtil.getPropsValue(s"MappedMetrics.cache.ttl.seconds.getStableMetrics", "86400").toInt
+  val stableBoundarySeconds = APIUtil.getPropsValue(s"MappedMetrics.stable.boundary.seconds", "600").toInt
   val cachedAllAggregateMetrics = APIUtil.getPropsValue(s"MappedMetrics.cache.ttl.seconds.getAllAggregateMetrics", "7").toInt
   val cachedTopApis = APIUtil.getPropsValue(s"MappedMetrics.cache.ttl.seconds.getTopApis", "3600").toInt
   val cachedTopConsumers = APIUtil.getPropsValue(s"MappedMetrics.cache.ttl.seconds.getTopConsumers", "3600").toInt
+
+  /**
+   * Determines the appropriate cache TTL based on the query's date range.
+   * 
+   * Strategy:
+   * - If fromDate exists and is older than the stable boundary → use long TTL (stable cache)
+   * - If no fromDate but toDate exists and is older than stable boundary → use long TTL (stable cache)
+   * - Otherwise (no dates, or any date in recent zone) → use short TTL (regular cache)
+   * 
+   * Rationale:
+   * Metrics older than the stable boundary (e.g., 10 minutes) never change, so they can be
+   * cached for much longer. This significantly reduces database load for historical queries
+   * (reports, analytics, etc.) while keeping recent data fresh.
+   * 
+   * Examples:
+   * - from_date=2024-01-01 → stable cache (old data)
+   * - to_date=2024-01-01, no from_date → stable cache (only old data)
+   * - from_date=5 mins ago → regular cache (recent data)
+   * - no date filters → regular cache (typically "latest N metrics")
+   * 
+   * @param queryParams The query parameters including potential OBPFromDate and OBPToDate
+   * @return Cache TTL in seconds - either cachedStableMetrics or cachedAllMetrics
+   */
+  private def determineMetricsCacheTTL(queryParams: List[OBPQueryParam]): Int = {
+    val now = new Date()
+    val stableBoundary = new Date(now.getTime - (stableBoundarySeconds * 1000L))
+    
+    val fromDate = queryParams.collectFirst { case OBPFromDate(d) => d }
+    val toDate = queryParams.collectFirst { case OBPToDate(d) => d }
+    
+    // Determine if we should use stable cache based on date parameters
+    val useStableCache = (fromDate, toDate) match {
+      // Case 1: fromDate exists and is before stable boundary (most common for historical queries)
+      case (Some(from), _) if from.before(stableBoundary) =>
+        logger.debug(s"Using stable metrics cache (TTL=${cachedStableMetrics}s): fromDate=$from is before stableBoundary=$stableBoundary")
+        true
+      
+      // Case 2: No fromDate, but toDate exists and is before stable boundary (e.g., "all data up to Jan 2024")
+      case (None, Some(to)) if to.before(stableBoundary) =>
+        logger.debug(s"Using stable metrics cache (TTL=${cachedStableMetrics}s): toDate=$to is before stableBoundary=$stableBoundary (no fromDate)")
+        true
+      
+      // Case 3: No dates, or dates include recent data → use regular cache
+      case _ =>
+        logger.debug(s"Using regular metrics cache (TTL=${cachedAllMetrics}s): fromDate=$fromDate, toDate=$toDate, stableBoundary=$stableBoundary")
+        false
+    }
+    
+    if (useStableCache) cachedStableMetrics else cachedAllMetrics
+  }
 
   // If consumerId is Int, if consumerId is not Int, convert it to primary key.
   // Since version 3.1.0 we do not use a primary key externally. I.e. we use UUID instead of it as the value exposed to end users.
@@ -206,8 +276,9 @@ object MappedMetrics extends APIMetrics with MdcLoggable{
       * https://github.com/OpenBankProject/scala-macros/blob/master/macros/src/main/scala/com/tesobe/CacheKeyFromArgumentsMacro.scala#L49
       */
     var cacheKey = (randomUUID().toString, randomUUID().toString, randomUUID().toString)
+      val cacheTTL = determineMetricsCacheTTL(queryParams)
       CacheKeyFromArguments.buildCacheKey { 
-        Caching.memoizeSyncWithProvider(Some(cacheKey.toString()))(cachedAllMetrics seconds){
+        Caching.memoizeSyncWithProvider(Some(cacheKey.toString()))(cacheTTL seconds){
           val optionalParams = getQueryParams(queryParams)
           MappedMetric.findAll(optionalParams: _*)
       }

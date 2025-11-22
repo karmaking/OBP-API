@@ -227,6 +227,12 @@ write_connector_metrics=false
 #es.metrics.port.http=9200
 
 
+## Metrics Cache Configuration - Smart Two-Tier Caching
+## Metrics older than the stable boundary are immutable and can be cached longer
+MappedMetrics.cache.ttl.seconds.getAllMetrics=7  # Short TTL for recent/changing data
+MappedMetrics.cache.ttl.seconds.getStableMetrics=86400  # 24 hours - Long TTL for stable/old data
+MappedMetrics.stable.boundary.seconds=600  # 10 minutes - Metrics older than this are considered stable
+
 ## You can use a no config needed h2 database by setting db.driver=org.h2.Driver and not including db.url
 # See the README for how to use the H2 browser / console.
 db.driver=org.h2.Driver
