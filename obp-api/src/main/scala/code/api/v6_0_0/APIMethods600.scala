@@ -16,8 +16,9 @@ import code.api.v3_1_0.{JSONFactory310, PostCustomerNumberJsonV310}
 import code.api.v4_0_0.CallLimitPostJsonV400
 import code.api.v4_0_0.JSONFactory400.createCallsLimitJson
 import code.api.v5_0_0.JSONFactory500
-import code.api.v5_1_0.PostCustomerLegalNameJsonV510
+import code.api.v5_1_0.{JSONFactory510, PostCustomerLegalNameJsonV510}
 import code.api.v6_0_0.JSONFactory600.{DynamicEntityDiagnosticsJsonV600, DynamicEntityIssueJsonV600, ReferenceTypeJsonV600, ReferenceTypesJsonV600, createActiveCallLimitsJsonV600, createCallLimitJsonV600, createCurrentUsageJson}
+import code.metrics.APIMetrics
 import code.bankconnectors.LocalMappedConnectorInternal
 import code.bankconnectors.LocalMappedConnectorInternal._
 import code.entitlement.Entitlement
@@ -1328,15 +1329,150 @@ trait APIMethods600 {
     }
 
     staticResourceDocs += ResourceDoc(
+      getMetrics,
+      implementedInApiVersion,
+      nameOf(getMetrics),
+      "GET",
+      "/management/metrics",
+      "Get Metrics",
+      s"""Get API metrics rows. These are records of each REST API call.
+         |
+         |require CanReadMetrics role
+         |
+         |**IMPORTANT: Smart Caching & Performance**
+         |
+         |This endpoint uses intelligent two-tier caching to optimize performance:
+         |
+         |**Stable Data Cache (Long TTL):**
+         |- Metrics older than ${APIUtil.getPropsValue("MappedMetrics.stable.boundary.seconds", "600")} seconds (${APIUtil.getPropsValue("MappedMetrics.stable.boundary.seconds", "600").toInt / 60} minutes) are considered immutable/stable
+         |- These are cached for ${APIUtil.getPropsValue("MappedMetrics.cache.ttl.seconds.getStableMetrics", "86400")} seconds (${APIUtil.getPropsValue("MappedMetrics.cache.ttl.seconds.getStableMetrics", "86400").toInt / 3600} hours)
+         |- Used when your query's from_date is older than the stable boundary
+         |
+         |**Recent Data Cache (Short TTL):**
+         |- Recent metrics (within the stable boundary) are cached for ${APIUtil.getPropsValue("MappedMetrics.cache.ttl.seconds.getAllMetrics", "7")} seconds
+         |- Used when your query includes recent data or has no from_date
+         |
+         |**STRONGLY RECOMMENDED: Always specify from_date in your queries!**
+         |
+         |**Why from_date matters:**
+         |- Queries WITH from_date older than ${APIUtil.getPropsValue("MappedMetrics.stable.boundary.seconds", "600").toInt / 60} mins → cached for ${APIUtil.getPropsValue("MappedMetrics.cache.ttl.seconds.getStableMetrics", "86400").toInt / 3600} hours (fast!)
+         |- Queries WITHOUT from_date → cached for only ${APIUtil.getPropsValue("MappedMetrics.cache.ttl.seconds.getAllMetrics", "7")} seconds (slower)
+         |
+         |**Examples:**
+         |- `from_date=2025-01-01T00:00:00.000Z` → Uses ${APIUtil.getPropsValue("MappedMetrics.cache.ttl.seconds.getStableMetrics", "86400").toInt / 3600} hours cache (historical data)
+         |- `from_date=$DateWithMsExampleString` (recent date) → Uses ${APIUtil.getPropsValue("MappedMetrics.cache.ttl.seconds.getAllMetrics", "7")} seconds cache (recent data)
+         |- No from_date → **Automatically set to ${(APIUtil.getPropsValue("MappedMetrics.stable.boundary.seconds", "600").toInt - 1) / 60} minutes ago** → Uses ${APIUtil.getPropsValue("MappedMetrics.cache.ttl.seconds.getAllMetrics", "7")} seconds cache (recent data)
+         |
+         |For best performance on historical/reporting queries, always include a from_date parameter!
+         |
+         |Filters Part 1.*filtering* (no wilde cards etc.) parameters to GET /management/metrics
+         |
+         |You can filter by the following fields by applying url parameters
+         |
+         |eg: /management/metrics?from_date=$DateWithMsExampleString&to_date=$DateWithMsExampleString&limit=50&offset=2
+         |
+         |1 from_date e.g.:from_date=$DateWithMsExampleString 
+         |   **DEFAULT**: If not provided, automatically set to now - ${(APIUtil.getPropsValue("MappedMetrics.stable.boundary.seconds", "600").toInt - 1) / 60} minutes (keeps queries in recent data zone)
+         |   **IMPORTANT**: Including from_date enables long-term caching for historical data queries!
+         |
+         |2 to_date e.g.:to_date=$DateWithMsExampleString Defaults to a far future date i.e. ${APIUtil.ToDateInFuture}
+         |
+         |3 limit (for pagination: defaults to 50)  eg:limit=200
+         |
+         |4 offset (for pagination: zero index, defaults to 0) eg: offset=10
+         |
+         |5 sort_by (defaults to date field) eg: sort_by=date
+         |  possible values:
+         |    "url",
+         |    "date",
+         |    "user_name",
+         |    "app_name",
+         |    "developer_email",
+         |    "implemented_by_partial_function",
+         |    "implemented_in_version",
+         |    "consumer_id",
+         |    "verb"
+         |
+         |6 direction (defaults to date desc) eg: direction=desc
+         |
+         |eg: /management/metrics?from_date=$DateWithMsExampleString&to_date=$DateWithMsExampleString&limit=10000&offset=0&anon=false&app_name=TeatApp&implemented_in_version=v2.1.0&verb=POST&user_id=c7b6cb47-cb96-4441-8801-35b57456753a&user_name=susan.uk.29@example.com&consumer_id=78
+         |
+         |Other filters:
+         |
+         |7 consumer_id  (if null ignore)
+         |
+         |8 user_id (if null ignore)
+         |
+         |9 anon (if null ignore) only support two value : true (return where user_id is null.) or false (return where user_id is not null.)
+         |
+         |10 url (if null ignore), note: can not contain '&'.
+         |
+         |11 app_name (if null ignore)
+         |
+         |12 implemented_by_partial_function (if null ignore),
+         |
+         |13 implemented_in_version (if null ignore)
+         |
+         |14 verb (if null ignore)
+         |
+         |15 correlation_id (if null ignore)
+         |
+         |16 duration (if null ignore) non digit chars will be silently omitted
+         |
+      """.stripMargin,
+      EmptyBody,
+      metricsJsonV510,
+      List(
+        UserNotLoggedIn,
+        UserHasMissingRoles,
+        UnknownError
+      ),
+      List(apiTagMetric, apiTagApi),
+      Some(List(canReadMetrics)))
+
+    lazy val getMetrics: OBPEndpoint = {
+      case "management" :: "metrics" :: Nil JsonGet _ => {
+        cc => {
+          implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(u), callContext) <- authenticatedAccess(cc)
+            _ <- NewStyle.function.hasEntitlement("", u.userId, ApiRole.canReadMetrics, callContext)
+            httpParams <- NewStyle.function.extractHttpParamsFromUrl(cc.url)
+            // If from_date is not provided, set it to now - (stable.boundary - 1 second)
+            // This ensures we get recent data with the shorter cache TTL
+            httpParamsWithDefault = {
+              val hasFromDate = httpParams.exists(p => p.name == "from_date" || p.name == "obp_from_date")
+              if (!hasFromDate) {
+                val stableBoundarySeconds = APIUtil.getPropsValue("MappedMetrics.stable.boundary.seconds", "600").toInt
+                val defaultFromDate = new java.util.Date(System.currentTimeMillis() - ((stableBoundarySeconds - 1) * 1000L))
+                val dateStr = APIUtil.DateWithMs.format(defaultFromDate)
+                HTTPParam("from_date", List(dateStr)) :: httpParams
+              } else {
+                httpParams
+              }
+            }
+            (obpQueryParams, callContext) <- createQueriesByHttpParamsFuture(httpParamsWithDefault, callContext)
+            metrics <- Future(APIMetrics.apiMetrics.vend.getAllMetrics(obpQueryParams))
+            _ <- Future {
+              if (metrics.isEmpty) {
+                logger.warn(s"getMetrics returned empty list. Query params: $obpQueryParams, URL: ${cc.url}")
+              }
+            }
+          } yield {
+            (JSONFactory510.createMetricsJson(metrics), HttpCode.`200`(callContext))
+          }
+        }
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
       directLoginEndpoint,
       implementedInApiVersion,
       nameOf(directLoginEndpoint),
       "POST",
       "/my/logins/direct",
       "Direct Login",
-      s"""This endpoint allows users to create a DirectLogin token to access the API.
-         |
-         |DirectLogin is a simple authentication flow. You POST your credentials (username, password, and consumer key)
+      s"""DirectLogin is a simple authentication flow. You POST your credentials (username, password, and consumer key)
          |to the DirectLogin endpoint and receive a token in return.
          |
          |This is an alias to the DirectLogin endpoint that includes the standard API versioning prefix.
