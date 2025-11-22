@@ -31,10 +31,21 @@ object MappedMetrics extends APIMetrics with MdcLoggable{
    * Metrics data becomes stable/immutable after a certain time period (default: 10 minutes).
    * We leverage this to use different cache TTLs based on the age of the data being queried.
    * 
+   * This smart caching applies to:
+   * - getAllMetrics (GET /management/metrics)
+   * - getAllAggregateMetrics (GET /management/aggregate-metrics)
+   * - getTopApis (GET /management/metrics/top-apis)
+   * - getTopConsumers (GET /management/metrics/top-consumers)
+   * 
    * Configuration:
    * - MappedMetrics.cache.ttl.seconds.getAllMetrics: Short TTL for queries including recent data (default: 7 seconds)
    * - MappedMetrics.cache.ttl.seconds.getStableMetrics: Long TTL for queries with only stable/old data (default: 86400 seconds = 24 hours)
    * - MappedMetrics.stable.boundary.seconds: Age threshold after which metrics are stable (default: 600 seconds = 10 minutes)
+   * 
+   * Deprecated (no longer used - smart caching now applies):
+   * - MappedMetrics.cache.ttl.seconds.getAllAggregateMetrics (now uses smart caching)
+   * - MappedMetrics.cache.ttl.seconds.getTopApis (now uses smart caching)
+   * - MappedMetrics.cache.ttl.seconds.getTopConsumers (now uses smart caching)
    * 
    * Examples:
    * - Query with from_date=2025-01-01 (> 10 mins ago): Uses 24 hour cache (stable data)
@@ -321,7 +332,7 @@ object MappedMetrics extends APIMetrics with MdcLoggable{
   }
   
 
-  // TODO Cache this as long as fromDate and toDate are in the past (before now)
+  // Smart caching applied - uses determineMetricsCacheTTL based on query date range
   def getAllAggregateMetricsBox(queryParams: List[OBPQueryParam], isNewVersion: Boolean): Box[List[AggregateMetrics]] = {
     /**
       * Please note that "var cacheKey = (randomUUID().toString, randomUUID().toString, randomUUID().toString)"
@@ -330,7 +341,8 @@ object MappedMetrics extends APIMetrics with MdcLoggable{
       * https://github.com/OpenBankProject/scala-macros/blob/master/macros/src/main/scala/com/tesobe/CacheKeyFromArgumentsMacro.scala#L49
       */
     var cacheKey = (randomUUID().toString, randomUUID().toString, randomUUID().toString)
-    CacheKeyFromArguments.buildCacheKey { Caching.memoizeSyncWithProvider(Some(cacheKey.toString()))(cachedAllAggregateMetrics days){
+    val cacheTTL = determineMetricsCacheTTL(queryParams)
+    CacheKeyFromArguments.buildCacheKey { Caching.memoizeSyncWithProvider(Some(cacheKey.toString()))(cacheTTL seconds){
       val fromDate = queryParams.collect { case OBPFromDate(value) => value }.headOption
       val toDate = queryParams.collect { case OBPToDate(value) => value }.headOption
       val consumerId = queryParams.collect { case OBPConsumerId(value) => value }.headOption.flatMap(consumerIdToPrimaryKey)
@@ -430,7 +442,7 @@ object MappedMetrics extends APIMetrics with MdcLoggable{
     MappedMetric.bulkDelete_!!()
   }
 
-  // TODO Cache this as long as fromDate and toDate are in the past (before now)
+  // Smart caching applied - uses determineMetricsCacheTTL based on query date range
   override def getTopApisFuture(queryParams: List[OBPQueryParam]): Future[Box[List[TopApi]]] = Future{
   /**                                                                                        
   * Please note that "var cacheKey = (randomUUID().toString, randomUUID().toString, randomUU
@@ -438,8 +450,9 @@ object MappedMetrics extends APIMetrics with MdcLoggable{
   * The real value will be assigned by Macro during compile time at this line of a code:   
   * https://github.com/OpenBankProject/scala-macros/blob/master/macros/src/main/scala/com/t
   */                                                                                       
-  var cacheKey = (randomUUID().toString, randomUUID().toString, randomUUID().toString)       
-  CacheKeyFromArguments.buildCacheKey {Caching.memoizeSyncWithProvider(Some(cacheKey.toString()))(cachedTopApis seconds){   
+  var cacheKey = (randomUUID().toString, randomUUID().toString, randomUUID().toString)
+  val cacheTTL = determineMetricsCacheTTL(queryParams)
+  CacheKeyFromArguments.buildCacheKey {Caching.memoizeSyncWithProvider(Some(cacheKey.toString()))(cacheTTL seconds){
     {
       val fromDate = queryParams.collect { case OBPFromDate(value) => value }.headOption
       val toDate = queryParams.collect { case OBPToDate(value) => value }.headOption
@@ -510,7 +523,7 @@ object MappedMetrics extends APIMetrics with MdcLoggable{
     }}
   }}
 
-  // TODO Cache this as long as fromDate and toDate are in the past (before now)
+  // Smart caching applied - uses determineMetricsCacheTTL based on query date range
   override def getTopConsumersFuture(queryParams: List[OBPQueryParam]): Future[Box[List[TopConsumer]]] = Future {
   /**                                                                                        
   * Please note that "var cacheKey = (randomUUID().toString, randomUUID().toString, randomUU
@@ -518,8 +531,9 @@ object MappedMetrics extends APIMetrics with MdcLoggable{
   * The real value will be assigned by Macro during compile time at this line of a code:   
   * https://github.com/OpenBankProject/scala-macros/blob/master/macros/src/main/scala/com/t
   */                                                                                       
-  var cacheKey = (randomUUID().toString, randomUUID().toString, randomUUID().toString)       
-  CacheKeyFromArguments.buildCacheKey {Caching.memoizeSyncWithProvider(Some(cacheKey.toString()))(cachedTopConsumers seconds){   
+  var cacheKey = (randomUUID().toString, randomUUID().toString, randomUUID().toString)
+  val cacheTTL = determineMetricsCacheTTL(queryParams)
+  CacheKeyFromArguments.buildCacheKey {Caching.memoizeSyncWithProvider(Some(cacheKey.toString()))(cacheTTL seconds){
   
       val fromDate = queryParams.collect { case OBPFromDate(value) => value }.headOption
       val toDate = queryParams.collect { case OBPToDate(value) => value }.headOption
