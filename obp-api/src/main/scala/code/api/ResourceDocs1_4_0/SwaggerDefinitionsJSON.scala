@@ -2575,7 +2575,9 @@ object SwaggerDefinitionsJSON {
     agreements = Some(List(userAgreementJson)),
     is_deleted = false,
     last_marketing_agreement_signed_date = Some(DateWithDayExampleObject),
-    is_locked = false
+    is_locked = false,
+    last_activity_date = Some(DateWithDayExampleObject),
+    recent_operation_ids = List("obp.getBank", "obp.getAccounts", "obp.getTransactions", "obp.getUser", "obp.getCustomer")
   )
 
   lazy val usersInfoJsonV600 = UsersInfoJsonV600(

@@ -23,7 +23,9 @@ import code.metrics.APIMetrics
 import code.bankconnectors.LocalMappedConnectorInternal
 import code.bankconnectors.LocalMappedConnectorInternal._
 import code.entitlement.Entitlement
+import code.loginattempts.LoginAttempt
 import code.model._
+import code.users.{UserAgreement, UserAgreementProvider, Users}
 import code.ratelimiting.RateLimitingDI
 import code.util.Helper
 import code.util.Helper.{MdcLoggable, SILENCE_IS_GOLDEN}
@@ -37,6 +39,7 @@ import net.liftweb.http.provider.HTTPParam
 import net.liftweb.http.rest.RestHelper
 import net.liftweb.json.{Extraction, JsonParser}
 import net.liftweb.json.JsonAST.JValue
+import net.liftweb.mapper.{By, Descending, MaxRows, OrderBy}
 
 import java.text.SimpleDateFormat
 import scala.collection.immutable.{List, Nil}
@@ -740,6 +743,67 @@ trait APIMethods600 {
           users <- code.users.Users.users.vend.getUsers(obpQueryParams)
         } yield {
           (JSONFactory600.createUsersInfoJsonV600(users), HttpCode.`200`(callContext))
+        }
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
+      getUserByUserId,
+      implementedInApiVersion,
+      nameOf(getUserByUserId),
+      "GET",
+      "/users/user-id/USER_ID",
+      "Get User by USER_ID",
+      s"""Get user by USER_ID
+         |
+         |${userAuthenticationMessage(true)}
+         |
+         |CanGetAnyUser entitlement is required,
+         |
+      """.stripMargin,
+      EmptyBody,
+      userInfoJsonV600,
+      List(
+        $UserNotLoggedIn,
+        UserHasMissingRoles,
+        UserNotFoundByUserId,
+        UnknownError
+      ),
+      List(apiTagUser),
+      Some(List(canGetAnyUser))
+    )
+
+    lazy val getUserByUserId: OBPEndpoint = {
+      case "users" :: "user-id" :: userId :: Nil JsonGet _ => { cc =>
+        implicit val ec = EndpointContext(Some(cc))
+        for {
+          (Full(u), callContext) <- authenticatedAccess(cc)
+          _ <- NewStyle.function.hasEntitlement("", u.userId, canGetAnyUser, callContext)
+          user <- Users.users.vend.getUserByUserIdFuture(userId) map {
+            x => unboxFullOrFail(x, callContext, s"$UserNotFoundByUserId Current UserId($userId)")
+          }
+          entitlements <- NewStyle.function.getEntitlementsByUserId(user.userId, callContext)
+          // Fetch user agreements
+          agreements <- Future {
+            val acceptMarketingInfo = UserAgreementProvider.userAgreementProvider.vend.getLastUserAgreement(user.userId, "accept_marketing_info")
+            val termsAndConditions = UserAgreementProvider.userAgreementProvider.vend.getLastUserAgreement(user.userId, "terms_and_conditions")
+            val privacyConditions = UserAgreementProvider.userAgreementProvider.vend.getLastUserAgreement(user.userId, "privacy_conditions")
+            val agreementList = acceptMarketingInfo.toList ::: termsAndConditions.toList ::: privacyConditions.toList
+            if (agreementList.isEmpty) None else Some(agreementList)
+          }
+          isLocked = LoginAttempt.userIsLocked(user.provider, user.name)
+          // Fetch metrics data for the user
+          userMetrics <- Future {
+            code.metrics.MappedMetric.findAll(
+              By(code.metrics.MappedMetric.userId, userId),
+              OrderBy(code.metrics.MappedMetric.date, Descending),
+              MaxRows(5)
+            )
+          }
+          lastActivityDate = userMetrics.headOption.map(_.getDate())
+          recentOperationIds = userMetrics.map(_.getImplementedByPartialFunction())
+        } yield {
+          (JSONFactory600.createUserInfoJsonV600(user, entitlements, agreements, isLocked, lastActivityDate, recentOperationIds), HttpCode.`200`(callContext))
         }
       }
     }

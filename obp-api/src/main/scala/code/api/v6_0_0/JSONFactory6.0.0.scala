@@ -166,7 +166,9 @@ case class UserInfoJsonV600(
                              agreements: Option[List[UserAgreementJson]],
                              is_deleted: Boolean,
                              last_marketing_agreement_signed_date: Option[Date],
-                             is_locked: Boolean
+                             is_locked: Boolean,
+                             last_activity_date: Option[Date],
+                             recent_operation_ids: List[String]
                            )
 
 case class UsersInfoJsonV600(users: List[UserInfoJsonV600])
@@ -328,7 +330,7 @@ object JSONFactory600 extends CustomJsonFormats with MdcLoggable{
     )
   }
 
-  def createUserInfoJsonV600(user: User, entitlements: List[Entitlement], agreements: Option[List[UserAgreement]], isLocked: Boolean): UserInfoJsonV600 = {
+  def createUserInfoJsonV600(user: User, entitlements: List[Entitlement], agreements: Option[List[UserAgreement]], isLocked: Boolean, lastActivityDate: Option[Date], recentOperationIds: List[String]): UserInfoJsonV600 = {
     UserInfoJsonV600(
       user_id = user.userId,
       email = user.emailAddress,
@@ -343,6 +345,8 @@ object JSONFactory600 extends CustomJsonFormats with MdcLoggable{
       is_deleted = user.isDeleted.getOrElse(false),
       last_marketing_agreement_signed_date = user.lastMarketingAgreementSignedDate,
       is_locked = isLocked,
+      last_activity_date = lastActivityDate,
+      recent_operation_ids = recentOperationIds
     )
   }
 
@@ -353,7 +357,9 @@ object JSONFactory600 extends CustomJsonFormats with MdcLoggable{
           t._1,
           t._2.getOrElse(Nil),
           t._3,
-          LoginAttempt.userIsLocked(t._1.provider, t._1.name)
+          LoginAttempt.userIsLocked(t._1.provider, t._1.name),
+          None,
+          List.empty
         )
       )
     )
