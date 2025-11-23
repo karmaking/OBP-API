@@ -813,7 +813,7 @@ trait APIMethods600 {
       implementedInApiVersion,
       nameOf(getMigrations),
       "GET",
-      "/dev-ops/migrations",
+      "/devops/migrations",
       "Get Database Migrations",
       s"""Get all database migration script logs.
          |
@@ -836,7 +836,7 @@ trait APIMethods600 {
     )
 
     lazy val getMigrations: OBPEndpoint = {
-      case "dev-ops" :: "migrations" :: Nil JsonGet _ => { cc =>
+      case "devops" :: "migrations" :: Nil JsonGet _ => { cc =>
         implicit val ec = EndpointContext(Some(cc))
         for {
           (Full(u), callContext) <- authenticatedAccess(cc)

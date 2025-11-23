@@ -3,7 +3,12 @@
 ### Most recent changes at top of file
 ```
 Date          Commit        Action
-18/11/2025    TBD           Breaking Role Name changes. 
+TBD           TBD           Changes to non stable endpoints: DevOps endpoint path updates
+                            Changed /dev-ops/ to /devops/ for all DevOps operational endpoints:
+                            - v5.1.0: /dev-ops/log-cache/LOG_LEVEL -> /devops/log-cache/LOG_LEVEL
+                            - v6.0.0: /dev-ops/migrations -> /devops/migrations
+                            This affects all clients calling these endpoints. Please update your API calls accordingly.
+18/11/2025    TBD           Breaking Role Name changes.
                             CanGetCustomer -> CanGetCustomersAtOneBank (singular and plural now use same role)
                             CanGetCustomersMinimal -> CanGetCustomersMinimalAtOneBank
                             CanGetCustomersMinimalAtAnyBank -> CanGetCustomersMinimalAtAllBanks
