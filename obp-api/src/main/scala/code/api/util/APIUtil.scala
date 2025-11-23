@@ -1020,6 +1020,7 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
     }
     else
     {
+      logger.warn(s"Failed to parse date string: '$date'. Expected format: ${DateWithMsFormat.toPattern}")
       Failure(FilterDateFormatError)
     }
   }

@@ -25,13 +25,14 @@ import code.entitlement.Entitlement
 import code.model._
 import code.ratelimiting.RateLimitingDI
 import code.util.Helper
-import code.util.Helper.SILENCE_IS_GOLDEN
+import code.util.Helper.{MdcLoggable, SILENCE_IS_GOLDEN}
 import code.views.Views
 import com.github.dwickern.macros.NameOf.nameOf
 import com.openbankproject.commons.ExecutionContext.Implicits.global
 import com.openbankproject.commons.model.{CustomerAttribute, _}
 import com.openbankproject.commons.util.{ApiVersion, ScannedApiVersion}
 import net.liftweb.common.{Empty, Full}
+import net.liftweb.http.provider.HTTPParam
 import net.liftweb.http.rest.RestHelper
 import net.liftweb.json.{Extraction, JsonParser}
 import net.liftweb.json.JsonAST.JValue
@@ -48,7 +49,7 @@ trait APIMethods600 {
 
   val Implementations6_0_0 = new Implementations600()
 
-  class Implementations600 {
+  class Implementations600 extends MdcLoggable {
 
     val implementedInApiVersion: ScannedApiVersion = ApiVersion.v6_0_0
 
@@ -1339,6 +1340,14 @@ trait APIMethods600 {
          |
          |require CanReadMetrics role
          |
+         |**NOTE: Automatic from_date Default**
+         |
+         |If you do not provide a `from_date` parameter, this endpoint will automatically set it to:
+         |**now - ${(APIUtil.getPropsValue("MappedMetrics.stable.boundary.seconds", "600").toInt - 1) / 60} minutes ago**
+         |
+         |This prevents accidentally querying all metrics since Unix Epoch and ensures reasonable response times.
+         |For historical/reporting queries, always explicitly specify your desired `from_date`.
+         |
          |**IMPORTANT: Smart Caching & Performance**
          |
          |This endpoint uses intelligent two-tier caching to optimize performance:
@@ -1436,16 +1445,16 @@ trait APIMethods600 {
           implicit val ec = EndpointContext(Some(cc))
           for {
             (Full(u), callContext) <- authenticatedAccess(cc)
-            _ <- NewStyle.function.hasEntitlement("", u.userId, ApiRole.canReadMetrics, callContext)
+            _ <- NewStyle.function.hasEntitlement("", u.userId, canReadMetrics, callContext)
             httpParams <- NewStyle.function.extractHttpParamsFromUrl(cc.url)
             // If from_date is not provided, set it to now - (stable.boundary - 1 second)
             // This ensures we get recent data with the shorter cache TTL
             httpParamsWithDefault = {
               val hasFromDate = httpParams.exists(p => p.name == "from_date" || p.name == "obp_from_date")
               if (!hasFromDate) {
-                val stableBoundarySeconds = APIUtil.getPropsValue("MappedMetrics.stable.boundary.seconds", "600").toInt
+                val stableBoundarySeconds = APIUtil.getPropsAsIntValue("MappedMetrics.stable.boundary.seconds", 600)
                 val defaultFromDate = new java.util.Date(System.currentTimeMillis() - ((stableBoundarySeconds - 1) * 1000L))
-                val dateStr = APIUtil.DateWithMs.format(defaultFromDate)
+                val dateStr = APIUtil.DateWithMsFormat.format(defaultFromDate)
                 HTTPParam("from_date", List(dateStr)) :: httpParams
               } else {
                 httpParams
