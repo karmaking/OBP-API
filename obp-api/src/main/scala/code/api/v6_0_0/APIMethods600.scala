@@ -801,7 +801,7 @@ trait APIMethods600 {
             )
           }
           lastActivityDate = userMetrics.headOption.map(_.getDate())
-          recentOperationIds = userMetrics.map(_.getImplementedByPartialFunction())
+          recentOperationIds = userMetrics.map(_.getImplementedByPartialFunction()).distinct.take(5)
         } yield {
           (JSONFactory600.createUserInfoJsonV600(user, entitlements, agreements, isLocked, lastActivityDate, recentOperationIds), HttpCode.`200`(callContext))
         }
