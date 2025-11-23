@@ -239,6 +239,11 @@ MappedMetrics.cache.ttl.seconds.getStableMetrics=86400
 # 10 minutes - Metrics older than this are considered stable
 MappedMetrics.stable.boundary.seconds=600
 
+## Provider List Cache Configuration
+# Cache TTL for GET /providers endpoint (list of authentication providers)
+# Default: 3600 seconds (1 hour) - Provider list changes infrequently
+getDistinctProviders.cache.ttl.seconds=3600
+
 
 ## You can use a no config needed h2 database by setting db.driver=org.h2.Driver and not including db.url
 # See the README for how to use the H2 browser / console.

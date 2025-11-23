@@ -3,6 +3,11 @@
 ### Most recent changes at top of file
 ```
 Date          Commit        Action
+TBD           TBD           Performance Improvement: Added caching to getProviders endpoint
+                            Added configurable caching with memoization to GET /obp/v6.0.0/providers endpoint.
+                            - Default cache TTL: 3600 seconds (1 hour)
+                            - Configurable via props: getDistinctProviders.cache.ttl.seconds
+                            - Significantly reduces database load for provider list lookups
 TBD           TBD           Changes to non stable endpoints: DevOps endpoint path updates
                             Changed /dev-ops/ to /devops/ for all DevOps operational endpoints:
                             - v5.1.0: /dev-ops/log-cache/LOG_LEVEL -> /devops/log-cache/LOG_LEVEL
