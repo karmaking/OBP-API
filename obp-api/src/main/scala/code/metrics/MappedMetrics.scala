@@ -247,7 +247,7 @@ object MappedMetrics extends APIMetrics with MdcLoggable{
     val implementedByPartialFunction = queryParams.collect { case OBPImplementedByPartialFunction(value) => By(MappedMetric.implementedByPartialFunction, value) }.headOption
     val verb = queryParams.collect { case OBPVerb(value) => By(MappedMetric.verb, value) }.headOption
     val correlationId = queryParams.collect { case OBPCorrelationId(value) => By(MappedMetric.correlationId, value) }.headOption
-    val duration = queryParams.collect { case OBPDuration(value) => By(MappedMetric.duration, value) }.headOption
+    val duration = queryParams.collect { case OBPDuration(value) => By_>(MappedMetric.duration, value) }.headOption
     val anon = queryParams.collect {
       case OBPAnon(true) => By(MappedMetric.userId, "null")
       case OBPAnon(false) => NotBy(MappedMetric.userId, "null")

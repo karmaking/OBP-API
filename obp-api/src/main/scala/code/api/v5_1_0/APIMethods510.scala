@@ -2834,7 +2834,7 @@ trait APIMethods510 {
          |
          |15 correlation_id (if null ignore)
          |
-         |16 duration (if null ignore) non digit chars will be silently omitted
+         |16 duration (if null ignore) - Returns calls where duration > specified value (in milliseconds). Use this to find slow API calls. eg: duration=5000 returns calls taking more than 5 seconds
          |
       """.stripMargin,
       EmptyBody,

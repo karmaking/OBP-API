@@ -12,6 +12,7 @@ import code.api.util.NewStyle.HttpCode
 import code.api.util.{APIUtil, CallContext, DiagnosticDynamicEntityCheck, ErrorMessages, NewStyle, RateLimitingUtil}
 import code.api.util.NewStyle.function.extractQueryParams
 import code.api.v3_0_0.JSONFactory300
+import code.api.v3_0_0.JSONFactory300.createAggregateMetricJson
 import code.api.v3_1_0.{JSONFactory310, PostCustomerNumberJsonV310}
 import code.api.v4_0_0.CallLimitPostJsonV400
 import code.api.v4_0_0.JSONFactory400.createCallsLimitJson
@@ -1426,7 +1427,7 @@ trait APIMethods600 {
          |
          |15 correlation_id (if null ignore)
          |
-         |16 duration (if null ignore) non digit chars will be silently omitted
+         |16 duration (if null ignore) - Returns calls where duration > specified value (in milliseconds). Use this to find slow API calls. eg: duration=5000 returns calls taking more than 5 seconds
          |
       """.stripMargin,
       EmptyBody,
@@ -1469,6 +1470,128 @@ trait APIMethods600 {
             }
           } yield {
             (JSONFactory510.createMetricsJson(metrics), HttpCode.`200`(callContext))
+          }
+        }
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
+      getAggregateMetrics,
+      implementedInApiVersion,
+      nameOf(getAggregateMetrics),
+      "GET",
+      "/management/aggregate-metrics",
+      "Get Aggregate Metrics",
+      s"""Returns aggregate metrics on api usage eg. total count, response time (in ms), etc.
+         |
+         |require CanReadAggregateMetrics role
+         |
+         |**NOTE: Automatic from_date Default**
+         |
+         |If you do not provide a `from_date` parameter, this endpoint will automatically set it to:
+         |**now - ${(APIUtil.getPropsValue("MappedMetrics.stable.boundary.seconds", "600").toInt - 1) / 60} minutes ago**
+         |
+         |This prevents accidentally querying all metrics since Unix Epoch and ensures reasonable response times.
+         |For historical/reporting queries, always explicitly specify your desired `from_date`.
+         |
+         |**IMPORTANT: Smart Caching & Performance**
+         |
+         |This endpoint uses intelligent two-tier caching to optimize performance:
+         |
+         |**Stable Data Cache (Long TTL):**
+         |- Metrics older than ${APIUtil.getPropsValue("MappedMetrics.stable.boundary.seconds", "600")} seconds (${APIUtil.getPropsValue("MappedMetrics.stable.boundary.seconds", "600").toInt / 60} minutes) are considered immutable/stable
+         |- These are cached for ${APIUtil.getPropsValue("MappedMetrics.cache.ttl.seconds.getStableMetrics", "86400")} seconds (${APIUtil.getPropsValue("MappedMetrics.cache.ttl.seconds.getStableMetrics", "86400").toInt / 3600} hours)
+         |- Used when your query's from_date is older than the stable boundary
+         |
+         |**Recent Data Cache (Short TTL):**
+         |- Recent metrics (within the stable boundary) are cached for ${APIUtil.getPropsValue("MappedMetrics.cache.ttl.seconds.getAllMetrics", "7")} seconds
+         |- Used when your query includes recent data or has no from_date
+         |
+         |**Why from_date matters:**
+         |- Queries WITH from_date older than ${APIUtil.getPropsValue("MappedMetrics.stable.boundary.seconds", "600").toInt / 60} mins → cached for ${APIUtil.getPropsValue("MappedMetrics.cache.ttl.seconds.getStableMetrics", "86400").toInt / 3600} hours (fast!)
+         |- Queries WITHOUT from_date → cached for only ${APIUtil.getPropsValue("MappedMetrics.cache.ttl.seconds.getAllMetrics", "7")} seconds (slower)
+         |
+         |Should be able to filter on the following fields
+         |
+         |eg: /management/aggregate-metrics?from_date=$DateWithMsExampleString&to_date=$DateWithMsExampleString&consumer_id=5
+         |&user_id=66214b8e-259e-44ad-8868-3eb47be70646&implemented_by_partial_function=getTransactionsForBankAccount
+         |&implemented_in_version=v3.0.0&url=/obp/v3.0.0/banks/gh.29.uk/accounts/8ca8a7e4-6d02-48e3-a029-0b2bf89de9f0/owner/transactions
+         |&verb=GET&anon=false&app_name=MapperPostman
+         |&exclude_app_names=API-EXPLORER,API-Manager,SOFI,null
+         |
+         |1 from_date e.g.:from_date=$DateWithMsExampleString
+         |   **DEFAULT**: If not provided, automatically set to now - ${(APIUtil.getPropsValue("MappedMetrics.stable.boundary.seconds", "600").toInt - 1) / 60} minutes (keeps queries in recent data zone)
+         |   **IMPORTANT**: Including from_date enables long-term caching for historical data queries!
+         |
+         |2 to_date (defaults to the current date) eg:to_date=$DateWithMsExampleString
+         |
+         |3 consumer_id  (if null ignore)
+         |
+         |4 user_id (if null ignore)
+         |
+         |5 anon (if null ignore) only support two value : true (return where user_id is null.) or false (return where user_id is not null.)
+         |
+         |6 url (if null ignore), note: can not contain '&'.
+         |
+         |7 app_name (if null ignore)
+         |
+         |8 implemented_by_partial_function (if null ignore)
+         |
+         |9 implemented_in_version (if null ignore)
+         |
+         |10 verb (if null ignore)
+         |
+         |11 correlation_id (if null ignore)
+         |
+         |12 include_app_names (if null ignore).eg: &include_app_names=API-EXPLORER,API-Manager,SOFI,null
+         |
+         |13 include_url_patterns (if null ignore).you can design you own SQL LIKE pattern. eg: &include_url_patterns=%management/metrics%,%management/aggregate-metrics%
+         |
+         |14 include_implemented_by_partial_functions (if null ignore).eg: &include_implemented_by_partial_functions=getMetrics,getConnectorMetrics,getAggregateMetrics
+         |
+      """.stripMargin,
+      EmptyBody,
+      aggregateMetricsJSONV300,
+      List(
+        UserNotLoggedIn,
+        UserHasMissingRoles,
+        UnknownError
+      ),
+      List(apiTagMetric, apiTagAggregateMetrics),
+      Some(List(canReadAggregateMetrics)))
+
+    lazy val getAggregateMetrics: OBPEndpoint = {
+      case "management" :: "aggregate-metrics" :: Nil JsonGet _ => {
+        cc => {
+          implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(u), callContext) <- authenticatedAccess(cc)
+            _ <- NewStyle.function.hasEntitlement("", u.userId, canReadAggregateMetrics, callContext)
+            httpParams <- NewStyle.function.extractHttpParamsFromUrl(cc.url)
+            // If from_date is not provided, set it to now - (stable.boundary - 1 second)
+            // This ensures we get recent data with the shorter cache TTL
+            httpParamsWithDefault = {
+              val hasFromDate = httpParams.exists(p => p.name == "from_date" || p.name == "obp_from_date")
+              if (!hasFromDate) {
+                val stableBoundarySeconds = APIUtil.getPropsAsIntValue("MappedMetrics.stable.boundary.seconds", 600)
+                val defaultFromDate = new java.util.Date(System.currentTimeMillis() - ((stableBoundarySeconds - 1) * 1000L))
+                val dateStr = APIUtil.DateWithMsFormat.format(defaultFromDate)
+                HTTPParam("from_date", List(dateStr)) :: httpParams
+              } else {
+                httpParams
+              }
+            }
+            (obpQueryParams, callContext) <- createQueriesByHttpParamsFuture(httpParamsWithDefault, callContext)
+            aggregateMetrics <- APIMetrics.apiMetrics.vend.getAllAggregateMetricsFuture(obpQueryParams, true) map {
+              x => unboxFullOrFail(x, callContext, GetAggregateMetricsError)
+            }
+            _ <- Future {
+              if (aggregateMetrics.isEmpty) {
+                logger.warn(s"getAggregateMetrics returned empty list. Query params: $obpQueryParams, URL: ${cc.url}")
+              }
+            }
+          } yield {
+            (createAggregateMetricJson(aggregateMetrics), HttpCode.`200`(callContext))
           }
         }
       }
