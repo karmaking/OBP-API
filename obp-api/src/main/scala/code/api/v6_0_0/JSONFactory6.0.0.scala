@@ -35,10 +35,14 @@ import code.api.v2_0_0.{EntitlementJSONs, JSONFactory200}
 import code.api.v2_1_0.CustomerCreditRatingJSON
 import code.api.v3_0_0.{CustomerAttributeResponseJsonV300, UserJsonV300, ViewJSON300, ViewsJSON300}
 import code.api.v3_1_0.{RateLimit, RedisCallLimitJson}
-import code.api.v4_0_0.BankAttributeBankResponseJsonV400
+import code.api.v4_0_0.{BankAttributeBankResponseJsonV400, UserAgreementJson}
 import code.entitlement.Entitlement
+import code.loginattempts.LoginAttempt
+import code.model.dataAccess.ResourceUser
+import code.users.UserAgreement
 import code.util.Helper.MdcLoggable
 import com.openbankproject.commons.model.{AmountOfMoneyJsonV121, CustomerAttribute, _}
+import net.liftweb.common.Box
 
 import java.util.Date
 
@@ -150,6 +154,37 @@ case class UserJsonV600(
 
 case class UserV600(user: User, entitlements: List[Entitlement], views: Option[Permission])
 case class UsersJsonV600(current_user: UserV600, on_behalf_of_user: UserV600)
+
+case class UserInfoJsonV600(
+                             user_id: String,
+                             email: String,
+                             provider_id: String,
+                             provider: String,
+                             username: String,
+                             entitlements: EntitlementJSONs,
+                             views: Option[ViewsJSON300],
+                             agreements: Option[List[UserAgreementJson]],
+                             is_deleted: Boolean,
+                             last_marketing_agreement_signed_date: Option[Date],
+                             is_locked: Boolean
+                           )
+
+case class UsersInfoJsonV600(users: List[UserInfoJsonV600])
+
+case class MigrationScriptLogJsonV600(
+  migration_script_log_id: String,
+  name: String,
+  commit_id: String,
+  is_successful: Boolean,
+  start_date: Long,
+  end_date: Long,
+  duration_in_ms: Long,
+  remark: String,
+  created_at: Date,
+  updated_at: Date
+)
+
+case class MigrationScriptLogsJsonV600(migration_script_logs: List[MigrationScriptLogJsonV600])
 
 case class PostBankJson600(
                             bank_id: String,
@@ -290,6 +325,58 @@ object JSONFactory600 extends CustomJsonFormats with MdcLoggable{
           views = obu.views.map(y => ViewsJSON300(y.views.map((v => ViewJSON300(v.bankId.value, v.accountId.value, v.viewId.value)))))
         )
       }
+    )
+  }
+
+  def createUserInfoJsonV600(user: User, entitlements: List[Entitlement], agreements: Option[List[UserAgreement]], isLocked: Boolean): UserInfoJsonV600 = {
+    UserInfoJsonV600(
+      user_id = user.userId,
+      email = user.emailAddress,
+      username = stringOrNull(user.name),
+      provider_id = user.idGivenByProvider,
+      provider = stringOrNull(user.provider),
+      entitlements = JSONFactory200.createEntitlementJSONs(entitlements),
+      views = None,
+      agreements = agreements.map(_.map(i =>
+        UserAgreementJson(`type` = i.agreementType, text = i.agreementText))
+      ),
+      is_deleted = user.isDeleted.getOrElse(false),
+      last_marketing_agreement_signed_date = user.lastMarketingAgreementSignedDate,
+      is_locked = isLocked,
+    )
+  }
+
+  def createUsersInfoJsonV600(users: List[(ResourceUser, Box[List[Entitlement]], Option[List[UserAgreement]])]): UsersInfoJsonV600 = {
+    UsersInfoJsonV600(
+      users.map(t =>
+        createUserInfoJsonV600(
+          t._1,
+          t._2.getOrElse(Nil),
+          t._3,
+          LoginAttempt.userIsLocked(t._1.provider, t._1.name)
+        )
+      )
+    )
+  }
+
+  def createMigrationScriptLogJsonV600(migrationLog: code.migration.MigrationScriptLogTrait): MigrationScriptLogJsonV600 = {
+    MigrationScriptLogJsonV600(
+      migration_script_log_id = migrationLog.migrationScriptLogId,
+      name = migrationLog.name,
+      commit_id = migrationLog.commitId,
+      is_successful = migrationLog.isSuccessful,
+      start_date = migrationLog.startDate,
+      end_date = migrationLog.endDate,
+      duration_in_ms = migrationLog.endDate - migrationLog.startDate,
+      remark = migrationLog.remark,
+      created_at = new Date(migrationLog.startDate),
+      updated_at = new Date(migrationLog.endDate)
+    )
+  }
+
+  def createMigrationScriptLogsJsonV600(migrationLogs: List[code.migration.MigrationScriptLogTrait]): MigrationScriptLogsJsonV600 = {
+    MigrationScriptLogsJsonV600(
+      migration_script_logs = migrationLogs.map(createMigrationScriptLogJsonV600)
     )
   }
 

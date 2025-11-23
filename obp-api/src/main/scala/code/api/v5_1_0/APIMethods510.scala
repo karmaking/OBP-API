@@ -252,7 +252,7 @@ trait APIMethods510 {
       EmptyBody,
       EmptyBody,
       List($UserNotLoggedIn, UnknownError),
-      apiTagApi :: Nil,
+      apiTagDevOps :: apiTagApi :: Nil,
       Some(List(canGetAllLevelLogsAtAllBanks)))
 
     lazy val logCacheEndpoint: OBPEndpoint = {

@@ -417,6 +417,9 @@ object ApiRole extends MdcLoggable{
   case class CanGetDatabaseInfo(requiresBankId: Boolean = false) extends ApiRole
   lazy val canGetDatabaseInfo = CanGetDatabaseInfo()
   
+  case class CanGetMigrations(requiresBankId: Boolean = false) extends ApiRole
+  lazy val canGetMigrations = CanGetMigrations()
+  
   case class CanGetCallContext(requiresBankId: Boolean = false) extends ApiRole
   lazy val canGetCallContext = CanGetCallContext()
 

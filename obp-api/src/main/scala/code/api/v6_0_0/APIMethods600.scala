@@ -700,6 +700,91 @@ trait APIMethods600 {
     }
 
     staticResourceDocs += ResourceDoc(
+      getUsers,
+      implementedInApiVersion,
+      nameOf(getUsers),
+      "GET",
+      "/users",
+      "Get all Users",
+      s"""Get all users
+         |
+         |${userAuthenticationMessage(true)}
+         |
+         |CanGetAnyUser entitlement is required,
+         |
+         |${urlParametersDocument(false, false)}
+         |* locked_status (if null ignore)
+         |* is_deleted (default: false)
+         |
+      """.stripMargin,
+      EmptyBody,
+      usersInfoJsonV600,
+      List(
+        $UserNotLoggedIn,
+        UserHasMissingRoles,
+        UnknownError
+      ),
+      List(apiTagUser),
+      Some(List(canGetAnyUser))
+    )
+
+    lazy val getUsers: OBPEndpoint = {
+      case "users" :: Nil JsonGet _ => { cc =>
+        implicit val ec = EndpointContext(Some(cc))
+        for {
+          httpParams <- NewStyle.function.extractHttpParamsFromUrl(cc.url)
+          (obpQueryParams, callContext) <- createQueriesByHttpParamsFuture(
+            httpParams,
+            cc.callContext
+          )
+          users <- code.users.Users.users.vend.getUsers(obpQueryParams)
+        } yield {
+          (JSONFactory600.createUsersInfoJsonV600(users), HttpCode.`200`(callContext))
+        }
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
+      getMigrations,
+      implementedInApiVersion,
+      nameOf(getMigrations),
+      "GET",
+      "/dev-ops/migrations",
+      "Get Database Migrations",
+      s"""Get all database migration script logs.
+         |
+         |This endpoint returns information about all migration scripts that have been executed or attempted.
+         |
+         |${userAuthenticationMessage(true)}
+         |
+         |CanGetMigrations entitlement is required.
+         |
+      """.stripMargin,
+      EmptyBody,
+      migrationScriptLogsJsonV600,
+      List(
+        $UserNotLoggedIn,
+        UserHasMissingRoles,
+        UnknownError
+      ),
+      List(apiTagDevOps, apiTagApi),
+      Some(List(canGetMigrations))
+    )
+
+    lazy val getMigrations: OBPEndpoint = {
+      case "dev-ops" :: "migrations" :: Nil JsonGet _ => { cc =>
+        implicit val ec = EndpointContext(Some(cc))
+        for {
+          (Full(u), callContext) <- authenticatedAccess(cc)
+          _ <- NewStyle.function.hasEntitlement("", u.userId, canGetMigrations, callContext)
+        } yield {
+          val migrations = code.migration.MigrationScriptLogProvider.migrationScriptLogProvider.vend.getMigrationScriptLogs()
+          (JSONFactory600.createMigrationScriptLogsJsonV600(migrations), HttpCode.`200`(callContext))
+        }
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
       createTransactionRequestCardano,
       implementedInApiVersion,
       nameOf(createTransactionRequestCardano),
