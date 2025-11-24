@@ -244,6 +244,11 @@ MappedMetrics.stable.boundary.seconds=600
 # Default: 3600 seconds (1 hour) - Provider list changes infrequently
 getDistinctProviders.cache.ttl.seconds=3600
 
+## Connector Method Names Cache Configuration
+# Cache TTL for GET /devops/connector-method-names endpoint (list of connector methods)
+# Default: 3600 seconds (1 hour) - Connector methods only change on deployment
+getConnectorMethodNames.cache.ttl.seconds=3600
+
 
 ## You can use a no config needed h2 database by setting db.driver=org.h2.Driver and not including db.url
 # See the README for how to use the H2 browser / console.
