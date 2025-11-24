@@ -253,6 +253,8 @@ object ErrorMessages {
   val UserNotFoundByProviderAndProvideId= "OBP-20104: User not found by PROVIDER and PROVIDER_ID."
 
   val BankAccountBalanceNotFoundById = "OBP-20105: BankAccountBalance not found. Please specify a valid value for BALANCE_ID."
+  val UserNotFoundByToken = "OBP-20106: User not found by token. The validation token is invalid or expired."
+  val UserAlreadyValidated = "OBP-20107: User email is already validated."
 
   // OAuth 2
   val ApplicationNotIdentified = "OBP-20200: The application cannot be identified. "
@@ -833,6 +835,8 @@ object ErrorMessages {
     UserNotSuperAdminOrMissRole -> 403,
     ConsumerHasMissingRoles -> 403,
     UserNotFoundByProviderAndUsername -> 404,
+    UserNotFoundByToken -> 404,
+    UserAlreadyValidated -> 400,
     ApplicationNotIdentified -> 401,
     CouldNotExchangeAuthorizationCodeForTokens -> 401,
     CouldNotSaveOpenIDConnectUser -> 401,

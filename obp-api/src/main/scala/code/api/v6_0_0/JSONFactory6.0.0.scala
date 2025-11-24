@@ -551,4 +551,17 @@ case class ReferenceTypesJsonV600(
   reference_types: List[ReferenceTypeJsonV600]
 )
 
+case class ValidateUserEmailJsonV600(
+  token: String
+)
+
+case class ValidateUserEmailResponseJsonV600(
+  user_id: String,
+  email: String,
+  username: String,
+  provider: String,
+  validated: Boolean,
+  message: String
+)
+
 }

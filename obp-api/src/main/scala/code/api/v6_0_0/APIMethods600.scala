@@ -19,7 +19,7 @@ import code.api.v4_0_0.CallLimitPostJsonV400
 import code.api.v4_0_0.JSONFactory400.createCallsLimitJson
 import code.api.v5_0_0.JSONFactory500
 import code.api.v5_1_0.{JSONFactory510, PostCustomerLegalNameJsonV510}
-import code.api.v6_0_0.JSONFactory600.{DynamicEntityDiagnosticsJsonV600, DynamicEntityIssueJsonV600, ReferenceTypeJsonV600, ReferenceTypesJsonV600, createActiveCallLimitsJsonV600, createCallLimitJsonV600, createCurrentUsageJson}
+import code.api.v6_0_0.JSONFactory600.{DynamicEntityDiagnosticsJsonV600, DynamicEntityIssueJsonV600, ReferenceTypeJsonV600, ReferenceTypesJsonV600, ValidateUserEmailJsonV600, ValidateUserEmailResponseJsonV600, createActiveCallLimitsJsonV600, createCallLimitJsonV600, createCurrentUsageJson}
 import code.metrics.APIMetrics
 import code.bankconnectors.LocalMappedConnectorInternal
 import code.bankconnectors.LocalMappedConnectorInternal._
@@ -1883,6 +1883,103 @@ trait APIMethods600 {
             } else {
               unboxFullOrFail(Empty, None, message, httpCode)
             }
+          }
+    }
+
+    staticResourceDocs += ResourceDoc(
+      validateUserEmail,
+      implementedInApiVersion,
+      nameOf(validateUserEmail),
+      "POST",
+      "/users/email-validation",
+      "Validate User Email",
+      s"""Validate a user's email address using the token sent via email.
+         |
+         |This endpoint is called anonymously (no authentication required).
+         |
+         |When a user signs up and email validation is enabled (authUser.skipEmailValidation=false),
+         |they receive an email with a validation link containing a unique token.
+         |
+         |This endpoint:
+         |- Validates the token
+         |- Sets the user's validated status to true
+         |- Resets the unique ID token (invalidating the link)
+         |- Grants default entitlements to the user
+         |
+         |The token is a unique identifier (UUID) that was generated when the user was created.
+         |
+         |Example token from validation email URL:
+         |https://your-obp-instance.com/user_mgt/validate_user/a1b2c3d4-e5f6-7890-abcd-ef1234567890
+         |
+         |In this case, the token would be: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+         |
+         |""".stripMargin,
+      JSONFactory600.ValidateUserEmailJsonV600(
+        token = "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+      ),
+      JSONFactory600.ValidateUserEmailResponseJsonV600(
+        user_id = "5995d6a2-01b3-423c-a173-5481df49bdaf",
+        email = "user@example.com",
+        username = "username",
+        provider = "https://localhost:8080",
+        validated = true,
+        message = "Email validated successfully"
+      ),
+      List(
+        InvalidJsonFormat,
+        UserNotFoundByToken,
+        UserAlreadyValidated,
+        UnknownError
+      ),
+      List(apiTagUser),
+      Some(List())
+    )
+
+    lazy val validateUserEmail: OBPEndpoint = {
+      case "users" :: "email-validation" :: Nil JsonPost json -> _ =>
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            postedData <- NewStyle.function.tryons(s"$InvalidJsonFormat The Json body should be the $ValidateUserEmailJsonV600 ", 400, cc.callContext) {
+              json.extract[JSONFactory600.ValidateUserEmailJsonV600]
+            }
+            token = postedData.token.trim
+            _ <- Helper.booleanToFuture(s"$InvalidJsonFormat Token cannot be empty", cc = cc.callContext) {
+              token.nonEmpty
+            }
+            // Find user by unique ID (the validation token)
+            authUser <- Future {
+              code.model.dataAccess.AuthUser.findUserByUniqueId(token) match {
+                case Full(user) => Full(user)
+                case Empty => Empty
+                case f: net.liftweb.common.Failure => f
+              }
+            }
+            user <- NewStyle.function.tryons(s"$UserNotFoundByToken Invalid or expired validation token", 404, cc.callContext) {
+              authUser.openOrThrowException("User not found")
+            }
+            // Check if user is already validated
+            _ <- Helper.booleanToFuture(s"$UserAlreadyValidated User email is already validated", cc = cc.callContext) {
+              !user.validated.get
+            }
+            // Validate the user
+            validatedUser <- Future {
+              user.setValidated(true).resetUniqueId().save
+              user
+            }
+            // Grant default entitlements
+            _ <- Future {
+              code.model.dataAccess.AuthUser.grantDefaultEntitlementsToAuthUser(validatedUser)
+            }
+          } yield {
+            val response = JSONFactory600.ValidateUserEmailResponseJsonV600(
+              user_id = validatedUser.user.obj.map(_.userId).getOrElse(""),
+              email = validatedUser.email.get,
+              username = validatedUser.username.get,
+              provider = validatedUser.provider.get,
+              validated = validatedUser.validated.get,
+              message = "Email validated successfully"
+            )
+            (response, HttpCode.`200`(cc.callContext))
           }
     }
 
