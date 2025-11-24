@@ -1906,6 +1906,9 @@ trait APIMethods600 {
          |- Resets the unique ID token (invalidating the link)
          |- Grants default entitlements to the user
          |
+         |**Important: This is a single-use token.** Once the email is validated, the token is invalidated.
+         |Any subsequent attempts to use the same token will return a 404 error (UserNotFoundByToken or UserAlreadyValidated).
+         |
          |The token is a unique identifier (UUID) that was generated when the user was created.
          |
          |Example token from validation email URL:
@@ -1948,7 +1951,7 @@ trait APIMethods600 {
             }
             // Find user by unique ID (the validation token)
             authUser <- Future {
-              code.model.dataAccess.AuthUser.findUserByUniqueId(token) match {
+              code.model.dataAccess.AuthUser.findUserByValidationToken(token) match {
                 case Full(user) => Full(user)
                 case Empty => Empty
                 case f: net.liftweb.common.Failure => f
@@ -1961,10 +1964,9 @@ trait APIMethods600 {
             _ <- Helper.booleanToFuture(s"$UserAlreadyValidated User email is already validated", cc = cc.callContext) {
               !user.validated.get
             }
-            // Validate the user
+            // Validate the user and reset the unique ID token
             validatedUser <- Future {
-              user.setValidated(true).resetUniqueId().save
-              user
+              code.model.dataAccess.AuthUser.validateAndResetToken(user)
             }
             // Grant default entitlements
             _ <- Future {

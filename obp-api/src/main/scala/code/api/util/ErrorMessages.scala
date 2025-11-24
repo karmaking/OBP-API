@@ -836,7 +836,7 @@ object ErrorMessages {
     ConsumerHasMissingRoles -> 403,
     UserNotFoundByProviderAndUsername -> 404,
     UserNotFoundByToken -> 404,
-    UserAlreadyValidated -> 400,
+    UserAlreadyValidated -> 404,
     ApplicationNotIdentified -> 401,
     CouldNotExchangeAuthorizationCodeForTokens -> 401,
     CouldNotSaveOpenIDConnectUser -> 401,
