@@ -246,11 +246,10 @@ trait ResourceDocsAPIMethods extends MdcLoggable with APIMethods220 with APIMeth
       val requestedApiVersion = ApiVersionUtils.valueOf(requestedApiVersionString)
 
       val dynamicDocs = allDynamicResourceDocs
-        .filter(rd => rd.implementedInApiVersion == requestedApiVersion)
         .map(it => it.specifiedUrl match {
           case Some(_) => it
           case _ =>
-            it.specifiedUrl = Some(s"/${it.implementedInApiVersion.urlPrefix}/${requestedApiVersion.vDottedApiVersion}${it.requestUrl}")
+            it.specifiedUrl = if (it.partialFunctionName.startsWith("dynamicEntity")) Some(s"/${it.implementedInApiVersion.urlPrefix}/${ApiVersion.`dynamic-entity`}${it.requestUrl}") else Some(s"/${it.implementedInApiVersion.urlPrefix}/${ApiVersion.`dynamic-endpoint`}${it.requestUrl}")
             it
         })
 
