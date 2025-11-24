@@ -142,6 +142,15 @@ trait APIMethods400 extends MdcLoggable {
          |- For boolean fields, the example must be the STRING "true" or "false" (not boolean values)
          |- The "hasPersonalEntity" field is optional (defaults to true) and goes at the root level""".stripMargin
     
+    private val dynamicEntityGeneratedTags = 
+      """**Tags Generated for CRUD Endpoints:**
+         |When you create a dynamic entity, the resulting CRUD endpoints (GET all, GET one, POST, PUT, DELETE) will automatically be tagged with THREE tags:
+         |1. **Entity-specific tag** - Based on your entity name (e.g., "Piano", "Invoice", "AgentConversation")
+         |2. **"Dynamic-Entity"** - Groups all dynamic entity endpoints together
+         |3. **"Dynamic"** - Groups all dynamic endpoints (both entities and endpoints)
+         |
+         |These tags help organize and filter endpoints in the API Explorer.""".stripMargin
+    
     private val dynamicEntityPianoExample = 
       """
          |**Example 3: Piano Entity Demonstrating Different Field Types**
@@ -2365,6 +2374,8 @@ trait APIMethods400 extends MdcLoggable {
          |
          |$dynamicEntityImportantNotes
          |
+         |$dynamicEntityGeneratedTags
+         |
          |$dynamicEntityPianoExample
          |
          |**WRONG (will fail validation):**
@@ -2552,6 +2563,8 @@ trait APIMethods400 extends MdcLoggable {
          |```
          |
          |$dynamicEntityImportantNotes
+         |
+         |$dynamicEntityGeneratedTags
          |
          |$dynamicEntityPianoExample
          |

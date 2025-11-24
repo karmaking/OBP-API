@@ -3,6 +3,7 @@ package code.api.v6_0_0
 import code.accountattribute.AccountAttributeX
 import code.api.{DirectLogin, ObpApiFailure}
 import code.api.ResourceDocs1_4_0.SwaggerDefinitionsJSON._
+import code.api.cache.Caching
 import code.api.util.APIUtil._
 import code.api.util.ApiRole._
 import code.api.util.ApiTag._
@@ -34,6 +35,7 @@ import com.github.dwickern.macros.NameOf.nameOf
 import com.openbankproject.commons.ExecutionContext.Implicits.global
 import com.openbankproject.commons.model.{CustomerAttribute, _}
 import com.openbankproject.commons.util.{ApiVersion, ScannedApiVersion}
+import com.tesobe.CacheKeyFromArguments
 import net.liftweb.common.{Empty, Full}
 import net.liftweb.http.provider.HTTPParam
 import net.liftweb.http.rest.RestHelper
@@ -42,9 +44,11 @@ import net.liftweb.json.JsonAST.JValue
 import net.liftweb.mapper.{By, Descending, MaxRows, OrderBy}
 
 import java.text.SimpleDateFormat
+import java.util.UUID.randomUUID
 import scala.collection.immutable.{List, Nil}
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
+import scala.concurrent.duration._
 import scala.util.Random
 
 
@@ -1120,9 +1124,44 @@ trait APIMethods600 {
          |
          |These are the method names that can be used in Method Routing configuration.
          |
+         |## Data Source
+         |
+         |The data comes from **scanning the actual Scala connector code at runtime** using reflection, NOT from a database or configuration file.
+         |
+         |The endpoint:
+         |1. Reads the connector name from props (e.g., `connector=mapped`)
+         |2. Gets the connector instance (e.g., LocalMappedConnector, KafkaConnector, StarConnector)
+         |3. Uses Scala reflection to scan all public methods that override the base Connector trait
+         |4. Filters for valid connector methods (public, has parameters, overrides base trait)
+         |5. Returns the method names as a sorted list
+         |
+         |## Which Connector?
+         |
+         |Depends on your `connector` property:
+         |* `connector=mapped` → Returns methods from LocalMappedConnector
+         |* `connector=kafka_vSept2018` → Returns methods from KafkaConnector
+         |* `connector=star` → Returns methods from StarConnector
+         |* `connector=rest_vMar2019` → Returns methods from RestConnector
+         |
+         |## When Does It Change?
+         |
+         |The list only changes when:
+         |* Code is deployed with new/modified connector methods
+         |* The `connector` property is changed to point to a different connector
+         |
+         |## Performance
+         |
+         |This endpoint uses caching (default: 1 hour) because Scala reflection is expensive.
+         |Configure via: `getConnectorMethodNames.cache.ttl.seconds=3600`
+         |
+         |## Use Case
+         |
+         |Use this endpoint to discover which connector methods are available when configuring Method Routing.
+         |These method names are different from API endpoint operation IDs (which you get from /resource-docs).
+         |
          |${userAuthenticationMessage(true)}
          |
-         |CanGetConnectorMethodNames entitlement is required.
+         |CanGetMethodRoutings entitlement is required.
          |
       """.stripMargin,
       EmptyBody,
