@@ -209,6 +209,8 @@ case class BankJson600(
 
 case class ProvidersJsonV600(providers: List[String])
 
+case class ConnectorMethodNamesJsonV600(connector_method_names: List[String])
+
 case class PostCustomerJsonV600(
    legal_name: String,
    customer_number: Option[String] = None,
@@ -425,6 +427,10 @@ object JSONFactory600 extends CustomJsonFormats with MdcLoggable{
 
   def createProvidersJson(providers: List[String]): ProvidersJsonV600 = {
     ProvidersJsonV600(providers)
+  }
+
+  def createConnectorMethodNamesJson(methodNames: List[String]): ConnectorMethodNamesJsonV600 = {
+    ConnectorMethodNamesJsonV600(methodNames.sorted)
   }
 
   def createBankJSON600(bank: Bank, attributes: List[BankAttributeTrait] = Nil): BankJson600 = {

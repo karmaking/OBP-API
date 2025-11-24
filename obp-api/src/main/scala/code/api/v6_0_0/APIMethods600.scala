@@ -1108,6 +1108,48 @@ trait APIMethods600 {
             (JSONFactory600.createProvidersJson(providers), HttpCode.`200`(callContext))
           }
     }
+
+    staticResourceDocs += ResourceDoc(
+      getConnectorMethodNames,
+      implementedInApiVersion,
+      nameOf(getConnectorMethodNames),
+      "GET",
+      "/devops/connector-method-names",
+      "Get Connector Method Names",
+      s"""Get the list of all available connector method names.
+         |
+         |These are the method names that can be used in Method Routing configuration.
+         |
+         |${userAuthenticationMessage(true)}
+         |
+         |CanGetConnectorMethodNames entitlement is required.
+         |
+      """.stripMargin,
+      EmptyBody,
+      ConnectorMethodNamesJsonV600(List("getBank", "getBanks", "getUser", "getAccount", "makePayment", "getTransactions")),
+      List(
+        $UserNotLoggedIn,
+        UserHasMissingRoles,
+        UnknownError
+      ),
+      List(apiTagDevOps, apiTagMethodRouting, apiTagApi),
+      Some(List(canGetMethodRoutings))
+    )
+
+    lazy val getConnectorMethodNames: OBPEndpoint = {
+      case "devops" :: "connector-method-names" :: Nil JsonGet _ =>
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(u), callContext) <- authenticatedAccess(cc)
+            _ <- NewStyle.function.hasEntitlement("", u.userId, canGetMethodRoutings, callContext)
+            connectorName = APIUtil.getPropsValue("connector", "mapped")
+            connector = code.bankconnectors.Connector.getConnectorInstance(connectorName)
+            methodNames = connector.callableMethods.keys.toList
+          } yield {
+            (JSONFactory600.createConnectorMethodNamesJson(methodNames), HttpCode.`200`(callContext))
+          }
+    }
+
     staticResourceDocs += ResourceDoc(
       createCustomer,
       implementedInApiVersion,
