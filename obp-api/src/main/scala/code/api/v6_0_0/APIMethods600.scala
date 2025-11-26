@@ -20,6 +20,7 @@ import code.api.v4_0_0.JSONFactory400.createCallsLimitJson
 import code.api.v5_0_0.JSONFactory500
 import code.api.v5_1_0.{JSONFactory510, PostCustomerLegalNameJsonV510}
 import code.api.v6_0_0.JSONFactory600.{DynamicEntityDiagnosticsJsonV600, DynamicEntityIssueJsonV600, GroupJsonV600, GroupsJsonV600, PostGroupJsonV600, PutGroupJsonV600, ReferenceTypeJsonV600, ReferenceTypesJsonV600, ValidateUserEmailJsonV600, ValidateUserEmailResponseJsonV600, createActiveCallLimitsJsonV600, createCallLimitJsonV600, createCurrentUsageJson}
+import code.api.v6_0_0.OBPAPI6_0_0
 import code.metrics.APIMetrics
 import code.bankconnectors.LocalMappedConnectorInternal
 import code.bankconnectors.LocalMappedConnectorInternal._
@@ -66,6 +67,36 @@ trait APIMethods600 {
     val apiRelations = ArrayBuffer[ApiRelation]()
     val codeContext = CodeContext(staticResourceDocs, apiRelations)
 
+
+    staticResourceDocs += ResourceDoc(
+      root,
+      implementedInApiVersion,
+      nameOf(root),
+      "GET",
+      "/root",
+      "Get API Info (root)",
+      """Returns information about:
+        |
+        |* API version
+        |* Hosted by information
+        |* Hosted at information
+        |* Energy source information
+        |* Git Commit""",
+      EmptyBody,
+      apiInfoJson400,
+      List(UnknownError, MandatoryPropertyIsNotSet),
+      apiTagApi  :: Nil)
+
+    lazy val root: OBPEndpoint = {
+      case (Nil | "root" :: Nil) JsonGet _ => {
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            _ <- Future() // Just start async call
+          } yield {
+            (JSONFactory510.getApiInfoJSON(OBPAPI6_0_0.version, OBPAPI6_0_0.versionStatus), HttpCode.`200`(cc.callContext))
+          }
+      }
+    }
 
     staticResourceDocs += ResourceDoc(
       createTransactionRequestHold,
