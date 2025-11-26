@@ -19,7 +19,7 @@ import code.api.v4_0_0.CallLimitPostJsonV400
 import code.api.v4_0_0.JSONFactory400.createCallsLimitJson
 import code.api.v5_0_0.JSONFactory500
 import code.api.v5_1_0.{JSONFactory510, PostCustomerLegalNameJsonV510}
-import code.api.v6_0_0.JSONFactory600.{DynamicEntityDiagnosticsJsonV600, DynamicEntityIssueJsonV600, ReferenceTypeJsonV600, ReferenceTypesJsonV600, ValidateUserEmailJsonV600, ValidateUserEmailResponseJsonV600, createActiveCallLimitsJsonV600, createCallLimitJsonV600, createCurrentUsageJson}
+import code.api.v6_0_0.JSONFactory600.{DynamicEntityDiagnosticsJsonV600, DynamicEntityIssueJsonV600, GroupJsonV600, GroupsJsonV600, PostGroupJsonV600, PutGroupJsonV600, ReferenceTypeJsonV600, ReferenceTypesJsonV600, ValidateUserEmailJsonV600, ValidateUserEmailResponseJsonV600, createActiveCallLimitsJsonV600, createCallLimitJsonV600, createCurrentUsageJson}
 import code.metrics.APIMetrics
 import code.bankconnectors.LocalMappedConnectorInternal
 import code.bankconnectors.LocalMappedConnectorInternal._
@@ -2009,6 +2009,386 @@ trait APIMethods600 {
             )
             (response, HttpCode.`200`(cc.callContext))
           }
+    }
+
+    // ============================================ GROUP MANAGEMENT ============================================
+
+    staticResourceDocs += ResourceDoc(
+      createGroup,
+      implementedInApiVersion,
+      nameOf(createGroup),
+      "POST",
+      "/management/groups",
+      "Create Group",
+      s"""Create a new group of roles.
+         |
+         |Groups can be either:
+         |- System-level (bank_id = null) - requires CanCreateGroupsAtAllBanks role
+         |- Bank-level (bank_id provided) - requires CanCreateGroupsAtOneBank role
+         |
+         |A group contains a list of role names that can be assigned together.
+         |
+         |${userAuthenticationMessage(true)}
+         |
+         |""".stripMargin,
+      PostGroupJsonV600(
+        bank_id = Some("gh.29.uk"),
+        group_name = "Teller Group",
+        group_description = "Standard teller roles for branch operations",
+        list_of_roles = List("CanGetCustomer", "CanGetAccount", "CanCreateTransaction"),
+        is_enabled = true
+      ),
+      GroupJsonV600(
+        group_id = "group-id-123",
+        bank_id = Some("gh.29.uk"),
+        group_name = "Teller Group",
+        group_description = "Standard teller roles for branch operations",
+        list_of_roles = List("CanGetCustomer", "CanGetAccount", "CanCreateTransaction"),
+        is_enabled = true
+      ),
+      List(
+        UserNotLoggedIn,
+        UserHasMissingRoles,
+        InvalidJsonFormat,
+        UnknownError
+      ),
+      List(apiTagGroup),
+      Some(List(canCreateGroupsAtAllBanks, canCreateGroupsAtOneBank))
+    )
+
+    lazy val createGroup: OBPEndpoint = {
+      case "management" :: "groups" :: Nil JsonPost json -> _ => {
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(u), callContext) <- authenticatedAccess(cc)
+            postJson <- NewStyle.function.tryons(s"$InvalidJsonFormat The Json body should be the $PostGroupJsonV600", 400, callContext) {
+              json.extract[PostGroupJsonV600]
+            }
+            _ <- Helper.booleanToFuture(failMsg = s"${InvalidJsonFormat} bank_id and group_name cannot be empty", cc = callContext) {
+              postJson.group_name.nonEmpty
+            }
+            _ <- postJson.bank_id match {
+              case Some(bankId) if bankId.nonEmpty =>
+                NewStyle.function.hasEntitlement(bankId, u.userId, canCreateGroupsAtOneBank, callContext)
+              case _ =>
+                NewStyle.function.hasEntitlement("", u.userId, canCreateGroupsAtAllBanks, callContext)
+            }
+            group <- Future {
+              code.group.Group.group.vend.createGroup(
+                postJson.bank_id.filter(_.nonEmpty),
+                postJson.group_name,
+                postJson.group_description,
+                postJson.list_of_roles,
+                postJson.is_enabled
+              )
+            } map {
+              x => unboxFullOrFail(x, callContext, s"$UnknownError Cannot create group", 400)
+            }
+          } yield {
+            val response = GroupJsonV600(
+              group_id = group.groupId,
+              bank_id = group.bankId,
+              group_name = group.groupName,
+              group_description = group.groupDescription,
+              list_of_roles = group.listOfRoles,
+              is_enabled = group.isEnabled
+            )
+            (response, HttpCode.`201`(callContext))
+          }
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
+      getGroup,
+      implementedInApiVersion,
+      nameOf(getGroup),
+      "GET",
+      "/management/groups/GROUP_ID",
+      "Get Group",
+      s"""Get a group by its ID.
+         |
+         |Requires either:
+         |- CanGetGroupsAtAllBanks (for any group)
+         |- CanGetGroupsAtOneBank (for groups at specific bank)
+         |
+         |${userAuthenticationMessage(true)}
+         |
+         |""".stripMargin,
+      EmptyBody,
+      GroupJsonV600(
+        group_id = "group-id-123",
+        bank_id = Some("gh.29.uk"),
+        group_name = "Teller Group",
+        group_description = "Standard teller roles for branch operations",
+        list_of_roles = List("CanGetCustomer", "CanGetAccount", "CanCreateTransaction"),
+        is_enabled = true
+      ),
+      List(
+        UserNotLoggedIn,
+        UserHasMissingRoles,
+        UnknownError
+      ),
+      List(apiTagGroup),
+      Some(List(canGetGroupsAtAllBanks, canGetGroupsAtOneBank))
+    )
+
+    lazy val getGroup: OBPEndpoint = {
+      case "management" :: "groups" :: groupId :: Nil JsonGet _ => {
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(u), callContext) <- authenticatedAccess(cc)
+            group <- Future {
+              code.group.Group.group.vend.getGroup(groupId)
+            } map {
+              x => unboxFullOrFail(x, callContext, s"$UnknownError Group not found", 404)
+            }
+            _ <- group.bankId match {
+              case Some(bankId) =>
+                NewStyle.function.hasEntitlement(bankId, u.userId, canGetGroupsAtOneBank, callContext)
+              case None =>
+                NewStyle.function.hasEntitlement("", u.userId, canGetGroupsAtAllBanks, callContext)
+            }
+          } yield {
+            val response = GroupJsonV600(
+              group_id = group.groupId,
+              bank_id = group.bankId,
+              group_name = group.groupName,
+              group_description = group.groupDescription,
+              list_of_roles = group.listOfRoles,
+              is_enabled = group.isEnabled
+            )
+            (response, HttpCode.`200`(callContext))
+          }
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
+      getGroups,
+      implementedInApiVersion,
+      nameOf(getGroups),
+      "GET",
+      "/management/groups",
+      "Get Groups",
+      s"""Get all groups. Optionally filter by bank_id.
+         |
+         |Query parameters:
+         |- bank_id (optional): Filter groups by bank. Use "null" or omit for system-level groups.
+         |
+         |Requires either:
+         |- CanGetGroupsAtAllBanks (for any/all groups)
+         |- CanGetGroupsAtOneBank (for groups at specific bank with bank_id parameter)
+         |
+         |${userAuthenticationMessage(true)}
+         |
+         |""".stripMargin,
+      EmptyBody,
+      GroupsJsonV600(
+        groups = List(
+          GroupJsonV600(
+            group_id = "group-id-123",
+            bank_id = Some("gh.29.uk"),
+            group_name = "Teller Group",
+            group_description = "Standard teller roles",
+            list_of_roles = List("CanGetCustomer", "CanGetAccount"),
+            is_enabled = true
+          )
+        )
+      ),
+      List(
+        UserNotLoggedIn,
+        UserHasMissingRoles,
+        UnknownError
+      ),
+      List(apiTagGroup),
+      Some(List(canGetGroupsAtAllBanks, canGetGroupsAtOneBank))
+    )
+
+    lazy val getGroups: OBPEndpoint = {
+      case "management" :: "groups" :: Nil JsonGet req => {
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(u), callContext) <- authenticatedAccess(cc)
+            httpParams <- NewStyle.function.extractHttpParamsFromUrl(cc.url)
+            bankIdParam = httpParams.find(_.name == "bank_id").flatMap(_.values.headOption)
+            bankIdFilter = bankIdParam match {
+              case Some("null") | Some("") => None
+              case Some(id) => Some(id)
+              case None => None
+            }
+            _ <- bankIdFilter match {
+              case Some(bankId) =>
+                NewStyle.function.hasEntitlement(bankId, u.userId, canGetGroupsAtOneBank, callContext)
+              case None =>
+                NewStyle.function.hasEntitlement("", u.userId, canGetGroupsAtAllBanks, callContext)
+            }
+            groups <- bankIdFilter match {
+              case Some(bankId) =>
+                code.group.Group.group.vend.getGroupsByBankId(Some(bankId)) map {
+                  x => unboxFullOrFail(x, callContext, s"$UnknownError Cannot get groups", 400)
+                }
+              case None if bankIdParam.isDefined =>
+                code.group.Group.group.vend.getGroupsByBankId(None) map {
+                  x => unboxFullOrFail(x, callContext, s"$UnknownError Cannot get groups", 400)
+                }
+              case None =>
+                code.group.Group.group.vend.getAllGroups() map {
+                  x => unboxFullOrFail(x, callContext, s"$UnknownError Cannot get groups", 400)
+                }
+            }
+          } yield {
+            val response = GroupsJsonV600(
+              groups = groups.map(group =>
+                GroupJsonV600(
+                  group_id = group.groupId,
+                  bank_id = group.bankId,
+                  group_name = group.groupName,
+                  group_description = group.groupDescription,
+                  list_of_roles = group.listOfRoles,
+                  is_enabled = group.isEnabled
+                )
+              )
+            )
+            (response, HttpCode.`200`(callContext))
+          }
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
+      updateGroup,
+      implementedInApiVersion,
+      nameOf(updateGroup),
+      "PUT",
+      "/management/groups/GROUP_ID",
+      "Update Group",
+      s"""Update a group. All fields are optional.
+         |
+         |Requires either:
+         |- CanUpdateGroupsAtAllBanks (for any group)
+         |- CanUpdateGroupsAtOneBank (for groups at specific bank)
+         |
+         |${userAuthenticationMessage(true)}
+         |
+         |""".stripMargin,
+      PutGroupJsonV600(
+        group_name = Some("Updated Teller Group"),
+        group_description = Some("Updated description"),
+        list_of_roles = Some(List("CanGetCustomer", "CanGetAccount", "CanCreateTransaction", "CanGetTransaction")),
+        is_enabled = Some(true)
+      ),
+      GroupJsonV600(
+        group_id = "group-id-123",
+        bank_id = Some("gh.29.uk"),
+        group_name = "Updated Teller Group",
+        group_description = "Updated description",
+        list_of_roles = List("CanGetCustomer", "CanGetAccount", "CanCreateTransaction", "CanGetTransaction"),
+        is_enabled = true
+      ),
+      List(
+        UserNotLoggedIn,
+        UserHasMissingRoles,
+        InvalidJsonFormat,
+        UnknownError
+      ),
+      List(apiTagGroup),
+      Some(List(canUpdateGroupsAtAllBanks, canUpdateGroupsAtOneBank))
+    )
+
+    lazy val updateGroup: OBPEndpoint = {
+      case "management" :: "groups" :: groupId :: Nil JsonPut json -> _ => {
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(u), callContext) <- authenticatedAccess(cc)
+            putJson <- NewStyle.function.tryons(s"$InvalidJsonFormat The Json body should be the $PutGroupJsonV600", 400, callContext) {
+              json.extract[PutGroupJsonV600]
+            }
+            existingGroup <- Future {
+              code.group.Group.group.vend.getGroup(groupId)
+            } map {
+              x => unboxFullOrFail(x, callContext, s"$UnknownError Group not found", 404)
+            }
+            _ <- existingGroup.bankId match {
+              case Some(bankId) =>
+                NewStyle.function.hasEntitlement(bankId, u.userId, canUpdateGroupsAtOneBank, callContext)
+              case None =>
+                NewStyle.function.hasEntitlement("", u.userId, canUpdateGroupsAtAllBanks, callContext)
+            }
+            updatedGroup <- Future {
+              code.group.Group.group.vend.updateGroup(
+                groupId,
+                putJson.group_name,
+                putJson.group_description,
+                putJson.list_of_roles,
+                putJson.is_enabled
+              )
+            } map {
+              x => unboxFullOrFail(x, callContext, s"$UnknownError Cannot update group", 400)
+            }
+          } yield {
+            val response = GroupJsonV600(
+              group_id = updatedGroup.groupId,
+              bank_id = updatedGroup.bankId,
+              group_name = updatedGroup.groupName,
+              group_description = updatedGroup.groupDescription,
+              list_of_roles = updatedGroup.listOfRoles,
+              is_enabled = updatedGroup.isEnabled
+            )
+            (response, HttpCode.`200`(callContext))
+          }
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
+      deleteGroup,
+      implementedInApiVersion,
+      nameOf(deleteGroup),
+      "DELETE",
+      "/management/groups/GROUP_ID",
+      "Delete Group",
+      s"""Delete a group by its ID.
+         |
+         |Requires either:
+         |- CanDeleteGroupsAtAllBanks (for any group)
+         |- CanDeleteGroupsAtOneBank (for groups at specific bank)
+         |
+         |${userAuthenticationMessage(true)}
+         |
+         |""".stripMargin,
+      EmptyBody,
+      EmptyBody,
+      List(
+        UserNotLoggedIn,
+        UserHasMissingRoles,
+        UnknownError
+      ),
+      List(apiTagGroup),
+      Some(List(canDeleteGroupsAtAllBanks, canDeleteGroupsAtOneBank))
+    )
+
+    lazy val deleteGroup: OBPEndpoint = {
+      case "management" :: "groups" :: groupId :: Nil JsonDelete _ => {
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(u), callContext) <- authenticatedAccess(cc)
+            existingGroup <- Future {
+              code.group.Group.group.vend.getGroup(groupId)
+            } map {
+              x => unboxFullOrFail(x, callContext, s"$UnknownError Group not found", 404)
+            }
+            _ <- existingGroup.bankId match {
+              case Some(bankId) =>
+                NewStyle.function.hasEntitlement(bankId, u.userId, canDeleteGroupsAtOneBank, callContext)
+              case None =>
+                NewStyle.function.hasEntitlement("", u.userId, canDeleteGroupsAtAllBanks, callContext)
+            }
+            deleted <- Future {
+              code.group.Group.group.vend.deleteGroup(groupId)
+            } map {
+              x => unboxFullOrFail(x, callContext, s"$UnknownError Cannot delete group", 400)
+            }
+          } yield {
+            (Full(deleted), HttpCode.`204`(callContext))
+          }
+      }
     }
 
   }

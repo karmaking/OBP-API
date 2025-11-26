@@ -1108,6 +1108,27 @@ object ApiRole extends MdcLoggable{
   case class CanGetProviders(requiresBankId: Boolean = false) extends ApiRole
   lazy val canGetProviders = CanGetProviders()
 
+  // Group management roles
+  case class CanCreateGroupsAtAllBanks(requiresBankId: Boolean = false) extends ApiRole
+  lazy val canCreateGroupsAtAllBanks = CanCreateGroupsAtAllBanks()
+  case class CanCreateGroupsAtOneBank(requiresBankId: Boolean = true) extends ApiRole
+  lazy val canCreateGroupsAtOneBank = CanCreateGroupsAtOneBank()
+  
+  case class CanUpdateGroupsAtAllBanks(requiresBankId: Boolean = false) extends ApiRole
+  lazy val canUpdateGroupsAtAllBanks = CanUpdateGroupsAtAllBanks()
+  case class CanUpdateGroupsAtOneBank(requiresBankId: Boolean = true) extends ApiRole
+  lazy val canUpdateGroupsAtOneBank = CanUpdateGroupsAtOneBank()
+  
+  case class CanDeleteGroupsAtAllBanks(requiresBankId: Boolean = false) extends ApiRole
+  lazy val canDeleteGroupsAtAllBanks = CanDeleteGroupsAtAllBanks()
+  case class CanDeleteGroupsAtOneBank(requiresBankId: Boolean = true) extends ApiRole
+  lazy val canDeleteGroupsAtOneBank = CanDeleteGroupsAtOneBank()
+  
+  case class CanGetGroupsAtAllBanks(requiresBankId: Boolean = false) extends ApiRole
+  lazy val canGetGroupsAtAllBanks = CanGetGroupsAtAllBanks()
+  case class CanGetGroupsAtOneBank(requiresBankId: Boolean = true) extends ApiRole
+  lazy val canGetGroupsAtOneBank = CanGetGroupsAtOneBank()
+
   private val dynamicApiRoles = new ConcurrentHashMap[String, ApiRole]
 
   private case class DynamicApiRole(role: String, requiresBankId: Boolean = false) extends ApiRole{

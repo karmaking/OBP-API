@@ -564,4 +564,31 @@ case class ValidateUserEmailResponseJsonV600(
   message: String
 )
 
+// Group JSON case classes
+case class PostGroupJsonV600(
+  bank_id: Option[String],
+  group_name: String,
+  group_description: String,
+  list_of_roles: List[String],
+  is_enabled: Boolean
+)
+
+case class PutGroupJsonV600(
+  group_name: Option[String],
+  group_description: Option[String],
+  list_of_roles: Option[List[String]],
+  is_enabled: Option[Boolean]
+)
+
+case class GroupJsonV600(
+  group_id: String,
+  bank_id: Option[String],
+  group_name: String,
+  group_description: String,
+  list_of_roles: List[String],
+  is_enabled: Boolean
+)
+
+case class GroupsJsonV600(groups: List[GroupJsonV600])
+
 }
