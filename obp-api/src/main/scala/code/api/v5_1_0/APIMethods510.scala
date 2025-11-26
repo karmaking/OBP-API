@@ -248,6 +248,12 @@ trait APIMethods510 {
       """Returns information about:
         |
         |* Log Cache
+        |
+        |This endpoint supports pagination via the following optional query parameters:
+        |* limit - Maximum number of log entries to return
+        |* offset - Number of log entries to skip (for pagination)
+        |
+        |Example: GET /dev-ops/log-cache/INFO?limit=50&offset=100
         """,
       EmptyBody,
       EmptyBody,
@@ -271,8 +277,13 @@ trait APIMethods510 {
               roles = RedisLogger.LogLevel.requiredRoles(level),
               callContext = cc.callContext
             )
-            // Fetch logs
-            logs <- Future(RedisLogger.getLogTail(level))
+            httpParams <- NewStyle.function.extractHttpParamsFromUrl(cc.url)
+            (obpQueryParams, callContext) <- createQueriesByHttpParamsFuture(httpParams, cc.callContext)
+            // Extract limit and offset from query parameters
+            limit = obpQueryParams.collectFirst { case OBPLimit(value) => value }
+            offset = obpQueryParams.collectFirst { case OBPOffset(value) => value }
+            // Fetch logs with pagination
+            logs <- Future(RedisLogger.getLogTail(level, limit, offset))
           } yield {
             (logs, HttpCode.`200`(cc.callContext))
           }
