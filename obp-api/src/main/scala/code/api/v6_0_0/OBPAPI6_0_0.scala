@@ -75,7 +75,7 @@ object OBPAPI6_0_0 extends OBPRestHelper
   lazy val endpointsOf6_0_0 = getEndpoints(Implementations6_0_0)
   
   // Exclude v5.1.0 root endpoint since v6.0.0 has its own
-  lazy val endpointsOf5_1_0_without_root = OBPAPI5_1_0.routes -- List(Implementations5_1_0.root)
+  lazy val endpointsOf5_1_0_without_root = OBPAPI5_1_0.routes.filterNot(_ == Implementations5_1_0.root)
 
   lazy val excludeEndpoints = 
     nameOf(Implementations3_0_0.getUserByUsername) ::  // following 4 endpoints miss Provider parameter in the URL, we introduce new ones in V600.

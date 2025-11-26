@@ -49,7 +49,7 @@ class MigrationsTest extends V600ServerSetup {
   feature(s"test $ApiEndpoint1 version $VersionOfApi - Unauthorized access") {
     scenario("We will call the endpoint without user credentials", ApiEndpoint1, VersionOfApi) {
       When("We make a request v6.0.0")
-      val request600 = (v6_0_0_Request / "devops" / "migrations").GET
+      val request600 = (v6_0_0_Request / "system" / "migrations").GET
       val response600 = makeGetRequest(request600)
       Then("We should get a 401")
       response600.code should equal(401)
@@ -60,7 +60,7 @@ class MigrationsTest extends V600ServerSetup {
   feature(s"test $ApiEndpoint1 version $VersionOfApi - Authorized access") {
     scenario("We will call the endpoint without proper Role", ApiEndpoint1, VersionOfApi) {
       When("We make a request v6.0.0 without a proper role")
-      val request600 = (v6_0_0_Request / "devops" / "migrations").GET <@ (user1)
+      val request600 = (v6_0_0_Request / "system" / "migrations").GET <@ (user1)
       val response600 = makeGetRequest(request600)
       Then("We should get a 403")
       response600.code should equal(403)
@@ -71,7 +71,7 @@ class MigrationsTest extends V600ServerSetup {
     scenario("We will call the endpoint with proper Role", ApiEndpoint1, VersionOfApi) {
       When("We make a request v6.0.0 with a proper role")
       Entitlement.entitlement.vend.addEntitlement("", resourceUser1.userId, CanGetMigrations.toString)
-      val request600 = (v6_0_0_Request / "devops" / "migrations").GET <@ (user1)
+      val request600 = (v6_0_0_Request / "system" / "migrations").GET <@ (user1)
       val response600 = makeGetRequest(request600)
       Then("We should get a 200")
       response600.code should equal(200)
@@ -86,7 +86,7 @@ class MigrationsTest extends V600ServerSetup {
     scenario("We will verify the response structure contains expected fields", ApiEndpoint1, VersionOfApi) {
       Entitlement.entitlement.vend.addEntitlement("", resourceUser1.userId, CanGetMigrations.toString)
       When("We make a request v6.0.0")
-      val request600 = (v6_0_0_Request / "devops" / "migrations").GET <@ (user1)
+      val request600 = (v6_0_0_Request / "system" / "migrations").GET <@ (user1)
       val response600 = makeGetRequest(request600)
       Then("We should get a 200")
       response600.code should equal(200)

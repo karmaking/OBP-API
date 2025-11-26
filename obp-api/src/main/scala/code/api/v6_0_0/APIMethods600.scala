@@ -847,7 +847,7 @@ trait APIMethods600 {
       implementedInApiVersion,
       nameOf(getMigrations),
       "GET",
-      "/devops/migrations",
+      "/system/migrations",
       "Get Database Migrations",
       s"""Get all database migration script logs.
          |
@@ -865,12 +865,12 @@ trait APIMethods600 {
         UserHasMissingRoles,
         UnknownError
       ),
-      List(apiTagDevOps, apiTagApi),
+      List(apiTagSystem, apiTagApi),
       Some(List(canGetMigrations))
     )
 
     lazy val getMigrations: OBPEndpoint = {
-      case "devops" :: "migrations" :: Nil JsonGet _ => { cc =>
+      case "system" :: "migrations" :: Nil JsonGet _ => { cc =>
         implicit val ec = EndpointContext(Some(cc))
         for {
           (Full(u), callContext) <- authenticatedAccess(cc)
@@ -1148,7 +1148,7 @@ trait APIMethods600 {
       implementedInApiVersion,
       nameOf(getConnectorMethodNames),
       "GET",
-      "/devops/connector-method-names",
+      "/system/connector-method-names",
       "Get Connector Method Names",
       s"""Get the list of all available connector method names.
          |
@@ -1201,12 +1201,12 @@ trait APIMethods600 {
         UserHasMissingRoles,
         UnknownError
       ),
-      List(apiTagDevOps, apiTagMethodRouting, apiTagApi),
+      List(apiTagSystem, apiTagMethodRouting, apiTagApi),
       Some(List(canGetMethodRoutings))
     )
 
     lazy val getConnectorMethodNames: OBPEndpoint = {
-      case "devops" :: "connector-method-names" :: Nil JsonGet _ =>
+      case "system" :: "connector-method-names" :: Nil JsonGet _ =>
         cc => implicit val ec = EndpointContext(Some(cc))
           for {
             (Full(u), callContext) <- authenticatedAccess(cc)

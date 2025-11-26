@@ -243,7 +243,7 @@ trait APIMethods510 {
       implementedInApiVersion,
       nameOf(logCacheEndpoint),
       "GET",
-      "/devops/log-cache/LOG_LEVEL",
+      "/system/log-cache/LOG_LEVEL",
       "Get Log Cache",
       """Returns information about:
         |
@@ -253,16 +253,16 @@ trait APIMethods510 {
         |* limit - Maximum number of log entries to return
         |* offset - Number of log entries to skip (for pagination)
         |
-        |Example: GET /dev-ops/log-cache/INFO?limit=50&offset=100
+        |Example: GET /system/log-cache/INFO?limit=50&offset=100
         """,
       EmptyBody,
       EmptyBody,
       List($UserNotLoggedIn, UnknownError),
-      apiTagDevOps :: apiTagApi :: Nil,
+      apiTagSystem :: apiTagApi :: Nil,
       Some(List(canGetAllLevelLogsAtAllBanks)))
 
     lazy val logCacheEndpoint: OBPEndpoint = {
-      case "devops" :: "log-cache" :: logLevel :: Nil JsonGet _ =>
+      case "system" :: "log-cache" :: logLevel :: Nil JsonGet _ =>
         cc =>
           implicit val ec = EndpointContext(Some(cc))
           for {

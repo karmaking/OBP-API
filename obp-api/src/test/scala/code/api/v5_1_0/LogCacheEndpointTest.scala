@@ -26,7 +26,7 @@ class LogCacheEndpointTest extends V510ServerSetup {
   feature(s"test $ApiEndpoint1 version $VersionOfApi - Unauthorized access") {
     scenario("We will call the endpoint without user credentials", ApiEndpoint1, VersionOfApi) {
       When("We make a request v5.1.0")
-      val request = (v5_1_0_Request / "dev-ops" / "log-cache" / "INFO").GET
+      val request = (v5_1_0_Request / "system" / "log-cache" / "INFO").GET
       val response = makeGetRequest(request)
       Then("We should get a 401")
       response.code should equal(401)
@@ -37,7 +37,7 @@ class LogCacheEndpointTest extends V510ServerSetup {
   feature(s"test $ApiEndpoint1 version $VersionOfApi - Missing entitlement") {
     scenario("We will call the endpoint with user credentials but without proper entitlement", ApiEndpoint1, VersionOfApi) {
       When("We make a request v5.1.0")
-      val request = (v5_1_0_Request / "dev-ops" / "log-cache" / "INFO").GET <@(user1)
+      val request = (v5_1_0_Request / "system" / "log-cache" / "INFO").GET <@(user1)
       val response = makeGetRequest(request)
       Then("error should be " + UserHasMissingRoles + CanGetAllLevelLogsAtAllBanks)
       response.code should equal(403)
@@ -51,7 +51,7 @@ class LogCacheEndpointTest extends V510ServerSetup {
       Entitlement.entitlement.vend.addEntitlement("", resourceUser1.userId, CanGetAllLevelLogsAtAllBanks.toString)
       
       When("We make a request to get log cache")
-      val request = (v5_1_0_Request / "dev-ops" / "log-cache" / "INFO").GET <@(user1)
+      val request = (v5_1_0_Request / "system" / "log-cache" / "INFO").GET <@(user1)
       val response = makeGetRequest(request)
       
       Then("We should get a successful response")
@@ -69,7 +69,7 @@ class LogCacheEndpointTest extends V510ServerSetup {
       Entitlement.entitlement.vend.addEntitlement("", resourceUser1.userId, CanGetAllLevelLogsAtAllBanks.toString)
       
       When("We make a request with limit parameter")
-      val request = (v5_1_0_Request / "dev-ops" / "log-cache" / "INFO").GET <@(user1) <<? List(("limit", "5"))
+      val request = (v5_1_0_Request / "system" / "log-cache" / "INFO").GET <@(user1) <<? List(("limit", "5"))
       val response = makeGetRequest(request)
       
       Then("We should get a successful response")
@@ -88,7 +88,7 @@ class LogCacheEndpointTest extends V510ServerSetup {
       Entitlement.entitlement.vend.addEntitlement("", resourceUser1.userId, CanGetAllLevelLogsAtAllBanks.toString)
       
       When("We make a request with offset parameter")
-      val request = (v5_1_0_Request / "dev-ops" / "log-cache" / "INFO").GET <@(user1) <<? List(("offset", "2"))
+      val request = (v5_1_0_Request / "system" / "log-cache" / "INFO").GET <@(user1) <<? List(("offset", "2"))
       val response = makeGetRequest(request)
       
       Then("We should get a successful response")
@@ -106,7 +106,7 @@ class LogCacheEndpointTest extends V510ServerSetup {
       Entitlement.entitlement.vend.addEntitlement("", resourceUser1.userId, CanGetAllLevelLogsAtAllBanks.toString)
       
       When("We make a request with both limit and offset parameters")
-      val request = (v5_1_0_Request / "dev-ops" / "log-cache" / "INFO").GET <@(user1) <<? List(("limit", "3"), ("offset", "1"))
+      val request = (v5_1_0_Request / "system" / "log-cache" / "INFO").GET <@(user1) <<? List(("limit", "3"), ("offset", "1"))
       val response = makeGetRequest(request)
       
       Then("We should get a successful response")
@@ -125,7 +125,7 @@ class LogCacheEndpointTest extends V510ServerSetup {
       Entitlement.entitlement.vend.addEntitlement("", resourceUser1.userId, CanGetAllLevelLogsAtAllBanks.toString)
       
       When("We make a request with zero limit")
-      val request = (v5_1_0_Request / "dev-ops" / "log-cache" / "INFO").GET <@(user1) <<? List(("limit", "0"))
+      val request = (v5_1_0_Request / "system" / "log-cache" / "INFO").GET <@(user1) <<? List(("limit", "0"))
       val response = makeGetRequest(request)
       
       Then("We should get a bad request response")
@@ -142,7 +142,7 @@ class LogCacheEndpointTest extends V510ServerSetup {
       Entitlement.entitlement.vend.addEntitlement("", resourceUser1.userId, CanGetAllLevelLogsAtAllBanks.toString)
       
       When("We make a request with very large offset")
-      val request = (v5_1_0_Request / "dev-ops" / "log-cache" / "INFO").GET <@(user1) <<? List(("offset", "10000"))
+      val request = (v5_1_0_Request / "system" / "log-cache" / "INFO").GET <@(user1) <<? List(("offset", "10000"))
       val response = makeGetRequest(request)
       
       Then("We should get a successful response")
@@ -159,7 +159,7 @@ class LogCacheEndpointTest extends V510ServerSetup {
       Entitlement.entitlement.vend.addEntitlement("", resourceUser1.userId, CanGetAllLevelLogsAtAllBanks.toString)
       
       When("We make a request with minimum valid limit (1)")
-      val request = (v5_1_0_Request / "dev-ops" / "log-cache" / "INFO").GET <@(user1) <<? List(("limit", "1"))
+      val request = (v5_1_0_Request / "system" / "log-cache" / "INFO").GET <@(user1) <<? List(("limit", "1"))
       val response = makeGetRequest(request)
       
       Then("We should get a successful response")
@@ -181,7 +181,7 @@ class LogCacheEndpointTest extends V510ServerSetup {
       val logLevels = List("DEBUG", "INFO", "WARN", "ERROR", "ALL")
       
       logLevels.foreach { logLevel =>
-        val request = (v5_1_0_Request / "dev-ops" / "log-cache" / logLevel).GET <@(user1) <<? List(("limit", "2"), ("offset", "0"))
+        val request = (v5_1_0_Request / "system" / "log-cache" / logLevel).GET <@(user1) <<? List(("limit", "2"), ("offset", "0"))
         val response = makeGetRequest(request)
         
         Then(s"We should get successful response for log level $logLevel")
@@ -200,7 +200,7 @@ class LogCacheEndpointTest extends V510ServerSetup {
       Entitlement.entitlement.vend.addEntitlement("", resourceUser1.userId, CanGetAllLevelLogsAtAllBanks.toString)
       
       When("We make a request with invalid log level")
-      val request = (v5_1_0_Request / "dev-ops" / "log-cache" / "INVALID_LEVEL").GET <@(user1)
+      val request = (v5_1_0_Request / "system" / "log-cache" / "INVALID_LEVEL").GET <@(user1)
       val response = makeGetRequest(request)
       
       Then("We should get a bad request response")
@@ -214,28 +214,28 @@ class LogCacheEndpointTest extends V510ServerSetup {
       Entitlement.entitlement.vend.addEntitlement("", resourceUser1.userId, CanGetAllLevelLogsAtAllBanks.toString)
       
       When("We test with non-numeric limit parameter")
-      val requestInvalidLimit = (v5_1_0_Request / "dev-ops" / "log-cache" / "INFO").GET <@(user1) <<? List(("limit", "abc"))
+      val requestInvalidLimit = (v5_1_0_Request / "system" / "log-cache" / "INFO").GET <@(user1) <<? List(("limit", "abc"))
       val responseInvalidLimit = makeGetRequest(requestInvalidLimit)
       
       Then("We should get a bad request response")
       responseInvalidLimit.code should equal(400)
       
       When("We test with non-numeric offset parameter")
-      val requestInvalidOffset = (v5_1_0_Request / "dev-ops" / "log-cache" / "INFO").GET <@(user1) <<? List(("offset", "xyz"))
+      val requestInvalidOffset = (v5_1_0_Request / "system" / "log-cache" / "INFO").GET <@(user1) <<? List(("offset", "xyz"))
       val responseInvalidOffset = makeGetRequest(requestInvalidOffset)
       
       Then("We should get a bad request response")
       responseInvalidOffset.code should equal(400)
 
       When("We test with negative limit parameter")
-      val requestNegativeLimit = (v5_1_0_Request / "dev-ops" / "log-cache" / "INFO").GET <@(user1) <<? List(("limit", "-1"))
+      val requestNegativeLimit = (v5_1_0_Request / "system" / "log-cache" / "INFO").GET <@(user1) <<? List(("limit", "-1"))
       val responseNegativeLimit = makeGetRequest(requestNegativeLimit)
       
       Then("We should get a bad request response")
       responseNegativeLimit.code should equal(400)
 
       When("We test with negative offset parameter")
-      val requestNegativeOffset = (v5_1_0_Request / "dev-ops" / "log-cache" / "INFO").GET <@(user1) <<? List(("offset", "-1"))
+      val requestNegativeOffset = (v5_1_0_Request / "system" / "log-cache" / "INFO").GET <@(user1) <<? List(("offset", "-1"))
       val responseNegativeOffset = makeGetRequest(requestNegativeOffset)
       
       Then("We should get a bad request response")
