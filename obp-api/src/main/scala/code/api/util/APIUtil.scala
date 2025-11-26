@@ -1234,7 +1234,7 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
       functionName <- getHttpParamValuesByName(httpParams, "function_name")
       customerId <- getHttpParamValuesByName(httpParams, "customer_id")
       lockedStatus <- getHttpParamValuesByName(httpParams, "locked_status")
-      httpCode <- getHttpParamValuesByName(httpParams, "http_code")
+      httpStatusCode <- getHttpParamValuesByName(httpParams, "http_status_code")
     }yield{
       /**
        * sortBy is currently disabled as it would open up a security hole:
@@ -1252,7 +1252,7 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
       //This guarantee the order
       List(limit, offset, ordering, sortBy, fromDate, toDate,
         anon, status, consumerId, azp, iss, consentId, userId, providerProviderId, url, appName, implementedByPartialFunction, implementedInVersion,
-        verb, correlationId, duration, httpCode, excludeAppNames, excludeUrlPattern, excludeImplementedByPartialfunctions,
+        verb, correlationId, duration, httpStatusCode, excludeAppNames, excludeUrlPattern, excludeImplementedByPartialfunctions,
         includeAppNames, includeUrlPattern, includeImplementedByPartialfunctions, 
         connectorName,functionName, bankId, accountId, customerId, lockedStatus, deletedStatus
       ).filter(_ != OBPEmpty())

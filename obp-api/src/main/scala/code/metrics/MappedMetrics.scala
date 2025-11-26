@@ -238,7 +238,7 @@ object MappedMetrics extends APIMetrics with MdcLoggable{
           case Some(s) if s == "implemented_by_partial_function" => OrderBy(MappedMetric.implementedByPartialFunction, direction)
           case Some(s) if s == "correlation_id" => OrderBy(MappedMetric.correlationId, direction)
           case Some(s) if s == "duration" => OrderBy(MappedMetric.duration, direction)
-          case Some(s) if s == "http_code" => OrderBy(MappedMetric.httpCode, direction)
+          case Some(s) if s == "http_status_code" => OrderBy(MappedMetric.httpCode, direction)
           case _ => OrderBy(MappedMetric.date, Descending)
         }
     }
@@ -256,7 +256,7 @@ object MappedMetrics extends APIMetrics with MdcLoggable{
     val verb = queryParams.collect { case OBPVerb(value) => By(MappedMetric.verb, value) }.headOption
     val correlationId = queryParams.collect { case OBPCorrelationId(value) => By(MappedMetric.correlationId, value) }.headOption
     val duration = queryParams.collect { case OBPDuration(value) => By_>(MappedMetric.duration, value) }.headOption
-    val httpCode = queryParams.collect { case OBPHttpCode(value) => By(MappedMetric.httpCode, value) }.headOption
+    val httpStatusCode = queryParams.collect { case OBPHttpStatusCode(value) => By(MappedMetric.httpCode, value) }.headOption
     val anon = queryParams.collect {
       case OBPAnon(true) => By(MappedMetric.userId, "null")
       case OBPAnon(false) => NotBy(MappedMetric.userId, "null")
@@ -282,7 +282,7 @@ object MappedMetrics extends APIMetrics with MdcLoggable{
       limit.toSeq,
       correlationId.toSeq,
       duration.toSeq,
-      httpCode.toSeq,
+      httpStatusCode.toSeq,
       anon.toSeq,
       excludeAppNames.toSeq.flatten
     ).flatten
@@ -367,7 +367,7 @@ object MappedMetrics extends APIMetrics with MdcLoggable{
       val anon = queryParams.collect { case OBPAnon(value) => value }.headOption
       val correlationId = queryParams.collect { case OBPCorrelationId(value) => value }.headOption
       val duration = queryParams.collect { case OBPDuration(value) => value }.headOption
-      val httpCode = queryParams.collect { case OBPHttpCode(value) => value }.headOption
+      val httpStatusCode = queryParams.collect { case OBPHttpStatusCode(value) => value }.headOption
       val excludeUrlPatterns = queryParams.collect { case OBPExcludeUrlPatterns(value) => value }.headOption
       val includeUrlPatterns = queryParams.collect { case OBPIncludeUrlPatterns(value) => value }.headOption
       val excludeImplementedByPartialFunctions = queryParams.collect { case OBPExcludeImplementedByPartialFunctions(value) => value }.headOption
@@ -404,7 +404,7 @@ object MappedMetrics extends APIMetrics with MdcLoggable{
               AND (${falseOrTrue(anon.isDefined && anon.equals(Some(true)))} or userid = 'null')
               AND (${falseOrTrue(anon.isDefined && anon.equals(Some(false)))} or userid != 'null') 
               AND (${trueOrFalse(correlationId.isEmpty)} or correlationId = ${sqlFriendly(correlationId)})
-              AND (${trueOrFalse(httpCode.isEmpty)} or httpcode = ${sqlFriendlyInt(httpCode)})
+              AND (${trueOrFalse(httpStatusCode.isEmpty)} or httpcode = ${sqlFriendlyInt(httpStatusCode)})
               AND (${trueOrFalse(includeUrlPatterns.isEmpty) } or (url LIKE ($includeUrlPatternsQueriesSql)))
               AND (${trueOrFalse(includeAppNames.isEmpty) } or (appname in ($includeAppNamesList)))
               AND (${trueOrFalse(includeImplementedByPartialFunctions.isEmpty) } or implementedbypartialfunction in ($includeImplementedByPartialFunctionsList))
@@ -424,7 +424,7 @@ object MappedMetrics extends APIMetrics with MdcLoggable{
             AND (${falseOrTrue(anon.isDefined && anon.equals(Some(true)))} or userid = 'null')
             AND (${falseOrTrue(anon.isDefined && anon.equals(Some(false)))} or userid != 'null')
             AND (${trueOrFalse(correlationId.isEmpty)} or correlationId = ${sqlFriendly(correlationId)})
-            AND (${trueOrFalse(httpCode.isEmpty)} or httpcode = ${sqlFriendlyInt(httpCode)})
+            AND (${trueOrFalse(httpStatusCode.isEmpty)} or httpcode = ${sqlFriendlyInt(httpStatusCode)})
             AND (${trueOrFalse(excludeUrlPatterns.isEmpty) } or (url NOT LIKE ($excludeUrlPatternsQueries)))
             AND (${trueOrFalse(excludeAppNames.isEmpty) } or appname not in ($excludeAppNamesList))
             AND (${trueOrFalse(excludeImplementedByPartialFunctions.isEmpty) } or implementedbypartialfunction not in ($excludeImplementedByPartialFunctionsList))
@@ -480,7 +480,7 @@ object MappedMetrics extends APIMetrics with MdcLoggable{
       val anon = queryParams.collect { case OBPAnon(value) => value }.headOption
       val correlationId = queryParams.collect { case OBPCorrelationId(value) => value }.headOption
       val duration = queryParams.collect { case OBPDuration(value) => value }.headOption
-      val httpCode = queryParams.collect { case OBPHttpCode(value) => value }.headOption
+      val httpStatusCode = queryParams.collect { case OBPHttpStatusCode(value) => value }.headOption
       val excludeUrlPatterns = queryParams.collect { case OBPExcludeUrlPatterns(value) => value }.headOption
       val excludeImplementedByPartialFunctions = queryParams.collect { case OBPExcludeImplementedByPartialFunctions(value) => value }.headOption
       val limit = queryParams.collect { case OBPLimit(value) => value }.headOption.getOrElse(10)
@@ -514,7 +514,7 @@ object MappedMetrics extends APIMetrics with MdcLoggable{
                 AND (${trueOrFalse(verb.isEmpty)} or verb = ${verb.getOrElse("null")})
                 AND (${falseOrTrue(anon.isDefined && anon.equals(Some(true)))} or userid = null) 
                 AND (${falseOrTrue(anon.isDefined && anon.equals(Some(false)))} or userid != null) 
-                AND (${trueOrFalse(httpCode.isEmpty)} or httpcode = ${sqlFriendlyInt(httpCode)})
+                AND (${trueOrFalse(httpStatusCode.isEmpty)} or httpcode = ${sqlFriendlyInt(httpStatusCode)})
                 AND (${trueOrFalse(excludeUrlPatterns.isEmpty)} or (url NOT LIKE ($excludeUrlPatternsQueries)))
                 AND (${trueOrFalse(excludeAppNames.isEmpty)} or appname not in ($excludeAppNamesNumberList))
                 AND (${trueOrFalse(excludeImplementedByPartialFunctions.isEmpty)} or implementedbypartialfunction not in ($excludeImplementedByPartialFunctionsNumberList))
@@ -563,7 +563,7 @@ object MappedMetrics extends APIMetrics with MdcLoggable{
       val anon = queryParams.collect { case OBPAnon(value) => value }.headOption
       val correlationId = queryParams.collect { case OBPCorrelationId(value) => value }.headOption
       val duration = queryParams.collect { case OBPDuration(value) => value }.headOption
-      val httpCode = queryParams.collect { case OBPHttpCode(value) => value }.headOption
+      val httpStatusCode = queryParams.collect { case OBPHttpStatusCode(value) => value }.headOption
       val excludeUrlPatterns = queryParams.collect { case OBPExcludeUrlPatterns(value) => value }.headOption
       val excludeImplementedByPartialFunctions = queryParams.collect { case OBPExcludeImplementedByPartialFunctions(value) => value }.headOption
       val limit = queryParams.collect { case OBPLimit(value) => value }.headOption.getOrElse("500")
@@ -599,7 +599,7 @@ object MappedMetrics extends APIMetrics with MdcLoggable{
                 AND (${trueOrFalse(verb.isEmpty)} or verb = ${sqlFriendly(verb)})
                 AND (${falseOrTrue(anon.isDefined && anon.equals(Some(true)))} or userid = null) 
                 AND (${falseOrTrue(anon.isDefined && anon.equals(Some(false)))} or userid != null) 
-                AND (${trueOrFalse(httpCode.isEmpty)} or httpcode = ${sqlFriendlyInt(httpCode)})
+                AND (${trueOrFalse(httpStatusCode.isEmpty)} or httpcode = ${sqlFriendlyInt(httpStatusCode)})
                 AND (${trueOrFalse(excludeUrlPatterns.isEmpty) } or (url NOT LIKE ($excludeUrlPatternsQueries)))
                 AND (${trueOrFalse(excludeAppNames.isEmpty) } or appname not in ($excludeAppNamesList))
                 AND (${trueOrFalse(excludeImplementedByPartialFunctions.isEmpty) } or implementedbypartialfunction not in ($excludeImplementedByPartialFunctionsList))

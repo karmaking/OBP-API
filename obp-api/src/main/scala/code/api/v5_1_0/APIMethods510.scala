@@ -2723,7 +2723,7 @@ trait APIMethods510 {
          |
          |14 include_implemented_by_partial_functions (if null ignore).eg: &include_implemented_by_partial_functions=getMetrics,getConnectorMetrics,getAggregateMetrics
          |
-         |15 http_code (if null ignore) - Filter by HTTP status code. eg: http_code=200 returns only successful calls, http_code=500 returns server errors
+         |15 http_status_code (if null ignore) - Filter by HTTP status code. eg: http_status_code=200 returns only successful calls, http_status_code=500 returns server errors
          |
          |${userAuthenticationMessage(true)}
          |
@@ -2822,7 +2822,7 @@ trait APIMethods510 {
          |    "implemented_in_version",
          |    "consumer_id",
          |    "verb",
-         |    "http_code"
+         |    "http_status_code"
          |
          |6 direction (defaults to date desc) eg: direction=desc
          |
@@ -2850,7 +2850,7 @@ trait APIMethods510 {
          |
          |16 duration (if null ignore) - Returns calls where duration > specified value (in milliseconds). Use this to find slow API calls. eg: duration=5000 returns calls taking more than 5 seconds
          |
-         |17 http_code (if null ignore) - Returns calls with specific HTTP status code. eg: http_code=200 returns only successful calls, http_code=500 returns server errors
+         |17 http_status_code (if null ignore) - Returns calls with specific HTTP status code. eg: http_status_code=200 returns only successful calls, http_status_code=500 returns server errors
          |
       """.stripMargin,
       EmptyBody,
