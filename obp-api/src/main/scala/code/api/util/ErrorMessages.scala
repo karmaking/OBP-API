@@ -373,6 +373,7 @@ object ErrorMessages {
   val GetAggregateMetricsError = "OBP-30043: Could not get the aggregate metrics from database.  "
 
   val DefaultBankIdNotSet = "OBP-30044: Default BankId is not set on this instance. Please set defaultBank.bank_id in props files. "
+  val ExcludeParametersNotSupported = "OBP-30046: The exclude_* parameters are not supported in v6.0.0+. Please use the corresponding include_* parameters instead (include_app_names, include_url_patterns, include_implemented_by_partial_functions). "
 
   val CreateWebhookError = "OBP-30047: Cannot create Webhook"
   val GetWebhooksError = "OBP-30048: Cannot get Webhooks"

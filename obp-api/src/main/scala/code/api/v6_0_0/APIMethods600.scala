@@ -1756,7 +1756,17 @@ trait APIMethods600 {
          |&user_id=66214b8e-259e-44ad-8868-3eb47be70646&implemented_by_partial_function=getTransactionsForBankAccount
          |&implemented_in_version=v3.0.0&url=/obp/v3.0.0/banks/gh.29.uk/accounts/8ca8a7e4-6d02-48e3-a029-0b2bf89de9f0/owner/transactions
          |&verb=GET&anon=false&app_name=MapperPostman
-         |&exclude_app_names=API-EXPLORER,API-Manager,SOFI,null
+         |&include_app_names=API-EXPLORER,API-Manager,SOFI,null&http_status_code=200
+         |
+         |**IMPORTANT: v6.0.0+ uses INCLUDE filters only**
+         |
+         |This version does NOT support the old `exclude_*` parameters. Use `include_*` instead:
+         |- ❌ `exclude_app_names` - NOT supported
+         |- ❌ `exclude_url_patterns` - NOT supported  
+         |- ❌ `exclude_implemented_by_partial_functions` - NOT supported
+         |- ✅ `include_app_names` - Use this
+         |- ✅ `include_url_patterns` - Use this
+         |- ✅ `include_implemented_by_partial_functions` - Use this
          |
          |1 from_date e.g.:from_date=$DateWithMsExampleString
          |   **DEFAULT**: If not provided, automatically set to now - ${(APIUtil.getPropsValue("MappedMetrics.stable.boundary.seconds", "600").toInt - 1) / 60} minutes (keeps queries in recent data zone)
@@ -1788,6 +1798,8 @@ trait APIMethods600 {
          |
          |14 include_implemented_by_partial_functions (if null ignore).eg: &include_implemented_by_partial_functions=getMetrics,getConnectorMetrics,getAggregateMetrics
          |
+         |15 http_status_code (if null ignore) - Filter by HTTP status code. eg: http_status_code=200 returns only successful calls, http_status_code=500 returns server errors
+         |
       """.stripMargin,
       EmptyBody,
       aggregateMetricsJSONV300,
@@ -1807,6 +1819,18 @@ trait APIMethods600 {
             (Full(u), callContext) <- authenticatedAccess(cc)
             _ <- NewStyle.function.hasEntitlement("", u.userId, canReadAggregateMetrics, callContext)
             httpParams <- NewStyle.function.extractHttpParamsFromUrl(cc.url)
+            // Reject old exclude_* parameters in v6.0.0+
+            _ <- Future {
+              val excludeParams = httpParams.filter(p => 
+                p.name == "exclude_app_names" || 
+                p.name == "exclude_url_patterns" || 
+                p.name == "exclude_implemented_by_partial_functions"
+              )
+              if (excludeParams.nonEmpty) {
+                val paramNames = excludeParams.map(_.name).mkString(", ")
+                throw new Exception(s"${ErrorMessages.ExcludeParametersNotSupported} Parameters found: [$paramNames]")
+              }
+            }
             // If from_date is not provided, set it to now - (stable.boundary - 1 second)
             // This ensures we get recent data with the shorter cache TTL
             httpParamsWithDefault = {

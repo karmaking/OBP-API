@@ -344,6 +344,7 @@ object MappedMetrics extends APIMetrics with MdcLoggable{
 
   // Smart caching applied - uses determineMetricsCacheTTL based on query date range
   def getAllAggregateMetricsBox(queryParams: List[OBPQueryParam], isNewVersion: Boolean): Box[List[AggregateMetrics]] = {
+    logger.info(s"getAllAggregateMetricsBox called with ${queryParams.length} query params, isNewVersion=$isNewVersion")
     /**
       * Please note that "var cacheKey = (randomUUID().toString, randomUUID().toString, randomUUID().toString)"
       * is just a temporary value field with UUID values in order to prevent any ambiguity.
@@ -352,7 +353,10 @@ object MappedMetrics extends APIMetrics with MdcLoggable{
       */
     var cacheKey = (randomUUID().toString, randomUUID().toString, randomUUID().toString)
     val cacheTTL = determineMetricsCacheTTL(queryParams)
+    logger.debug(s"getAllAggregateMetricsBox cache key: $cacheKey, TTL: $cacheTTL seconds")
     CacheKeyFromArguments.buildCacheKey { Caching.memoizeSyncWithProvider(Some(cacheKey.toString()))(cacheTTL seconds){
+      logger.info(s"getAllAggregateMetricsBox - CACHE MISS - Executing database query for aggregate metrics")
+      val startTime = System.currentTimeMillis()
       val fromDate = queryParams.collect { case OBPFromDate(value) => value }.headOption
       val toDate = queryParams.collect { case OBPToDate(value) => value }.headOption
       val consumerId = queryParams.collect { case OBPConsumerId(value) => value }.headOption.flatMap(consumerIdToPrimaryKey)
@@ -431,6 +435,7 @@ object MappedMetrics extends APIMetrics with MdcLoggable{
             """.stripMargin
         val (_, rows) = DB.runQuery(sqlQuery, List())
         logger.debug("code.metrics.MappedMetrics.getAllAggregateMetricsBox.sqlQuery --:  " + sqlQuery)
+        logger.info(s"getAllAggregateMetricsBox - Query executed, returned ${rows.length} rows")
         val sqlResult = rows.map(
               rs => // Map result to case class
                 AggregateMetrics(
@@ -443,6 +448,8 @@ object MappedMetrics extends APIMetrics with MdcLoggable{
         logger.debug("code.metrics.MappedMetrics.getAllAggregateMetricsBox.sqlResult --:  " + sqlResult)
         sqlResult
       }
+      val elapsedTime = System.currentTimeMillis() - startTime
+      logger.info(s"getAllAggregateMetricsBox - Query completed in ${elapsedTime}ms")
       tryo(result)
     }}
   }
