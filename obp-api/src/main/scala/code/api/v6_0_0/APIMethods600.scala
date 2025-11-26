@@ -1758,15 +1758,17 @@ trait APIMethods600 {
          |&verb=GET&anon=false&app_name=MapperPostman
          |&include_app_names=API-EXPLORER,API-Manager,SOFI,null&http_status_code=200
          |
-         |**IMPORTANT: v6.0.0+ uses INCLUDE filters only**
+         |**IMPORTANT: v6.0.0+ Breaking Change**
          |
-         |This version does NOT support the old `exclude_*` parameters. Use `include_*` instead:
-         |- ❌ `exclude_app_names` - NOT supported
-         |- ❌ `exclude_url_patterns` - NOT supported  
-         |- ❌ `exclude_implemented_by_partial_functions` - NOT supported
-         |- ✅ `include_app_names` - Use this
-         |- ✅ `include_url_patterns` - Use this
-         |- ✅ `include_implemented_by_partial_functions` - Use this
+         |This version does NOT support the old `exclude_*` parameters:
+         |- ❌ `exclude_app_names` - NOT supported (returns error)
+         |- ❌ `exclude_url_patterns` - NOT supported (returns error)
+         |- ❌ `exclude_implemented_by_partial_functions` - NOT supported (returns error)
+         |
+         |Use `include_*` parameters instead (all optional):
+         |- ✅ `include_app_names` - Optional - include only these apps
+         |- ✅ `include_url_patterns` - Optional - include only URLs matching these patterns
+         |- ✅ `include_implemented_by_partial_functions` - Optional - include only these functions
          |
          |1 from_date e.g.:from_date=$DateWithMsExampleString
          |   **DEFAULT**: If not provided, automatically set to now - ${(APIUtil.getPropsValue("MappedMetrics.stable.boundary.seconds", "600").toInt - 1) / 60} minutes (keeps queries in recent data zone)
