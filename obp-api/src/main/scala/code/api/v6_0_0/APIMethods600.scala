@@ -2105,7 +2105,7 @@ trait APIMethods600 {
                 NewStyle.function.hasEntitlement("", u.userId, canCreateGroupsAtAllBanks, callContext)
             }
             group <- Future {
-              code.group.Group.group.vend.createGroup(
+              code.group.GroupTrait.group.vend.createGroup(
                 postJson.bank_id.filter(_.nonEmpty),
                 postJson.group_name,
                 postJson.group_description,
@@ -2169,7 +2169,7 @@ trait APIMethods600 {
           for {
             (Full(u), callContext) <- authenticatedAccess(cc)
             group <- Future {
-              code.group.Group.group.vend.getGroup(groupId)
+              code.group.GroupTrait.group.vend.getGroup(groupId)
             } map {
               x => unboxFullOrFail(x, callContext, s"$UnknownError Group not found", 404)
             }
@@ -2254,15 +2254,15 @@ trait APIMethods600 {
             }
             groups <- bankIdFilter match {
               case Some(bankId) =>
-                code.group.Group.group.vend.getGroupsByBankId(Some(bankId)) map {
+                code.group.GroupTrait.group.vend.getGroupsByBankId(Some(bankId)) map {
                   x => unboxFullOrFail(x, callContext, s"$UnknownError Cannot get groups", 400)
                 }
               case None if bankIdParam.isDefined =>
-                code.group.Group.group.vend.getGroupsByBankId(None) map {
+                code.group.GroupTrait.group.vend.getGroupsByBankId(None) map {
                   x => unboxFullOrFail(x, callContext, s"$UnknownError Cannot get groups", 400)
                 }
               case None =>
-                code.group.Group.group.vend.getAllGroups() map {
+                code.group.GroupTrait.group.vend.getAllGroups() map {
                   x => unboxFullOrFail(x, callContext, s"$UnknownError Cannot get groups", 400)
                 }
             }
@@ -2333,7 +2333,7 @@ trait APIMethods600 {
               json.extract[PutGroupJsonV600]
             }
             existingGroup <- Future {
-              code.group.Group.group.vend.getGroup(groupId)
+              code.group.GroupTrait.group.vend.getGroup(groupId)
             } map {
               x => unboxFullOrFail(x, callContext, s"$UnknownError Group not found", 404)
             }
@@ -2344,7 +2344,7 @@ trait APIMethods600 {
                 NewStyle.function.hasEntitlement("", u.userId, canUpdateGroupsAtAllBanks, callContext)
             }
             updatedGroup <- Future {
-              code.group.Group.group.vend.updateGroup(
+              code.group.GroupTrait.group.vend.updateGroup(
                 groupId,
                 putJson.group_name,
                 putJson.group_description,
@@ -2401,7 +2401,7 @@ trait APIMethods600 {
           for {
             (Full(u), callContext) <- authenticatedAccess(cc)
             existingGroup <- Future {
-              code.group.Group.group.vend.getGroup(groupId)
+              code.group.GroupTrait.group.vend.getGroup(groupId)
             } map {
               x => unboxFullOrFail(x, callContext, s"$UnknownError Group not found", 404)
             }
@@ -2412,7 +2412,7 @@ trait APIMethods600 {
                 NewStyle.function.hasEntitlement("", u.userId, canDeleteGroupsAtAllBanks, callContext)
             }
             deleted <- Future {
-              code.group.Group.group.vend.deleteGroup(groupId)
+              code.group.GroupTrait.group.vend.deleteGroup(groupId)
             } map {
               x => unboxFullOrFail(x, callContext, s"$UnknownError Cannot delete group", 400)
             }
