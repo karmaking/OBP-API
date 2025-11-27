@@ -14,6 +14,7 @@ import code.api.util.{APIUtil, CallContext, DiagnosticDynamicEntityCheck, ErrorM
 import code.api.util.NewStyle.function.extractQueryParams
 import code.api.v3_0_0.JSONFactory300
 import code.api.v3_0_0.JSONFactory300.createAggregateMetricJson
+import code.api.v2_0_0.JSONFactory200
 import code.api.v3_1_0.{JSONFactory310, PostCustomerNumberJsonV310}
 import code.api.v4_0_0.CallLimitPostJsonV400
 import code.api.v4_0_0.JSONFactory400.createCallsLimitJson
@@ -2369,13 +2370,108 @@ trait APIMethods600 {
     }
 
     staticResourceDocs += ResourceDoc(
+      createUser,
+      implementedInApiVersion,
+      nameOf(createUser),
+      "POST",
+      "/users",
+      "Create User (v6.0.0)",
+      s"""Creates OBP user.
+         | No authorisation required.
+         |
+         | Mimics current webform to Register.
+         |
+         | Requires username(email), password, first_name, last_name, and email.
+         |
+         | Validation checks performed:
+         | - Password must meet strong password requirements (InvalidStrongPasswordFormat error if not)
+         | - Username must be unique (409 error if username already exists)
+         | - All required fields must be present in valid JSON format
+         |
+         | Email validation behavior:
+         | - Controlled by property 'authUser.skipEmailValidation' (default: false)
+         | - When false: User is created with validated=false and a validation email is sent to the user's email address
+         | - When true: User is created with validated=true and no validation email is sent
+         | - Default entitlements are granted immediately regardless of validation status
+         |
+         | Note: If email validation is required (skipEmailValidation=false), the user must click the validation link
+         | in the email before they can log in, even though entitlements are already granted.
+         |
+         |""",
+      createUserJson,
+      userJsonV200,
+      List(InvalidJsonFormat, InvalidStrongPasswordFormat, DuplicateUsername, "Error occurred during user creation.", UnknownError),
+      List(apiTagUser, apiTagOnboarding))
+
+    lazy val createUser: OBPEndpoint = {
+      case "users" :: Nil JsonPost json -> _ => {
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            // STEP 1: Extract and validate JSON structure
+            postedData <- NewStyle.function.tryons(ErrorMessages.InvalidJsonFormat, 400, cc.callContext) {
+              json.extract[code.api.v2_0_0.CreateUserJson]
+            }
+            
+            // STEP 2: Validate password strength
+            _ <- Helper.booleanToFuture(ErrorMessages.InvalidStrongPasswordFormat, 400, cc.callContext) {
+              fullPasswordValidation(postedData.password)
+            }
+            
+            // STEP 3: Check username uniqueness (returns 409 Conflict if exists)
+            _ <- Helper.booleanToFuture(ErrorMessages.DuplicateUsername, 409, cc.callContext) {
+              code.model.dataAccess.AuthUser.find(net.liftweb.mapper.By(code.model.dataAccess.AuthUser.username, postedData.username)).isEmpty
+            }
+            
+            // STEP 4: Create AuthUser object
+            userCreated <- Future {
+              code.model.dataAccess.AuthUser.create
+                .firstName(postedData.first_name)
+                .lastName(postedData.last_name)
+                .username(postedData.username)
+                .email(postedData.email)
+                .password(postedData.password)
+                .validated(APIUtil.getPropsAsBoolValue("authUser.skipEmailValidation", defaultValue = false))
+            }
+            
+            // STEP 5: Validate Lift field validators
+            _ <- Helper.booleanToFuture(ErrorMessages.InvalidJsonFormat+userCreated.validate.map(_.msg).mkString(";"), 400, cc.callContext) {
+              userCreated.validate.size == 0
+            }
+            
+            // STEP 6: Save user to database
+            savedUser <- NewStyle.function.tryons(ErrorMessages.InvalidJsonFormat, 400, cc.callContext) {
+              userCreated.saveMe()
+            }
+            
+            // STEP 7: Verify save was successful
+            _ <- Helper.booleanToFuture(s"$UnknownError Error occurred during user creation.", 400, cc.callContext) {
+              userCreated.saved_?
+            }
+          } yield {
+            // STEP 8: Send validation email (if required)
+            val skipEmailValidation = APIUtil.getPropsAsBoolValue("authUser.skipEmailValidation", defaultValue = false)
+            if (!skipEmailValidation) {
+              code.model.dataAccess.AuthUser.sendValidationEmail(savedUser)
+            }
+            
+            // STEP 9: Grant default entitlements
+            code.model.dataAccess.AuthUser.grantDefaultEntitlementsToAuthUser(savedUser)
+            
+            // STEP 10: Return JSON response
+            val json = JSONFactory200.createUserJSONfromAuthUser(userCreated)
+            (json, HttpCode.`201`(cc.callContext))
+          }
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
       deleteGroup,
       implementedInApiVersion,
       nameOf(deleteGroup),
       "DELETE",
       "/management/groups/GROUP_ID",
       "Delete Group",
-      s"""Delete a group by its ID.
+      s"""Delete a Group.
          |
          |Requires either:
          |- CanDeleteGroupsAtAllBanks (for any group)
