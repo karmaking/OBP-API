@@ -1906,7 +1906,8 @@ trait APIMethods200 {
       EmptyBody,
       EmptyBody,
       List(UserNotLoggedIn, UserHasMissingRoles, EntitlementNotFound, UnknownError),
-      List(apiTagRole, apiTagUser, apiTagEntitlement))
+      List(apiTagRole, apiTagUser, apiTagEntitlement),
+      Some(List(canDeleteEntitlementAtAnyBank)))
 
 
     lazy val deleteEntitlement: OBPEndpoint = {
@@ -1944,7 +1945,8 @@ trait APIMethods200 {
       EmptyBody,
       entitlementJSONs,
       List(UserNotLoggedIn, UnknownError),
-      List(apiTagRole, apiTagEntitlement))
+      List(apiTagRole, apiTagEntitlement),
+      Some(List(canGetEntitlementsForAnyUserAtAnyBank)))
 
 
     lazy val getAllEntitlements: OBPEndpoint = {

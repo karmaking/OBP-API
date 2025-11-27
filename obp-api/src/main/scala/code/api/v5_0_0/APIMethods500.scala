@@ -1344,6 +1344,8 @@ trait APIMethods500 {
          |The Customer resource stores the customer number (which is set by the backend), legal name, email, phone number, their date of birth, relationship status, education attained, a url for a profile image, KYC status etc.
          |Dates need to be in the format 2013-01-21T23:08:00Z
          |
+         |If kyc_status is not provided, it defaults to false.
+         |
          |Note: If you need to set a specific customer number, use the Update Customer Number endpoint after this call.
          |
          |${userAuthenticationMessage(true)}

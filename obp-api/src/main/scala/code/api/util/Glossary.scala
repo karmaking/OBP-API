@@ -2943,12 +2943,26 @@ object Glossary extends MdcLoggable  {
 |      },
 |      "notifications_enabled": {
 |        "type": "boolean",
-|        "example": true
+|        "example": "true"
 |      }
 |    }
 |  }
 |}
 |```
+|
+|**IMPORTANT - JSON Structure:**
+|
+|The entity name (e.g., "CustomerPreferences") MUST be a direct top-level key in the JSON. The root object can contain at most TWO fields: your entity name and optionally "hasPersonalEntity".
+|
+|**Common mistake - DO NOT do this:**
+|```json
+|{
+|  "entity": {
+|    "CustomerPreferences": { ... }
+|  }
+|}
+|```
+|This will fail with error: "There must be 'required' field in entity"
 |
 |**Supported field types:**
 |

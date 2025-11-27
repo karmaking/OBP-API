@@ -3,6 +3,7 @@ package code.api.v6_0_0
 import code.accountattribute.AccountAttributeX
 import code.api.{DirectLogin, ObpApiFailure}
 import code.api.ResourceDocs1_4_0.SwaggerDefinitionsJSON._
+import code.api.cache.Caching
 import code.api.util.APIUtil._
 import code.api.util.ApiRole._
 import code.api.util.ApiTag._
@@ -12,33 +13,42 @@ import code.api.util.NewStyle.HttpCode
 import code.api.util.{APIUtil, CallContext, DiagnosticDynamicEntityCheck, ErrorMessages, NewStyle, RateLimitingUtil}
 import code.api.util.NewStyle.function.extractQueryParams
 import code.api.v3_0_0.JSONFactory300
+import code.api.v3_0_0.JSONFactory300.createAggregateMetricJson
 import code.api.v3_1_0.{JSONFactory310, PostCustomerNumberJsonV310}
 import code.api.v4_0_0.CallLimitPostJsonV400
 import code.api.v4_0_0.JSONFactory400.createCallsLimitJson
 import code.api.v5_0_0.JSONFactory500
-import code.api.v5_1_0.PostCustomerLegalNameJsonV510
-import code.api.v6_0_0.JSONFactory600.{DynamicEntityDiagnosticsJsonV600, DynamicEntityIssueJsonV600, ReferenceTypeJsonV600, ReferenceTypesJsonV600, createActiveCallLimitsJsonV600, createCallLimitJsonV600, createCurrentUsageJson}
+import code.api.v5_1_0.{JSONFactory510, PostCustomerLegalNameJsonV510}
+import code.api.v6_0_0.JSONFactory600.{DynamicEntityDiagnosticsJsonV600, DynamicEntityIssueJsonV600, GroupJsonV600, GroupsJsonV600, PostGroupJsonV600, PutGroupJsonV600, ReferenceTypeJsonV600, ReferenceTypesJsonV600, ValidateUserEmailJsonV600, ValidateUserEmailResponseJsonV600, createActiveCallLimitsJsonV600, createCallLimitJsonV600, createCurrentUsageJson}
+import code.api.v6_0_0.OBPAPI6_0_0
+import code.metrics.APIMetrics
 import code.bankconnectors.LocalMappedConnectorInternal
 import code.bankconnectors.LocalMappedConnectorInternal._
 import code.entitlement.Entitlement
+import code.loginattempts.LoginAttempt
 import code.model._
+import code.users.{UserAgreement, UserAgreementProvider, Users}
 import code.ratelimiting.RateLimitingDI
 import code.util.Helper
-import code.util.Helper.SILENCE_IS_GOLDEN
+import code.util.Helper.{MdcLoggable, SILENCE_IS_GOLDEN}
 import code.views.Views
 import com.github.dwickern.macros.NameOf.nameOf
 import com.openbankproject.commons.ExecutionContext.Implicits.global
 import com.openbankproject.commons.model.{CustomerAttribute, _}
 import com.openbankproject.commons.util.{ApiVersion, ScannedApiVersion}
 import net.liftweb.common.{Empty, Full}
+import net.liftweb.http.provider.HTTPParam
 import net.liftweb.http.rest.RestHelper
 import net.liftweb.json.{Extraction, JsonParser}
 import net.liftweb.json.JsonAST.JValue
+import net.liftweb.mapper.{By, Descending, MaxRows, OrderBy}
 
 import java.text.SimpleDateFormat
+import java.util.UUID.randomUUID
 import scala.collection.immutable.{List, Nil}
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
+import scala.concurrent.duration._
 import scala.util.Random
 
 
@@ -47,7 +57,7 @@ trait APIMethods600 {
 
   val Implementations6_0_0 = new Implementations600()
 
-  class Implementations600 {
+  class Implementations600 extends MdcLoggable {
 
     val implementedInApiVersion: ScannedApiVersion = ApiVersion.v6_0_0
 
@@ -57,6 +67,36 @@ trait APIMethods600 {
     val apiRelations = ArrayBuffer[ApiRelation]()
     val codeContext = CodeContext(staticResourceDocs, apiRelations)
 
+
+    staticResourceDocs += ResourceDoc(
+      root,
+      implementedInApiVersion,
+      nameOf(root),
+      "GET",
+      "/root",
+      "Get API Info (root)",
+      """Returns information about:
+        |
+        |* API version
+        |* Hosted by information
+        |* Hosted at information
+        |* Energy source information
+        |* Git Commit""",
+      EmptyBody,
+      apiInfoJson400,
+      List(UnknownError, MandatoryPropertyIsNotSet),
+      apiTagApi  :: Nil)
+
+    lazy val root: OBPEndpoint = {
+      case (Nil | "root" :: Nil) JsonGet _ => {
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            _ <- Future() // Just start async call
+          } yield {
+            (JSONFactory510.getApiInfoJSON(OBPAPI6_0_0.version, OBPAPI6_0_0.versionStatus), HttpCode.`200`(cc.callContext))
+          }
+      }
+    }
 
     staticResourceDocs += ResourceDoc(
       createTransactionRequestHold,
@@ -697,6 +737,152 @@ trait APIMethods600 {
     }
 
     staticResourceDocs += ResourceDoc(
+      getUsers,
+      implementedInApiVersion,
+      nameOf(getUsers),
+      "GET",
+      "/users",
+      "Get all Users",
+      s"""Get all users
+         |
+         |${userAuthenticationMessage(true)}
+         |
+         |CanGetAnyUser entitlement is required,
+         |
+         |${urlParametersDocument(false, false)}
+         |* locked_status (if null ignore)
+         |* is_deleted (default: false)
+         |
+      """.stripMargin,
+      EmptyBody,
+      usersInfoJsonV600,
+      List(
+        $UserNotLoggedIn,
+        UserHasMissingRoles,
+        UnknownError
+      ),
+      List(apiTagUser),
+      Some(List(canGetAnyUser))
+    )
+
+    lazy val getUsers: OBPEndpoint = {
+      case "users" :: Nil JsonGet _ => { cc =>
+        implicit val ec = EndpointContext(Some(cc))
+        for {
+          httpParams <- NewStyle.function.extractHttpParamsFromUrl(cc.url)
+          (obpQueryParams, callContext) <- createQueriesByHttpParamsFuture(
+            httpParams,
+            cc.callContext
+          )
+          users <- code.users.Users.users.vend.getUsers(obpQueryParams)
+        } yield {
+          (JSONFactory600.createUsersInfoJsonV600(users), HttpCode.`200`(callContext))
+        }
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
+      getUserByUserId,
+      implementedInApiVersion,
+      nameOf(getUserByUserId),
+      "GET",
+      "/users/user-id/USER_ID",
+      "Get User by USER_ID",
+      s"""Get user by USER_ID
+         |
+         |${userAuthenticationMessage(true)}
+         |
+         |CanGetAnyUser entitlement is required,
+         |
+      """.stripMargin,
+      EmptyBody,
+      userInfoJsonV600,
+      List(
+        $UserNotLoggedIn,
+        UserHasMissingRoles,
+        UserNotFoundByUserId,
+        UnknownError
+      ),
+      List(apiTagUser),
+      Some(List(canGetAnyUser))
+    )
+
+    lazy val getUserByUserId: OBPEndpoint = {
+      case "users" :: "user-id" :: userId :: Nil JsonGet _ => { cc =>
+        implicit val ec = EndpointContext(Some(cc))
+        for {
+          (Full(u), callContext) <- authenticatedAccess(cc)
+          _ <- NewStyle.function.hasEntitlement("", u.userId, canGetAnyUser, callContext)
+          user <- Users.users.vend.getUserByUserIdFuture(userId) map {
+            x => unboxFullOrFail(x, callContext, s"$UserNotFoundByUserId Current UserId($userId)")
+          }
+          entitlements <- NewStyle.function.getEntitlementsByUserId(user.userId, callContext)
+          // Fetch user agreements
+          agreements <- Future {
+            val acceptMarketingInfo = UserAgreementProvider.userAgreementProvider.vend.getLastUserAgreement(user.userId, "accept_marketing_info")
+            val termsAndConditions = UserAgreementProvider.userAgreementProvider.vend.getLastUserAgreement(user.userId, "terms_and_conditions")
+            val privacyConditions = UserAgreementProvider.userAgreementProvider.vend.getLastUserAgreement(user.userId, "privacy_conditions")
+            val agreementList = acceptMarketingInfo.toList ::: termsAndConditions.toList ::: privacyConditions.toList
+            if (agreementList.isEmpty) None else Some(agreementList)
+          }
+          isLocked = LoginAttempt.userIsLocked(user.provider, user.name)
+          // Fetch metrics data for the user
+          userMetrics <- Future {
+            code.metrics.MappedMetric.findAll(
+              By(code.metrics.MappedMetric.userId, userId),
+              OrderBy(code.metrics.MappedMetric.date, Descending),
+              MaxRows(5)
+            )
+          }
+          lastActivityDate = userMetrics.headOption.map(_.getDate())
+          recentOperationIds = userMetrics.map(_.getImplementedByPartialFunction()).distinct.take(5)
+        } yield {
+          (JSONFactory600.createUserInfoJsonV600(user, entitlements, agreements, isLocked, lastActivityDate, recentOperationIds), HttpCode.`200`(callContext))
+        }
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
+      getMigrations,
+      implementedInApiVersion,
+      nameOf(getMigrations),
+      "GET",
+      "/system/migrations",
+      "Get Database Migrations",
+      s"""Get all database migration script logs.
+         |
+         |This endpoint returns information about all migration scripts that have been executed or attempted.
+         |
+         |${userAuthenticationMessage(true)}
+         |
+         |CanGetMigrations entitlement is required.
+         |
+      """.stripMargin,
+      EmptyBody,
+      migrationScriptLogsJsonV600,
+      List(
+        $UserNotLoggedIn,
+        UserHasMissingRoles,
+        UnknownError
+      ),
+      List(apiTagSystem, apiTagApi),
+      Some(List(canGetMigrations))
+    )
+
+    lazy val getMigrations: OBPEndpoint = {
+      case "system" :: "migrations" :: Nil JsonGet _ => { cc =>
+        implicit val ec = EndpointContext(Some(cc))
+        for {
+          (Full(u), callContext) <- authenticatedAccess(cc)
+          _ <- NewStyle.function.hasEntitlement("", u.userId, canGetMigrations, callContext)
+        } yield {
+          val migrations = code.migration.MigrationScriptLogProvider.migrationScriptLogProvider.vend.getMigrationScriptLogs()
+          (JSONFactory600.createMigrationScriptLogsJsonV600(migrations), HttpCode.`200`(callContext))
+        }
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
       createTransactionRequestCardano,
       implementedInApiVersion,
       nameOf(createTransactionRequestCardano),
@@ -837,7 +1023,7 @@ trait APIMethods600 {
          |""",
 
       postBankJson600,
-      bankJson500,
+      bankJson600,
       List(
         InvalidJsonFormat,
         $UserNotLoggedIn,
@@ -908,7 +1094,7 @@ trait APIMethods600 {
                 Future(Entitlement.entitlement.vend.addEntitlement(postJson.bank_id, cc.userId, CanReadDynamicResourceDocsAtOneBank.toString()))
             }
           } yield {
-            (JSONFactory500.createBankJSON500(success), HttpCode.`201`(callContext))
+            (JSONFactory600.createBankJSON600(success), HttpCode.`201`(callContext))
           }
       }
     }
@@ -956,6 +1142,93 @@ trait APIMethods600 {
             (JSONFactory600.createProvidersJson(providers), HttpCode.`200`(callContext))
           }
     }
+
+    staticResourceDocs += ResourceDoc(
+      getConnectorMethodNames,
+      implementedInApiVersion,
+      nameOf(getConnectorMethodNames),
+      "GET",
+      "/system/connector-method-names",
+      "Get Connector Method Names",
+      s"""Get the list of all available connector method names.
+         |
+         |These are the method names that can be used in Method Routing configuration.
+         |
+         |## Data Source
+         |
+         |The data comes from **scanning the actual Scala connector code at runtime** using reflection, NOT from a database or configuration file.
+         |
+         |The endpoint:
+         |1. Reads the connector name from props (e.g., `connector=mapped`)
+         |2. Gets the connector instance (e.g., LocalMappedConnector, KafkaConnector, StarConnector)
+         |3. Uses Scala reflection to scan all public methods that override the base Connector trait
+         |4. Filters for valid connector methods (public, has parameters, overrides base trait)
+         |5. Returns the method names as a sorted list
+         |
+         |## Which Connector?
+         |
+         |Depends on your `connector` property:
+         |* `connector=mapped` → Returns methods from LocalMappedConnector
+         |* `connector=kafka_vSept2018` → Returns methods from KafkaConnector
+         |* `connector=star` → Returns methods from StarConnector
+         |* `connector=rest_vMar2019` → Returns methods from RestConnector
+         |
+         |## When Does It Change?
+         |
+         |The list only changes when:
+         |* Code is deployed with new/modified connector methods
+         |* The `connector` property is changed to point to a different connector
+         |
+         |## Performance
+         |
+         |This endpoint uses caching (default: 1 hour) because Scala reflection is expensive.
+         |Configure via: `getConnectorMethodNames.cache.ttl.seconds=3600`
+         |
+         |## Use Case
+         |
+         |Use this endpoint to discover which connector methods are available when configuring Method Routing.
+         |These method names are different from API endpoint operation IDs (which you get from /resource-docs).
+         |
+         |${userAuthenticationMessage(true)}
+         |
+         |CanGetMethodRoutings entitlement is required.
+         |
+      """.stripMargin,
+      EmptyBody,
+      ConnectorMethodNamesJsonV600(List("getBank", "getBanks", "getUser", "getAccount", "makePayment", "getTransactions")),
+      List(
+        $UserNotLoggedIn,
+        UserHasMissingRoles,
+        UnknownError
+      ),
+      List(apiTagSystem, apiTagMethodRouting, apiTagApi),
+      Some(List(canGetMethodRoutings))
+    )
+
+    lazy val getConnectorMethodNames: OBPEndpoint = {
+      case "system" :: "connector-method-names" :: Nil JsonGet _ =>
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(u), callContext) <- authenticatedAccess(cc)
+            _ <- NewStyle.function.hasEntitlement("", u.userId, canGetMethodRoutings, callContext)
+            // Fetch connector method names with caching
+            methodNames <- Future {
+              /**
+               * Connector methods rarely change (only on deployment), so we cache for a long time.
+               */
+              val cacheKey = "getConnectorMethodNames"
+              val cacheTTL = APIUtil.getPropsAsIntValue("getConnectorMethodNames.cache.ttl.seconds", 3600)
+              Caching.memoizeSyncWithProvider(Some(cacheKey))(cacheTTL seconds) {
+                val connectorName = APIUtil.getPropsValue("connector", "mapped")
+                val connector = code.bankconnectors.Connector.getConnectorInstance(connectorName)
+                connector.callableMethods.keys.toList
+              }
+            }
+          } yield {
+            (JSONFactory600.createConnectorMethodNamesJson(methodNames), HttpCode.`200`(callContext))
+          }
+    }
+
     staticResourceDocs += ResourceDoc(
       createCustomer,
       implementedInApiVersion,
@@ -983,7 +1256,7 @@ trait APIMethods600 {
          |- credit_limit: Customer's credit limit (currency and amount)
          |- highest_education_attained: Customer's highest education level
          |- employment_status: Customer's employment status
-         |- kyc_status: Know Your Customer verification status (true/false)
+         |- kyc_status: Know Your Customer verification status (true/false). Default: false
          |- last_ok_date: Last verification date
          |- title: Customer's title (e.g., Mr., Mrs., Dr.)
          |- branch_id: Associated branch identifier
@@ -1328,15 +1601,306 @@ trait APIMethods600 {
     }
 
     staticResourceDocs += ResourceDoc(
+      getMetrics,
+      implementedInApiVersion,
+      nameOf(getMetrics),
+      "GET",
+      "/management/metrics",
+      "Get Metrics",
+      s"""Get API metrics rows. These are records of each REST API call.
+         |
+         |require CanReadMetrics role
+         |
+         |**NOTE: Automatic from_date Default**
+         |
+         |If you do not provide a `from_date` parameter, this endpoint will automatically set it to:
+         |**now - ${(APIUtil.getPropsValue("MappedMetrics.stable.boundary.seconds", "600").toInt - 1) / 60} minutes ago**
+         |
+         |This prevents accidentally querying all metrics since Unix Epoch and ensures reasonable response times.
+         |For historical/reporting queries, always explicitly specify your desired `from_date`.
+         |
+         |**IMPORTANT: Smart Caching & Performance**
+         |
+         |This endpoint uses intelligent two-tier caching to optimize performance:
+         |
+         |**Stable Data Cache (Long TTL):**
+         |- Metrics older than ${APIUtil.getPropsValue("MappedMetrics.stable.boundary.seconds", "600")} seconds (${APIUtil.getPropsValue("MappedMetrics.stable.boundary.seconds", "600").toInt / 60} minutes) are considered immutable/stable
+         |- These are cached for ${APIUtil.getPropsValue("MappedMetrics.cache.ttl.seconds.getStableMetrics", "86400")} seconds (${APIUtil.getPropsValue("MappedMetrics.cache.ttl.seconds.getStableMetrics", "86400").toInt / 3600} hours)
+         |- Used when your query's from_date is older than the stable boundary
+         |
+         |**Recent Data Cache (Short TTL):**
+         |- Recent metrics (within the stable boundary) are cached for ${APIUtil.getPropsValue("MappedMetrics.cache.ttl.seconds.getAllMetrics", "7")} seconds
+         |- Used when your query includes recent data or has no from_date
+         |
+         |**STRONGLY RECOMMENDED: Always specify from_date in your queries!**
+         |
+         |**Why from_date matters:**
+         |- Queries WITH from_date older than ${APIUtil.getPropsValue("MappedMetrics.stable.boundary.seconds", "600").toInt / 60} mins → cached for ${APIUtil.getPropsValue("MappedMetrics.cache.ttl.seconds.getStableMetrics", "86400").toInt / 3600} hours (fast!)
+         |- Queries WITHOUT from_date → cached for only ${APIUtil.getPropsValue("MappedMetrics.cache.ttl.seconds.getAllMetrics", "7")} seconds (slower)
+         |
+         |**Examples:**
+         |- `from_date=2025-01-01T00:00:00.000Z` → Uses ${APIUtil.getPropsValue("MappedMetrics.cache.ttl.seconds.getStableMetrics", "86400").toInt / 3600} hours cache (historical data)
+         |- `from_date=$DateWithMsExampleString` (recent date) → Uses ${APIUtil.getPropsValue("MappedMetrics.cache.ttl.seconds.getAllMetrics", "7")} seconds cache (recent data)
+         |- No from_date → **Automatically set to ${(APIUtil.getPropsValue("MappedMetrics.stable.boundary.seconds", "600").toInt - 1) / 60} minutes ago** → Uses ${APIUtil.getPropsValue("MappedMetrics.cache.ttl.seconds.getAllMetrics", "7")} seconds cache (recent data)
+         |
+         |For best performance on historical/reporting queries, always include a from_date parameter!
+         |
+         |Filters Part 1.*filtering* (no wilde cards etc.) parameters to GET /management/metrics
+         |
+         |You can filter by the following fields by applying url parameters
+         |
+         |eg: /management/metrics?from_date=$DateWithMsExampleString&to_date=$DateWithMsExampleString&limit=50&offset=2
+         |
+         |1 from_date e.g.:from_date=$DateWithMsExampleString 
+         |   **DEFAULT**: If not provided, automatically set to now - ${(APIUtil.getPropsValue("MappedMetrics.stable.boundary.seconds", "600").toInt - 1) / 60} minutes (keeps queries in recent data zone)
+         |   **IMPORTANT**: Including from_date enables long-term caching for historical data queries!
+         |
+         |2 to_date e.g.:to_date=$DateWithMsExampleString Defaults to a far future date i.e. ${APIUtil.ToDateInFuture}
+         |
+         |3 limit (for pagination: defaults to 50)  eg:limit=200
+         |
+         |4 offset (for pagination: zero index, defaults to 0) eg: offset=10
+         |
+         |5 sort_by (defaults to date field) eg: sort_by=date
+         |  possible values:
+         |    "url",
+         |    "date",
+         |    "user_name",
+         |    "app_name",
+         |    "developer_email",
+         |    "implemented_by_partial_function",
+         |    "implemented_in_version",
+         |    "consumer_id",
+         |    "verb"
+         |
+         |6 direction (defaults to date desc) eg: direction=desc
+         |
+         |eg: /management/metrics?from_date=$DateWithMsExampleString&to_date=$DateWithMsExampleString&limit=10000&offset=0&anon=false&app_name=TeatApp&implemented_in_version=v2.1.0&verb=POST&user_id=c7b6cb47-cb96-4441-8801-35b57456753a&user_name=susan.uk.29@example.com&consumer_id=78
+         |
+         |Other filters:
+         |
+         |7 consumer_id  (if null ignore)
+         |
+         |8 user_id (if null ignore)
+         |
+         |9 anon (if null ignore) only support two value : true (return where user_id is null.) or false (return where user_id is not null.)
+         |
+         |10 url (if null ignore), note: can not contain '&'.
+         |
+         |11 app_name (if null ignore)
+         |
+         |12 implemented_by_partial_function (if null ignore),
+         |
+         |13 implemented_in_version (if null ignore)
+         |
+         |14 verb (if null ignore)
+         |
+         |15 correlation_id (if null ignore)
+         |
+         |16 duration (if null ignore) - Returns calls where duration > specified value (in milliseconds). Use this to find slow API calls. eg: duration=5000 returns calls taking more than 5 seconds
+         |
+      """.stripMargin,
+      EmptyBody,
+      metricsJsonV510,
+      List(
+        UserNotLoggedIn,
+        UserHasMissingRoles,
+        UnknownError
+      ),
+      List(apiTagMetric, apiTagApi),
+      Some(List(canReadMetrics)))
+
+    lazy val getMetrics: OBPEndpoint = {
+      case "management" :: "metrics" :: Nil JsonGet _ => {
+        cc => {
+          implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(u), callContext) <- authenticatedAccess(cc)
+            _ <- NewStyle.function.hasEntitlement("", u.userId, canReadMetrics, callContext)
+            httpParams <- NewStyle.function.extractHttpParamsFromUrl(cc.url)
+            // If from_date is not provided, set it to now - (stable.boundary - 1 second)
+            // This ensures we get recent data with the shorter cache TTL
+            httpParamsWithDefault = {
+              val hasFromDate = httpParams.exists(p => p.name == "from_date" || p.name == "obp_from_date")
+              if (!hasFromDate) {
+                val stableBoundarySeconds = APIUtil.getPropsAsIntValue("MappedMetrics.stable.boundary.seconds", 600)
+                val defaultFromDate = new java.util.Date(System.currentTimeMillis() - ((stableBoundarySeconds - 1) * 1000L))
+                val dateStr = APIUtil.DateWithMsFormat.format(defaultFromDate)
+                HTTPParam("from_date", List(dateStr)) :: httpParams
+              } else {
+                httpParams
+              }
+            }
+            (obpQueryParams, callContext) <- createQueriesByHttpParamsFuture(httpParamsWithDefault, callContext)
+            metrics <- Future(APIMetrics.apiMetrics.vend.getAllMetrics(obpQueryParams))
+            _ <- Future {
+              if (metrics.isEmpty) {
+                logger.warn(s"getMetrics returned empty list. Query params: $obpQueryParams, URL: ${cc.url}")
+              }
+            }
+          } yield {
+            (JSONFactory510.createMetricsJson(metrics), HttpCode.`200`(callContext))
+          }
+        }
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
+      getAggregateMetrics,
+      implementedInApiVersion,
+      nameOf(getAggregateMetrics),
+      "GET",
+      "/management/aggregate-metrics",
+      "Get Aggregate Metrics",
+      s"""Returns aggregate metrics on api usage eg. total count, response time (in ms), etc.
+         |
+         |require CanReadAggregateMetrics role
+         |
+         |**NOTE: Automatic from_date Default**
+         |
+         |If you do not provide a `from_date` parameter, this endpoint will automatically set it to:
+         |**now - ${(APIUtil.getPropsValue("MappedMetrics.stable.boundary.seconds", "600").toInt - 1) / 60} minutes ago**
+         |
+         |This prevents accidentally querying all metrics since Unix Epoch and ensures reasonable response times.
+         |For historical/reporting queries, always explicitly specify your desired `from_date`.
+         |
+         |**IMPORTANT: Smart Caching & Performance**
+         |
+         |This endpoint uses intelligent two-tier caching to optimize performance:
+         |
+         |**Stable Data Cache (Long TTL):**
+         |- Metrics older than ${APIUtil.getPropsValue("MappedMetrics.stable.boundary.seconds", "600")} seconds (${APIUtil.getPropsValue("MappedMetrics.stable.boundary.seconds", "600").toInt / 60} minutes) are considered immutable/stable
+         |- These are cached for ${APIUtil.getPropsValue("MappedMetrics.cache.ttl.seconds.getStableMetrics", "86400")} seconds (${APIUtil.getPropsValue("MappedMetrics.cache.ttl.seconds.getStableMetrics", "86400").toInt / 3600} hours)
+         |- Used when your query's from_date is older than the stable boundary
+         |
+         |**Recent Data Cache (Short TTL):**
+         |- Recent metrics (within the stable boundary) are cached for ${APIUtil.getPropsValue("MappedMetrics.cache.ttl.seconds.getAllMetrics", "7")} seconds
+         |- Used when your query includes recent data or has no from_date
+         |
+         |**Why from_date matters:**
+         |- Queries WITH from_date older than ${APIUtil.getPropsValue("MappedMetrics.stable.boundary.seconds", "600").toInt / 60} mins → cached for ${APIUtil.getPropsValue("MappedMetrics.cache.ttl.seconds.getStableMetrics", "86400").toInt / 3600} hours (fast!)
+         |- Queries WITHOUT from_date → cached for only ${APIUtil.getPropsValue("MappedMetrics.cache.ttl.seconds.getAllMetrics", "7")} seconds (slower)
+         |
+         |Should be able to filter on the following fields
+         |
+         |eg: /management/aggregate-metrics?from_date=$DateWithMsExampleString&to_date=$DateWithMsExampleString&consumer_id=5
+         |&user_id=66214b8e-259e-44ad-8868-3eb47be70646&implemented_by_partial_function=getTransactionsForBankAccount
+         |&implemented_in_version=v3.0.0&url=/obp/v3.0.0/banks/gh.29.uk/accounts/8ca8a7e4-6d02-48e3-a029-0b2bf89de9f0/owner/transactions
+         |&verb=GET&anon=false&app_name=MapperPostman
+         |&include_app_names=API-EXPLORER,API-Manager,SOFI,null&http_status_code=200
+         |
+         |**IMPORTANT: v6.0.0+ Breaking Change**
+         |
+         |This version does NOT support the old `exclude_*` parameters:
+         |- ❌ `exclude_app_names` - NOT supported (returns error)
+         |- ❌ `exclude_url_patterns` - NOT supported (returns error)
+         |- ❌ `exclude_implemented_by_partial_functions` - NOT supported (returns error)
+         |
+         |Use `include_*` parameters instead (all optional):
+         |- ✅ `include_app_names` - Optional - include only these apps
+         |- ✅ `include_url_patterns` - Optional - include only URLs matching these patterns
+         |- ✅ `include_implemented_by_partial_functions` - Optional - include only these functions
+         |
+         |1 from_date e.g.:from_date=$DateWithMsExampleString
+         |   **DEFAULT**: If not provided, automatically set to now - ${(APIUtil.getPropsValue("MappedMetrics.stable.boundary.seconds", "600").toInt - 1) / 60} minutes (keeps queries in recent data zone)
+         |   **IMPORTANT**: Including from_date enables long-term caching for historical data queries!
+         |
+         |2 to_date (defaults to the current date) eg:to_date=$DateWithMsExampleString
+         |
+         |3 consumer_id  (if null ignore)
+         |
+         |4 user_id (if null ignore)
+         |
+         |5 anon (if null ignore) only support two value : true (return where user_id is null.) or false (return where user_id is not null.)
+         |
+         |6 url (if null ignore), note: can not contain '&'.
+         |
+         |7 app_name (if null ignore)
+         |
+         |8 implemented_by_partial_function (if null ignore)
+         |
+         |9 implemented_in_version (if null ignore)
+         |
+         |10 verb (if null ignore)
+         |
+         |11 correlation_id (if null ignore)
+         |
+         |12 include_app_names (if null ignore).eg: &include_app_names=API-EXPLORER,API-Manager,SOFI,null
+         |
+         |13 include_url_patterns (if null ignore).you can design you own SQL LIKE pattern. eg: &include_url_patterns=%management/metrics%,%management/aggregate-metrics%
+         |
+         |14 include_implemented_by_partial_functions (if null ignore).eg: &include_implemented_by_partial_functions=getMetrics,getConnectorMetrics,getAggregateMetrics
+         |
+         |15 http_status_code (if null ignore) - Filter by HTTP status code. eg: http_status_code=200 returns only successful calls, http_status_code=500 returns server errors
+         |
+      """.stripMargin,
+      EmptyBody,
+      aggregateMetricsJSONV300,
+      List(
+        UserNotLoggedIn,
+        UserHasMissingRoles,
+        UnknownError
+      ),
+      List(apiTagMetric, apiTagAggregateMetrics),
+      Some(List(canReadAggregateMetrics)))
+
+    lazy val getAggregateMetrics: OBPEndpoint = {
+      case "management" :: "aggregate-metrics" :: Nil JsonGet _ => {
+        cc => {
+          implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(u), callContext) <- authenticatedAccess(cc)
+            _ <- NewStyle.function.hasEntitlement("", u.userId, canReadAggregateMetrics, callContext)
+            httpParams <- NewStyle.function.extractHttpParamsFromUrl(cc.url)
+            // Reject old exclude_* parameters in v6.0.0+
+            _ <- Future {
+              val excludeParams = httpParams.filter(p => 
+                p.name == "exclude_app_names" || 
+                p.name == "exclude_url_patterns" || 
+                p.name == "exclude_implemented_by_partial_functions"
+              )
+              if (excludeParams.nonEmpty) {
+                val paramNames = excludeParams.map(_.name).mkString(", ")
+                throw new Exception(s"${ErrorMessages.ExcludeParametersNotSupported} Parameters found: [$paramNames]")
+              }
+            }
+            // If from_date is not provided, set it to now - (stable.boundary - 1 second)
+            // This ensures we get recent data with the shorter cache TTL
+            httpParamsWithDefault = {
+              val hasFromDate = httpParams.exists(p => p.name == "from_date" || p.name == "obp_from_date")
+              if (!hasFromDate) {
+                val stableBoundarySeconds = APIUtil.getPropsAsIntValue("MappedMetrics.stable.boundary.seconds", 600)
+                val defaultFromDate = new java.util.Date(System.currentTimeMillis() - ((stableBoundarySeconds - 1) * 1000L))
+                val dateStr = APIUtil.DateWithMsFormat.format(defaultFromDate)
+                HTTPParam("from_date", List(dateStr)) :: httpParams
+              } else {
+                httpParams
+              }
+            }
+            (obpQueryParams, callContext) <- createQueriesByHttpParamsFuture(httpParamsWithDefault, callContext)
+            aggregateMetrics <- APIMetrics.apiMetrics.vend.getAllAggregateMetricsFuture(obpQueryParams, true) map {
+              x => unboxFullOrFail(x, callContext, GetAggregateMetricsError)
+            }
+            _ <- Future {
+              if (aggregateMetrics.isEmpty) {
+                logger.warn(s"getAggregateMetrics returned empty list. Query params: $obpQueryParams, URL: ${cc.url}")
+              }
+            }
+          } yield {
+            (createAggregateMetricJson(aggregateMetrics), HttpCode.`200`(callContext))
+          }
+        }
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
       directLoginEndpoint,
       implementedInApiVersion,
       nameOf(directLoginEndpoint),
       "POST",
       "/my/logins/direct",
       "Direct Login",
-      s"""This endpoint allows users to create a DirectLogin token to access the API.
-         |
-         |DirectLogin is a simple authentication flow. You POST your credentials (username, password, and consumer key)
+      s"""DirectLogin is a simple authentication flow. You POST your credentials (username, password, and consumer key)
          |to the DirectLogin endpoint and receive a token in return.
          |
          |This is an alias to the DirectLogin endpoint that includes the standard API versioning prefix.
@@ -1377,6 +1941,485 @@ trait APIMethods600 {
               unboxFullOrFail(Empty, None, message, httpCode)
             }
           }
+    }
+
+    staticResourceDocs += ResourceDoc(
+      validateUserEmail,
+      implementedInApiVersion,
+      nameOf(validateUserEmail),
+      "POST",
+      "/users/email-validation",
+      "Validate User Email",
+      s"""Validate a user's email address using the token sent via email.
+         |
+         |This endpoint is called anonymously (no authentication required).
+         |
+         |When a user signs up and email validation is enabled (authUser.skipEmailValidation=false),
+         |they receive an email with a validation link containing a unique token.
+         |
+         |This endpoint:
+         |- Validates the token
+         |- Sets the user's validated status to true
+         |- Resets the unique ID token (invalidating the link)
+         |- Grants default entitlements to the user
+         |
+         |**Important: This is a single-use token.** Once the email is validated, the token is invalidated.
+         |Any subsequent attempts to use the same token will return a 404 error (UserNotFoundByToken or UserAlreadyValidated).
+         |
+         |The token is a unique identifier (UUID) that was generated when the user was created.
+         |
+         |Example token from validation email URL:
+         |https://your-obp-instance.com/user_mgt/validate_user/a1b2c3d4-e5f6-7890-abcd-ef1234567890
+         |
+         |In this case, the token would be: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+         |
+         |""".stripMargin,
+      JSONFactory600.ValidateUserEmailJsonV600(
+        token = "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+      ),
+      JSONFactory600.ValidateUserEmailResponseJsonV600(
+        user_id = "5995d6a2-01b3-423c-a173-5481df49bdaf",
+        email = "user@example.com",
+        username = "username",
+        provider = "https://localhost:8080",
+        validated = true,
+        message = "Email validated successfully"
+      ),
+      List(
+        InvalidJsonFormat,
+        UserNotFoundByToken,
+        UserAlreadyValidated,
+        UnknownError
+      ),
+      List(apiTagUser),
+      Some(List())
+    )
+
+    lazy val validateUserEmail: OBPEndpoint = {
+      case "users" :: "email-validation" :: Nil JsonPost json -> _ =>
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            postedData <- NewStyle.function.tryons(s"$InvalidJsonFormat The Json body should be the $ValidateUserEmailJsonV600 ", 400, cc.callContext) {
+              json.extract[JSONFactory600.ValidateUserEmailJsonV600]
+            }
+            token = postedData.token.trim
+            _ <- Helper.booleanToFuture(s"$InvalidJsonFormat Token cannot be empty", cc = cc.callContext) {
+              token.nonEmpty
+            }
+            // Find user by unique ID (the validation token)
+            authUser <- Future {
+              code.model.dataAccess.AuthUser.findUserByValidationToken(token) match {
+                case Full(user) => Full(user)
+                case Empty => Empty
+                case f: net.liftweb.common.Failure => f
+              }
+            }
+            user <- NewStyle.function.tryons(s"$UserNotFoundByToken Invalid or expired validation token", 404, cc.callContext) {
+              authUser.openOrThrowException("User not found")
+            }
+            // Check if user is already validated
+            _ <- Helper.booleanToFuture(s"$UserAlreadyValidated User email is already validated", cc = cc.callContext) {
+              !user.validated.get
+            }
+            // Validate the user and reset the unique ID token
+            validatedUser <- Future {
+              code.model.dataAccess.AuthUser.validateAndResetToken(user)
+            }
+            // Grant default entitlements
+            _ <- Future {
+              code.model.dataAccess.AuthUser.grantDefaultEntitlementsToAuthUser(validatedUser)
+            }
+          } yield {
+            val response = JSONFactory600.ValidateUserEmailResponseJsonV600(
+              user_id = validatedUser.user.obj.map(_.userId).getOrElse(""),
+              email = validatedUser.email.get,
+              username = validatedUser.username.get,
+              provider = validatedUser.provider.get,
+              validated = validatedUser.validated.get,
+              message = "Email validated successfully"
+            )
+            (response, HttpCode.`200`(cc.callContext))
+          }
+    }
+
+    // ============================================ GROUP MANAGEMENT ============================================
+
+    staticResourceDocs += ResourceDoc(
+      createGroup,
+      implementedInApiVersion,
+      nameOf(createGroup),
+      "POST",
+      "/management/groups",
+      "Create Group",
+      s"""Create a new group of roles.
+         |
+         |Groups can be either:
+         |- System-level (bank_id = null) - requires CanCreateGroupsAtAllBanks role
+         |- Bank-level (bank_id provided) - requires CanCreateGroupsAtOneBank role
+         |
+         |A group contains a list of role names that can be assigned together.
+         |
+         |${userAuthenticationMessage(true)}
+         |
+         |""".stripMargin,
+      PostGroupJsonV600(
+        bank_id = Some("gh.29.uk"),
+        group_name = "Teller Group",
+        group_description = "Standard teller roles for branch operations",
+        list_of_roles = List("CanGetCustomer", "CanGetAccount", "CanCreateTransaction"),
+        is_enabled = true
+      ),
+      GroupJsonV600(
+        group_id = "group-id-123",
+        bank_id = Some("gh.29.uk"),
+        group_name = "Teller Group",
+        group_description = "Standard teller roles for branch operations",
+        list_of_roles = List("CanGetCustomer", "CanGetAccount", "CanCreateTransaction"),
+        is_enabled = true
+      ),
+      List(
+        UserNotLoggedIn,
+        UserHasMissingRoles,
+        InvalidJsonFormat,
+        UnknownError
+      ),
+      List(apiTagGroup),
+      Some(List(canCreateGroupsAtAllBanks, canCreateGroupsAtOneBank))
+    )
+
+    lazy val createGroup: OBPEndpoint = {
+      case "management" :: "groups" :: Nil JsonPost json -> _ => {
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(u), callContext) <- authenticatedAccess(cc)
+            postJson <- NewStyle.function.tryons(s"$InvalidJsonFormat The Json body should be the $PostGroupJsonV600", 400, callContext) {
+              json.extract[PostGroupJsonV600]
+            }
+            _ <- Helper.booleanToFuture(failMsg = s"${InvalidJsonFormat} bank_id and group_name cannot be empty", cc = callContext) {
+              postJson.group_name.nonEmpty
+            }
+            _ <- postJson.bank_id match {
+              case Some(bankId) if bankId.nonEmpty =>
+                NewStyle.function.hasEntitlement(bankId, u.userId, canCreateGroupsAtOneBank, callContext)
+              case _ =>
+                NewStyle.function.hasEntitlement("", u.userId, canCreateGroupsAtAllBanks, callContext)
+            }
+            group <- Future {
+              code.group.Group.group.vend.createGroup(
+                postJson.bank_id.filter(_.nonEmpty),
+                postJson.group_name,
+                postJson.group_description,
+                postJson.list_of_roles,
+                postJson.is_enabled
+              )
+            } map {
+              x => unboxFullOrFail(x, callContext, s"$UnknownError Cannot create group", 400)
+            }
+          } yield {
+            val response = GroupJsonV600(
+              group_id = group.groupId,
+              bank_id = group.bankId,
+              group_name = group.groupName,
+              group_description = group.groupDescription,
+              list_of_roles = group.listOfRoles,
+              is_enabled = group.isEnabled
+            )
+            (response, HttpCode.`201`(callContext))
+          }
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
+      getGroup,
+      implementedInApiVersion,
+      nameOf(getGroup),
+      "GET",
+      "/management/groups/GROUP_ID",
+      "Get Group",
+      s"""Get a group by its ID.
+         |
+         |Requires either:
+         |- CanGetGroupsAtAllBanks (for any group)
+         |- CanGetGroupsAtOneBank (for groups at specific bank)
+         |
+         |${userAuthenticationMessage(true)}
+         |
+         |""".stripMargin,
+      EmptyBody,
+      GroupJsonV600(
+        group_id = "group-id-123",
+        bank_id = Some("gh.29.uk"),
+        group_name = "Teller Group",
+        group_description = "Standard teller roles for branch operations",
+        list_of_roles = List("CanGetCustomer", "CanGetAccount", "CanCreateTransaction"),
+        is_enabled = true
+      ),
+      List(
+        UserNotLoggedIn,
+        UserHasMissingRoles,
+        UnknownError
+      ),
+      List(apiTagGroup),
+      Some(List(canGetGroupsAtAllBanks, canGetGroupsAtOneBank))
+    )
+
+    lazy val getGroup: OBPEndpoint = {
+      case "management" :: "groups" :: groupId :: Nil JsonGet _ => {
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(u), callContext) <- authenticatedAccess(cc)
+            group <- Future {
+              code.group.Group.group.vend.getGroup(groupId)
+            } map {
+              x => unboxFullOrFail(x, callContext, s"$UnknownError Group not found", 404)
+            }
+            _ <- group.bankId match {
+              case Some(bankId) =>
+                NewStyle.function.hasEntitlement(bankId, u.userId, canGetGroupsAtOneBank, callContext)
+              case None =>
+                NewStyle.function.hasEntitlement("", u.userId, canGetGroupsAtAllBanks, callContext)
+            }
+          } yield {
+            val response = GroupJsonV600(
+              group_id = group.groupId,
+              bank_id = group.bankId,
+              group_name = group.groupName,
+              group_description = group.groupDescription,
+              list_of_roles = group.listOfRoles,
+              is_enabled = group.isEnabled
+            )
+            (response, HttpCode.`200`(callContext))
+          }
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
+      getGroups,
+      implementedInApiVersion,
+      nameOf(getGroups),
+      "GET",
+      "/management/groups",
+      "Get Groups",
+      s"""Get all groups. Optionally filter by bank_id.
+         |
+         |Query parameters:
+         |- bank_id (optional): Filter groups by bank. Use "null" or omit for system-level groups.
+         |
+         |Requires either:
+         |- CanGetGroupsAtAllBanks (for any/all groups)
+         |- CanGetGroupsAtOneBank (for groups at specific bank with bank_id parameter)
+         |
+         |${userAuthenticationMessage(true)}
+         |
+         |""".stripMargin,
+      EmptyBody,
+      GroupsJsonV600(
+        groups = List(
+          GroupJsonV600(
+            group_id = "group-id-123",
+            bank_id = Some("gh.29.uk"),
+            group_name = "Teller Group",
+            group_description = "Standard teller roles",
+            list_of_roles = List("CanGetCustomer", "CanGetAccount"),
+            is_enabled = true
+          )
+        )
+      ),
+      List(
+        UserNotLoggedIn,
+        UserHasMissingRoles,
+        UnknownError
+      ),
+      List(apiTagGroup),
+      Some(List(canGetGroupsAtAllBanks, canGetGroupsAtOneBank))
+    )
+
+    lazy val getGroups: OBPEndpoint = {
+      case "management" :: "groups" :: Nil JsonGet req => {
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(u), callContext) <- authenticatedAccess(cc)
+            httpParams <- NewStyle.function.extractHttpParamsFromUrl(cc.url)
+            bankIdParam = httpParams.find(_.name == "bank_id").flatMap(_.values.headOption)
+            bankIdFilter = bankIdParam match {
+              case Some("null") | Some("") => None
+              case Some(id) => Some(id)
+              case None => None
+            }
+            _ <- bankIdFilter match {
+              case Some(bankId) =>
+                NewStyle.function.hasEntitlement(bankId, u.userId, canGetGroupsAtOneBank, callContext)
+              case None =>
+                NewStyle.function.hasEntitlement("", u.userId, canGetGroupsAtAllBanks, callContext)
+            }
+            groups <- bankIdFilter match {
+              case Some(bankId) =>
+                code.group.Group.group.vend.getGroupsByBankId(Some(bankId)) map {
+                  x => unboxFullOrFail(x, callContext, s"$UnknownError Cannot get groups", 400)
+                }
+              case None if bankIdParam.isDefined =>
+                code.group.Group.group.vend.getGroupsByBankId(None) map {
+                  x => unboxFullOrFail(x, callContext, s"$UnknownError Cannot get groups", 400)
+                }
+              case None =>
+                code.group.Group.group.vend.getAllGroups() map {
+                  x => unboxFullOrFail(x, callContext, s"$UnknownError Cannot get groups", 400)
+                }
+            }
+          } yield {
+            val response = GroupsJsonV600(
+              groups = groups.map(group =>
+                GroupJsonV600(
+                  group_id = group.groupId,
+                  bank_id = group.bankId,
+                  group_name = group.groupName,
+                  group_description = group.groupDescription,
+                  list_of_roles = group.listOfRoles,
+                  is_enabled = group.isEnabled
+                )
+              )
+            )
+            (response, HttpCode.`200`(callContext))
+          }
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
+      updateGroup,
+      implementedInApiVersion,
+      nameOf(updateGroup),
+      "PUT",
+      "/management/groups/GROUP_ID",
+      "Update Group",
+      s"""Update a group. All fields are optional.
+         |
+         |Requires either:
+         |- CanUpdateGroupsAtAllBanks (for any group)
+         |- CanUpdateGroupsAtOneBank (for groups at specific bank)
+         |
+         |${userAuthenticationMessage(true)}
+         |
+         |""".stripMargin,
+      PutGroupJsonV600(
+        group_name = Some("Updated Teller Group"),
+        group_description = Some("Updated description"),
+        list_of_roles = Some(List("CanGetCustomer", "CanGetAccount", "CanCreateTransaction", "CanGetTransaction")),
+        is_enabled = Some(true)
+      ),
+      GroupJsonV600(
+        group_id = "group-id-123",
+        bank_id = Some("gh.29.uk"),
+        group_name = "Updated Teller Group",
+        group_description = "Updated description",
+        list_of_roles = List("CanGetCustomer", "CanGetAccount", "CanCreateTransaction", "CanGetTransaction"),
+        is_enabled = true
+      ),
+      List(
+        UserNotLoggedIn,
+        UserHasMissingRoles,
+        InvalidJsonFormat,
+        UnknownError
+      ),
+      List(apiTagGroup),
+      Some(List(canUpdateGroupsAtAllBanks, canUpdateGroupsAtOneBank))
+    )
+
+    lazy val updateGroup: OBPEndpoint = {
+      case "management" :: "groups" :: groupId :: Nil JsonPut json -> _ => {
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(u), callContext) <- authenticatedAccess(cc)
+            putJson <- NewStyle.function.tryons(s"$InvalidJsonFormat The Json body should be the $PutGroupJsonV600", 400, callContext) {
+              json.extract[PutGroupJsonV600]
+            }
+            existingGroup <- Future {
+              code.group.Group.group.vend.getGroup(groupId)
+            } map {
+              x => unboxFullOrFail(x, callContext, s"$UnknownError Group not found", 404)
+            }
+            _ <- existingGroup.bankId match {
+              case Some(bankId) =>
+                NewStyle.function.hasEntitlement(bankId, u.userId, canUpdateGroupsAtOneBank, callContext)
+              case None =>
+                NewStyle.function.hasEntitlement("", u.userId, canUpdateGroupsAtAllBanks, callContext)
+            }
+            updatedGroup <- Future {
+              code.group.Group.group.vend.updateGroup(
+                groupId,
+                putJson.group_name,
+                putJson.group_description,
+                putJson.list_of_roles,
+                putJson.is_enabled
+              )
+            } map {
+              x => unboxFullOrFail(x, callContext, s"$UnknownError Cannot update group", 400)
+            }
+          } yield {
+            val response = GroupJsonV600(
+              group_id = updatedGroup.groupId,
+              bank_id = updatedGroup.bankId,
+              group_name = updatedGroup.groupName,
+              group_description = updatedGroup.groupDescription,
+              list_of_roles = updatedGroup.listOfRoles,
+              is_enabled = updatedGroup.isEnabled
+            )
+            (response, HttpCode.`200`(callContext))
+          }
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
+      deleteGroup,
+      implementedInApiVersion,
+      nameOf(deleteGroup),
+      "DELETE",
+      "/management/groups/GROUP_ID",
+      "Delete Group",
+      s"""Delete a group by its ID.
+         |
+         |Requires either:
+         |- CanDeleteGroupsAtAllBanks (for any group)
+         |- CanDeleteGroupsAtOneBank (for groups at specific bank)
+         |
+         |${userAuthenticationMessage(true)}
+         |
+         |""".stripMargin,
+      EmptyBody,
+      EmptyBody,
+      List(
+        UserNotLoggedIn,
+        UserHasMissingRoles,
+        UnknownError
+      ),
+      List(apiTagGroup),
+      Some(List(canDeleteGroupsAtAllBanks, canDeleteGroupsAtOneBank))
+    )
+
+    lazy val deleteGroup: OBPEndpoint = {
+      case "management" :: "groups" :: groupId :: Nil JsonDelete _ => {
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(u), callContext) <- authenticatedAccess(cc)
+            existingGroup <- Future {
+              code.group.Group.group.vend.getGroup(groupId)
+            } map {
+              x => unboxFullOrFail(x, callContext, s"$UnknownError Group not found", 404)
+            }
+            _ <- existingGroup.bankId match {
+              case Some(bankId) =>
+                NewStyle.function.hasEntitlement(bankId, u.userId, canDeleteGroupsAtOneBank, callContext)
+              case None =>
+                NewStyle.function.hasEntitlement("", u.userId, canDeleteGroupsAtAllBanks, callContext)
+            }
+            deleted <- Future {
+              code.group.Group.group.vend.deleteGroup(groupId)
+            } map {
+              x => unboxFullOrFail(x, callContext, s"$UnknownError Cannot delete group", 400)
+            }
+          } yield {
+            (Full(deleted), HttpCode.`204`(callContext))
+          }
+      }
     }
 
   }
