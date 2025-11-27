@@ -1,96 +1,204 @@
-## OBP API – Docker & Docker Compose Setup
+# OBP-API Docker Development Setup
 
-This project uses Docker and Docker Compose to run the **OBP API** service with Maven and Jetty.
+This Docker Compose setup provides a complete development environment for OBP-API with Redis caching support.
 
-- Java 17 with reflection workaround  
-- Connects to your local Postgres using `host.docker.internal`  
-- Supports separate dev & prod setups
+## Services
 
----
+### 🏦 **obp-api-app** 
+- Main OBP-API application
+- Built with Maven 3 + OpenJDK 17
+- Runs on Jetty 9.4
+- Port: `8080`
 
-## How to use
+### 🔴 **obp-api-redis**
+- Redis cache server
+- Version: Redis 7 Alpine
+- Internal port: `6379`
+- External port: `6380` (configurable)
+- Persistent storage with AOF
 
-> **Make sure you have Docker and Docker Compose installed.**
+## Quick Start
 
-### Set up the database connection
+1. **Prerequisites**
+   - Docker and Docker Compose installed
+   - Local PostgreSQL database running
+   - Props file configured at `obp-api/src/main/resources/props/default.props`
 
-Edit your `default.properties` (or similar config file):
+2. **Start services**
+   ```bash
+   cd development/docker
+   docker-compose up --build
+   ```
+
+3. **Access application**
+   - OBP-API: http://localhost:8080
+   - Redis: `localhost:6380`
+
+## Configuration
+
+### Database Connection
+
+Your `default.props` should use `host.docker.internal` to connect to your local database:
 
 ```properties
-db.url=jdbc:postgresql://host.docker.internal:5432/YOUR_DB_NAME?user=YOUR_DB_USER&password=YOUR_DB_PASSWORD
-````
+db.driver=org.postgresql.Driver
+db.url=jdbc:postgresql://host.docker.internal:5432/obp_mapped?user=obp&password=yourpassword
+```
 
-> Use `host.docker.internal` so the container can reach your local database.
+**Note**: The Docker setup automatically overrides the database URL via environment variable, so you can also configure it without modifying props files.
 
----
+### Redis Configuration
 
-### Build & run (production mode)
+Redis is configured automatically using OBP-API's environment variable override system:
 
-Build the Docker image and run the container:
+```yaml
+# Automatically set by docker-compose.yml:
+OBP_CACHE_REDIS_URL=redis      # Connect to redis service
+OBP_CACHE_REDIS_PORT=6379      # Internal Docker port
+OBP_DB_URL=jdbc:postgresql://host.docker.internal:5432/obp_mapped?user=obp&password=f
+```
+
+### Custom Redis Port
+
+To customize configuration, edit `.env`:
 
 ```bash
+# .env file
+OBP_CACHE_REDIS_PORT=6381
+OBP_DB_URL=jdbc:postgresql://host.docker.internal:5432/mydb?user=myuser&password=mypass
+```
+
+Or set environment variables:
+
+```bash
+export OBP_CACHE_REDIS_PORT=6381
+export OBP_DB_URL="jdbc:postgresql://host.docker.internal:5432/mydb?user=myuser&password=mypass"
 docker-compose up --build
 ```
 
-The service will be available at [http://localhost:8080](http://localhost:8080).
+## Container Names
 
----
+All containers use consistent `obp-api-*` naming:
 
-## Development tips
+- `obp-api-app` - Main application
+- `obp-api-redis` - Redis cache server
+- `obp-api-network` - Docker network
+- `obp-api-redis-data` - Redis data volume
 
-For live code updates without rebuilding:
+## Development Features
 
-* Use the provided `docker-compose.override.yml` which mounts only:
+### Props File Override
 
-  ```yaml
-  volumes:
-    - ../obp-api:/app/obp-api
-    - ../obp-commons:/app/obp-commons
-  ```
-* This keeps other built files (like `entrypoint.sh`) intact.
-* Avoid mounting the full `../:/app` because it overwrites the built image.
-
----
-
-## Useful commands
-
-Rebuild the image and restart:
-
-```bash
-docker-compose up --build
+The setup mounts your local props directory:
+```yaml
+volumes:
+  - ../../obp-api/src/main/resources/props:/app/props
 ```
 
-Stop the container:
+Environment variables take precedence over props files using OBP's built-in system:
+- `cache.redis.url` → `OBP_CACHE_REDIS_URL`
+- `cache.redis.port` → `OBP_CACHE_REDIS_PORT`
+- `db.url` → `OBP_DB_URL`
 
+### Live Development
+
+For code changes without rebuilds:
+```yaml
+# docker-compose.override.yml provides:
+volumes:
+  - ../../obp-api:/app/obp-api
+  - ../../obp-commons:/app/obp-commons
+```
+
+## Useful Commands
+
+### Service Management
 ```bash
+# Start services
+docker-compose up -d
+
+# View logs
+docker-compose logs obp-api-app
+docker-compose logs obp-api-redis
+
+# Stop services  
 docker-compose down
+
+# Rebuild and restart
+docker-compose up --build
 ```
 
----
-
-## Before first run
-
-Make sure your entrypoint script is executable:
-
+### Redis Operations
 ```bash
-chmod +x docker/entrypoint.sh
+# Connect to Redis CLI
+docker exec -it obp-api-redis redis-cli
+
+# Check Redis keys
+docker exec obp-api-redis redis-cli KEYS "*"
+
+# Monitor Redis commands
+docker exec obp-api-redis redis-cli MONITOR
 ```
 
----
+### Container Inspection
+```bash
+# List containers
+docker-compose ps
+
+# Execute commands in containers
+docker exec -it obp-api-app bash
+docker exec -it obp-api-redis sh
+```
+
+## Troubleshooting
+
+### Redis Connection Issues
+- Check if `OBP_CACHE_REDIS_URL=redis` is set correctly
+- Verify Redis container is running: `docker-compose ps`
+- Test Redis connection: `docker exec obp-api-redis redis-cli ping`
+
+### Database Connection Issues  
+- Ensure local PostgreSQL is running
+- Verify `host.docker.internal` resolves: `docker exec obp-api-app ping host.docker.internal`
+- Check props file is mounted: `docker exec obp-api-app ls /app/props/`
+
+### Props Loading Issues
+- Check external props are detected: `docker-compose logs obp-api-app | grep "external props"`
+- Verify environment variables: `docker exec obp-api-app env | grep OBP_`
+
+## Environment Variables
+
+The setup uses OBP-API's built-in environment override system:
+
+| Props File Property | Environment Variable | Default | Description |
+|---------------------|---------------------|---------|-------------|
+| `cache.redis.url` | `OBP_CACHE_REDIS_URL` | `redis` | Redis hostname |
+| `cache.redis.port` | `OBP_CACHE_REDIS_PORT` | `6379` | Redis port |
+| `cache.redis.password` | `OBP_CACHE_REDIS_PASSWORD` | - | Redis password |
+| `db.url` | `OBP_DB_URL` | `jdbc:postgresql://host.docker.internal:5432/obp_mapped?user=obp&password=f` | Database connection URL |
+
+## Network Architecture
+
+```
+Host Machine
+├── PostgreSQL :5432
+└── Docker Network (obp-api-network)
+    ├── obp-api-app :8080 → :8080
+    └── obp-api-redis :6379 → :6380
+```
+
+- OBP-API connects to Redis via internal Docker network (`redis:6379`)
+- OBP-API connects to PostgreSQL via `host.docker.internal:5432`
+- Redis is accessible from host via `localhost:6380`
 
 ## Notes
 
-* The container uses `MAVEN_OPTS` to pass JVM `--add-opens` flags needed by Lift.
-* In production, avoid volume mounts for better performance and consistency.
+- Container builds use multi-stage Dockerfile for optimized images
+- Redis data persists in `obp-api-redis-data` volume
+- Props files are mounted from host for easy development
+- Environment variables override props file values automatically
+- All containers restart automatically unless stopped manually
 
 ---
 
-That’s it — now you can run:
-
-```bash
-docker-compose up --build
-```
-
-and start coding!
-
-```
+🚀 **Ready to develop!** Run `docker-compose up --build` and start coding.
