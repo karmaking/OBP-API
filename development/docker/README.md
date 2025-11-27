@@ -1,14 +1,15 @@
 # OBP-API Docker Development Setup
 
-This Docker Compose setup provides a complete development environment for OBP-API with Redis caching support.
+This Docker Compose setup provides a complete **live development environment** for OBP-API with Redis caching support and hot reloading capabilities.
 
 ## Services
 
 ### 🏦 **obp-api-app** 
-- Main OBP-API application
-- Built with Maven 3 + OpenJDK 17
-- Runs on Jetty 9.4
+- Main OBP-API application with **live development mode**
+- Built with Maven 3.9.6 + OpenJDK 17
+- Runs with Jetty Maven Plugin (`mvn jetty:run`)
 - Port: `8080`
+- **Features**: Hot reloading, incremental compilation, live props changes
 
 ### 🔴 **obp-api-redis**
 - Redis cache server
@@ -38,14 +39,16 @@ This Docker Compose setup provides a complete development environment for OBP-AP
 
 ### Database Connection
 
-Your `default.props` should use `host.docker.internal` to connect to your local database:
+You can configure the database connection in multiple ways:
 
+**Option 1: Props file** (traditional):
 ```properties
 db.driver=org.postgresql.Driver
 db.url=jdbc:postgresql://host.docker.internal:5432/obp_mapped?user=obp&password=yourpassword
 ```
 
-**Note**: The Docker setup automatically overrides the database URL via environment variable, so you can also configure it without modifying props files.
+**Option 2: Environment variables** (recommended for Docker):
+The setup automatically overrides database settings via environment variables, so you can configure without modifying props files.
 
 ### Redis Configuration
 
@@ -100,14 +103,20 @@ Environment variables take precedence over props files using OBP's built-in syst
 - `cache.redis.port` → `OBP_CACHE_REDIS_PORT`
 - `db.url` → `OBP_DB_URL`
 
-### Live Development
+### Live Development Features
 
-For code changes without rebuilds:
+**🔥 Hot Reloading**: `Dockerfile.dev` uses `mvn jetty:run` for automatic recompilation and reloading:
+- ✅ **Scala code changes** - Automatic recompilation and reload
+- ✅ **Props file changes** - Live configuration updates via volume mount
+- ✅ **Resource changes** - Instant refresh without container restart
+- ✅ **Incremental builds** - Only changed files are recompiled
+
+**Volume Mounts for Development**:
 ```yaml
-# docker-compose.override.yml provides:
+# Automatically mounted by docker-compose:
 volumes:
-  - ../../obp-api:/app/obp-api
-  - ../../obp-commons:/app/obp-commons
+  - ../../obp-api/src/main/resources/props:/app/props  # Live props updates
+  # Source code is copied during build for optimal performance
 ```
 
 ## Useful Commands
@@ -182,23 +191,51 @@ The setup uses OBP-API's built-in environment override system:
 ```
 Host Machine
 ├── PostgreSQL :5432
+├── Props Files (mounted) → Docker Container
 └── Docker Network (obp-api-network)
-    ├── obp-api-app :8080 → :8080
-    └── obp-api-redis :6379 → :6380
+    ├── obp-api-app :8080 → :8080 (Live Development Mode)
+    └── obp-api-redis :6379 → :6380 (Persistent Cache)
 ```
 
-- OBP-API connects to Redis via internal Docker network (`redis:6379`)
-- OBP-API connects to PostgreSQL via `host.docker.internal:5432`
-- Redis is accessible from host via `localhost:6380`
+**Connection Flow**:
+- OBP-API ↔ Redis: Internal Docker network (`redis:6379`)
+- OBP-API ↔ PostgreSQL: Host connection (`host.docker.internal:5432`) 
+- Props Files: Live mounted from host (`/app/props/`)
+- Redis External: Accessible via `localhost:6380`
 
-## Notes
+## Development Benefits
 
-- Container builds use multi-stage Dockerfile for optimized images
+### ⚡ **Live Development Mode** (`Dockerfile.dev`)
+- **Single-stage build** optimized for development speed
+- **Hot reloading** with `mvn jetty:run` - code changes are reflected instantly
+- **Incremental compilation** - only changed files are rebuilt
+- **Live props updates** - configuration changes without container restart
+- **Security compliant** - selective file copying (SonarQube approved)
+
+### 🔧 **Development vs Production**
+- **Current setup**: Uses `Dockerfile.dev` for optimal development experience
+- **Production ready**: Can switch to `Dockerfile` for multi-stage production builds
+- **Best of both**: Live development with production-grade security practices
+
+### 📋 **Additional Notes**
 - Redis data persists in `obp-api-redis-data` volume
-- Props files are mounted from host for easy development
+- Props files are live-mounted from host for instant updates
 - Environment variables override props file values automatically
+- Java 17 with proper module system compatibility
 - All containers restart automatically unless stopped manually
 
 ---
 
-🚀 **Ready to develop!** Run `docker-compose up --build` and start coding.
+🚀 **Ready for live development!** 
+
+```bash
+cd development/docker
+docker-compose up --build
+# Start coding - changes are reflected automatically! 🔥
+```
+
+**Pro Tips**:
+- Make code changes and see them instantly without rebuilding
+- Update props files and they're loaded immediately  
+- Use `docker-compose logs obp-api -f` to watch live application logs
+- Redis caching speeds up API responses significantly
