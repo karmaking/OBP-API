@@ -1,7 +1,10 @@
-# Existing configuration exclusions
+# Configuration files - exclude potentially sensitive props but allow templates and default configs
 obp-api/src/main/resources/props/*
 !obp-api/src/main/resources/props/sample.props.template
 !obp-api/src/main/resources/props/test.default.props.template
+!obp-api/src/main/resources/props/test.default.props
+!obp-api/src/main/resources/props/default.props
+!obp-api/src/main/resources/props/development.default.props
 
 # IDE and editor files
 .idea/
@@ -60,8 +63,8 @@ README.md
 
 # Docker files themselves (avoid recursive copies)
 Dockerfile
-docker/
-!docker/entrypoint.sh
+development/docker/
+!development/docker/entrypoint.sh
 
 # Test and development files
 ideas/
