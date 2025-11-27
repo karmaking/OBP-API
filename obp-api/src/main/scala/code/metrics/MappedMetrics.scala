@@ -111,18 +111,6 @@ object MappedMetrics extends APIMetrics with MdcLoggable{
     if (useStableCache) cachedStableMetrics else cachedAllMetrics
   }
 
-  // If consumerId is Int, if consumerId is not Int, convert it to primary key.
-  // Since version 3.1.0 we do not use a primary key externally. I.e. we use UUID instead of it as the value exposed to end users.
-  private def consumerIdToPrimaryKey(consumerId: String): Option[String] = consumerId match {
-    // Do NOT search by primary key at all
-    case str if StringUtils.isBlank(str) => Option.empty[String] 
-    // Search by primary key
-    case str if str.matches("\\d+") => Some(str) 
-    // Get consumer by UUID, extract a primary key and then search by the primary key
-    // This can not be empty here, it need return the value back as the parameter 
-    case str => MappedConsumersProvider.getConsumerByConsumerId(str).map(_.id.get.toString).toOption.orElse(Some(str)) 
-  }
-
   override def saveMetric(userId: String, url: String, date: Date, duration: Long, userName: String, appName: String, developerEmail: String, consumerId: String, implementedByPartialFunction: String, implementedInVersion: String, verb: String, httpCode: Option[Int], correlationId: String,
                           responseBody: String, sourceIp: String, targetIp: String): Unit = {
     val metric = MappedMetric.create
@@ -243,10 +231,7 @@ object MappedMetrics extends APIMetrics with MdcLoggable{
         }
     }
     // he optional variables:
-    val consumerId = queryParams.collect { case OBPConsumerId(value) => value}.headOption
-      .flatMap(consumerIdToPrimaryKey)
-      .map(By(MappedMetric.consumerId, _) )
-
+    val consumerId = queryParams.collect { case OBPConsumerId(value) => By(MappedMetric.consumerId, value)}.headOption
     val bankId = queryParams.collect { case OBPBankId(value) => Like(MappedMetric.url, s"%banks/$value%") }.headOption
     val userId = queryParams.collect { case OBPUserId(value) => By(MappedMetric.userId, value) }.headOption
     val url = queryParams.collect { case OBPUrl(value) => By(MappedMetric.url, value) }.headOption
@@ -359,7 +344,7 @@ object MappedMetrics extends APIMetrics with MdcLoggable{
       val startTime = System.currentTimeMillis()
       val fromDate = queryParams.collect { case OBPFromDate(value) => value }.headOption
       val toDate = queryParams.collect { case OBPToDate(value) => value }.headOption
-      val consumerId = queryParams.collect { case OBPConsumerId(value) => value }.headOption.flatMap(consumerIdToPrimaryKey)
+      val consumerId = queryParams.collect { case OBPConsumerId(value) => value }.headOption
       val userId = queryParams.collect { case OBPUserId(value) => value }.headOption
       val url = queryParams.collect { case OBPUrl(value) => value }.headOption
       val appName = queryParams.collect { case OBPAppName(value) => value }.headOption
@@ -476,7 +461,7 @@ object MappedMetrics extends APIMetrics with MdcLoggable{
     {
       val fromDate = queryParams.collect { case OBPFromDate(value) => value }.headOption
       val toDate = queryParams.collect { case OBPToDate(value) => value }.headOption
-      val consumerId = queryParams.collect { case OBPConsumerId(value) => value }.headOption.flatMap(consumerIdToPrimaryKey)
+      val consumerId = queryParams.collect { case OBPConsumerId(value) => value }.headOption
       val userId = queryParams.collect { case OBPUserId(value) => value }.headOption
       val url = queryParams.collect { case OBPUrl(value) => value }.headOption
       val appName = queryParams.collect { case OBPAppName(value) => value }.headOption
@@ -559,7 +544,7 @@ object MappedMetrics extends APIMetrics with MdcLoggable{
   
       val fromDate = queryParams.collect { case OBPFromDate(value) => value }.headOption
       val toDate = queryParams.collect { case OBPToDate(value) => value }.headOption
-      val consumerId = queryParams.collect { case OBPConsumerId(value) => value }.headOption.flatMap(consumerIdToPrimaryKey)
+      val consumerId = queryParams.collect { case OBPConsumerId(value) => value }.headOption
       val userId = queryParams.collect { case OBPUserId(value) => value }.headOption
       val url = queryParams.collect { case OBPUrl(value) => value }.headOption
       val appName = queryParams.collect { case OBPAppName(value) => value }.headOption
