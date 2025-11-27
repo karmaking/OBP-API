@@ -2,8 +2,18 @@ FROM maven:3.9.6-eclipse-temurin-17
 
 WORKDIR /app
 
-# Copy all project files into container
-COPY . .
+# Copy Maven configuration files
+COPY pom.xml .
+COPY build.sbt .
+
+# Copy source code and necessary project files
+COPY obp-api/ ./obp-api/
+COPY obp-commons/ ./obp-commons/
+COPY project/ ./project/
+
+# Copy other necessary files for the build
+COPY jitpack.yml .
+COPY web-app_2_3.dtd .
 
 EXPOSE 8080
 
