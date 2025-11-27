@@ -1,45 +1,112 @@
 package code.group
 
-import net.liftweb.common.Box
-import net.liftweb.util.SimpleInjector
+import code.util.MappedUUID
+import net.liftweb.common.{Box, Empty, Full}
+import net.liftweb.mapper._
+import net.liftweb.util.Helpers.tryo
 
 import scala.concurrent.Future
+import com.openbankproject.commons.ExecutionContext.Implicits.global
 
-object Group extends SimpleInjector {
-  val group = new Inject(buildOne _) {}
+object MappedGroupProvider extends GroupProvider {
   
-  def buildOne: GroupProvider = MappedGroupProvider
-}
-
-trait GroupProvider {
-  def createGroup(
+  override def createGroup(
     bankId: Option[String],
     groupName: String,
     groupDescription: String,
     listOfRoles: List[String],
     isEnabled: Boolean
-  ): Box[Group]
+  ): Box[GroupTrait] = {
+    tryo {
+      Group.create
+        .BankId(bankId.getOrElse(""))
+        .GroupName(groupName)
+        .GroupDescription(groupDescription)
+        .ListOfRoles(listOfRoles.mkString(","))
+        .IsEnabled(isEnabled)
+        .saveMe()
+    }
+  }
   
-  def getGroup(groupId: String): Box[Group]
-  def getGroupsByBankId(bankId: Option[String]): Future[Box[List[Group]]]
-  def getAllGroups(): Future[Box[List[Group]]]
+  override def getGroup(groupId: String): Box[GroupTrait] = {
+    Group.find(By(Group.GroupId, groupId))
+  }
   
-  def updateGroup(
+  override def getGroupsByBankId(bankId: Option[String]): Future[Box[List[GroupTrait]]] = {
+    Future {
+      tryo {
+        bankId match {
+          case Some(id) => 
+            Group.findAll(By(Group.BankId, id))
+          case None => 
+            Group.findAll(By(Group.BankId, ""))
+        }
+      }
+    }
+  }
+  
+  override def getAllGroups(): Future[Box[List[GroupTrait]]] = {
+    Future {
+      tryo {
+        Group.findAll()
+      }
+    }
+  }
+  
+  override def updateGroup(
     groupId: String,
     groupName: Option[String],
     groupDescription: Option[String],
     listOfRoles: Option[List[String]],
     isEnabled: Option[Boolean]
-  ): Box[Group]
+  ): Box[GroupTrait] = {
+    Group.find(By(Group.GroupId, groupId)).flatMap { group =>
+      tryo {
+        groupName.foreach(name => group.GroupName(name))
+        groupDescription.foreach(desc => group.GroupDescription(desc))
+        listOfRoles.foreach(roles => group.ListOfRoles(roles.mkString(",")))
+        isEnabled.foreach(enabled => group.IsEnabled(enabled))
+        group.saveMe()
+      }
+    }
+  }
   
-  def deleteGroup(groupId: String): Box[Boolean]
+  override def deleteGroup(groupId: String): Box[Boolean] = {
+    Group.find(By(Group.GroupId, groupId)).flatMap { group =>
+      tryo {
+        group.delete_!
+      }
+    }
+  }
 }
 
-trait Group {
-  def groupId: String
-  def bankId: Option[String]
-  def groupName: String
-  def groupDescription: String
-  def listOfRoles: List[String]
-  def isEnabled: Boolean
+class Group extends GroupTrait with LongKeyedMapper[Group] with IdPK with CreatedUpdated {
+  
+  def getSingleton = Group
+  
+  object GroupId extends MappedUUID(this)
+  object BankId extends MappedString(this, 255) // Empty string for system-level groups
+  object GroupName extends MappedString(this, 255)
+  object GroupDescription extends MappedText(this)
+  object ListOfRoles extends MappedText(this) // Comma-separated list of roles
+  object IsEnabled extends MappedBoolean(this)
+  
+  override def groupId: String = GroupId.get.toString
+  override def bankId: Option[String] = {
+    val id = BankId.get
+    if (id == null || id.isEmpty) None else Some(id)
+  }
+  override def groupName: String = GroupName.get
+  override def groupDescription: String = GroupDescription.get
+  override def listOfRoles: List[String] = {
+    val rolesStr = ListOfRoles.get
+    if (rolesStr == null || rolesStr.isEmpty) List.empty
+    else rolesStr.split(",").map(_.trim).filter(_.nonEmpty).toList
+  }
+  override def isEnabled: Boolean = IsEnabled.get
+}
+
+object Group extends Group with LongKeyedMetaMapper[Group] {
+  override def dbTableName = "Group" // define the DB table name
+  override def dbIndexes = Index(GroupId) :: Index(BankId) :: super.dbIndexes
 }
