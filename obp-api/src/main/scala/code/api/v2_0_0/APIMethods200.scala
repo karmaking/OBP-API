@@ -1318,7 +1318,7 @@ trait APIMethods200 {
         |""",
       createUserJson,
       userJsonV200,
-      List(UserNotLoggedIn, InvalidJsonFormat, InvalidStrongPasswordFormat ,"Error occurred during user creation.", "User with the same username already exists." , UnknownError),
+      List(UserNotLoggedIn, InvalidJsonFormat, InvalidStrongPasswordFormat, DuplicateUsername, "Error occurred during user creation.", UnknownError),
       List(apiTagUser, apiTagOnboarding))
 
     lazy val createUser: OBPEndpoint = {
@@ -1331,7 +1331,7 @@ trait APIMethods200 {
             _ <- Helper.booleanToFuture(ErrorMessages.InvalidStrongPasswordFormat, 400, cc.callContext) {
               fullPasswordValidation(postedData.password)
             }
-            _ <- Helper.booleanToFuture(s"$InvalidJsonFormat User with the same username already exists.", 409, cc.callContext) {
+            _ <- Helper.booleanToFuture(ErrorMessages.DuplicateUsername, 409, cc.callContext) {
               AuthUser.find(By(AuthUser.username, postedData.username)).isEmpty
             }
             userCreated <- Future {

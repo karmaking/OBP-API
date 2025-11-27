@@ -283,6 +283,10 @@ object ErrorMessages {
   val InvalidConsentIdUsage = "OBP-20256: Consent-Id must not be used for this API Endpoint. "
   val NotValidRfc7231Date = "OBP-20257: Request header Date is not in accordance with RFC 7231 "
 
+  val DuplicateUsername = "OBP-20258: Duplicate Username. Cannot create Username because it already exists. "
+
+
+
   // X.509
   val X509GeneralError = "OBP-20300: PEM Encoded Certificate issue."
   val X509ParsingFailed = "OBP-20301: Parsing failed for PEM Encoded Certificate."
