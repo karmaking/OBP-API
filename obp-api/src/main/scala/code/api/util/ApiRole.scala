@@ -263,6 +263,9 @@ object ApiRole extends MdcLoggable{
   case class CanDeleteEntitlementAtAnyBank(requiresBankId: Boolean = false) extends ApiRole
   lazy val canDeleteEntitlementAtAnyBank = CanDeleteEntitlementAtAnyBank()
 
+  case class CanGetRolesWithEntitlementCountsAtAllBanks(requiresBankId: Boolean = false) extends ApiRole
+  lazy val canGetRolesWithEntitlementCountsAtAllBanks = CanGetRolesWithEntitlementCountsAtAllBanks()
+
   case class CanGetConsumers(requiresBankId: Boolean = false) extends ApiRole
   lazy val canGetConsumers = CanGetConsumers()
 

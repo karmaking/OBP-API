@@ -525,6 +525,26 @@ object JSONFactory600 extends CustomJsonFormats with MdcLoggable{
     )
   }
 
+  def createRoleWithEntitlementCountJson(role: String, count: Int): RoleWithEntitlementCountJsonV600 = {
+    // Check if the role requires a bank ID by looking it up in ApiRole
+    val requiresBankId = try {
+      code.api.util.ApiRole.valueOf(role).requiresBankId
+    } catch {
+      case _: IllegalArgumentException => false
+    }
+    RoleWithEntitlementCountJsonV600(
+      role = role,
+      requires_bank_id = requiresBankId,
+      entitlement_count = count
+    )
+  }
+
+  def createRolesWithEntitlementCountsJson(rolesWithCounts: List[(String, Int)]): RolesWithEntitlementCountsJsonV600 = {
+    RolesWithEntitlementCountsJsonV600(rolesWithCounts.map { case (role, count) => 
+      createRoleWithEntitlementCountJson(role, count)
+    })
+  }
+
 case class ProvidersJsonV600(providers: List[String])
 
 case class DynamicEntityIssueJsonV600(
@@ -590,5 +610,13 @@ case class GroupJsonV600(
 )
 
 case class GroupsJsonV600(groups: List[GroupJsonV600])
+
+case class RoleWithEntitlementCountJsonV600(
+  role: String,
+  requires_bank_id: Boolean,
+  entitlement_count: Int
+)
+
+case class RolesWithEntitlementCountsJsonV600(roles: List[RoleWithEntitlementCountJsonV600])
 
 }

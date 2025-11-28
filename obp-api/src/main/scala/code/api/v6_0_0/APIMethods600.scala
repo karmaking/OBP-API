@@ -5,6 +5,7 @@ import code.api.{DirectLogin, ObpApiFailure}
 import code.api.ResourceDocs1_4_0.SwaggerDefinitionsJSON._
 import code.api.cache.Caching
 import code.api.util.APIUtil._
+import code.api.util.ApiRole
 import code.api.util.ApiRole._
 import code.api.util.ApiTag._
 import code.api.util.ErrorMessages.{$UserNotLoggedIn, InvalidDateFormat, InvalidJsonFormat, UnknownError, _}
@@ -20,7 +21,7 @@ import code.api.v4_0_0.CallLimitPostJsonV400
 import code.api.v4_0_0.JSONFactory400.createCallsLimitJson
 import code.api.v5_0_0.JSONFactory500
 import code.api.v5_1_0.{JSONFactory510, PostCustomerLegalNameJsonV510}
-import code.api.v6_0_0.JSONFactory600.{DynamicEntityDiagnosticsJsonV600, DynamicEntityIssueJsonV600, GroupJsonV600, GroupsJsonV600, PostGroupJsonV600, PutGroupJsonV600, ReferenceTypeJsonV600, ReferenceTypesJsonV600, ValidateUserEmailJsonV600, ValidateUserEmailResponseJsonV600, createActiveCallLimitsJsonV600, createCallLimitJsonV600, createCurrentUsageJson}
+import code.api.v6_0_0.JSONFactory600.{DynamicEntityDiagnosticsJsonV600, DynamicEntityIssueJsonV600, GroupJsonV600, GroupsJsonV600, PostGroupJsonV600, PutGroupJsonV600, ReferenceTypeJsonV600, ReferenceTypesJsonV600, RoleWithEntitlementCountJsonV600, RolesWithEntitlementCountsJsonV600, ValidateUserEmailJsonV600, ValidateUserEmailResponseJsonV600, createActiveCallLimitsJsonV600, createCallLimitJsonV600, createCurrentUsageJson}
 import code.api.v6_0_0.OBPAPI6_0_0
 import code.metrics.APIMetrics
 import code.bankconnectors.LocalMappedConnectorInternal
@@ -2460,6 +2461,72 @@ trait APIMethods600 {
             // STEP 10: Return JSON response
             val json = JSONFactory200.createUserJSONfromAuthUser(userCreated)
             (json, HttpCode.`201`(cc.callContext))
+          }
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
+      getRolesWithEntitlementCountsAtAllBanks,
+      implementedInApiVersion,
+      nameOf(getRolesWithEntitlementCountsAtAllBanks),
+      "GET",
+      "/management/roles-with-entitlement-counts",
+      "Get Roles with Entitlement Counts",
+      s"""Returns all available roles with the count of entitlements that use each role.
+         |
+         |This endpoint provides statistics about role usage across all banks by counting 
+         |how many entitlements have been granted for each role.
+         |
+         |${userAuthenticationMessage(true)}
+         |
+         |Requires the CanGetRolesWithEntitlementCountsAtAllBanks role.
+         |
+         |""",
+      EmptyBody,
+      RolesWithEntitlementCountsJsonV600(
+        roles = List(
+          RoleWithEntitlementCountJsonV600(
+            role = "CanGetCustomer",
+            requires_bank_id = true,
+            entitlement_count = 5
+          ),
+          RoleWithEntitlementCountJsonV600(
+            role = "CanGetBank",
+            requires_bank_id = false,
+            entitlement_count = 3
+          )
+        )
+      ),
+      List(
+        UserNotLoggedIn,
+        UserHasMissingRoles,
+        UnknownError
+      ),
+      List(apiTagRole, apiTagEntitlement),
+      Some(List(canGetRolesWithEntitlementCountsAtAllBanks))
+    )
+
+    lazy val getRolesWithEntitlementCountsAtAllBanks: OBPEndpoint = {
+      case "management" :: "roles-with-entitlement-counts" :: Nil JsonGet _ => {
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(u), callContext) <- authenticatedAccess(cc)
+            
+            // Get all available roles
+            allRoles = ApiRole.availableRoles.sorted
+            
+            // Get entitlement counts for each role
+            rolesWithCounts <- Future.sequence {
+              allRoles.map { role =>
+                Entitlement.entitlement.vend.getEntitlementsByRoleFuture(role).map { entitlementsBox =>
+                  val count = entitlementsBox.map(_.length).getOrElse(0)
+                  (role, count)
+                }
+              }
+            }
+          } yield {
+            val json = JSONFactory600.createRolesWithEntitlementCountsJson(rolesWithCounts)
+            (json, HttpCode.`200`(callContext))
           }
       }
     }
