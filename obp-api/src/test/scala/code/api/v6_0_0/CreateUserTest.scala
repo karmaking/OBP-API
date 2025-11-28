@@ -2,6 +2,7 @@ package code.api.v6_0_0
 
 import code.api.util.APIUtil.OAuth._
 import code.api.util.ErrorMessages
+import code.api.util.ErrorMessages.InvalidStrongPasswordFormat
 import code.consumer.Consumers
 import code.model.dataAccess.AuthUser
 import com.openbankproject.commons.util.ApiVersion
@@ -282,7 +283,7 @@ class CreateUserTest extends V600ServerSetup {
 
       And("The error should be InvalidStrongPasswordFormat")
       val errorMessage = response.body.extract[ErrorMessageV600].message
-      errorMessage should include("Invalid Strong Password Format")
+      errorMessage should include(InvalidStrongPasswordFormat)
       errorMessage should not include("OBP-10001")
     }
 
@@ -304,7 +305,7 @@ class CreateUserTest extends V600ServerSetup {
 
       And("The error should be InvalidStrongPasswordFormat")
       val errorMessage = response.body.extract[ErrorMessageV600].message
-      errorMessage should include("Invalid Strong Password Format")
+      errorMessage should include(InvalidStrongPasswordFormat)
     }
 
     scenario("Fail to create user - password missing special character (10-16 chars)", ApiEndpointCreateUser, VersionOfApi) {
@@ -325,7 +326,7 @@ class CreateUserTest extends V600ServerSetup {
 
       And("The error should be InvalidStrongPasswordFormat")
       val errorMessage = response.body.extract[ErrorMessageV600].message
-      errorMessage should include("Invalid Strong Password Format")
+      errorMessage should include(InvalidStrongPasswordFormat)
     }
 
     scenario("Fail to create user - password missing digit (10-16 chars)", ApiEndpointCreateUser, VersionOfApi) {
@@ -346,7 +347,7 @@ class CreateUserTest extends V600ServerSetup {
 
       And("The error should be InvalidStrongPasswordFormat")
       val errorMessage = response.body.extract[ErrorMessageV600].message
-      errorMessage should include("Invalid Strong Password Format")
+      errorMessage should include(InvalidStrongPasswordFormat)
     }
 
     scenario("Fail to create user - password missing lowercase letter (10-16 chars)", ApiEndpointCreateUser, VersionOfApi) {
@@ -367,7 +368,7 @@ class CreateUserTest extends V600ServerSetup {
 
       And("The error should be InvalidStrongPasswordFormat")
       val errorMessage = response.body.extract[ErrorMessageV600].message
-      errorMessage should include("Invalid Strong Password Format")
+      errorMessage should include(InvalidStrongPasswordFormat)
     }
 
     scenario("Fail to create user - empty username", ApiEndpointCreateUser, VersionOfApi) {
@@ -431,7 +432,7 @@ class CreateUserTest extends V600ServerSetup {
 
       And("The error should be InvalidStrongPasswordFormat")
       val errorMessage = response.body.extract[ErrorMessageV600].message
-      errorMessage should include("Invalid Strong Password Format")
+      errorMessage should include(InvalidStrongPasswordFormat)
     }
 
     scenario("Successfully create user - password exactly 17 chars (no special requirements)", ApiEndpointCreateUser, VersionOfApi) {
