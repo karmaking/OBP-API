@@ -140,6 +140,11 @@ class MappedEntitlement extends Entitlement
   object mUserId extends UUIDString(this)
   object mRoleName extends MappedString(this, 64)
   object mCreatedByProcess extends MappedString(this, 255)
+  
+  object entitlement_request_id extends MappedUUID(this) {
+    override def dbColumnName = "entitlement_request_id"
+    override def defaultValue = null
+  }
 
   override def entitlementId: String = mEntitlementId.get.toString
   override def bankId: String = mBankId.get
@@ -147,6 +152,14 @@ class MappedEntitlement extends Entitlement
   override def roleName: String = mRoleName.get
   override def createdByProcess: String = 
     if(mCreatedByProcess.get == null || mCreatedByProcess.get.isEmpty) "manual" else mCreatedByProcess.get
+  override def entitlementRequestId: Option[String] = {
+    entitlement_request_id.get match {
+      case uuid if uuid.toString.nonEmpty && uuid.toString != "00000000-0000-0000-0000-000000000000" => 
+        Some(uuid.toString)
+      case _ => 
+        None
+    }
+  }
 }
 
 

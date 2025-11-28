@@ -37,4 +37,5 @@ trait Entitlement {
   def userId : String
   def roleName : String
   def createdByProcess : String
+  def entitlementRequestId: Option[String]
 }
