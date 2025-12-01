@@ -1,6 +1,7 @@
 package code.api.v6_0_0
 
 import code.accountattribute.AccountAttributeX
+import code.api.Constant
 import code.api.{DirectLogin, ObpApiFailure}
 import code.api.ResourceDocs1_4_0.SwaggerDefinitionsJSON._
 import code.api.cache.Caching
@@ -2465,10 +2466,10 @@ trait APIMethods600 {
               val emailValidationLink = postedData.validating_application match {
                 case Some("EXTERNAL_PORTAL") =>
                   // Use portal_external_url property if available, otherwise fall back to hostname
-                  APIUtil.getPropsValue("portal_external_url", Constant.HostName) + "/" + code.model.dataAccess.AuthUser.validateUserPath.mkString("/") + "/" + java.net.URLEncoder.encode(savedUser.getUniqueId(), "UTF-8")
+                  APIUtil.getPropsValue("portal_external_url", Constant.HostName) + "/" + code.model.dataAccess.AuthUser.validateUserPath.mkString("/") + "/" + java.net.URLEncoder.encode(savedUser.uniqueId.get, "UTF-8")
                 case _ =>
                   // Default to the API hostname
-                  Constant.HostName + "/" + code.model.dataAccess.AuthUser.validateUserPath.mkString("/") + "/" + java.net.URLEncoder.encode(savedUser.getUniqueId(), "UTF-8")
+                  Constant.HostName + "/" + code.model.dataAccess.AuthUser.validateUserPath.mkString("/") + "/" + java.net.URLEncoder.encode(savedUser.uniqueId.get, "UTF-8")
               }
 
               val textContent = Some(s"Welcome! Please validate your account by clicking the following link: $emailValidationLink")
@@ -2477,7 +2478,7 @@ trait APIMethods600 {
 
               val emailContent = code.api.util.CommonsEmailWrapper.EmailContent(
                 from = code.model.dataAccess.AuthUser.emailFrom,
-                to = List(savedUser.getEmail),
+                to = List(savedUser.email.get),
                 bcc = code.model.dataAccess.AuthUser.bccEmail.toList,
                 subject = subjectContent,
                 textContent = textContent,
