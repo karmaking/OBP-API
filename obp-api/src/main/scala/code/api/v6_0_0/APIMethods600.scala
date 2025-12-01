@@ -2498,6 +2498,64 @@ trait APIMethods600 {
     }
 
     staticResourceDocs += ResourceDoc(
+      deleteEntitlement,
+      implementedInApiVersion,
+      nameOf(deleteEntitlement),
+      "DELETE",
+      "/users/USER_ID/entitlement/ENTITLEMENT_ID",
+      "Delete Entitlement",
+      s"""Delete Entitlement specified by ENTITLEMENT_ID for an user specified by USER_ID
+         |
+         |${authenticationRequiredMessage(true)}
+         |
+         |Requires the $canDeleteEntitlementAtAnyBank role.
+         |
+         |This endpoint is idempotent - if the entitlement does not exist, it returns 204 No Content.
+         |
+      """.stripMargin,
+      EmptyBody,
+      EmptyBody,
+      List(
+        $UserNotLoggedIn,
+        UserHasMissingRoles,
+        UserDoesNotHaveEntitlement,
+        EntitlementCannotBeDeleted,
+        UnknownError
+      ),
+      List(apiTagRole, apiTagUser, apiTagEntitlement),
+      Some(List(canDeleteEntitlementAtAnyBank))
+    )
+
+    lazy val deleteEntitlement: OBPEndpoint = {
+      case "users" :: userId :: "entitlement" :: entitlementId :: Nil JsonDelete _ => {
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(u), callContext) <- authenticatedAccess(cc)
+            // TODO: This role check may be redundant since role is already specified in ResourceDoc.
+            // See should_fix_role_docs.md for details on removing duplicate role checks.
+            _ <- NewStyle.function.hasEntitlement("", u.userId, canDeleteEntitlementAtAnyBank, callContext)
+            entitlementBox <- Future(Entitlement.entitlement.vend.getEntitlementById(entitlementId))
+            result <- entitlementBox match {
+              case Full(entitlement) =>
+                // Entitlement exists, verify it belongs to the specified user
+                if (entitlement.userId == userId) {
+                  // Delete the entitlement
+                  Future(Entitlement.entitlement.vend.deleteEntitlement(Some(entitlement))) map {
+                    x => fullBoxOrException(x ~> APIFailureNewStyle(EntitlementCannotBeDeleted, 404, callContext.map(_.toLight)))
+                  } map { _ => (EmptyBody, HttpCode.`204`(callContext)) }
+                } else {
+                  // Entitlement exists but doesn't belong to this user
+                  Future.failed(new Exception(UserDoesNotHaveEntitlement))
+                }
+              case _ =>
+                // Entitlement not found - idempotent delete returns success
+                Future.successful((EmptyBody, HttpCode.`204`(callContext)))
+            }
+          } yield result
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
       getRolesWithEntitlementCountsAtAllBanks,
       implementedInApiVersion,
       nameOf(getRolesWithEntitlementCountsAtAllBanks),
