@@ -2128,6 +2128,16 @@ object SwaggerDefinitionsJSON {
     users = List(createUserJson)
   )
 
+  lazy val createUserJsonV600 = CreateUserJsonV600(
+    email = emailExample.value,
+    username = usernameExample.value,
+    password = "String",
+    first_name = "Simon",
+    last_name = "Redfern",
+    validating_application = Some("OBP-Portal")
+  )
+
+
   lazy val createMeetingJson = CreateMeetingJson(
     provider_id = providerIdValueExample.value,
     purpose_id = "String"

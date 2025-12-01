@@ -173,6 +173,15 @@ case class UserInfoJsonV600(
 
 case class UsersInfoJsonV600(users: List[UserInfoJsonV600])
 
+case class CreateUserJsonV600(
+  email: String,
+  username: String,
+  password: String,
+  first_name: String,
+  last_name: String,
+  validating_application: Option[String] = None
+)
+
 case class MigrationScriptLogJsonV600(
   migration_script_log_id: String,
   name: String,

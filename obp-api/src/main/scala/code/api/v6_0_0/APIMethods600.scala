@@ -650,47 +650,47 @@ trait APIMethods600 {
             _ <- NewStyle.function.hasEntitlement("", u.userId, canGetDynamicEntityReferenceTypes, callContext)
           } yield {
             val referenceTypeNames = code.dynamicEntity.ReferenceType.referenceTypeNames
-            
+
             // Get list of dynamic entity names to distinguish from static references
             val dynamicEntityNames = NewStyle.function.getDynamicEntities(None, true)
               .map(entity => s"reference:${entity.entityName}")
               .toSet
-            
+
             val exampleId1 = APIUtil.generateUUID()
             val exampleId2 = APIUtil.generateUUID()
             val exampleId3 = APIUtil.generateUUID()
             val exampleId4 = APIUtil.generateUUID()
-            
+
             val reg1 = """reference:([^:]+)""".r
             val reg2 = """reference:(?:[^:]+):([^&]+)&([^&]+)""".r
             val reg3 = """reference:(?:[^:]+):([^&]+)&([^&]+)&([^&]+)""".r
             val reg4 = """reference:(?:[^:]+):([^&]+)&([^&]+)&([^&]+)&([^&]+)""".r
-            
+
             val referenceTypes = referenceTypeNames.map { refTypeName =>
               val example = refTypeName match {
-                case reg1(entityName) => 
+                case reg1(entityName) =>
                   val description = if (dynamicEntityNames.contains(refTypeName)) {
                     s"Reference to $entityName (dynamic entity)"
                   } else {
                     s"Reference to $entityName entity"
                   }
                   (exampleId1, description)
-                case reg2(a, b) => 
+                case reg2(a, b) =>
                   (s"$a=$exampleId1&$b=$exampleId2", s"Composite reference with $a and $b")
-                case reg3(a, b, c) => 
+                case reg3(a, b, c) =>
                   (s"$a=$exampleId1&$b=$exampleId2&$c=$exampleId3", s"Composite reference with $a, $b and $c")
-                case reg4(a, b, c, d) => 
+                case reg4(a, b, c, d) =>
                   (s"$a=$exampleId1&$b=$exampleId2&$c=$exampleId3&$d=$exampleId4", s"Composite reference with $a, $b, $c and $d")
                 case _ => (exampleId1, "Reference type")
               }
-              
+
               ReferenceTypeJsonV600(
                 type_name = refTypeName,
                 example_value = example._1,
                 description = example._2
               )
             }
-            
+
             val response = ReferenceTypesJsonV600(referenceTypes)
             (response, HttpCode.`200`(callContext))
           }
@@ -1653,7 +1653,7 @@ trait APIMethods600 {
          |
          |eg: /management/metrics?from_date=$DateWithMsExampleString&to_date=$DateWithMsExampleString&limit=50&offset=2
          |
-         |1 from_date e.g.:from_date=$DateWithMsExampleString 
+         |1 from_date e.g.:from_date=$DateWithMsExampleString
          |   **DEFAULT**: If not provided, automatically set to now - ${(APIUtil.getPropsValue("MappedMetrics.stable.boundary.seconds", "600").toInt - 1) / 60} minutes (keeps queries in recent data zone)
          |   **IMPORTANT**: Including from_date enables long-term caching for historical data queries!
          |
@@ -1856,9 +1856,9 @@ trait APIMethods600 {
             httpParams <- NewStyle.function.extractHttpParamsFromUrl(cc.url)
             // Reject old exclude_* parameters in v6.0.0+
             _ <- Future {
-              val excludeParams = httpParams.filter(p => 
-                p.name == "exclude_app_names" || 
-                p.name == "exclude_url_patterns" || 
+              val excludeParams = httpParams.filter(p =>
+                p.name == "exclude_app_names" ||
+                p.name == "exclude_url_patterns" ||
                 p.name == "exclude_implemented_by_partial_functions"
               )
               if (excludeParams.nonEmpty) {
@@ -2384,6 +2384,11 @@ trait APIMethods600 {
          |
          | Requires username(email), password, first_name, last_name, and email.
          |
+         | Optional fields:
+         | - validating_application: Optional application name that will validate the user's email (e.g., "OBP-Portal", "EXTERNAL_PORTAL")
+         |   When set to "OBP-Portal", the validation link will use the portal_hostname property
+         |   When set to "EXTERNAL_PORTAL", the validation link will use the portal_external_url property
+         |
          | Validation checks performed:
          | - Password must meet strong password requirements (InvalidStrongPasswordFormat error if not)
          | - Username must be unique (409 error if username already exists)
@@ -2392,6 +2397,10 @@ trait APIMethods600 {
          | Email validation behavior:
          | - Controlled by property 'authUser.skipEmailValidation' (default: false)
          | - When false: User is created with validated=false and a validation email is sent to the user's email address
+         | - Validation link domain is determined by validating_application:
+         |   * "OBP-Portal": Uses portal_hostname property (e.g., https://portal.example.com)
+         |   * "EXTERNAL_PORTAL": Uses portal_external_url property (e.g., https://external-portal.example.com)
+         |   * Other/None: Uses API hostname property (e.g., https://api.example.com)
          | - When true: User is created with validated=true and no validation email is sent
          | - Default entitlements are granted immediately regardless of validation status
          |
@@ -2399,7 +2408,7 @@ trait APIMethods600 {
          | in the email before they can log in, even though entitlements are already granted.
          |
          |""",
-      createUserJson,
+      createUserJsonV600,
       userJsonV200,
       List(InvalidJsonFormat, InvalidStrongPasswordFormat, DuplicateUsername, "Error occurred during user creation.", UnknownError),
       List(apiTagUser, apiTagOnboarding))
@@ -2410,19 +2419,19 @@ trait APIMethods600 {
           for {
             // STEP 1: Extract and validate JSON structure
             postedData <- NewStyle.function.tryons(ErrorMessages.InvalidJsonFormat, 400, cc.callContext) {
-              json.extract[code.api.v2_0_0.CreateUserJson]
+              json.extract[code.api.v6_0_0.CreateUserJsonV600]
             }
-            
+
             // STEP 2: Validate password strength
             _ <- Helper.booleanToFuture(ErrorMessages.InvalidStrongPasswordFormat, 400, cc.callContext) {
               fullPasswordValidation(postedData.password)
             }
-            
+
             // STEP 3: Check username uniqueness (returns 409 Conflict if exists)
             _ <- Helper.booleanToFuture(ErrorMessages.DuplicateUsername, 409, cc.callContext) {
               code.model.dataAccess.AuthUser.find(net.liftweb.mapper.By(code.model.dataAccess.AuthUser.username, postedData.username)).isEmpty
             }
-            
+
             // STEP 4: Create AuthUser object
             userCreated <- Future {
               code.model.dataAccess.AuthUser.create
@@ -2433,17 +2442,17 @@ trait APIMethods600 {
                 .password(postedData.password)
                 .validated(APIUtil.getPropsAsBoolValue("authUser.skipEmailValidation", defaultValue = false))
             }
-            
+
             // STEP 5: Validate Lift field validators
             _ <- Helper.booleanToFuture(ErrorMessages.InvalidJsonFormat+userCreated.validate.map(_.msg).mkString(";"), 400, cc.callContext) {
               userCreated.validate.size == 0
             }
-            
+
             // STEP 6: Save user to database
             savedUser <- NewStyle.function.tryons(ErrorMessages.InvalidJsonFormat, 400, cc.callContext) {
               userCreated.saveMe()
             }
-            
+
             // STEP 7: Verify save was successful
             _ <- Helper.booleanToFuture(s"$UnknownError Error occurred during user creation.", 400, cc.callContext) {
               userCreated.saved_?
@@ -2452,12 +2461,35 @@ trait APIMethods600 {
             // STEP 8: Send validation email (if required)
             val skipEmailValidation = APIUtil.getPropsAsBoolValue("authUser.skipEmailValidation", defaultValue = false)
             if (!skipEmailValidation) {
-              code.model.dataAccess.AuthUser.sendValidationEmail(savedUser)
+              // Construct validation link based on validating_application
+              val emailValidationLink = postedData.validating_application match {
+                case Some("EXTERNAL_PORTAL") =>
+                  // Use portal_external_url property if available, otherwise fall back to hostname
+                  APIUtil.getPropsValue("portal_external_url", Constant.HostName) + "/" + code.model.dataAccess.AuthUser.validateUserPath.mkString("/") + "/" + java.net.URLEncoder.encode(savedUser.getUniqueId(), "UTF-8")
+                case _ =>
+                  // Default to the API hostname
+                  Constant.HostName + "/" + code.model.dataAccess.AuthUser.validateUserPath.mkString("/") + "/" + java.net.URLEncoder.encode(savedUser.getUniqueId(), "UTF-8")
+              }
+
+              val textContent = Some(s"Welcome! Please validate your account by clicking the following link: $emailValidationLink")
+              val htmlContent = Some(s"<p>Welcome! Please validate your account by clicking the following link:</p><p><a href='$emailValidationLink'>$emailValidationLink</a></p>")
+              val subjectContent = "Sign up confirmation"
+
+              val emailContent = code.api.util.CommonsEmailWrapper.EmailContent(
+                from = code.model.dataAccess.AuthUser.emailFrom,
+                to = List(savedUser.getEmail),
+                bcc = code.model.dataAccess.AuthUser.bccEmail.toList,
+                subject = subjectContent,
+                textContent = textContent,
+                htmlContent = htmlContent
+              )
+
+              code.api.util.CommonsEmailWrapper.sendHtmlEmail(emailContent)
             }
-            
+
             // STEP 9: Grant default entitlements
             code.model.dataAccess.AuthUser.grantDefaultEntitlementsToAuthUser(savedUser)
-            
+
             // STEP 10: Return JSON response
             val json = JSONFactory200.createUserJSONfromAuthUser(userCreated)
             (json, HttpCode.`201`(cc.callContext))
@@ -2474,7 +2506,7 @@ trait APIMethods600 {
       "Get Roles with Entitlement Counts",
       s"""Returns all available roles with the count of entitlements that use each role.
          |
-         |This endpoint provides statistics about role usage across all banks by counting 
+         |This endpoint provides statistics about role usage across all banks by counting
          |how many entitlements have been granted for each role.
          |
          |${userAuthenticationMessage(true)}
@@ -2511,10 +2543,10 @@ trait APIMethods600 {
         cc => implicit val ec = EndpointContext(Some(cc))
           for {
             (Full(u), callContext) <- authenticatedAccess(cc)
-            
+
             // Get all available roles
             allRoles = ApiRole.availableRoles.sorted
-            
+
             // Get entitlement counts for each role
             rolesWithCounts <- Future.sequence {
               allRoles.map { role =>
