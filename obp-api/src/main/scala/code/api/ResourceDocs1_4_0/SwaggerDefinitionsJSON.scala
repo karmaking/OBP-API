@@ -1933,6 +1933,19 @@ object SwaggerDefinitionsJSON {
     list = List(entitlementJSON)
   )
 
+  lazy val entitlementJsonV310 =
+    code.api.v3_1_0.EntitlementJsonV310(
+      entitlement_id = "6fb17583-1e49-4435-bb74-a14fe0996723",
+      role_name = "CanGetCustomersAtOneBank",
+      bank_id = bankIdExample.value,
+      user_id = ExampleValue.userIdExample.value,
+      username = usernameExample.value
+    )
+    
+  lazy val entitlementJSonsV310 = EntitlementJSonsV310(
+    list = List(entitlementJsonV310)
+  )
+
   lazy val userJsonV200 = UserJsonV200(
     user_id = ExampleValue.userIdExample.value,
     email = ExampleValue.emailExample.value,
