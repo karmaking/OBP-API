@@ -22,7 +22,7 @@ import code.api.v4_0_0.CallLimitPostJsonV400
 import code.api.v4_0_0.JSONFactory400.createCallsLimitJson
 import code.api.v5_0_0.JSONFactory500
 import code.api.v5_1_0.{JSONFactory510, PostCustomerLegalNameJsonV510}
-import code.api.v6_0_0.JSONFactory600.{DynamicEntityDiagnosticsJsonV600, DynamicEntityIssueJsonV600, GroupJsonV600, GroupsJsonV600, PostGroupJsonV600, PutGroupJsonV600, ReferenceTypeJsonV600, ReferenceTypesJsonV600, RoleWithEntitlementCountJsonV600, RolesWithEntitlementCountsJsonV600, ValidateUserEmailJsonV600, ValidateUserEmailResponseJsonV600, createActiveCallLimitsJsonV600, createCallLimitJsonV600, createCurrentUsageJson}
+import code.api.v6_0_0.JSONFactory600.{DynamicEntityDiagnosticsJsonV600, DynamicEntityIssueJsonV600, GroupJsonV600, GroupMembershipJsonV600, GroupMembershipsJsonV600, GroupsJsonV600, PostGroupJsonV600, PostGroupMembershipJsonV600, PutGroupJsonV600, ReferenceTypeJsonV600, ReferenceTypesJsonV600, RoleWithEntitlementCountJsonV600, RolesWithEntitlementCountsJsonV600, ValidateUserEmailJsonV600, ValidateUserEmailResponseJsonV600, createActiveCallLimitsJsonV600, createCallLimitJsonV600, createCurrentUsageJson}
 import code.api.v6_0_0.OBPAPI6_0_0
 import code.metrics.APIMetrics
 import code.bankconnectors.LocalMappedConnectorInternal
@@ -2057,8 +2057,8 @@ trait APIMethods600 {
       s"""Create a new group of roles.
          |
          |Groups can be either:
-         |- System-level (bank_id = null) - requires CanCreateGroupsAtAllBanks role
-         |- Bank-level (bank_id provided) - requires CanCreateGroupsAtOneBank role
+         |- System-level (bank_id = null) - requires CanCreateGroupAtAllBanks role
+         |- Bank-level (bank_id provided) - requires CanCreateGroupAtOneBank role
          |
          |A group contains a list of role names that can be assigned together.
          |
@@ -2087,7 +2087,7 @@ trait APIMethods600 {
         UnknownError
       ),
       List(apiTagGroup),
-      Some(List(canCreateGroupsAtAllBanks, canCreateGroupsAtOneBank))
+      Some(List(canCreateGroupAtAllBanks, canCreateGroupAtOneBank))
     )
 
     lazy val createGroup: OBPEndpoint = {
@@ -2103,9 +2103,9 @@ trait APIMethods600 {
             }
             _ <- postJson.bank_id match {
               case Some(bankId) if bankId.nonEmpty =>
-                NewStyle.function.hasEntitlement(bankId, u.userId, canCreateGroupsAtOneBank, callContext)
+                NewStyle.function.hasAtLeastOneEntitlement(bankId, u.userId, canCreateGroupAtOneBank :: canCreateGroupAtAllBanks :: Nil, callContext)
               case _ =>
-                NewStyle.function.hasEntitlement("", u.userId, canCreateGroupsAtAllBanks, callContext)
+                NewStyle.function.hasEntitlement("", u.userId, canCreateGroupAtAllBanks, callContext)
             }
             group <- Future {
               code.group.GroupTrait.group.vend.createGroup(
@@ -2178,7 +2178,7 @@ trait APIMethods600 {
             }
             _ <- group.bankId match {
               case Some(bankId) =>
-                NewStyle.function.hasEntitlement(bankId, u.userId, canGetGroupsAtOneBank, callContext)
+                NewStyle.function.hasAtLeastOneEntitlement(bankId, u.userId, canGetGroupsAtOneBank :: canGetGroupsAtAllBanks :: Nil, callContext)
               case None =>
                 NewStyle.function.hasEntitlement("", u.userId, canGetGroupsAtAllBanks, callContext)
             }
@@ -2251,7 +2251,7 @@ trait APIMethods600 {
             }
             _ <- bankIdFilter match {
               case Some(bankId) =>
-                NewStyle.function.hasEntitlement(bankId, u.userId, canGetGroupsAtOneBank, callContext)
+                NewStyle.function.hasAtLeastOneEntitlement(bankId, u.userId, canGetGroupsAtOneBank :: canGetGroupsAtAllBanks :: Nil, callContext)
               case None =>
                 NewStyle.function.hasEntitlement("", u.userId, canGetGroupsAtAllBanks, callContext)
             }
@@ -2297,8 +2297,8 @@ trait APIMethods600 {
       s"""Update a group. All fields are optional.
          |
          |Requires either:
-         |- CanUpdateGroupsAtAllBanks (for any group)
-         |- CanUpdateGroupsAtOneBank (for groups at specific bank)
+         |- CanUpdateGroupAtAllBanks (for any group)
+         |- CanUpdateGroupAtOneBank (for groups at specific bank)
          |
          |${userAuthenticationMessage(true)}
          |
@@ -2324,7 +2324,7 @@ trait APIMethods600 {
         UnknownError
       ),
       List(apiTagGroup),
-      Some(List(canUpdateGroupsAtAllBanks, canUpdateGroupsAtOneBank))
+      Some(List(canUpdateGroupAtAllBanks, canUpdateGroupAtOneBank))
     )
 
     lazy val updateGroup: OBPEndpoint = {
@@ -2342,9 +2342,9 @@ trait APIMethods600 {
             }
             _ <- existingGroup.bankId match {
               case Some(bankId) =>
-                NewStyle.function.hasEntitlement(bankId, u.userId, canUpdateGroupsAtOneBank, callContext)
+                NewStyle.function.hasAtLeastOneEntitlement(bankId, u.userId, canUpdateGroupAtOneBank :: canUpdateGroupAtAllBanks :: Nil, callContext)
               case None =>
-                NewStyle.function.hasEntitlement("", u.userId, canUpdateGroupsAtAllBanks, callContext)
+                NewStyle.function.hasEntitlement("", u.userId, canUpdateGroupAtAllBanks, callContext)
             }
             updatedGroup <- Future {
               code.group.GroupTrait.group.vend.updateGroup(
@@ -2627,8 +2627,8 @@ trait APIMethods600 {
       s"""Delete a Group.
          |
          |Requires either:
-         |- CanDeleteGroupsAtAllBanks (for any group)
-         |- CanDeleteGroupsAtOneBank (for groups at specific bank)
+         |- CanDeleteGroupAtAllBanks (for any group)
+         |- CanDeleteGroupAtOneBank (for groups at specific bank)
          |
          |${userAuthenticationMessage(true)}
          |
@@ -2641,7 +2641,7 @@ trait APIMethods600 {
         UnknownError
       ),
       List(apiTagGroup),
-      Some(List(canDeleteGroupsAtAllBanks, canDeleteGroupsAtOneBank))
+      Some(List(canDeleteGroupAtAllBanks, canDeleteGroupAtOneBank))
     )
 
     lazy val deleteGroup: OBPEndpoint = {
@@ -2656,9 +2656,9 @@ trait APIMethods600 {
             }
             _ <- existingGroup.bankId match {
               case Some(bankId) =>
-                NewStyle.function.hasEntitlement(bankId, u.userId, canDeleteGroupsAtOneBank, callContext)
+                NewStyle.function.hasAtLeastOneEntitlement(bankId, u.userId, canDeleteGroupAtOneBank :: canDeleteGroupAtAllBanks :: Nil, callContext)
               case None =>
-                NewStyle.function.hasEntitlement("", u.userId, canDeleteGroupsAtAllBanks, callContext)
+                NewStyle.function.hasEntitlement("", u.userId, canDeleteGroupAtAllBanks, callContext)
             }
             deleted <- Future {
               code.group.GroupTrait.group.vend.deleteGroup(groupId)
@@ -2667,6 +2667,268 @@ trait APIMethods600 {
             }
           } yield {
             (Full(deleted), HttpCode.`204`(callContext))
+          }
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
+      addUserToGroup,
+      implementedInApiVersion,
+      nameOf(addUserToGroup),
+      "POST",
+      "/users/USER_ID/group-memberships",
+      "Add User to Group",
+      s"""Add a user to a group. This will create entitlements for all roles in the group.
+         |
+         |Each entitlement will have:
+         |- group_id set to the group ID
+         |- process set to "GROUP_MEMBERSHIP"
+         |
+         |Requires either:
+         |- CanAddUserToGroupAtAllBanks (for any group)
+         |- CanAddUserToGroupAtOneBank (for groups at specific bank)
+         |
+         |${userAuthenticationMessage(true)}
+         |
+         |""".stripMargin,
+      PostGroupMembershipJsonV600(
+        group_id = "group-id-123"
+      ),
+      GroupMembershipJsonV600(
+        group_id = "group-id-123",
+        user_id = "user-id-123",
+        bank_id = Some("gh.29.uk"),
+        group_name = "Teller Group",
+        list_of_roles = List("CanGetCustomer", "CanGetAccount", "CanCreateTransaction")
+      ),
+      List(
+        UserNotLoggedIn,
+        UserHasMissingRoles,
+        InvalidJsonFormat,
+        UnknownError
+      ),
+      List(apiTagGroup, apiTagUser, apiTagEntitlement),
+      Some(List(canAddUserToGroupAtAllBanks, canAddUserToGroupAtOneBank))
+    )
+
+    lazy val addUserToGroup: OBPEndpoint = {
+      case "users" :: userId :: "group-memberships" :: Nil JsonPost json -> _ => {
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(u), callContext) <- authenticatedAccess(cc)
+            postJson <- NewStyle.function.tryons(s"$InvalidJsonFormat The Json body should be the $PostGroupMembershipJsonV600", 400, callContext) {
+              json.extract[PostGroupMembershipJsonV600]
+            }
+            (user, callContext) <- NewStyle.function.findByUserId(userId, callContext)
+            group <- Future {
+              code.group.GroupTrait.group.vend.getGroup(postJson.group_id)
+            } map {
+              x => unboxFullOrFail(x, callContext, s"$UnknownError Group not found", 404)
+            }
+            _ <- group.bankId match {
+              case Some(bankId) =>
+                NewStyle.function.hasAtLeastOneEntitlement(bankId, u.userId, canAddUserToGroupAtOneBank :: canAddUserToGroupAtAllBanks :: Nil, callContext)
+              case None =>
+                NewStyle.function.hasEntitlement("", u.userId, canAddUserToGroupAtAllBanks, callContext)
+            }
+            _ <- Helper.booleanToFuture(failMsg = s"$UnknownError Group is not enabled", 400, callContext) {
+              group.isEnabled
+            }
+            // Get existing entitlements for this user
+            existingEntitlements <- Future {
+              Entitlement.entitlement.vend.getEntitlementsByUserId(userId)
+            }
+            // Create entitlements for all roles in the group, skipping duplicates
+            _ <- Future.sequence {
+              group.listOfRoles.map { roleName =>
+                Future {
+                  // Check if user already has this role at this bank
+                  val alreadyHasRole = existingEntitlements.toOption.exists(_.exists { ent =>
+                    ent.roleName == roleName && ent.bankId == group.bankId.getOrElse("")
+                  })
+                  
+                  if (!alreadyHasRole) {
+                    Entitlement.entitlement.vend.addEntitlement(
+                      group.bankId.getOrElse(""),
+                      userId,
+                      roleName,
+                      "manual",
+                      None,
+                      Some(postJson.group_id),
+                      Some("GROUP_MEMBERSHIP")
+                    )
+                  }
+                }
+              }
+            }
+          } yield {
+            val response = GroupMembershipJsonV600(
+              group_id = group.groupId,
+              user_id = userId,
+              bank_id = group.bankId,
+              group_name = group.groupName,
+              list_of_roles = group.listOfRoles
+            )
+            (response, HttpCode.`201`(callContext))
+          }
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
+      getUserGroupMemberships,
+      implementedInApiVersion,
+      nameOf(getUserGroupMemberships),
+      "GET",
+      "/users/USER_ID/group-memberships",
+      "Get User's Group Memberships",
+      s"""Get all groups a user is a member of.
+         |
+         |Returns groups where the user has entitlements with process = "GROUP_MEMBERSHIP".
+         |
+         |Requires either:
+         |- CanGetUserGroupMembershipsAtAllBanks (for any user)
+         |- CanGetUserGroupMembershipsAtOneBank (for users at specific bank)
+         |
+         |${userAuthenticationMessage(true)}
+         |
+         |""".stripMargin,
+      EmptyBody,
+      GroupMembershipsJsonV600(
+        group_memberships = List(
+          GroupMembershipJsonV600(
+            group_id = "group-id-123",
+            user_id = "user-id-123",
+            bank_id = Some("gh.29.uk"),
+            group_name = "Teller Group",
+            list_of_roles = List("CanGetCustomer", "CanGetAccount", "CanCreateTransaction")
+          )
+        )
+      ),
+      List(
+        UserNotLoggedIn,
+        UserHasMissingRoles,
+        UnknownError
+      ),
+      List(apiTagGroup, apiTagUser, apiTagEntitlement),
+      Some(List(canGetUserGroupMembershipsAtAllBanks, canGetUserGroupMembershipsAtOneBank))
+    )
+
+    lazy val getUserGroupMemberships: OBPEndpoint = {
+      case "users" :: userId :: "group-memberships" :: Nil JsonGet _ => {
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(u), callContext) <- authenticatedAccess(cc)
+            (user, callContext) <- NewStyle.function.findByUserId(userId, callContext)
+            // Get all entitlements for this user that came from groups
+            entitlements <- Future {
+              Entitlement.entitlement.vend.getEntitlementsByUserId(userId)
+            }
+            groupEntitlements = entitlements.toOption.getOrElse(List.empty).filter(_.process == Some("GROUP_MEMBERSHIP"))
+            // Get unique group IDs
+            groupIds = groupEntitlements.flatMap(_.groupId).distinct
+            // Check permissions for each bank
+            _ <- Future.sequence {
+              groupIds.flatMap { groupId =>
+                // Get the group to find its bank_id
+                code.group.GroupTrait.group.vend.getGroup(groupId).toOption.map { group =>
+                  group.bankId match {
+                    case Some(bankId) =>
+                      NewStyle.function.hasAtLeastOneEntitlement(bankId, u.userId, canGetUserGroupMembershipsAtOneBank :: canGetUserGroupMembershipsAtAllBanks :: Nil, callContext)
+                    case None =>
+                      NewStyle.function.hasEntitlement("", u.userId, canGetUserGroupMembershipsAtAllBanks, callContext)
+                  }
+                }
+              }
+            }
+            // Get full group details
+            groups <- Future.sequence {
+              groupIds.map { groupId =>
+                Future {
+                  code.group.GroupTrait.group.vend.getGroup(groupId)
+                }
+              }
+            }
+            validGroups = groups.flatten
+          } yield {
+            val memberships = validGroups.map { group =>
+              GroupMembershipJsonV600(
+                group_id = group.groupId,
+                user_id = userId,
+                bank_id = group.bankId,
+                group_name = group.groupName,
+                list_of_roles = group.listOfRoles
+              )
+            }
+            (GroupMembershipsJsonV600(memberships), HttpCode.`200`(callContext))
+          }
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
+      removeUserFromGroup,
+      implementedInApiVersion,
+      nameOf(removeUserFromGroup),
+      "DELETE",
+      "/users/USER_ID/group-memberships/GROUP_ID",
+      "Remove User from Group",
+      s"""Remove a user from a group. This will delete all entitlements that were created by this group membership.
+         |
+         |Only removes entitlements with:
+         |- group_id matching GROUP_ID
+         |- process = "GROUP_MEMBERSHIP"
+         |
+         |Requires either:
+         |- CanRemoveUserFromGroupAtAllBanks (for any group)
+         |- CanRemoveUserFromGroupAtOneBank (for groups at specific bank)
+         |
+         |${userAuthenticationMessage(true)}
+         |
+         |""".stripMargin,
+      EmptyBody,
+      EmptyBody,
+      List(
+        UserNotLoggedIn,
+        UserHasMissingRoles,
+        UnknownError
+      ),
+      List(apiTagGroup, apiTagUser, apiTagEntitlement),
+      Some(List(canRemoveUserFromGroupAtAllBanks, canRemoveUserFromGroupAtOneBank))
+    )
+
+    lazy val removeUserFromGroup: OBPEndpoint = {
+      case "users" :: userId :: "group-memberships" :: groupId :: Nil JsonDelete _ => {
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(u), callContext) <- authenticatedAccess(cc)
+            (user, callContext) <- NewStyle.function.findByUserId(userId, callContext)
+            group <- Future {
+              code.group.GroupTrait.group.vend.getGroup(groupId)
+            } map {
+              x => unboxFullOrFail(x, callContext, s"$UnknownError Group not found", 404)
+            }
+            _ <- group.bankId match {
+              case Some(bankId) =>
+                NewStyle.function.hasAtLeastOneEntitlement(bankId, u.userId, canRemoveUserFromGroupAtOneBank :: canRemoveUserFromGroupAtAllBanks :: Nil, callContext)
+              case None =>
+                NewStyle.function.hasEntitlement("", u.userId, canRemoveUserFromGroupAtAllBanks, callContext)
+            }
+            // Get all entitlements for this user from this group
+            entitlements <- Future {
+              Entitlement.entitlement.vend.getEntitlementsByUserId(userId)
+            }
+            groupEntitlements = entitlements.toOption.getOrElse(List.empty).filter(e => 
+              e.groupId == Some(groupId) && e.process == Some("GROUP_MEMBERSHIP")
+            )
+            // Delete all entitlements from this group
+            _ <- Future.sequence {
+              groupEntitlements.map { entitlement =>
+                Future {
+                  Entitlement.entitlement.vend.deleteEntitlement(Full(entitlement))
+                }
+              }
+            }
+          } yield {
+            (Full(true), HttpCode.`204`(callContext))
           }
       }
     }

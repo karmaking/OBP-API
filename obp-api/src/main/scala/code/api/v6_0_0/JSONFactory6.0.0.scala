@@ -620,6 +620,20 @@ case class GroupJsonV600(
 
 case class GroupsJsonV600(groups: List[GroupJsonV600])
 
+case class PostGroupMembershipJsonV600(
+  group_id: String
+)
+
+case class GroupMembershipJsonV600(
+  group_id: String,
+  user_id: String,
+  bank_id: Option[String],
+  group_name: String,
+  list_of_roles: List[String]
+)
+
+case class GroupMembershipsJsonV600(group_memberships: List[GroupMembershipJsonV600])
+
 case class RoleWithEntitlementCountJsonV600(
   role: String,
   requires_bank_id: Boolean,

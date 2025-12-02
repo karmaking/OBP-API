@@ -107,6 +107,6 @@ class Group extends GroupTrait with LongKeyedMapper[Group] with IdPK with Create
 }
 
 object Group extends Group with LongKeyedMetaMapper[Group] {
-  override def dbTableName = "Group" // define the DB table name
+  override def dbTableName = "GroupOfRoles" // define the DB table name
   override def dbIndexes = Index(GroupId) :: Index(BankId) :: super.dbIndexes
 }
