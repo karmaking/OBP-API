@@ -14,6 +14,7 @@ import code.api.util.FutureUtil.EndpointContext
 import code.api.util.NewStyle.HttpCode
 import code.api.util.{APIUtil, CallContext, DiagnosticDynamicEntityCheck, ErrorMessages, NewStyle, RateLimitingUtil}
 import code.api.util.NewStyle.function.extractQueryParams
+import code.api.util.newstyle.ViewNewStyle
 import code.api.v3_0_0.JSONFactory300
 import code.api.v3_0_0.JSONFactory300.createAggregateMetricJson
 import code.api.v2_0_0.JSONFactory200
@@ -21,7 +22,7 @@ import code.api.v3_1_0.{JSONFactory310, PostCustomerNumberJsonV310}
 import code.api.v4_0_0.CallLimitPostJsonV400
 import code.api.v4_0_0.JSONFactory400.createCallsLimitJson
 import code.api.v5_0_0.JSONFactory500
-import code.api.v5_0_0.ViewsJsonV500
+import code.api.v5_0_0.{ViewJsonV500, ViewsJsonV500}
 import code.api.v5_1_0.{JSONFactory510, PostCustomerLegalNameJsonV510}
 import code.api.v6_0_0.JSONFactory600.{DynamicEntityDiagnosticsJsonV600, DynamicEntityIssueJsonV600, GroupJsonV600, GroupMembershipJsonV600, GroupMembershipsJsonV600, GroupsJsonV600, PostGroupJsonV600, PostGroupMembershipJsonV600, PutGroupJsonV600, ReferenceTypeJsonV600, ReferenceTypesJsonV600, RoleWithEntitlementCountJsonV600, RolesWithEntitlementCountsJsonV600, ValidateUserEmailJsonV600, ValidateUserEmailResponseJsonV600, createActiveCallLimitsJsonV600, createCallLimitJsonV600, createCurrentUsageJson}
 import code.api.v6_0_0.OBPAPI6_0_0
@@ -36,6 +37,7 @@ import code.ratelimiting.RateLimitingDI
 import code.util.Helper
 import code.util.Helper.{MdcLoggable, SILENCE_IS_GOLDEN}
 import code.views.Views
+import code.views.system.ViewDefinition
 import com.github.dwickern.macros.NameOf.nameOf
 import com.openbankproject.commons.ExecutionContext.Implicits.global
 import com.openbankproject.commons.model.{CustomerAttribute, _}
@@ -2971,6 +2973,174 @@ trait APIMethods600 {
             views <- Views.views.vend.getSystemViews()
           } yield {
             (JSONFactory500.createViewsJsonV500(views), HttpCode.`200`(callContext))
+          }
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
+      getSystemViewById,
+      implementedInApiVersion,
+      nameOf(getSystemViewById),
+      "GET",
+      "/management/system-views/VIEW_ID",
+      "Get System View",
+      s"""Get a single system view by its ID.
+         |
+         |System views are predefined views that apply to all accounts, such as:
+         |- owner
+         |- accountant
+         |- auditor
+         |- standard
+         |
+         |${userAuthenticationMessage(true)}
+         |
+         |""".stripMargin,
+      EmptyBody,
+      ViewJsonV500(
+        id = "owner",
+        short_name = "Owner",
+        description = "The owner of the account. Has full privileges.",
+        metadata_view = "owner",
+        is_public = false,
+        is_system = true,
+        is_firehose = Some(false),
+        alias = "private",
+        hide_metadata_if_alias_used = false,
+        can_grant_access_to_views = List("owner", "accountant"),
+        can_revoke_access_to_views = List("owner", "accountant"),
+        can_add_comment = true,
+        can_add_corporate_location = true,
+        can_add_image = true,
+        can_add_image_url = true,
+        can_add_more_info = true,
+        can_add_open_corporates_url = true,
+        can_add_physical_location = true,
+        can_add_private_alias = true,
+        can_add_public_alias = true,
+        can_add_tag = true,
+        can_add_url = true,
+        can_add_where_tag = true,
+        can_delete_comment = true,
+        can_add_counterparty = true,
+        can_delete_corporate_location = true,
+        can_delete_image = true,
+        can_delete_physical_location = true,
+        can_delete_tag = true,
+        can_delete_where_tag = true,
+        can_edit_owner_comment = true,
+        can_see_bank_account_balance = true,
+        can_query_available_funds = true,
+        can_see_bank_account_bank_name = true,
+        can_see_bank_account_currency = true,
+        can_see_bank_account_iban = true,
+        can_see_bank_account_label = true,
+        can_see_bank_account_national_identifier = true,
+        can_see_bank_account_number = true,
+        can_see_bank_account_owners = true,
+        can_see_bank_account_swift_bic = true,
+        can_see_bank_account_type = true,
+        can_see_comments = true,
+        can_see_corporate_location = true,
+        can_see_image_url = true,
+        can_see_images = true,
+        can_see_more_info = true,
+        can_see_open_corporates_url = true,
+        can_see_other_account_bank_name = true,
+        can_see_other_account_iban = true,
+        can_see_other_account_kind = true,
+        can_see_other_account_metadata = true,
+        can_see_other_account_national_identifier = true,
+        can_see_other_account_number = true,
+        can_see_other_account_swift_bic = true,
+        can_see_owner_comment = true,
+        can_see_physical_location = true,
+        can_see_private_alias = true,
+        can_see_public_alias = true,
+        can_see_tags = true,
+        can_see_transaction_amount = true,
+        can_see_transaction_balance = true,
+        can_see_transaction_currency = true,
+        can_see_transaction_description = true,
+        can_see_transaction_finish_date = true,
+        can_see_transaction_metadata = true,
+        can_see_transaction_other_bank_account = true,
+        can_see_transaction_start_date = true,
+        can_see_transaction_this_bank_account = true,
+        can_see_transaction_type = true,
+        can_see_url = true,
+        can_see_where_tag = true,
+        can_see_bank_routing_scheme = true,
+        can_see_bank_routing_address = true,
+        can_see_bank_account_routing_scheme = true,
+        can_see_bank_account_routing_address = true,
+        can_see_other_bank_routing_scheme = true,
+        can_see_other_bank_routing_address = true,
+        can_see_other_account_routing_scheme = true,
+        can_see_other_account_routing_address = true,
+        can_add_transaction_request_to_own_account = true,
+        can_add_transaction_request_to_any_account = true,
+        can_see_bank_account_credit_limit = true,
+        can_create_direct_debit = true,
+        can_create_standing_order = true
+      ),
+      List(
+        UserNotLoggedIn,
+        UserHasMissingRoles,
+        SystemViewNotFound,
+        UnknownError
+      ),
+      List(apiTagSystemView, apiTagView),
+      Some(List(canGetSystemViews))
+    )
+
+    lazy val getSystemViewById: OBPEndpoint = {
+      case "management" :: "system-views" :: viewId :: Nil JsonGet _ => {
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(u), callContext) <- authenticatedAccess(cc)
+            view <- ViewNewStyle.systemView(ViewId(viewId), callContext)
+          } yield {
+            (JSONFactory500.createViewJsonV500(view), HttpCode.`200`(callContext))
+          }
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
+      getCustomViews,
+      implementedInApiVersion,
+      nameOf(getCustomViews),
+      "GET",
+      "/management/custom-views",
+      "Get Custom Views",
+      s"""Get all custom views.
+         |
+         |Custom views are user-created views with names starting with underscore (_), such as:
+         |- _work
+         |- _personal
+         |- _audit
+         |
+         |${userAuthenticationMessage(true)}
+         |
+         |""".stripMargin,
+      EmptyBody,
+      ViewsJsonV500(List()),
+      List(
+        UserNotLoggedIn,
+        UserHasMissingRoles,
+        UnknownError
+      ),
+      List(apiTagView, apiTagSystemView),
+      Some(List(canGetCustomViews))
+    )
+
+    lazy val getCustomViews: OBPEndpoint = {
+      case "management" :: "custom-views" :: Nil JsonGet _ => {
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(u), callContext) <- authenticatedAccess(cc)
+            customViews <- Future { ViewDefinition.getCustomViews() }
+          } yield {
+            (JSONFactory500.createViewsJsonV500(customViews), HttpCode.`200`(callContext))
           }
       }
     }
