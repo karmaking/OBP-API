@@ -19,6 +19,8 @@ import code.api.v4_0_0.{APIMethods400, OBPAPI4_0_0}
 import code.api.v5_0_0.OBPAPI5_0_0
 import code.api.v5_1_0.OBPAPI5_1_0
 import code.api.v6_0_0.OBPAPI6_0_0
+import code.api.dynamic.endpoint.OBPAPIDynamicEndpoint
+import code.api.dynamic.entity.OBPAPIDynamicEntity
 import code.apicollectionendpoint.MappedApiCollectionEndpointsProvider
 import code.util.Helper
 import code.util.Helper.{MdcLoggable, ObpS, SILENCE_IS_GOLDEN}
@@ -123,6 +125,8 @@ trait ResourceDocsAPIMethods extends MdcLoggable with APIMethods220 with APIMeth
         case ApiVersion.v1_4_0 => Implementations1_4_0.resourceDocs ++ Implementations1_3_0.resourceDocs ++ Implementations1_2_1.resourceDocs
         case ApiVersion.v1_3_0 => Implementations1_3_0.resourceDocs ++ Implementations1_2_1.resourceDocs
         case ApiVersion.v1_2_1 => Implementations1_2_1.resourceDocs
+        case ApiVersion.`dynamic-endpoint` => OBPAPIDynamicEndpoint.allResourceDocs
+        case ApiVersion.`dynamic-entity` => OBPAPIDynamicEntity.allResourceDocs
         case version: ScannedApiVersion => ScannedApis.versionMapScannedApis(version).allResourceDocs
         case _ => ArrayBuffer.empty[ResourceDoc]
       }
@@ -142,6 +146,8 @@ trait ResourceDocsAPIMethods extends MdcLoggable with APIMethods220 with APIMeth
         case ApiVersion.v1_4_0 => OBPAPI1_4_0.routes
         case ApiVersion.v1_3_0 => OBPAPI1_3_0.routes
         case ApiVersion.v1_2_1 => OBPAPI1_2_1.routes
+        case ApiVersion.`dynamic-endpoint` => OBPAPIDynamicEndpoint.routes
+        case ApiVersion.`dynamic-entity` => OBPAPIDynamicEntity.routes
         case version: ScannedApiVersion => ScannedApis.versionMapScannedApis(version).routes
         case _                 => Nil
       }

@@ -21,6 +21,7 @@ import code.api.v3_1_0.{JSONFactory310, PostCustomerNumberJsonV310}
 import code.api.v4_0_0.CallLimitPostJsonV400
 import code.api.v4_0_0.JSONFactory400.createCallsLimitJson
 import code.api.v5_0_0.JSONFactory500
+import code.api.v5_0_0.ViewsJsonV500
 import code.api.v5_1_0.{JSONFactory510, PostCustomerLegalNameJsonV510}
 import code.api.v6_0_0.JSONFactory600.{DynamicEntityDiagnosticsJsonV600, DynamicEntityIssueJsonV600, GroupJsonV600, GroupMembershipJsonV600, GroupMembershipsJsonV600, GroupsJsonV600, PostGroupJsonV600, PostGroupMembershipJsonV600, PutGroupJsonV600, ReferenceTypeJsonV600, ReferenceTypesJsonV600, RoleWithEntitlementCountJsonV600, RolesWithEntitlementCountsJsonV600, ValidateUserEmailJsonV600, ValidateUserEmailResponseJsonV600, createActiveCallLimitsJsonV600, createCallLimitJsonV600, createCurrentUsageJson}
 import code.api.v6_0_0.OBPAPI6_0_0
@@ -2929,6 +2930,47 @@ trait APIMethods600 {
             }
           } yield {
             (Full(true), HttpCode.`204`(callContext))
+          }
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
+      getSystemViews,
+      implementedInApiVersion,
+      nameOf(getSystemViews),
+      "GET",
+      "/management/system-views",
+      "Get System Views",
+      s"""Get all system views.
+         |
+         |System views are predefined views that apply to all accounts, such as:
+         |- owner
+         |- accountant
+         |- auditor
+         |- standard
+         |
+         |${userAuthenticationMessage(true)}
+         |
+         |""".stripMargin,
+      EmptyBody,
+      ViewsJsonV500(List()),
+      List(
+        UserNotLoggedIn,
+        UserHasMissingRoles,
+        UnknownError
+      ),
+      List(apiTagSystemView, apiTagView),
+      Some(List(canGetSystemViews))
+    )
+
+    lazy val getSystemViews: OBPEndpoint = {
+      case "management" :: "system-views" :: Nil JsonGet _ => {
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(u), callContext) <- authenticatedAccess(cc)
+            views <- Views.views.vend.getSystemViews()
+          } yield {
+            (JSONFactory500.createViewsJsonV500(views), HttpCode.`200`(callContext))
           }
       }
     }

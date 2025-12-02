@@ -624,6 +624,8 @@ object ApiRole extends MdcLoggable{
   lazy val canUpdateSystemView = CanUpdateSystemView()
   case class CanGetSystemView(requiresBankId: Boolean = false) extends ApiRole
   lazy val canGetSystemView = CanGetSystemView()
+  case class CanGetSystemViews(requiresBankId: Boolean = false) extends ApiRole
+  lazy val canGetSystemViews = CanGetSystemViews()
   case class CanDeleteSystemView(requiresBankId: Boolean = false) extends ApiRole
   lazy val canDeleteSystemView = CanDeleteSystemView()
 
