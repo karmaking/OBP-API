@@ -183,4 +183,9 @@ class SystemViewsTest extends V600ServerSetup with DefaultUsers {
       Then("We should get a 400 or 404 error")
       response.code should (equal(400) or equal(404))
       
-      And("Error message should indicate system
+      And("Error message should indicate system view not found")
+      response.body.extract[ErrorMessage].message should include("view")
+    }
+  }
+
+}
