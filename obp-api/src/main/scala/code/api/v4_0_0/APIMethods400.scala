@@ -2258,6 +2258,8 @@ trait APIMethods400 extends MdcLoggable {
          |
          |The ${DynamicEntityFieldType.DATE_WITH_DAY} format is: ${DynamicEntityFieldType.DATE_WITH_DAY.dateFormat}
          |
+         |**Important:** Each property MUST include an `example` field with a valid example value. This is required for API documentation and validation.
+         |
          |Reference types are like foreign keys and composite foreign keys are supported. The value you need to supply as the (composite) foreign key is a UUID (or several UUIDs in the case of a composite key) that match value in another Entity.
          |
          |To see the complete list of available reference types and their correct formats, call:
@@ -2447,6 +2449,8 @@ trait APIMethods400 extends MdcLoggable {
           .mkString("[", ", ", ", reference]")}
          |
          |The ${DynamicEntityFieldType.DATE_WITH_DAY} format is: ${DynamicEntityFieldType.DATE_WITH_DAY.dateFormat}
+         |
+         |**Important:** Each property MUST include an `example` field with a valid example value. This is required for API documentation and validation.
          |
          |Reference types are like foreign keys and composite foreign keys are supported. The value you need to supply as the (composite) foreign key is a UUID (or several UUIDs in the case of a composite key) that match value in another Entity.
          |
@@ -2690,6 +2694,8 @@ trait APIMethods400 extends MdcLoggable {
          |
          |The ${DynamicEntityFieldType.DATE_WITH_DAY} format is: ${DynamicEntityFieldType.DATE_WITH_DAY.dateFormat}
          |
+         |**Important:** Each property MUST include an `example` field with a valid example value. This is required for API documentation and validation.
+         |
          |To see all available reference types and their correct formats, call:
          |**GET /obp/v6.0.0/management/dynamic-entities/reference-types**
          |""",
@@ -2737,6 +2743,8 @@ trait APIMethods400 extends MdcLoggable {
           .mkString("[", ", ", ", reference]")}
          |
          |The ${DynamicEntityFieldType.DATE_WITH_DAY} format is: ${DynamicEntityFieldType.DATE_WITH_DAY.dateFormat}
+         |
+         |**Important:** Each property MUST include an `example` field with a valid example value. This is required for API documentation and validation.
          |
          |To see all available reference types and their correct formats, call:
          |**GET /obp/v6.0.0/management/dynamic-entities/reference-types**
@@ -2934,6 +2942,8 @@ trait APIMethods400 extends MdcLoggable {
           .mkString("[", ", ", ", reference]")}
          |
          |The ${DynamicEntityFieldType.DATE_WITH_DAY} format is: ${DynamicEntityFieldType.DATE_WITH_DAY.dateFormat}
+         |
+         |**Important:** Each property MUST include an `example` field with a valid example value. This is required for API documentation and validation.
          |
          |To see all available reference types and their correct formats, call:
          |**GET /obp/v6.0.0/management/dynamic-entities/reference-types**
