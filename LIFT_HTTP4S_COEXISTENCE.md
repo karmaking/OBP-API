@@ -252,6 +252,185 @@ Phase 4 (Complete):
 
 **This way http4s is NEVER dependent on Jetty.**
 
+### Is http4s Non-Blocking?
+
+**YES - http4s is fully non-blocking and asynchronous.**
+
+#### Architecture Comparison
+
+**Lift/Jetty (Blocking):**
+```
+Thread-per-request model:
+┌─────────────────────────────┐
+│ Request 1 → Thread 1 (busy) │  Blocks waiting for DB
+│ Request 2 → Thread 2 (busy) │  Blocks waiting for HTTP call
+│ Request 3 → Thread 3 (busy) │  Blocks waiting for file I/O
+│ Request 4 → Thread 4 (busy) │
+│ ...                          │
+│ Request N → Thread pool full │  ← New requests wait!
+└─────────────────────────────┘
+
+Problem: 
+- 1 thread per request
+- Thread blocks on I/O
+- Limited by thread pool size (e.g., 200 threads)
+- More requests = more memory
+```
+
+**http4s (Non-Blocking):**
+```
+Async/Effect model:
+┌─────────────────────────────┐
+│ Thread 1:                   │
+│   Request 1 → DB call (IO)  │  ← Doesn't block! Fiber suspended
+│   Request 2 → API call (IO) │  ← Continues processing
+│   Request 3 → Processing    │
+│   Request N → ...           │
+└─────────────────────────────┘
+
+Benefits:
+- Few threads (typically = CPU cores)
+- Thousands of concurrent requests
+- Much lower memory usage
+- Scales better
+```
+
+#### Performance Impact
+
+**Lift/Jetty:**
+- 200 threads × ~1MB stack = ~200MB just for threads
+- Max ~200 concurrent blocking requests
+- Each blocked thread = wasted resources
+
+**http4s:**
+- 8 threads (on 8-core machine) × ~1MB = ~8MB for threads
+- Can handle 10,000+ concurrent requests
+- Threads never block, always doing work
+
+#### Code Example - Blocking vs Non-Blocking
+
+**Lift (Blocking):**
+```scala
+// This BLOCKS the thread while waiting for DB
+lazy val getBank: OBPEndpoint = {
+  case "banks" :: bankId :: Nil JsonGet _ => {
+    cc => implicit val ec = EndpointContext(Some(cc))
+    for {
+      // Thread blocks here waiting for database
+      bank <- Future { Connector.connector.vend.getBank(BankId(bankId)) }
+    } yield {
+      (bank, HttpCode.`200`(cc))
+    }
+  }
+}
+
+// Under the hood:
+// Thread 1: Wait for DB... (blocked, not doing anything else)
+// Thread 2: Wait for DB... (blocked)
+// Thread 3: Wait for DB... (blocked)
+// Eventually: No threads left → requests queue up
+```
+
+**http4s (Non-Blocking):**
+```scala
+// This NEVER blocks - thread is freed while waiting
+def getBank[F[_]: Concurrent](bankId: String): F[Response[F]] = {
+  for {
+    // Thread is released while waiting for DB
+    // Can handle other requests in the meantime
+    bank <- getBankFromDB(bankId)  // Returns F[Bank], doesn't block
+    response <- Ok(bank.asJson)
+  } yield response
+}
+
+// Under the hood:
+// Thread 1: Start DB call → release thread → handle other requests
+//           DB returns → pick up continuation → send response
+// Same thread handles 100s of requests while others wait for I/O
+```
+
+#### Real-World Impact
+
+**Scenario:** 1000 concurrent requests, each needs 100ms of DB time
+
+**Lift/Jetty (200 thread pool):**
+- First 200 requests: start immediately
+- Requests 201-1000: wait in queue
+- Total time: ~500ms (because of queuing)
+- Memory: 200MB for threads
+
+**http4s (8 threads):**
+- All 1000 requests: start immediately
+- Process concurrently on 8 threads
+- Total time: ~100ms (no queuing)
+- Memory: 8MB for threads
+
+#### Why This Matters for Migration
+
+1. **Better Resource Usage**
+   - Same machine can handle more requests
+   - Lower memory footprint
+   - Can scale vertically better
+
+2. **No Thread Pool Tuning**
+   - Lift: Need to tune thread pool size (too small = slow, too large = OOM)
+   - http4s: Set to CPU cores, done
+
+3. **Database Connections**
+   - Lift: Need thread pool ≤ DB connections (e.g., 200 threads = 200 DB connections)
+   - http4s: 8 threads can share smaller DB pool (e.g., 20 connections)
+
+4. **Modern Architecture**
+   - http4s uses cats-effect (like Akka, ZIO, Monix)
+   - Industry standard for Scala backends
+   - Better ecosystem and tooling
+
+#### The Blocking Problem in Current OBP-API
+
+```scala
+// Common pattern in OBP-API - BLOCKS thread
+for {
+  bank <- Future { /* Get from DB - BLOCKS */ }
+  accounts <- Future { /* Get from DB - BLOCKS */ }
+  transactions <- Future { /* Get from Connector - BLOCKS */ }
+} yield result
+
+// Each Future ties up a thread waiting
+// If 200 requests do this, 200 threads blocked
+```
+
+#### http4s Solution - Truly Async
+
+```scala
+// Non-blocking version
+for {
+  bank <- IO { /* Get from DB - thread released */ }
+  accounts <- IO { /* Get from DB - thread released */ }
+  transactions <- IO { /* Get from Connector - thread released */ }
+} yield result
+
+// IO suspends computation, releases thread
+// Thread can handle other work while waiting
+// 8 threads can handle 1000s of these concurrently
+```
+
+### Conclusion on Non-Blocking
+
+**Yes, http4s is non-blocking and this is a MAJOR reason to migrate:**
+
+- Better performance (10-50x more concurrent requests)
+- Lower memory usage
+- Better resource utilization
+- Scales much better
+- Removes need for thread pool tuning
+
+**However:** To get full benefits, you'll need to:
+1. Use `IO` or `F[_]` instead of blocking `Future`
+2. Use non-blocking database libraries (Doobie, Skunk)
+3. Use non-blocking HTTP clients (http4s client)
+
+But the migration can be gradual - even blocking code in http4s is still better than Lift/Jetty's servlet model.
+
 ### Step 4: Shared Business Logic
 
 ```scala
