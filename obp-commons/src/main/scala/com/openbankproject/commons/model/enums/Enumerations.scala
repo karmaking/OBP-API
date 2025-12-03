@@ -192,7 +192,17 @@ sealed trait DynamicEntityFieldType extends EnumValue {
   def wrongTypeMsg = s"the value's type should be $this."
 }
 object DynamicEntityFieldType extends OBPEnumeration[DynamicEntityFieldType]{
-  object number  extends Value{val jValueType = classOf[JDouble]}
+  object number  extends Value{
+    val jValueType = classOf[JDouble]
+    override def isJValueValid(jValue: JValue): Boolean = {
+      jValue match {
+        case _: JDouble => true
+        case _: JInt => true
+        case _ => false
+      }
+    }
+    override def wrongTypeMsg: String = s"""the value's type should be number (decimal or integer)."""
+  }
   object integer extends Value{val jValueType = classOf[JInt]}
   object boolean extends Value {
     val jValueType = classOf[JValue]

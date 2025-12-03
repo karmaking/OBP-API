@@ -97,7 +97,19 @@ trait DynamicEntityT {
         case (_, _, JNothing | JNull)                             => Future.successful("") // required properties already checked.
 
         case (_, Some(typeEnum), v) if !typeEnum.isJValueValid(v) =>
-          Future.successful(s"The value of '$propertyName' is wrong, ${typeEnum.wrongTypeMsg}")
+          val receivedType = v.getClass.getSimpleName
+          val receivedValue = v match {
+            case JString(s) => s""""$s""""
+            case JInt(i) => i.toString
+            case JDouble(d) => d.toString
+            case JBool(b) => b.toString
+            case JArray(arr) => s"[array with ${arr.length} elements]"
+            case JObject(obj) => s"{object with ${obj.length} fields}"
+            case JNull => "null"
+            case JNothing => "nothing"
+            case other => other.toString
+          }
+          Future.successful(s"The value of '$propertyName' is wrong, ${typeEnum.wrongTypeMsg} Received: $receivedValue (type: $receivedType)")
 
         case (t, None, v)  if t.startsWith("reference:") && !v.isInstanceOf[JString] =>
           val errorMsg = s"The type of '$propertyName' is 'reference', value should be a string that represent reference entity's Id"
