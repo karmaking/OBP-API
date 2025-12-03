@@ -632,6 +632,9 @@ object ApiRole extends MdcLoggable{
   case class CanGetCustomViews(requiresBankId: Boolean = false) extends ApiRole
   lazy val canGetCustomViews = CanGetCustomViews()
 
+  case class CanCreateCustomView(requiresBankId: Boolean = false) extends ApiRole
+  lazy val canCreateCustomView = CanCreateCustomView()
+
   case class CanGetRegulatedEntityAttribute(requiresBankId: Boolean = false) extends ApiRole
   lazy val canGetRegulatedEntityAttribute = CanGetRegulatedEntityAttribute()
 

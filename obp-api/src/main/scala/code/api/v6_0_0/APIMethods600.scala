@@ -3106,6 +3106,75 @@ trait APIMethods600 {
     }
 
     staticResourceDocs += ResourceDoc(
+      createCustomViewManagement,
+      implementedInApiVersion,
+      nameOf(createCustomViewManagement),
+      "POST",
+      "/management/banks/BANK_ID/accounts/ACCOUNT_ID/views",
+      "Create Custom View (Management)",
+      s"""Create a custom view on a bank account via management endpoint.
+         |
+         |This is a **management endpoint** that requires the `CanCreateCustomView` role (entitlement).
+         |
+         |This endpoint provides a simpler, role-based authorization model compared to the original 
+         |v3.0.0 endpoint which requires view-level permissions. Use this endpoint when you want to 
+         |grant view creation ability through direct role assignment rather than through view access.
+         |
+         |For the original endpoint that checks account-level view permissions, see:
+         |POST /obp/v3.0.0/banks/BANK_ID/accounts/ACCOUNT_ID/views
+         |
+         |${userAuthenticationMessage(true)}
+         |
+         |The 'alias' field in the JSON can take one of three values:
+         |
+         | * _public_: to use the public alias if there is one specified for the other account.
+         | * _private_: to use the private alias if there is one specified for the other account.
+         |
+         | * _''(empty string)_: to use no alias; the view shows the real name of the other account.
+         |
+         | The 'hide_metadata_if_alias_used' field in the JSON can take boolean values. If it is set to `true` and there is an alias on the other account then the other accounts' metadata (like more_info, url, image_url, open_corporates_url, etc.) will be hidden. Otherwise the metadata will be shown.
+         |
+         | The 'allowed_actions' field is a list containing the name of the actions allowed on this view, all the actions contained will be set to `true` on the view creation, the rest will be set to `false`.
+         |
+         | You MUST use a leading _ (underscore) in the view name because other view names are reserved for OBP [system views](/index#group-View-System).
+         |
+         |""".stripMargin,
+      createViewJsonV300,
+      viewJsonV300,
+      List(
+        UserNotLoggedIn,
+        UserHasMissingRoles,
+        InvalidJsonFormat,
+        InvalidCustomViewFormat,
+        BankAccountNotFound,
+        UnknownError
+      ),
+      List(apiTagView, apiTagAccount),
+      Some(List(canCreateCustomView))
+    )
+
+    lazy val createCustomViewManagement: OBPEndpoint = {
+      case "management" :: "banks" :: BankId(bankId) :: "accounts" :: AccountId(accountId) :: "views" :: Nil JsonPost json -> _ => {
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(u), callContext) <- authenticatedAccess(cc)
+            createViewJson <- Future { tryo{json.extract[CreateViewJson]} } map {
+              val msg = s"$InvalidJsonFormat The Json body should be the $CreateViewJson "
+              x => unboxFullOrFail(x, callContext, msg)
+            }
+            //customer views are started with `_`, eg _life, _work, and System views start with letter, eg: owner
+            _ <- Helper.booleanToFuture(failMsg = InvalidCustomViewFormat + s"Current view_name (${createViewJson.name})", cc = callContext) {
+              isValidCustomViewName(createViewJson.name)
+            }
+            (account, callContext) <- NewStyle.function.getBankAccount(bankId, accountId, callContext)
+            (view, callContext) <- ViewNewStyle.createCustomView(BankIdAccountId(bankId, accountId), createViewJson, callContext)
+          } yield {
+            (JSONFactory300.createViewJSON(view), HttpCode.`201`(callContext))
+          }
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
       getCustomViews,
       implementedInApiVersion,
       nameOf(getCustomViews),
