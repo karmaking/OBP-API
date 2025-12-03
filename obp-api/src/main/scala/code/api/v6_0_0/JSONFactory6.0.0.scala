@@ -642,4 +642,8 @@ case class RoleWithEntitlementCountJsonV600(
 
 case class RolesWithEntitlementCountsJsonV600(roles: List[RoleWithEntitlementCountJsonV600])
 
+case class PostResetPasswordUrlJsonV600(username: String, email: String, user_id: String)
+
+case class ResetPasswordUrlJsonV600(reset_password_url: String)
+
 }

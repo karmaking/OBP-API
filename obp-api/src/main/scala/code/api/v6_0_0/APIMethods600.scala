@@ -24,7 +24,7 @@ import code.api.v4_0_0.JSONFactory400.createCallsLimitJson
 import code.api.v5_0_0.JSONFactory500
 import code.api.v5_0_0.{ViewJsonV500, ViewsJsonV500}
 import code.api.v5_1_0.{JSONFactory510, PostCustomerLegalNameJsonV510}
-import code.api.v6_0_0.JSONFactory600.{DynamicEntityDiagnosticsJsonV600, DynamicEntityIssueJsonV600, GroupJsonV600, GroupMembershipJsonV600, GroupMembershipsJsonV600, GroupsJsonV600, PostGroupJsonV600, PostGroupMembershipJsonV600, PutGroupJsonV600, ReferenceTypeJsonV600, ReferenceTypesJsonV600, RoleWithEntitlementCountJsonV600, RolesWithEntitlementCountsJsonV600, ValidateUserEmailJsonV600, ValidateUserEmailResponseJsonV600, createActiveCallLimitsJsonV600, createCallLimitJsonV600, createCurrentUsageJson}
+import code.api.v6_0_0.JSONFactory600.{DynamicEntityDiagnosticsJsonV600, DynamicEntityIssueJsonV600, GroupJsonV600, GroupMembershipJsonV600, GroupMembershipsJsonV600, GroupsJsonV600, PostGroupJsonV600, PostGroupMembershipJsonV600, PostResetPasswordUrlJsonV600, PutGroupJsonV600, ReferenceTypeJsonV600, ReferenceTypesJsonV600, ResetPasswordUrlJsonV600, RoleWithEntitlementCountJsonV600, RolesWithEntitlementCountsJsonV600, ValidateUserEmailJsonV600, ValidateUserEmailResponseJsonV600, createActiveCallLimitsJsonV600, createCallLimitJsonV600, createCurrentUsageJson}
 import code.api.v6_0_0.OBPAPI6_0_0
 import code.metrics.APIMetrics
 import code.bankconnectors.LocalMappedConnectorInternal
@@ -3208,6 +3208,133 @@ trait APIMethods600 {
             customViews <- Future { ViewDefinition.getCustomViews() }
           } yield {
             (JSONFactory500.createViewsJsonV500(customViews), HttpCode.`200`(callContext))
+          }
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
+      resetPasswordUrl,
+      implementedInApiVersion,
+      nameOf(resetPasswordUrl),
+      "POST",
+      "/management/user/reset-password-url",
+      "Create Password Reset URL and Send Email",
+      s"""Create a password reset URL for a user and automatically send it via email.
+         |
+         |This endpoint generates a password reset URL and sends it to the user's email address.
+         |
+         |${userAuthenticationMessage(true)}
+         |
+         |Behavior:
+         |- Generates a unique password reset token
+         |- Creates a reset URL using the portal_external_url property (falls back to API hostname)
+         |- Sends an email to the user with the reset link
+         |- Returns the reset URL in the response for logging/tracking purposes
+         |
+         |Required fields:
+         |- username: The user's username (typically email)
+         |- email: The user's email address (must match username)
+         |- user_id: The user's UUID
+         |
+         |The user must exist and be validated before a reset URL can be generated.
+         |
+         |Email configuration must be set up correctly for email delivery to work.
+         |
+         |""".stripMargin,
+      PostResetPasswordUrlJsonV600(
+        "user@example.com",
+        "user@example.com",
+        "74a8ebcc-10e4-4036-bef3-9835922246bf"
+      ),
+      ResetPasswordUrlJsonV600(
+        "https://api.example.com/user_mgt/reset_password/QOL1CPNJPCZ4BRMPX3Z01DPOX1HMGU3L"
+      ),
+      List(
+        $UserNotLoggedIn,
+        UserHasMissingRoles,
+        InvalidJsonFormat,
+        UnknownError
+      ),
+      List(apiTagUser),
+      Some(List(canCreateResetPasswordUrl))
+    )
+
+    lazy val resetPasswordUrl: OBPEndpoint = {
+      case "management" :: "user" :: "reset-password-url" :: Nil JsonPost json -> _ => {
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(u), callContext) <- authenticatedAccess(cc)
+            _ <- Helper.booleanToFuture(
+              failMsg = ErrorMessages.NotAllowedEndpoint,
+              cc = callContext
+            ) {
+              APIUtil.getPropsAsBoolValue("ResetPasswordUrlEnabled", false)
+            }
+            postedData <- NewStyle.function.tryons(
+              s"$InvalidJsonFormat The Json body should be the ${classOf[PostResetPasswordUrlJsonV600]}",
+              400,
+              callContext
+            ) {
+              json.extract[PostResetPasswordUrlJsonV600]
+            }
+            // Find the AuthUser
+            authUserBox <- Future {
+              code.model.dataAccess.AuthUser.find(
+                net.liftweb.mapper.By(code.model.dataAccess.AuthUser.username, postedData.username)
+              )
+            }
+            authUser <- NewStyle.function.tryons(
+              s"$UnknownError User not found or validation failed",
+              400,
+              callContext
+            ) {
+              authUserBox match {
+                case Full(user) if user.validated.get && user.email.get == postedData.email =>
+                  // Verify user_id matches
+                  Users.users.vend.getUserByUserId(postedData.user_id) match {
+                    case Full(resourceUser) if resourceUser.name == postedData.username && 
+                                                 resourceUser.emailAddress == postedData.email =>
+                      user
+                    case _ => throw new Exception("User ID does not match username and email")
+                  }
+                case _ => throw new Exception("User not found, not validated, or email mismatch")
+              }
+            }
+          } yield {
+            // Explicitly type the user to ensure proper method resolution
+            val user: code.model.dataAccess.AuthUser = authUser
+            
+            // Generate new reset token
+            // Reset the unique ID token by generating a new random value (32 chars, no hyphens)
+            user.uniqueId.set(java.util.UUID.randomUUID().toString.replace("-", ""))
+            user.save
+            
+            // Construct reset URL using portal_hostname
+            // Get the unique ID value for the reset token URL
+            val resetPasswordLink = APIUtil.getPropsValue("portal_external_url", Constant.HostName) + 
+              "/user_mgt/reset_password/" + 
+              java.net.URLEncoder.encode(user.uniqueId.get, "UTF-8")
+            
+            // Send email using CommonsEmailWrapper (like createUser does)
+            val textContent = Some(s"Please use the following link to reset your password: $resetPasswordLink")
+            val htmlContent = Some(s"<p>Please use the following link to reset your password:</p><p><a href='$resetPasswordLink'>$resetPasswordLink</a></p>")
+            val subjectContent = "Reset your password - " + user.username.get
+            
+            val emailContent = code.api.util.CommonsEmailWrapper.EmailContent(
+              from = code.model.dataAccess.AuthUser.emailFrom,
+              to = List(user.email.get),
+              bcc = code.model.dataAccess.AuthUser.bccEmail.toList,
+              subject = subjectContent,
+              textContent = textContent,
+              htmlContent = htmlContent
+            )
+            
+            code.api.util.CommonsEmailWrapper.sendHtmlEmail(emailContent)
+            
+            (
+              ResetPasswordUrlJsonV600(resetPasswordLink),
+              HttpCode.`201`(callContext)
+            )
           }
       }
     }
