@@ -2389,9 +2389,9 @@ trait APIMethods600 {
          | Requires username(email), password, first_name, last_name, and email.
          |
          | Optional fields:
-         | - validating_application: Optional application name that will validate the user's email (e.g., "OBP-Portal", "EXTERNAL_PORTAL")
-         |   When set to "OBP-Portal", the validation link will use the portal_hostname property
-         |   When set to "EXTERNAL_PORTAL", the validation link will use the portal_external_url property
+         | - validating_application: Optional application name that will validate the user's email (e.g., "LEGACY_PORTAL")
+         |   When set to "LEGACY_PORTAL", the validation link will use the API hostname property
+         |   When set to any other value or not provided, the validation link will use the portal_external_url property (default behavior)
          |
          | Validation checks performed:
          | - Password must meet strong password requirements (InvalidStrongPasswordFormat error if not)
@@ -2402,9 +2402,8 @@ trait APIMethods600 {
          | - Controlled by property 'authUser.skipEmailValidation' (default: false)
          | - When false: User is created with validated=false and a validation email is sent to the user's email address
          | - Validation link domain is determined by validating_application:
-         |   * "OBP-Portal": Uses portal_hostname property (e.g., https://portal.example.com)
-         |   * "EXTERNAL_PORTAL": Uses portal_external_url property (e.g., https://external-portal.example.com)
-         |   * Other/None: Uses API hostname property (e.g., https://api.example.com)
+         |   * "LEGACY_PORTAL": Uses API hostname property (e.g., https://api.example.com)
+         |   * Other/None (default): Uses portal_external_url property (e.g., https://external-portal.example.com)
          | - When true: User is created with validated=true and no validation email is sent
          | - Default entitlements are granted immediately regardless of validation status
          |
@@ -2467,12 +2466,12 @@ trait APIMethods600 {
             if (!skipEmailValidation) {
               // Construct validation link based on validating_application
               val emailValidationLink = postedData.validating_application match {
-                case Some("EXTERNAL_PORTAL") =>
-                  // Use portal_external_url property if available, otherwise fall back to hostname
-                  APIUtil.getPropsValue("portal_external_url", Constant.HostName) + "/" + code.model.dataAccess.AuthUser.validateUserPath.mkString("/") + "/" + java.net.URLEncoder.encode(savedUser.uniqueId.get, "UTF-8")
-                case _ =>
-                  // Default to the API hostname
+                case Some("LEGACY_PORTAL") =>
+                  // Use API hostname for legacy portal
                   Constant.HostName + "/" + code.model.dataAccess.AuthUser.validateUserPath.mkString("/") + "/" + java.net.URLEncoder.encode(savedUser.uniqueId.get, "UTF-8")
+                case _ =>
+                  // Default to portal_external_url property if available, otherwise fall back to hostname
+                  APIUtil.getPropsValue("portal_external_url", Constant.HostName) + "/" + code.model.dataAccess.AuthUser.validateUserPath.mkString("/") + "/" + java.net.URLEncoder.encode(savedUser.uniqueId.get, "UTF-8")
               }
 
               val textContent = Some(s"Welcome! Please validate your account by clicking the following link: $emailValidationLink")
@@ -3158,9 +3157,8 @@ trait APIMethods600 {
         cc => implicit val ec = EndpointContext(Some(cc))
           for {
             (Full(u), callContext) <- authenticatedAccess(cc)
-            createViewJson <- Future { tryo{json.extract[CreateViewJson]} } map {
-              val msg = s"$InvalidJsonFormat The Json body should be the $CreateViewJson "
-              x => unboxFullOrFail(x, callContext, msg)
+            createViewJson <- NewStyle.function.tryons(s"$InvalidJsonFormat The Json body should be the $CreateViewJson ", 400, callContext) {
+              json.extract[CreateViewJson]
             }
             //customer views are started with `_`, eg _life, _work, and System views start with letter, eg: owner
             _ <- Helper.booleanToFuture(failMsg = InvalidCustomViewFormat + s"Current view_name (${createViewJson.name})", cc = callContext) {
