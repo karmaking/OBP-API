@@ -195,15 +195,17 @@ object DynamicEntityFieldType extends OBPEnumeration[DynamicEntityFieldType]{
   object number  extends Value{val jValueType = classOf[JDouble]}
   object integer extends Value{val jValueType = classOf[JInt]}
   object boolean extends Value {
-    val jValueType = classOf[JString]
+    val jValueType = classOf[JValue]
     override def isJValueValid(jValue: JValue): Boolean = {
-      super.isJValueValid(jValue) && {
-        val value = jValue.asInstanceOf[JString].s
-        val lowerValue = value.toLowerCase
-        lowerValue == "true" || lowerValue == "false"
+      jValue match {
+        case JBool(_) => true
+        case JString(s) => 
+          val lowerValue = s.toLowerCase
+          lowerValue == "true" || lowerValue == "false"
+        case _ => false
       }
     }
-    override def wrongTypeMsg: String = s"""the value's type should be string "true" or "false"."""
+    override def wrongTypeMsg: String = s"""the value's type should be boolean (true/false) or string ("true"/"false")."""
   }
   object string  extends Value{
     val jValueType = classOf[JString]
