@@ -59,7 +59,7 @@ object OpenAPI31JSONFactory extends MdcLoggable {
     servers: List[ServerJson],
     paths: Map[String, PathItemJson],
     components: ComponentsJson,
-    security: Option[List[SecurityRequirementJson]] = None,
+    security: Option[List[Map[String, List[String]]]] = None,
     tags: Option[List[TagJson]] = None,
     externalDocs: Option[ExternalDocumentationJson] = None
   )
@@ -142,7 +142,7 @@ object OpenAPI31JSONFactory extends MdcLoggable {
     responses: ResponsesJson,
     callbacks: Option[Map[String, CallbackJson]] = None,
     deprecated: Option[Boolean] = None,
-    security: Option[List[SecurityRequirementJson]] = None,
+    security: Option[List[Map[String, List[String]]]] = None,
     servers: Option[List[ServerJson]] = None
   )
 
@@ -169,11 +169,8 @@ object OpenAPI31JSONFactory extends MdcLoggable {
     required: Option[Boolean] = None
   )
 
-  // Responses Object
-  case class ResponsesJson(
-    default: Option[ResponseJson] = None,
-    responses: Map[String, ResponseJson] = Map.empty
-  )
+  // Responses Object - simplified to avoid nesting
+  type ResponsesJson = Map[String, ResponseJson]
 
   // Response Object
   case class ResponseJson(
@@ -318,9 +315,8 @@ object OpenAPI31JSONFactory extends MdcLoggable {
     scopes: Map[String, String]
   )
 
-  case class SecurityRequirementJson(
-    requirements: Map[String, List[String]]
-  )
+  // Security requirements are just a map of scheme name to scopes
+  type SecurityRequirementJson = Map[String, List[String]]
 
   case class TagJson(
     name: String,
@@ -357,11 +353,14 @@ object OpenAPI31JSONFactory extends MdcLoggable {
 
     val timestamp = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
     
+    // Clean version string to avoid double 'v' prefix
+    val cleanVersion = if (requestedApiVersion.startsWith("v")) requestedApiVersion.substring(1) else requestedApiVersion
+    
     // Create Info object
     val info = InfoJson(
-      title = s"Open Bank Project API v$requestedApiVersion",
-      version = requestedApiVersion,
-      description = Some(s"""The Open Bank Project API v$requestedApiVersion provides standardized banking APIs.
+      title = s"Open Bank Project API v$cleanVersion",
+      version = cleanVersion,
+      description = Some(s"""The Open Bank Project API v$cleanVersion provides standardized banking APIs.
         |
         |This specification was automatically generated from the OBP API codebase.
         |Generated on: $timestamp
@@ -455,15 +454,21 @@ object OpenAPI31JSONFactory extends MdcLoggable {
    * Converts OBP path format to OpenAPI path format
    */
   private def convertPathToOpenAPI(obpPath: String): String = {
-    // Convert OBP path parameters (BANK_ID) to OpenAPI format ({bankId})
-    val segments = obpPath.split("/")
-    segments.map { segment =>
-      if (segment.matches("[A-Z_]+")) {
-        s"{${segment.toLowerCase.replace("_", "")}}"
-      } else {
-        segment
-      }
-    }.mkString("/")
+    // Handle paths that are already in OpenAPI format or convert from OBP format
+    if (obpPath.contains("{") && obpPath.contains("}")) {
+      // Already in OpenAPI format, return as-is
+      obpPath
+    } else {
+      // Convert OBP path parameters (BANK_ID) to OpenAPI format ({bankid})
+      val segments = obpPath.split("/")
+      segments.map { segment =>
+        if (segment.matches("[A-Z_]+")) {
+          s"{${segment.toLowerCase.replace("_", "")}}"
+        } else {
+          segment
+        }
+      }.mkString("/")
+    }
   }
 
   /**
@@ -489,17 +494,18 @@ object OpenAPI31JSONFactory extends MdcLoggable {
   private def createOperation(doc: ResourceDocJson): (String, OperationJson) = {
     val method = doc.request_verb.toUpperCase
     
-    // Extract path parameters
-    val pathParams = extractPathParameters(doc.request_url)
+    // Convert path to OpenAPI format and extract parameters
+    val openApiPath = convertPathToOpenAPI(doc.request_url)
+    val pathParams = extractOpenAPIPathParameters(openApiPath)
     
     // Create parameters
     val parameters = pathParams.map { paramName =>
       ParameterJson(
-        name = paramName.toLowerCase.replace("_", ""),
+        name = paramName,
         in = "path",
         required = Some(true),
         schema = Some(SchemaJson(`type` = Some("string"))),
-        description = Some(s"The $paramName identifier")
+        description = Some(s"The ${paramName.toUpperCase} identifier")
       )
     }
 
@@ -532,9 +538,7 @@ object OpenAPI31JSONFactory extends MdcLoggable {
 
     val errorResponses = createErrorResponses(doc.error_response_bodies)
     
-    val responses = ResponsesJson(
-      responses = Map("200" -> successResponse) ++ errorResponses
-    )
+    val responsesMap = Map("200" -> successResponse) ++ errorResponses
 
     // Create tags
     val tags = if (doc.tags.nonEmpty) {
@@ -544,9 +548,9 @@ object OpenAPI31JSONFactory extends MdcLoggable {
     // Check if authentication is required
     val security = if (requiresAuthentication(doc)) {
       Some(List(
-        SecurityRequirementJson(Map("DirectLogin" -> List.empty)),
-        SecurityRequirementJson(Map("GatewayLogin" -> List.empty)),
-        SecurityRequirementJson(Map("OAuth2" -> List.empty))
+        Map("DirectLogin" -> List.empty[String]),
+        Map("GatewayLogin" -> List.empty[String]),
+        Map("OAuth2" -> List.empty[String])
       ))
     } else None
 
@@ -557,19 +561,21 @@ object OpenAPI31JSONFactory extends MdcLoggable {
       tags = tags,
       parameters = if (parameters.nonEmpty) Some(parameters) else None,
       requestBody = requestBody,
-      responses = responses,
+      responses = responsesMap,
       security = security
     )
 
     method -> operation
   }
 
+
+
   /**
-   * Extracts path parameters from OBP path format
+   * Extracts path parameters from OpenAPI path format
    */
-  private def extractPathParameters(path: String): List[String] = {
-    val paramPattern = """([A-Z_]+)""".r
-    paramPattern.findAllIn(path).toList
+  private def extractOpenAPIPathParameters(path: String): List[String] = {
+    val paramPattern = """\{([^}]+)\}""".r
+    paramPattern.findAllMatchIn(path).map(_.group(1)).toList
   }
 
   /**
@@ -632,12 +638,17 @@ object OpenAPI31JSONFactory extends MdcLoggable {
       "500" -> ResponseJson(description = "Internal Server Error")
     )
 
-    // Filter to only include relevant error codes based on error bodies
-    commonErrors.filter { case (code, _) =>
-      errorBodies.exists(_.contains(code)) ||
-      errorBodies.exists(_.toLowerCase.contains("unauthorized")) && code == "401" ||
-      errorBodies.exists(_.toLowerCase.contains("not found")) && code == "404" ||
-      errorBodies.exists(_.toLowerCase.contains("bad request")) && code == "400"
+    // Always include common error responses for better API documentation
+    if (errorBodies.nonEmpty) {
+      commonErrors.filter { case (code, _) =>
+        errorBodies.exists(_.contains(code)) ||
+        errorBodies.exists(_.toLowerCase.contains("unauthorized")) && code == "401" ||
+        errorBodies.exists(_.toLowerCase.contains("not found")) && code == "404" ||
+        errorBodies.exists(_.toLowerCase.contains("bad request")) && code == "400" ||
+        code == "500" // Always include 500 for server errors
+      }
+    } else {
+      Map("500" -> ResponseJson(description = "Internal Server Error"))
     }
   }
 
@@ -645,8 +656,10 @@ object OpenAPI31JSONFactory extends MdcLoggable {
    * Determines if an endpoint requires authentication
    */
   private def requiresAuthentication(doc: ResourceDocJson): Boolean = {
-    !doc.error_response_bodies.exists(_.contains("UserNotLoggedIn")) &&
-    doc.roles.nonEmpty
+    doc.error_response_bodies.exists(_.contains("UserNotLoggedIn")) ||
+    doc.roles.nonEmpty ||
+    doc.description.toLowerCase.contains("authentication is required") ||
+    doc.description.toLowerCase.contains("user must be logged in")
   }
 
   /**
@@ -663,7 +676,38 @@ object OpenAPI31JSONFactory extends MdcLoggable {
     implicit val formats: Formats = DefaultFormats
 
     def toJValue(openapi: OpenAPI31Json): JValue = {
-      Extraction.decompose(openapi)(formats)
+      val baseJson = Extraction.decompose(openapi)(formats)
+      // Transform to fix nested structures
+      transformJson(baseJson)
+    }
+    
+    private def transformJson(json: JValue): JValue = {
+      json.transform {
+        // Fix responses structure - flatten nested responses
+        case JObject(fields) if fields.exists(_.name == "responses") =>
+          JObject(fields.map {
+            case JField("responses", JObject(responseFields)) =>
+              // If responses contains another responses field, flatten it
+              responseFields.find(_.name == "responses") match {
+                case Some(JField(_, JObject(innerResponses))) =>
+                  JField("responses", JObject(innerResponses))
+                case _ =>
+                  JField("responses", JObject(responseFields))
+              }
+            case other => other
+          })
+        // Fix security structure - remove requirements wrapper
+        case JObject(fields) if fields.exists(_.name == "security") =>
+          JObject(fields.map {
+            case JField("security", JArray(securityItems)) =>
+              val fixedSecurity = securityItems.map {
+                case JObject(List(JField("requirements", securityObj))) => securityObj
+                case other => other
+              }
+              JField("security", JArray(fixedSecurity))
+            case other => other
+          })
+      }
     }
   }
 }
