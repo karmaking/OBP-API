@@ -299,6 +299,14 @@ apiPathZero=obp
 ## This section configures email sending using CommonsEmailWrapper instead of Lift Mailer.
 ## All email functionality (password reset, validation, notifications) now uses these settings.
 ##
+## Test Mode
+## ---------
+## Enable test mode to log emails instead of sending them via SMTP.
+## Perfect for localhost development and testing user invitations without an SMTP server.
+## When enabled, full email content (from, to, subject, body) is logged to console.
+## Default: false (emails are sent normally via SMTP)
+#mail.test.mode=true
+##
 ## SMTP Server Configuration
 ## -------------------------
 ## Basic SMTP settings
