@@ -73,10 +73,12 @@ class ConsentTest extends V310ServerSetup {
   lazy val bankAccount = randomPrivateAccount(bankId)
   lazy val entitlements = List(PostConsentEntitlementJsonV310("", CanGetAnyUser.toString()))
   lazy val views = List(PostConsentViewJsonV310(bankId, bankAccount.id, Constant.SYSTEM_OWNER_VIEW_ID))
-  lazy val postConsentEmailJsonV310 = SwaggerDefinitionsJSON.postConsentEmailJsonV310
-    .copy(entitlements=entitlements)
+  def postConsentEmailJsonV310 = SwaggerDefinitionsJSON.postConsentEmailJsonV310
     .copy(consumer_id=Some(testConsumer.consumerId.get))
+    .copy(valid_from = Some(new Date()))
     .copy(views=views)
+    .copy(entitlements=entitlements)
+
   def postConsentImplicitJsonV310 = SwaggerDefinitionsJSON.postConsentImplicitJsonV310
     .copy(consumer_id=Some(testConsumer.consumerId.get))
     .copy(entitlements=entitlements)
