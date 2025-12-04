@@ -41,7 +41,17 @@ import com.openbankproject.commons.util.ApiVersion
 import net.liftweb.json.Serialization.write
 import org.scalatest.Tag
 
+import java.util.Date
+
 class ConsentTest extends V310ServerSetup {
+
+  override def beforeAll() {
+    super.beforeAll()
+  }
+
+  override def afterAll() {
+    super.afterAll()
+  }
 
   /**
     * Test tags
@@ -67,9 +77,10 @@ class ConsentTest extends V310ServerSetup {
     .copy(entitlements=entitlements)
     .copy(consumer_id=Some(testConsumer.consumerId.get))
     .copy(views=views)
-  lazy val postConsentImplicitJsonV310 = SwaggerDefinitionsJSON.postConsentImplicitJsonV310
-    .copy(entitlements=entitlements)
+  def postConsentImplicitJsonV310 = SwaggerDefinitionsJSON.postConsentImplicitJsonV310
     .copy(consumer_id=Some(testConsumer.consumerId.get))
+    .copy(entitlements=entitlements)
+    .copy(valid_from = Some(new Date()))
     .copy(views=views)
 
   val maxTimeToLive = APIUtil.getPropsAsIntValue(nameOfProperty="consents.max_time_to_live", defaultValue=3600)
