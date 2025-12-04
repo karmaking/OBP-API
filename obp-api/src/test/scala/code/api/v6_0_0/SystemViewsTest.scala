@@ -89,8 +89,8 @@ class SystemViewsTest extends V600ServerSetup with DefaultUsers {
       
       Then("The automatic role guard should reject the request")
       responseWithoutRole.code should equal(403)
-      responseWithoutRole.body.extract[ErrorMessage].message should contain(CanGetSystemViews.toString)
-      
+      responseWithoutRole.body.extract[ErrorMessage].message should be (UserHasMissingRoles + CanGetSystemViews)
+
       When("The same user is granted the required role")
       Entitlement.entitlement.vend.addEntitlement("", resourceUser1.userId, CanGetSystemViews.toString)
       val requestWithRole = (v6_0_0_Request / "management" / "system-views").GET <@ (user1)

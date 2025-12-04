@@ -91,8 +91,8 @@ class PasswordResetTest extends V600ServerSetup {
       When("We make a request v6.0.0 without a Role " + canCreateResetPasswordUrl)
       val request600 = (v6_0_0_Request / "management" / "user" / "reset-password-url").POST <@(user1)
       val response600 = makePostRequest(request600, write(postJson))
-      Then("We should get a 400")
-      response600.code should equal(400)
+      Then("We should get a 403")
+      response600.code should equal(403)
       And("error should be " + UserHasMissingRoles + CanCreateResetPasswordUrl)
       response600.body.extract[ErrorMessage].message should equal((UserHasMissingRoles + CanCreateResetPasswordUrl))
     }

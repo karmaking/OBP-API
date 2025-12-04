@@ -3,7 +3,7 @@ package code.api.v6_0_0
 import code.api.util.APIUtil.OAuth._
 import code.api.util.ApiRole.{CanCreateCustomView, CanGetCustomViews}
 import code.api.util.ErrorMessages
-import code.api.util.ErrorMessages.UserHasMissingRoles
+import code.api.util.ErrorMessages.{InvalidCustomViewFormat, InvalidJsonFormat, UserHasMissingRoles}
 import code.api.v6_0_0.APIMethods600.Implementations6_0_0
 import code.entitlement.Entitlement
 import code.setup.DefaultUsers
@@ -125,7 +125,7 @@ class CustomViewsTest extends V600ServerSetup with DefaultUsers {
       
       Then("The automatic role guard should reject the request")
       responseWithoutRole.code should equal(403)
-      responseWithoutRole.body.extract[ErrorMessage].message should contain(CanGetCustomViews.toString)
+      responseWithoutRole.body.extract[ErrorMessage].message should equal(UserHasMissingRoles + CanGetCustomViews.toString)
       
       When("The same user is granted the required role")
       Entitlement.entitlement.vend.addEntitlement("", resourceUser1.userId, CanGetCustomViews.toString)
@@ -271,7 +271,7 @@ class CustomViewsTest extends V600ServerSetup with DefaultUsers {
       response.code should equal(400)
       
       And("Error message should indicate invalid custom view format")
-      response.body.extract[ErrorMessage].message should include("InvalidCustomViewFormat")
+      response.body.extract[ErrorMessage].message should include(InvalidCustomViewFormat)
     }
 
     scenario("We verify automatic role guard from ResourceDoc configuration for management endpoint", ApiEndpoint2, VersionOfApi) {
@@ -295,7 +295,7 @@ class CustomViewsTest extends V600ServerSetup with DefaultUsers {
       
       Then("The automatic role guard should reject the request")
       responseWithoutRole.code should equal(403)
-      responseWithoutRole.body.extract[ErrorMessage].message should contain(CanCreateCustomView.toString)
+      responseWithoutRole.body.extract[ErrorMessage].message should equal(UserHasMissingRoles + CanCreateCustomView.toString)
       
       When("The same user is granted the required role")
       Entitlement.entitlement.vend.addEntitlement("", resourceUser1.userId, CanCreateCustomView.toString)
@@ -325,7 +325,7 @@ class CustomViewsTest extends V600ServerSetup with DefaultUsers {
       response.code should equal(400)
       
       And("Error message should indicate invalid JSON format")
-      response.body.extract[ErrorMessage].message should include("InvalidJsonFormat")
+      response.body.extract[ErrorMessage].message should include(InvalidJsonFormat)
     }
   }
 }
