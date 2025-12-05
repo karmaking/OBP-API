@@ -15,6 +15,7 @@
     <akka.version>2.5.32</akka.version>
     <avro.version>1.8.2</avro.version>
     <lift.version>3.5.0</lift.version>
+    <http4s.version>0.23.30</http4s.version>
     <jetty.version>9.4.50.v20221201</jetty.version>
     <obp-ri.version>2016.11-RC6-SNAPSHOT</obp-ri.version>
     <!-- Common plugin settings -->
@@ -126,7 +127,7 @@
         <plugin>
           <groupId>net.alchim31.maven</groupId>
           <artifactId>scala-maven-plugin</artifactId>
-          <version>4.3.1</version>
+          <version>4.8.1</version>
           <configuration>
             <scalaVersion>${scala.compiler}</scalaVersion>
             <charset>${project.build.sourceEncoding}</charset>
@@ -143,6 +144,7 @@
               <arg>-verbose</arg>
               <arg>-deprecation</arg>
               -->
+              <arg>-Ypartial-unification</arg>
             </args>
           </configuration>
           <executions>
