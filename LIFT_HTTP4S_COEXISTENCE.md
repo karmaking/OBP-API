@@ -5,26 +5,139 @@ Can http4s and Lift coexist in the same project to convert endpoints one by one?
 
 ## Answer: Yes, on Different Ports
 
-### Architecture Overview
+## OBP-API-Dispatch
+
+OBP-API-Dispatch already exists:
+
+- **Location:** `workspace_2024/OBP-API-Dispatch`
+- **GitHub:** https://github.com/OpenBankProject/OBP-API-Dispatch
+- **Technology:** http4s (Cats Effect 3, Ember server)
+- **Purpose:** Routes requests between different OBP-API backends
+- **Current routing:** Based on API version (v1.3.0 → backend 2, others → backend 1)
+
+It needs minor enhancements to support version-based routing for the Lift → http4s migration.
+
+## Answers to Your Three Questions
+
+### Q1: Could we use OBP-API-Dispatch to route between two ports?
+
+**YES - it already exists**
+
+OBP-API-Dispatch can be used for this:
+- Single entry point for clients
+- Route by API version: v4/v5 → Lift, v6/v7 → http4s
+- No client configuration changes needed
+- Rollback by changing routing config
+
+### Q2: Running http4s in Jetty until migration complete?
+
+**Possible but not recommended**
+
+Running http4s in Jetty (servlet mode) loses:
+- True non-blocking I/O
+- HTTP/2, WebSockets, efficient streaming
+- Would need to refactor again later to standalone
+
+Use standalone http4s on port 8081 from the start.
+
+### Q3: How would the developer experience be?
+
+**IDE and Project Setup:**
+
+You'll work in **one IDE window** with the OBP-API codebase:
+- Same project structure
+- Same database (Lift Boot continues to handle DB creation/migrations)
+- Both Lift and http4s code in the same `obp-api` module
+- Edit both Lift endpoints and http4s endpoints in the same IDE
+
+**Running the Servers:**
+
+You'll run **three separate terminal processes**:
+
+**Terminal 1: Lift Server (existing)**
+```bash
+cd workspace_2024/OBP-API-C/OBP-API
+sbt "project obp-api" run
+```
+- Runs Lift Boot (handles DB initialization)
+- Starts on port 8080
+- Keep this running as long as you have Lift endpoints
+
+**Terminal 2: http4s Server (new)**
+```bash
+cd workspace_2024/OBP-API-C/OBP-API
+sbt "project obp-api" "runMain code.api.http4s.Http4sMain"
+```
+- Starts on port 8081
+- Separate process from Lift
+- Uses same database connection pool
+
+**Terminal 3: OBP-API-Dispatch (separate project)**
+```bash
+cd workspace_2024/OBP-API-Dispatch
+mvn clean package
+java -jar target/OBP-API-Dispatch-1.0-SNAPSHOT-jar-with-dependencies.jar
+```
+- Separate IDE window or just a terminal
+- Routes requests between Lift (8080) and http4s (8081)
+- Runs on port 8088
+
+**Editing Workflow:**
+
+1. **Adding new http4s endpoint:**
+   - Create endpoint in `obp-api/src/main/scala/code/api/http4s/`
+   - Edit in same IDE as Lift code
+   - Restart Terminal 2 only (http4s server)
+
+2. **Fixing Lift endpoint:**
+   - Edit existing Lift code in `obp-api/src/main/scala/code/api/`
+   - Restart Terminal 1 only (Lift server)
+
+3. **Updating routing (which endpoints go where):**
+   - Edit `OBP-API-Dispatch/src/main/resources/application.conf`
+   - Restart Terminal 3 only (Dispatch)
+
+**Database:**
+
+Lift Boot continues to handle:
+- Database connection setup
+- Schema migrations
+- Table creation
+
+Both Lift and http4s use the same database connection pool and Mapper classes.
+
+### Architecture with OBP-API-Dispatch
 
 ```
-┌─────────────────────────────────────────┐
-│         OBP-API Application             │
-├─────────────────────────────────────────┤
-│                                         │
-│  ┌──────────────┐  ┌─────────────────┐ │
-│  │ Lift/Jetty   │  │ http4s Server   │ │
-│  │ Port 8080    │  │ Port 8081       │ │
-│  └──────────────┘  └─────────────────┘ │
-│         │                  │            │
-│         └──────┬───────────┘            │
-│                │                        │
-│         Shared Resources:               │
-│         - Database                      │
-│         - Business Logic                │
-│         - Authentication                │
-│         - ResourceDocs                  │
-└─────────────────────────────────────────┘
+┌────────────────────────────────────────────┐
+│            API Clients                      │
+└────────────────────────────────────────────┘
+                    ↓
+              Port 8088/443
+                    ↓
+┌────────────────────────────────────────────┐
+│        OBP-API-Dispatch (http4s)           │
+│                                            │
+│  Routing Rules:                            │
+│  • /obp/v4.0.0/* → Lift (8080)            │
+│  • /obp/v5.0.0/* → Lift (8080)            │
+│  • /obp/v5.1.0/* → Lift (8080)            │
+│  • /obp/v6.0.0/* → http4s (8081) ✨       │
+│  • /obp/v7.0.0/* → http4s (8081) ✨       │
+└────────────────────────────────────────────┘
+         ↓                        ↓
+    ┌─────────┐             ┌─────────┐
+    │  Lift   │             │ http4s  │
+    │  :8080  │             │  :8081  │
+    └─────────┘             └─────────┘
+         ↓                        ↓
+    ┌────────────────────────────────┐
+    │   Shared Resources:            │
+    │   - Database                   │
+    │   - Business Logic             │
+    │   - Authentication             │
+    │   - ResourceDocs               │
+    └────────────────────────────────┘
 ```
 
 ### How It Works
@@ -45,6 +158,122 @@ Can http4s and Lift coexist in the same project to convert endpoints one by one?
    - Start: All endpoints on Lift (port 8080)
    - During: Some on Lift, some on http4s
    - End: All on http4s (port 8081), Lift removed
+
+## Using OBP-API-Dispatch for Routing
+
+### Current Status
+
+OBP-API-Dispatch already exists and is functional:
+- **Location:** `workspace_2024/OBP-API-Dispatch`
+- **GitHub:** https://github.com/OpenBankProject/OBP-API-Dispatch
+- **Build:** Maven-based
+- **Technology:** http4s with Ember server
+- **Current routing:** Routes v1.3.0 to backend 2, others to backend 1
+
+### Current Configuration
+
+```hocon
+# application.conf
+app {
+  dispatch_host = "127.0.0.1"
+  dispatch_dev_port = 8088
+  obp_api_1_base_uri = "http://localhost:8080"
+  obp_api_2_base_uri = "http://localhost:8086"
+}
+```
+
+### Enhancement for Migration
+
+Update configuration to support version-based routing:
+
+```hocon
+# application.conf
+app {
+  dispatch_host = "0.0.0.0"
+  dispatch_port = 8088
+  
+  # Lift backend (legacy endpoints)
+  lift_backend_uri = "http://localhost:8080"
+  lift_backend_uri = ${?LIFT_BACKEND_URI}
+  
+  # http4s backend (modern endpoints)
+  http4s_backend_uri = "http://localhost:8081"
+  http4s_backend_uri = ${?HTTP4S_BACKEND_URI}
+  
+  # Routing strategy
+  routing {
+    # API versions that go to http4s backend
+    http4s_versions = ["v6.0.0", "v7.0.0"]
+    
+    # Specific endpoint overrides (optional)
+    overrides = [
+      # Example: migrate specific v5.1.0 endpoints early
+      # { path = "/obp/v5.1.0/banks", target = "http4s" }
+    ]
+  }
+}
+```
+
+### Enhanced Routing Logic
+
+Update `ObpApiDispatch.scala` to support version-based routing:
+
+```scala
+private def selectBackend(path: String, method: Method): String = {
+  // Extract API version from path: /obp/v{version}/...
+  val versionPattern = """/obp/(v\d+\.\d+\.\d+)/.*""".r
+  
+  path match {
+    case versionPattern(version) =>
+      if (http4sVersions.contains(version)) {
+        logger.info(s"Version $version routed to http4s")
+        "http4s"
+      } else {
+        logger.info(s"Version $version routed to Lift")
+        "lift"
+      }
+    case _ =>
+      logger.debug(s"Path $path routing to Lift (default)")
+      "lift"
+  }
+}
+```
+
+### Local Development Workflow
+
+**Terminal 1: Start Lift**
+```bash
+cd workspace_2024/OBP-API-C/OBP-API
+sbt "project obp-api" run
+# Starts on port 8080
+```
+
+**Terminal 2: Start http4s**
+```bash
+cd workspace_2024/OBP-API-C/OBP-API
+sbt "project obp-api" "runMain code.api.http4s.Http4sMain"
+# Starts on port 8081
+```
+
+**Terminal 3: Start OBP-API-Dispatch**
+```bash
+cd workspace_2024/OBP-API-Dispatch
+mvn clean package
+java -jar target/OBP-API-Dispatch-1.0-SNAPSHOT-jar-with-dependencies.jar
+# Starts on port 8088
+```
+
+**Terminal 4: Test**
+```bash
+# Old endpoint (goes to Lift)
+curl http://localhost:8088/obp/v5.1.0/banks
+
+# New endpoint (goes to http4s)
+curl http://localhost:8088/obp/v6.0.0/banks
+
+# Health checks
+curl http://localhost:8088/health
+```
 
 ## Implementation Approach
 
@@ -88,14 +317,14 @@ object Http4sServer {
 
 ### Step 3: THE JETTY PROBLEM
 
-**IMPORTANT:** If you start http4s from Lift's Bootstrap, it runs INSIDE Jetty's servlet container. This defeats the purpose of using http4s!
+If you start http4s from Lift's Bootstrap, it runs INSIDE Jetty's servlet container. This defeats the purpose of using http4s.
 
 ```
 ❌ WRONG APPROACH:
 ┌─────────────────────────────┐
 │ Jetty Servlet Container     │
 │  ├─ Lift (port 8080)        │
-│  └─ http4s (port 8081)      │  ← Still requires Jetty!
+│  └─ http4s (port 8081)      │  ← Still requires Jetty
 └─────────────────────────────┘
 ```
 
@@ -220,9 +449,9 @@ Access via:
 - Can't remove servlet container
 - Only for development/testing
 
-### RECOMMENDED APPROACH
+### Option A: Two Separate Processes
 
-**For actual migration, use Option A (Two Separate Processes):**
+For actual migration:
 
 1. **Keep Lift/Jetty running as-is** on port 8080
 2. **Create standalone http4s server** on port 8081 with its own Main class
@@ -247,7 +476,7 @@ Phase 4 (Complete):
 └──────┬──────┘
        │
        └──→ http4s standalone            Port 8080  ← All endpoints
-            (Jetty removed!)
+            (Jetty removed)
 ```
 
 **This way http4s is NEVER dependent on Jetty.**
@@ -267,7 +496,7 @@ Thread-per-request model:
 │ Request 3 → Thread 3 (busy) │  Blocks waiting for file I/O
 │ Request 4 → Thread 4 (busy) │
 │ ...                          │
-│ Request N → Thread pool full │  ← New requests wait!
+│ Request N → Thread pool full │  ← New requests wait
 └─────────────────────────────┘
 
 Problem: 
@@ -282,7 +511,7 @@ Problem:
 Async/Effect model:
 ┌─────────────────────────────┐
 │ Thread 1:                   │
-│   Request 1 → DB call (IO)  │  ← Doesn't block! Fiber suspended
+│   Request 1 → DB call (IO)  │  ← Doesn't block - Fiber suspended
 │   Request 2 → API call (IO) │  ← Continues processing
 │   Request 3 → Processing    │
 │   Request N → ...           │
@@ -466,18 +695,18 @@ class Http4sEndpoints[F[_]: Concurrent] {
 
 ## Migration Strategy
 
-### Phase 1: Setup (Week 1-2)
+### Phase 1: Setup
 - Add http4s dependencies
 - Create http4s server infrastructure
 - Start http4s on port 8081
 - Keep all endpoints on Lift
 
-### Phase 2: Convert New Endpoints (Week 3-8)
+### Phase 2: Convert New Endpoints
 - All NEW endpoints go to http4s only
 - Existing endpoints stay on Lift
 - Share business logic between both
 
-### Phase 3: Migrate Existing Endpoints (Month 3-6)
+### Phase 3: Migrate Existing Endpoints
 Priority order:
 1. Simple GET endpoints (read-only, no sessions)
 2. POST endpoints with simple authentication
@@ -485,13 +714,13 @@ Priority order:
 4. Admin/management endpoints
 5. OAuth/authentication endpoints (last)
 
-### Phase 4: Deprecation (Month 7-9)
+### Phase 4: Deprecation
 - Announce Lift endpoints deprecated
 - Run both servers (port 8080 and 8081)
 - Redirect/proxy 8080 -> 8081
 - Update documentation
 
-### Phase 5: Removal (Month 10-12)
+### Phase 5: Removal
 - Remove Lift dependencies
 - Remove Jetty dependency
 - Single http4s server on port 8080
@@ -499,54 +728,68 @@ Priority order:
 
 ## Request Routing During Migration
 
-### Option A: Two Separate Ports
+### OBP-API-Dispatch
+
+```
+Clients → OBP-API-Dispatch (8088/443)
+           ├─→ Lift (8080) - v4, v5, v5.1
+           └─→ http4s (8081) - v6, v7
+```
+
+**OBP-API-Dispatch:**
+- Already exists in workspace
+- Already http4s-based
+- Designed for routing between backends
+- Has error handling, logging
+- Needs routing logic updates
+- Single entry point
+- Route by version or endpoint
+
+**Migration Phases:**
+
+**Phase 1: Setup**
+```hocon
+routing {
+  http4s_versions = []  # All traffic to Lift
+}
+```
+
+**Phase 2: First Migration**
+```hocon
+routing {
+  http4s_versions = ["v6.0.0"]  # v6 to http4s
+}
+```
+
+**Phase 3: Progressive**
+```hocon
+routing {
+  http4s_versions = ["v5.1.0", "v6.0.0", "v7.0.0"]
+}
+```
+
+**Phase 4: Complete**
+```hocon
+routing {
+  http4s_versions = ["v4.0.0", "v5.0.0", "v5.1.0", "v6.0.0", "v7.0.0"]
+}
+```
+
+### Alternative Options
+
+#### Option A: Two Separate Ports
 ```
 Clients → Load Balancer
-           ├─→ Port 8080 (Lift) - Old endpoints
-           └─→ Port 8081 (http4s) - New endpoints
+           ├─→ Port 8080 (Lift)
+           └─→ Port 8081 (http4s)
 ```
+Clients need to know which port to use
 
-**Pros:** 
-- Simple, clear separation
-- Easy to monitor which endpoints are migrated
-- No risk of conflicts
-
-**Cons:**
-- Clients need to know which port to use
-- Load balancer configuration needed
-
-### Option B: Proxy Pattern
+#### Option B: Nginx/HAProxy
 ```
-Clients → Port 8080 (Lift)
-           ├─→ Handle locally (Lift endpoints)
-           └─→ Proxy to 8081 (http4s endpoints)
+Clients → Nginx (443) → Backends
 ```
-
-**Pros:**
-- Single port for clients
-- Transparent migration
-- No client changes needed
-
-**Cons:**
-- Additional latency for proxied requests
-- More complex routing logic
-
-### Option C: Reverse Proxy (Nginx/HAProxy)
-```
-Clients → Nginx (Port 443)
-           ├─→ Port 8080 (Lift) - /api/v4.0.0/*
-           └─→ Port 8081 (http4s) - /api/v6.0.0/*
-```
-
-**Pros:**
-- Professional solution
-- Fine-grained routing rules
-- SSL termination
-- Load balancing
-
-**Cons:**
-- Additional infrastructure component
-- Configuration overhead
+Additional infrastructure when OBP-API-Dispatch already exists
 
 ## Database Access Migration
 
@@ -684,10 +927,7 @@ def createUserHttp4s[F[_]: Concurrent]: HttpRoutes[F] = {
    - Same business logic
    - Same configuration
 
-5. **Flexible Timeline**
-   - Migrate at your own pace
-   - Pause if needed
-   - No hard deadlines
+
 
 ## Challenges and Solutions
 
@@ -798,22 +1038,6 @@ scenario("Get bank - http4s version") {
 - Delete Lift endpoint code
 - All traffic to http4s
 
-## Timeline Estimate
-
-### Conservative Approach (12-18 months)
-- **Month 1-2:** Setup and infrastructure
-- **Month 3-6:** Migrate 25% of endpoints
-- **Month 7-10:** Migrate 50% more (75% total)
-- **Month 11-14:** Migrate remaining 25%
-- **Month 15-16:** Testing and stabilization
-- **Month 17-18:** Remove Lift, cleanup
-
-### Aggressive Approach (6-9 months)
-- **Month 1:** Setup
-- **Month 2-5:** Migrate 80% of endpoints
-- **Month 6-7:** Migrate remaining 20%
-- **Month 8-9:** Remove Lift
-
 ## Conclusion
 
 **Yes, Lift and http4s can coexist** by running on different ports (8080 and 8081) within the same application. This allows for:
@@ -822,7 +1046,7 @@ scenario("Get bank - http4s version") {
 - Endpoint-by-endpoint conversion
 - Shared business logic and resources
 - Zero downtime
-- Flexible timeline
+- Flexible migration pace
 
 The key is to **keep HTTP layer separate from business logic** so both frameworks can call the same underlying functions.
 
