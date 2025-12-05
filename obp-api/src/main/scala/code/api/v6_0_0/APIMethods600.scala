@@ -35,9 +35,10 @@ import code.model._
 import code.users.{UserAgreement, UserAgreementProvider, Users}
 import code.ratelimiting.RateLimitingDI
 import code.util.Helper
-import code.util.Helper.{MdcLoggable, SILENCE_IS_GOLDEN}
+import code.util.Helper.{MdcLoggable, ObpS, SILENCE_IS_GOLDEN}
 import code.views.Views
 import code.views.system.ViewDefinition
+import code.webuiprops.{MappedWebUiPropsProvider, WebUiPropsCommons}
 import com.github.dwickern.macros.NameOf.nameOf
 import com.openbankproject.commons.ExecutionContext.Implicits.global
 import com.openbankproject.commons.model.{CustomerAttribute, _}
@@ -3335,6 +3336,86 @@ trait APIMethods600 {
               ResetPasswordUrlJsonV600(resetPasswordLink),
               HttpCode.`201`(callContext)
             )
+          }
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
+      getWebUiProp,
+      implementedInApiVersion,
+      nameOf(getWebUiProp),
+      "GET",
+      "/webui-props/WEBUI_PROP_NAME",
+      "Get WebUiProp by Name",
+      s"""
+         |
+         |Get a single WebUiProp by name.
+         |
+         |Properties with names starting with "webui_" can be stored in the database and managed via API.
+         |
+         |**Data Sources:**
+         |
+         |1. **Explicit WebUiProps (Database)**: Custom values created/updated via the API and stored in the database.
+         |
+         |2. **Implicit WebUiProps (Configuration File)**: Default values defined in the `sample.props.template` configuration file.
+         |
+         |**Query Parameter:**
+         |
+         |* `active` (optional, boolean string, default: "false")
+         |  - If `active=false` or omitted: Returns only explicit prop from the database
+         |  - If `active=true`: Returns explicit prop from database, or if not found, returns implicit (default) prop from configuration file
+         |    - Implicit props are marked with `webUiPropsId = "default"`
+         |
+         |**Examples:**
+         |
+         |Get database-stored prop only:
+         |${getObpApiRoot}/v6.0.0/webui-props/webui_api_explorer_url
+         |
+         |Get database prop or fallback to default:
+         |${getObpApiRoot}/v6.0.0/webui-props/webui_api_explorer_url?active=true
+         |
+         |""",
+      EmptyBody,
+      WebUiPropsCommons("webui_api_explorer_url", "https://apiexplorer.openbankproject.com", Some("web-ui-props-id")),
+      List(
+        WebUiPropsNotFoundByName,
+        UnknownError
+      ),
+      List(apiTagWebUiProps)
+    )
+    lazy val getWebUiProp: OBPEndpoint = {
+      case "webui-props" :: webUiPropName :: Nil JsonGet req => {
+        cc => implicit val ec = EndpointContext(Some(cc))
+          val active = ObpS.param("active").getOrElse("false")
+          for {
+            invalidMsg <- Future(s"""$InvalidFilterParameterFormat `active` must be a boolean, but current `active` value is: ${active} """)
+            isActived <- NewStyle.function.tryons(invalidMsg, 400, cc.callContext) {
+              active.toBoolean
+            }
+            explicitWebUiProps <- Future{ MappedWebUiPropsProvider.getAll() }
+            explicitProp = explicitWebUiProps.find(_.name == webUiPropName)
+            result <- {
+              explicitProp match {
+                case Some(prop) =>
+                  // Found in database
+                  Future.successful(prop)
+                case None if isActived =>
+                  // Not in database, check implicit props if active=true
+                  val implicitWebUiProps = getWebUIPropsPairs.map(webUIPropsPairs =>
+                    WebUiPropsCommons(webUIPropsPairs._1, webUIPropsPairs._2, webUiPropsId = Some("default"))
+                  )
+                  val implicitProp = implicitWebUiProps.find(_.name == webUiPropName)
+                  implicitProp match {
+                    case Some(prop) => Future.successful(prop)
+                    case None => Future.failed(new Exception(s"$WebUiPropsNotFoundByName Current WEBUI_PROP_NAME($webUiPropName)"))
+                  }
+                case None =>
+                  // Not in database and active=false
+                  Future.failed(new Exception(s"$WebUiPropsNotFoundByName Current WEBUI_PROP_NAME($webUiPropName)"))
+              }
+            }
+          } yield {
+            (result, HttpCode.`200`(cc.callContext))
           }
       }
     }

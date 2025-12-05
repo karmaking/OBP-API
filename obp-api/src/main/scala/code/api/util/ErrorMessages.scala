@@ -54,6 +54,7 @@ object ErrorMessages {
   // WebUiProps Exceptions (OBP-08XXX)
   val InvalidWebUiProps = "OBP-08001: Incorrect format of name."
   val WebUiPropsNotFound = "OBP-08002: WebUi props not found. Please specify a valid value for WEB_UI_PROPS_ID."
+  val WebUiPropsNotFoundByName = "OBP-08003: WebUi prop not found. Please specify a valid value for WEBUI_PROP_NAME."
 
   // DynamicEntity Exceptions (OBP-09XXX)
   val DynamicEntityNotFoundByDynamicEntityId = "OBP-09001: DynamicEntity not found. Please specify a valid value for DYNAMIC_ENTITY_ID."
