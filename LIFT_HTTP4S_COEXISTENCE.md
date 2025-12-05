@@ -25,7 +25,7 @@ It needs minor enhancements to support version-based routing for the Lift → ht
 
 OBP-API-Dispatch can be used for this:
 - Single entry point for clients
-- Route by API version: v4/v5 → Lift, v6/v7 → http4s
+- Route by API version: v4/v5 → Lift, v6/v7 → http4s (might want to route based on resource docs but not sure if we really need this - NGINX might therefore be an alternative but OBP-Dispatch would have OBP specific routing out of the box and potentially other features)
 - No client configuration changes needed
 - Rollback by changing routing config
 
@@ -376,80 +376,7 @@ java -jar obp-api-http4s.jar &
 - Two separate processes to manage
 - Two JVMs (more memory)
 
-#### Option B: Single JVM with Two Threads (Complex but Doable)
-
-```scala
-// Main.scala - Entry point
-object Main extends IOApp {
-  
-  def run(args: List[String]): IO[ExitCode] = {
-    for {
-      // Start Lift/Jetty in background fiber
-      liftFiber <- startLiftServer().start
-      
-      // Start http4s server (blocks main thread)
-      _ <- Http4sServer.start(8081)
-    } yield ExitCode.Success
-  }
-  
-  def startLiftServer(): IO[Unit] = IO {
-    // Start Jetty programmatically
-    val server = new Server(8080)
-    val context = new WebAppContext()
-    context.setContextPath("/")
-    context.setWar("src/main/webapp")
-    server.setHandler(context)
-    server.start()
-    // Don't call server.join() - let it run in background
-  }
-}
-```
-
-**Pros:**
-- Single process
-- Shared JVM, less memory
-- Shared resources easier
-
-**Cons:**
-- More complex startup
-- Harder to debug
-- Mixed responsibilities
-
-#### Option C: Use Jetty for Both (Transition Strategy)
-
-During migration, you CAN start http4s from Lift Bootstrap using a servlet adapter, but this is TEMPORARY:
-
-```scala
-// bootstrap/liftweb/Boot.scala
-class Boot {
-  def boot {
-    // Existing Lift setup
-    LiftRules.addToPackages("code")
-    
-    // Add http4s routes to Jetty (TEMPORARY)
-    if (APIUtil.getPropsAsBoolValue("http4s.enabled", false)) {
-      // Add http4s servlet on different context path
-      val http4sServlet = new Http4sServlet[IO](http4sRoutes)
-      LiftRules.context.addServlet(http4sServlet, "/http4s/*")
-    }
-  }
-}
-```
-
-Access via:
-- Lift: `http://localhost:8080/obp/v6.0.0/banks/...`
-- http4s: `http://localhost:8080/http4s/obp/v6.0.0/banks/...`
-
-**Pros:**
-- Single port
-- Easy during development
-
-**Cons:**
-- http4s still requires Jetty
-- Can't remove servlet container
-- Only for development/testing
-
-### Option A: Two Separate Processes
+### Two Separate Processes
 
 For actual migration:
 
@@ -775,21 +702,14 @@ routing {
 }
 ```
 
-### Alternative Options
+### Alternative: Two Separate Ports
 
-#### Option A: Two Separate Ports
 ```
 Clients → Load Balancer
            ├─→ Port 8080 (Lift)
            └─→ Port 8081 (http4s)
 ```
 Clients need to know which port to use
-
-#### Option B: Nginx/HAProxy
-```
-Clients → Nginx (443) → Backends
-```
-Additional infrastructure when OBP-API-Dispatch already exists
 
 ## Database Access Migration
 
