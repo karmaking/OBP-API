@@ -2473,7 +2473,7 @@ trait APIMethods600 {
                   Constant.HostName + "/" + code.model.dataAccess.AuthUser.validateUserPath.mkString("/") + "/" + java.net.URLEncoder.encode(savedUser.uniqueId.get, "UTF-8")
                 case _ =>
                   // Default to portal_external_url property if available, otherwise fall back to hostname
-                  APIUtil.getPropsValue("portal_external_url", Constant.HostName) + "/" + code.model.dataAccess.AuthUser.validateUserPath.mkString("/") + "/" + java.net.URLEncoder.encode(savedUser.uniqueId.get, "UTF-8")
+                  APIUtil.getPropsValue("portal_external_url", Constant.HostName) + "/user-validation?token=" + java.net.URLEncoder.encode(savedUser.uniqueId.get, "UTF-8")
               }
 
               val textContent = Some(s"Welcome! Please validate your account by clicking the following link: $emailValidationLink")
