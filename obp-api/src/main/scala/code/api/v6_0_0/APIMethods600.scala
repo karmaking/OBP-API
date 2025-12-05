@@ -11,6 +11,7 @@ import code.api.util.ApiRole._
 import code.api.util.ApiTag._
 import code.api.util.ErrorMessages.{$UserNotLoggedIn, InvalidDateFormat, InvalidJsonFormat, UnknownError, _}
 import code.api.util.FutureUtil.EndpointContext
+import code.api.util.Glossary
 import code.api.util.NewStyle.HttpCode
 import code.api.util.{APIUtil, CallContext, DiagnosticDynamicEntityCheck, ErrorMessages, NewStyle, RateLimitingUtil}
 import code.api.util.NewStyle.function.extractQueryParams
@@ -3416,6 +3417,109 @@ trait APIMethods600 {
             }
           } yield {
             (result, HttpCode.`200`(cc.callContext))
+          }
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
+      getWebUiProps,
+      implementedInApiVersion,
+      nameOf(getWebUiProps),
+      "GET",
+      "/management/webui_props",
+      "Get WebUiProps",
+      s"""
+         |
+         |Get WebUiProps - properties that configure the Web UI behavior and appearance.
+         |
+         |Properties with names starting with "webui_" can be stored in the database and managed via API.
+         |
+         |**Data Sources:**
+         |
+         |1. **Explicit WebUiProps (Database)**: Custom values created/updated via the API and stored in the database.
+         |
+         |2. **Implicit WebUiProps (Configuration File)**: Default values defined in the `sample.props.template` configuration file.
+         |
+         |**Query Parameter:**
+         |
+         |* `what` (optional, string, default: "active")
+         |  - `active`: Returns explicit props from database + implicit (default) props from configuration file
+         |    - When both sources have the same property name, the database value takes precedence
+         |    - Implicit props are marked with `webUiPropsId = "default"`
+         |  - `database`: Returns only explicit props from the database
+         |  - `config`: Returns only implicit (default) props from configuration file
+         |
+         |**Examples:**
+         |
+         |Get database props combined with defaults (default behavior):
+         |${getObpApiRoot}/v6.0.0/management/webui_props
+         |${getObpApiRoot}/v6.0.0/management/webui_props?what=active
+         |
+         |Get only database-stored props:
+         |${getObpApiRoot}/v6.0.0/management/webui_props?what=database
+         |
+         |Get only default props from configuration:
+         |${getObpApiRoot}/v6.0.0/management/webui_props?what=config
+         |
+         |For more details about WebUI Props, including how to set config file defaults and precedence order, see ${Glossary.getGlossaryItemLink("webui_props")}.
+         |
+         |""",
+      EmptyBody,
+      ListResult(
+        "webui_props",
+        (List(WebUiPropsCommons("webui_api_explorer_url", "https://apiexplorer.openbankproject.com", Some("web-ui-props-id"))))
+      )
+      ,
+      List(
+        UserNotLoggedIn,
+        UserHasMissingRoles,
+        UnknownError
+      ),
+      List(apiTagWebUiProps),
+      Some(List(canGetWebUiProps))
+    )
+
+
+    lazy val getWebUiProps: OBPEndpoint = {
+      case "management" :: "webui_props":: Nil JsonGet req => {
+        cc => implicit val ec = EndpointContext(Some(cc))
+          val what = ObpS.param("what").getOrElse("active")
+          logger.info(s"========== GET /obp/v6.0.0/management/webui_props called with what=$what ==========")
+          for {
+            (Full(u), callContext) <- authenticatedAccess(cc)
+            _ <- NewStyle.function.tryons(s"""$InvalidFilterParameterFormat `what` must be one of: active, database, config. Current value: $what""", 400, callContext) {
+              what match {
+                case "active" | "database" | "config" => true
+                case _ => false
+              }
+            }
+            _ <- NewStyle.function.hasEntitlement("", u.userId, ApiRole.canGetWebUiProps, callContext)
+            explicitWebUiProps <- Future{ MappedWebUiPropsProvider.getAll() }
+            implicitWebUiProps = getWebUIPropsPairs.map(webUIPropsPairs=>WebUiPropsCommons(webUIPropsPairs._1, webUIPropsPairs._2, webUiPropsId= Some("default")))
+            result = what match {
+              case "database" => 
+                // Return only database props
+                explicitWebUiProps
+              case "config" =>
+                // Return only config file props
+                implicitWebUiProps.distinct
+              case "active" =>
+                // Return database props + config props (removing duplicates, database takes precedence)
+                val implicitWebUiPropsRemovedDuplicated = if(explicitWebUiProps.nonEmpty){
+                  val duplicatedProps : List[WebUiPropsCommons]= explicitWebUiProps.map(explicitWebUiProp => implicitWebUiProps.filter(_.name == explicitWebUiProp.name)).flatten
+                  implicitWebUiProps diff duplicatedProps
+                } else {
+                  implicitWebUiProps.distinct
+                }
+                explicitWebUiProps ++ implicitWebUiPropsRemovedDuplicated
+            }
+          } yield {
+            logger.info(s"========== GET /obp/v6.0.0/management/webui_props returning ${result.size} records ==========")
+            result.foreach { prop =>
+              logger.info(s"  - name: ${prop.name}, value: ${prop.value}, webUiPropsId: ${prop.webUiPropsId}")
+            }
+            logger.info(s"========== END GET /obp/v6.0.0/management/webui_props ==========")
+            (ListResult("webui_props", result), HttpCode.`200`(callContext))
           }
       }
     }
