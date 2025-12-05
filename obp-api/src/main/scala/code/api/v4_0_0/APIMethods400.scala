@@ -14,7 +14,7 @@ import code.api.dynamic.endpoint.helper.practise.{
   PractiseEndpoint
 }
 import code.api.dynamic.endpoint.helper.{CompiledObjects, DynamicEndpointHelper}
-import code.api.dynamic.entity.helper.DynamicEntityInfo
+import code.api.dynamic.entity.helper.{DynamicEntityHelper, DynamicEntityInfo}
 import code.api.util.APIUtil.{fullBoxOrException, _}
 import code.api.util.ApiRole._
 import code.api.util.ApiTag._
@@ -2798,6 +2798,98 @@ trait APIMethods400 extends MdcLoggable {
         cc =>
           implicit val ec = EndpointContext(Some(cc))
           deleteDynamicEntityMethod(None, dynamicEntityId, cc)
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
+      deleteSystemDynamicEntityCascade,
+      implementedInApiVersion,
+      nameOf(deleteSystemDynamicEntityCascade),
+      "DELETE",
+      "/management/system-dynamic-entities/cascade/DYNAMIC_ENTITY_ID",
+      "Delete System Level Dynamic Entity Cascade",
+      s"""Delete a DynamicEntity specified by DYNAMIC_ENTITY_ID and all its data records.
+         |
+         |This endpoint performs a cascade delete:
+         |1. Deletes all data records associated with the dynamic entity
+         |2. Deletes the dynamic entity definition itself
+         |
+         |Use with caution - this operation cannot be undone.
+         |
+         |For more information see ${Glossary.getGlossaryItemLink(
+          "Dynamic-Entities"
+        )}/
+         |
+         |""",
+      EmptyBody,
+      EmptyBody,
+      List(
+        $UserNotLoggedIn,
+        UserHasMissingRoles,
+        UnknownError
+      ),
+      List(apiTagManageDynamicEntity, apiTagApi),
+      Some(List(canDeleteCascadeSystemDynamicEntity))
+    )
+    lazy val deleteSystemDynamicEntityCascade: OBPEndpoint = {
+      case "management" :: "system-dynamic-entities" :: "cascade" :: dynamicEntityId :: Nil JsonDelete _ => {
+        cc =>
+          implicit val ec = EndpointContext(Some(cc))
+          deleteDynamicEntityCascadeMethod(None, dynamicEntityId, cc)
+      }
+    }
+
+    private def deleteDynamicEntityCascadeMethod(
+        bankId: Option[String],
+        dynamicEntityId: String,
+        cc: CallContext
+    ) = {
+      for {
+        // Get the dynamic entity
+        (entity, _) <- NewStyle.function.getDynamicEntityById(
+          bankId,
+          dynamicEntityId,
+          cc.callContext
+        )
+        // Get all data records for this entity
+        (box, _) <- NewStyle.function.invokeDynamicConnector(
+          GET_ALL,
+          entity.entityName,
+          None,
+          None,
+          entity.bankId,
+          None,
+          None,
+          false,
+          cc.callContext
+        )
+        resultList: JArray = unboxResult(
+          box.asInstanceOf[Box[JArray]],
+          entity.entityName
+        )
+        // Delete all data records
+        _ <- Future.sequence {
+          resultList.arr.map { record =>
+            val idFieldName = DynamicEntityHelper.createEntityId(entity.entityName)
+            val recordId = (record \ idFieldName).asInstanceOf[JString].s
+            Future {
+              DynamicDataProvider.connectorMethodProvider.vend.delete(
+                entity.bankId,
+                entity.entityName,
+                recordId,
+                None,
+                false
+              )
+            }
+          }
+        }
+        // Delete the dynamic entity definition
+        deleted: Box[Boolean] <- NewStyle.function.deleteDynamicEntity(
+          bankId,
+          dynamicEntityId
+        )
+      } yield {
+        (deleted, HttpCode.`200`(cc.callContext))
       }
     }
 
