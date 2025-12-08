@@ -2474,14 +2474,24 @@ trait APIMethods600 {
             // STEP 8: Send validation email (if required)
             val skipEmailValidation = APIUtil.getPropsAsBoolValue("authUser.skipEmailValidation", defaultValue = false)
             if (!skipEmailValidation) {
-              // Construct validation link based on validating_application
+              // Construct validation link based on validating_application and portal_external_url
+              val portalExternalUrl = APIUtil.getPropsValue("portal_external_url")
+              
               val emailValidationLink = postedData.validating_application match {
                 case Some("LEGACY_PORTAL") =>
-                  // Use API hostname for legacy portal
+                  // Use API hostname with legacy path
                   Constant.HostName + "/" + code.model.dataAccess.AuthUser.validateUserPath.mkString("/") + "/" + java.net.URLEncoder.encode(savedUser.uniqueId.get, "UTF-8")
                 case _ =>
-                  // Default to portal_external_url property if available, otherwise fall back to hostname
-                  APIUtil.getPropsValue("portal_external_url", Constant.HostName) + "/user-validation?token=" + java.net.URLEncoder.encode(savedUser.uniqueId.get, "UTF-8")
+                  // If portal_external_url is set, use modern portal path
+                  // Otherwise fall back to API hostname with legacy path
+                  portalExternalUrl match {
+                    case Full(portalUrl) =>
+                      // Portal is configured - use modern frontend route
+                      portalUrl + "/user-validation?token=" + java.net.URLEncoder.encode(savedUser.uniqueId.get, "UTF-8")
+                    case _ =>
+                      // No portal configured - fall back to API hostname with legacy path
+                      Constant.HostName + "/" + code.model.dataAccess.AuthUser.validateUserPath.mkString("/") + "/" + java.net.URLEncoder.encode(savedUser.uniqueId.get, "UTF-8")
+                  }
               }
 
               val textContent = Some(s"Welcome! Please validate your account by clicking the following link: $emailValidationLink")
