@@ -2321,6 +2321,17 @@ trait APIMethods400 extends MdcLoggable {
          |      "summary": {
          |        "type": "string",
          |        "example": "User received 'No such price' error using Stripe API"
+         |      },
+         |      "custom_metadata": {
+         |        "type": "json",
+         |        "example": {
+         |          "priority": "high",
+         |          "tags": ["support", "billing"],
+         |          "context": {
+         |            "page": "checkout",
+         |            "step": 3
+         |          }
+         |        }
          |      }
          |    }
          |  },
@@ -2513,6 +2524,17 @@ trait APIMethods400 extends MdcLoggable {
          |      "summary": {
          |        "type": "string",
          |        "example": "User received 'No such price' error using Stripe API"
+         |      },
+         |      "custom_metadata": {
+         |        "type": "json",
+         |        "example": {
+         |          "priority": "high",
+         |          "tags": ["support", "billing"],
+         |          "context": {
+         |            "page": "checkout",
+         |            "step": 3
+         |          }
+         |        }
          |      }
          |    }
          |  },
