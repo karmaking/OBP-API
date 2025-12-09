@@ -693,6 +693,9 @@ object ApiRole extends MdcLoggable{
   case class CanDeleteSystemLevelDynamicEntity(requiresBankId: Boolean = false) extends ApiRole
   lazy val canDeleteSystemLevelDynamicEntity = CanDeleteSystemLevelDynamicEntity()
 
+  case class CanDeleteCascadeSystemDynamicEntity(requiresBankId: Boolean = false) extends ApiRole
+  lazy val canDeleteCascadeSystemDynamicEntity = CanDeleteCascadeSystemDynamicEntity()
+
   case class CanDeleteBankLevelDynamicEntity(requiresBankId: Boolean = true) extends ApiRole
   lazy val canDeleteBankLevelDynamicEntity = CanDeleteBankLevelDynamicEntity()
 

@@ -106,6 +106,7 @@ object Migration extends MdcLoggable {
       renameCustomerRoleNames()
       addUniqueIndexOnResourceUserUserId()
       addIndexOnMappedMetricUserId()
+      alterRoleNameLength()
     }
     
     private def dummyScript(): Boolean = {
@@ -543,6 +544,13 @@ object Migration extends MdcLoggable {
       val name = nameOf(addIndexOnMappedMetricUserId)
       runOnce(name) {
         MigrationOfUserIdIndexes.addIndexOnMappedMetricUserId(name)
+      }
+    }
+    
+    private def alterRoleNameLength(): Boolean = {
+      val name = nameOf(alterRoleNameLength)
+      runOnce(name) {
+        MigrationOfRoleNameFieldLength.alterRoleNameLength(name)
       }
     }
   }

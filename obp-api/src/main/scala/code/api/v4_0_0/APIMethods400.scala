@@ -14,7 +14,7 @@ import code.api.dynamic.endpoint.helper.practise.{
   PractiseEndpoint
 }
 import code.api.dynamic.endpoint.helper.{CompiledObjects, DynamicEndpointHelper}
-import code.api.dynamic.entity.helper.DynamicEntityInfo
+import code.api.dynamic.entity.helper.{DynamicEntityHelper, DynamicEntityInfo}
 import code.api.util.APIUtil.{fullBoxOrException, _}
 import code.api.util.ApiRole._
 import code.api.util.ApiTag._
@@ -2321,6 +2321,17 @@ trait APIMethods400 extends MdcLoggable {
          |      "summary": {
          |        "type": "string",
          |        "example": "User received 'No such price' error using Stripe API"
+         |      },
+         |      "custom_metadata": {
+         |        "type": "json",
+         |        "example": {
+         |          "priority": "high",
+         |          "tags": ["support", "billing"],
+         |          "context": {
+         |            "page": "checkout",
+         |            "step": 3
+         |          }
+         |        }
          |      }
          |    }
          |  },
@@ -2513,6 +2524,17 @@ trait APIMethods400 extends MdcLoggable {
          |      "summary": {
          |        "type": "string",
          |        "example": "User received 'No such price' error using Stripe API"
+         |      },
+         |      "custom_metadata": {
+         |        "type": "json",
+         |        "example": {
+         |          "priority": "high",
+         |          "tags": ["support", "billing"],
+         |          "context": {
+         |            "page": "checkout",
+         |            "step": 3
+         |          }
+         |        }
          |      }
          |    }
          |  },
@@ -2800,6 +2822,8 @@ trait APIMethods400 extends MdcLoggable {
           deleteDynamicEntityMethod(None, dynamicEntityId, cc)
       }
     }
+
+
 
     private def deleteDynamicEntityMethod(
         bankId: Option[String],
@@ -4368,25 +4392,25 @@ trait APIMethods400 extends MdcLoggable {
       "/banks/BANK_ID/firehose/accounts/views/VIEW_ID",
       "Get Firehose Accounts at Bank",
       s"""
-         |Get Accounts which have a firehose view assigned to them.
+         |Get all Accounts at a Bank.
          |
-         |This endpoint allows bulk access to accounts.
+         |This endpoint allows bulk access to all accounts at the specified bank.
          |
-         |Requires the CanUseFirehoseAtAnyBank Role
+         |Requires the CanUseFirehoseAtAnyBank Role or CanUseAccountFirehose Role
          |
-         |To be shown on the list, each Account must have a firehose View linked to it.
+         |Returns all accounts at the bank. The VIEW_ID parameter determines what account data fields are visible according to the view's permissions.
          |
-         |A firehose view has is_firehose = true
+         |The view specified must have is_firehose = true
          |
-         |For VIEW_ID try 'owner'
+         |For VIEW_ID try 'owner' or 'firehose'
          |
-         |optional request parameters for filter with attributes
+         |Optional request parameters for filtering by account attributes:
          |URL params example:
-         |  /banks/some-bank-id/firehose/accounts/views/owner?&limit=50&offset=1
+         |  /banks/some-bank-id/firehose/accounts/views/owner?limit=50&offset=1
          |
-         |to invalid Browser cache, add timestamp query parameter as follow, the parameter name must be `_timestamp_`
+         |To invalidate browser cache, add timestamp query parameter as follows (the parameter name must be `_timestamp_`):
          |URL params example:
-         |  `/banks/some-bank-id/firehose/accounts/views/owner?&limit=50&offset=1&_timestamp_=1596762180358`
+         |  `/banks/some-bank-id/firehose/accounts/views/owner?limit=50&offset=1&_timestamp_=1596762180358`
          |
          |${userAuthenticationMessage(true)}
          |
