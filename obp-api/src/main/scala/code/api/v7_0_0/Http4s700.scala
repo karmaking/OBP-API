@@ -1,6 +1,6 @@
 package code.api.v7_0_0
 
-import cats.data.Kleisli
+import cats.data.{Kleisli, OptionT}
 import cats.effect._
 import cats.implicits._
 import code.api.util.{APIUtil, CustomJsonFormats}
@@ -19,6 +19,8 @@ import scala.language.{higherKinds, implicitConversions}
 
 object Http4s700 {
 
+  type HttpF[A] = OptionT[IO, A]
+
   implicit val formats: Formats = CustomJsonFormats.formats
   implicit def convertAnyToJsonString(any: Any): String = prettyRender(Extraction.decompose(any))
 
@@ -31,12 +33,13 @@ object Http4s700 {
 
   object CallContextMiddleware {
 
-    def withCallContext(routes: HttpRoutes[IO]): HttpRoutes[IO] = Kleisli { req: Request[IO] =>
-      val callContext = CallContext(userId = "example-user", requestId = java.util.UUID.randomUUID().toString)
-      val updatedAttributes = req.attributes.insert(callContextKey, callContext)
-      val updatedReq = req.withAttributes(updatedAttributes)
-      routes(updatedReq)
-    }
+    def withCallContext(routes: HttpRoutes[IO]): HttpRoutes[IO] =
+      Kleisli[HttpF, Request[IO], Response[IO]] { req: Request[IO] =>
+        val callContext = CallContext(userId = "example-user", requestId = java.util.UUID.randomUUID().toString)
+        val updatedAttributes = req.attributes.insert(callContextKey, callContext)
+        val updatedReq = req.withAttributes(updatedAttributes)
+        routes(updatedReq)
+      }
   }
 
   val v700Services: HttpRoutes[IO] = HttpRoutes.of[IO] {
