@@ -4,6 +4,7 @@ import java.util.regex.Pattern
 
 import code.api.util.ErrorMessages.DynamicEntityInstanceValidateFail
 import code.api.util.{APIUtil, CallContext, NewStyle}
+import code.util.Helper.MdcLoggable
 import com.openbankproject.commons.ExecutionContext.Implicits.global
 import com.openbankproject.commons.model.enums.{DynamicEntityFieldType, DynamicEntityOperation}
 import com.openbankproject.commons.model._
@@ -144,7 +145,7 @@ trait DynamicEntityT {
   }
 }
 
-object ReferenceType {
+object ReferenceType extends MdcLoggable {
 
   private def recoverFn(fieldName: String, value: String, entityName: String): PartialFunction[Throwable, String] = {
       case _: Throwable => s"entity '$entityName' not found by the value '$value', the field name is '$fieldName'."
@@ -360,14 +361,18 @@ object ReferenceType {
     } else {
       val dynamicEntityName = typeName.replace("reference:", "")
       val errorMsg = s"""$dynamicEntityName not found by the id value '$value', propertyName is '$propertyName'"""
-      NewStyle.function.invokeDynamicConnector(DynamicEntityOperation.GET_ONE,dynamicEntityName, None, Some(value), None, None, None, false,callContext)
-        .recover {
-          case _: Throwable => errorMsg
+      logger.info(s"========== Validating reference field: propertyName='$propertyName', typeName='$typeName', dynamicEntityName='$dynamicEntityName', value='$value' ==========")
+      
+      Future {
+        val exists = code.DynamicData.MappedDynamicDataProvider.existsById(dynamicEntityName, value)
+        if (exists) {
+          logger.info(s"========== Reference validation SUCCESS: propertyName='$propertyName', dynamicEntityName='$dynamicEntityName', value='$value' ==========")
+          ""
+        } else {
+          logger.warn(s"========== Reference validation FAILED: propertyName='$propertyName', dynamicEntityName='$dynamicEntityName', value='$value' ==========")
+          errorMsg
         }
-        .map {
-          case (Full(_), _) => ""
-          case _ => errorMsg
-        }
+      }
     }
   }
 }

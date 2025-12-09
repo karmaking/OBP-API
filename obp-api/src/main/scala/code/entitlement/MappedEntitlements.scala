@@ -139,7 +139,7 @@ class MappedEntitlement extends Entitlement
   object mEntitlementId extends MappedUUID(this)
   object mBankId extends UUIDString(this)
   object mUserId extends UUIDString(this)
-  object mRoleName extends MappedString(this, 64)
+  object mRoleName extends MappedString(this, 255)
   object mCreatedByProcess extends MappedString(this, 255)
   
   object mGroupId extends MappedString(this, 255) {

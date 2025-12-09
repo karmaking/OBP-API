@@ -9,8 +9,9 @@ import code.api.util.APIUtil._
 import code.api.util.ApiRole
 import code.api.util.ApiRole._
 import code.api.util.ApiTag._
-import code.api.util.ErrorMessages.{$UserNotLoggedIn, InvalidDateFormat, InvalidJsonFormat, UnknownError, _}
+import code.api.util.ErrorMessages.{$UserNotLoggedIn, InvalidDateFormat, InvalidJsonFormat, UnknownError, DynamicEntityOperationNotAllowed, _}
 import code.api.util.FutureUtil.EndpointContext
+import code.api.util.Glossary
 import code.api.util.NewStyle.HttpCode
 import code.api.util.{APIUtil, CallContext, DiagnosticDynamicEntityCheck, ErrorMessages, NewStyle, RateLimitingUtil}
 import code.api.util.NewStyle.function.extractQueryParams
@@ -24,6 +25,7 @@ import code.api.v4_0_0.JSONFactory400.createCallsLimitJson
 import code.api.v5_0_0.JSONFactory500
 import code.api.v5_0_0.{ViewJsonV500, ViewsJsonV500}
 import code.api.v5_1_0.{JSONFactory510, PostCustomerLegalNameJsonV510}
+import code.api.dynamic.entity.helper.{DynamicEntityHelper, DynamicEntityInfo}
 import code.api.v6_0_0.JSONFactory600.{DynamicEntityDiagnosticsJsonV600, DynamicEntityIssueJsonV600, GroupJsonV600, GroupMembershipJsonV600, GroupMembershipsJsonV600, GroupsJsonV600, PostGroupJsonV600, PostGroupMembershipJsonV600, PostResetPasswordUrlJsonV600, PutGroupJsonV600, ReferenceTypeJsonV600, ReferenceTypesJsonV600, ResetPasswordUrlJsonV600, RoleWithEntitlementCountJsonV600, RolesWithEntitlementCountsJsonV600, ValidateUserEmailJsonV600, ValidateUserEmailResponseJsonV600, createActiveCallLimitsJsonV600, createCallLimitJsonV600, createCurrentUsageJson}
 import code.api.v6_0_0.OBPAPI6_0_0
 import code.metrics.APIMetrics
@@ -39,16 +41,23 @@ import code.util.Helper.{MdcLoggable, ObpS, SILENCE_IS_GOLDEN}
 import code.views.Views
 import code.views.system.ViewDefinition
 import code.webuiprops.{MappedWebUiPropsProvider, WebUiPropsCommons}
+import code.dynamicEntity.DynamicEntityCommons
+import code.DynamicData.{DynamicData, DynamicDataProvider}
 import com.github.dwickern.macros.NameOf.nameOf
 import com.openbankproject.commons.ExecutionContext.Implicits.global
 import com.openbankproject.commons.model.{CustomerAttribute, _}
+import com.openbankproject.commons.model.enums.DynamicEntityOperation._
 import com.openbankproject.commons.util.{ApiVersion, ScannedApiVersion}
-import net.liftweb.common.{Empty, Full}
+import net.liftweb.common.{Empty, Failure, Full}
+import org.apache.commons.lang3.StringUtils
 import net.liftweb.http.provider.HTTPParam
 import net.liftweb.http.rest.RestHelper
 import net.liftweb.json.{Extraction, JsonParser}
-import net.liftweb.json.JsonAST.JValue
-import net.liftweb.mapper.{By, Descending, MaxRows, OrderBy}
+import net.liftweb.json.JsonAST.{JArray, JObject, JString, JValue}
+import net.liftweb.json.JsonDSL._
+import net.liftweb.mapper.{By, Descending, MaxRows, NullRef, OrderBy}
+import code.api.util.ExampleValue.dynamicEntityResponseBodyExample
+import net.liftweb.common.Box
 
 import java.text.SimpleDateFormat
 import java.util.UUID.randomUUID
@@ -2472,7 +2481,7 @@ trait APIMethods600 {
                   Constant.HostName + "/" + code.model.dataAccess.AuthUser.validateUserPath.mkString("/") + "/" + java.net.URLEncoder.encode(savedUser.uniqueId.get, "UTF-8")
                 case _ =>
                   // Default to portal_external_url property if available, otherwise fall back to hostname
-                  APIUtil.getPropsValue("portal_external_url", Constant.HostName) + "/" + code.model.dataAccess.AuthUser.validateUserPath.mkString("/") + "/" + java.net.URLEncoder.encode(savedUser.uniqueId.get, "UTF-8")
+                  APIUtil.getPropsValue("portal_external_url", Constant.HostName) + "/user-validation?token=" + java.net.URLEncoder.encode(savedUser.uniqueId.get, "UTF-8")
               }
 
               val textContent = Some(s"Welcome! Please validate your account by clicking the following link: $emailValidationLink")
@@ -3417,6 +3426,269 @@ trait APIMethods600 {
           } yield {
             (result, HttpCode.`200`(cc.callContext))
           }
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
+      getWebUiProps,
+      implementedInApiVersion,
+      nameOf(getWebUiProps),
+      "GET",
+      "/management/webui_props",
+      "Get WebUiProps",
+      s"""
+         |
+         |Get WebUiProps - properties that configure the Web UI behavior and appearance.
+         |
+         |Properties with names starting with "webui_" can be stored in the database and managed via API.
+         |
+         |**Data Sources:**
+         |
+         |1. **Explicit WebUiProps (Database)**: Custom values created/updated via the API and stored in the database.
+         |
+         |2. **Implicit WebUiProps (Configuration File)**: Default values defined in the `sample.props.template` configuration file.
+         |
+         |**Query Parameter:**
+         |
+         |* `what` (optional, string, default: "active")
+         |  - `active`: Returns explicit props from database + implicit (default) props from configuration file
+         |    - When both sources have the same property name, the database value takes precedence
+         |    - Implicit props are marked with `webUiPropsId = "default"`
+         |  - `database`: Returns only explicit props from the database
+         |  - `config`: Returns only implicit (default) props from configuration file
+         |
+         |**Examples:**
+         |
+         |Get database props combined with defaults (default behavior):
+         |${getObpApiRoot}/v6.0.0/management/webui_props
+         |${getObpApiRoot}/v6.0.0/management/webui_props?what=active
+         |
+         |Get only database-stored props:
+         |${getObpApiRoot}/v6.0.0/management/webui_props?what=database
+         |
+         |Get only default props from configuration:
+         |${getObpApiRoot}/v6.0.0/management/webui_props?what=config
+         |
+         |For more details about WebUI Props, including how to set config file defaults and precedence order, see ${Glossary.getGlossaryItemLink("webui_props")}.
+         |
+         |""",
+      EmptyBody,
+      ListResult(
+        "webui_props",
+        (List(WebUiPropsCommons("webui_api_explorer_url", "https://apiexplorer.openbankproject.com", Some("web-ui-props-id"))))
+      )
+      ,
+      List(
+        UserNotLoggedIn,
+        UserHasMissingRoles,
+        UnknownError
+      ),
+      List(apiTagWebUiProps),
+      Some(List(canGetWebUiProps))
+    )
+
+
+    lazy val getWebUiProps: OBPEndpoint = {
+      case "management" :: "webui_props":: Nil JsonGet req => {
+        cc => implicit val ec = EndpointContext(Some(cc))
+          val what = ObpS.param("what").getOrElse("active")
+          logger.info(s"========== GET /obp/v6.0.0/management/webui_props called with what=$what ==========")
+          for {
+            (Full(u), callContext) <- authenticatedAccess(cc)
+            _ <- NewStyle.function.tryons(s"""$InvalidFilterParameterFormat `what` must be one of: active, database, config. Current value: $what""", 400, callContext) {
+              what match {
+                case "active" | "database" | "config" => true
+                case _ => false
+              }
+            }
+            _ <- NewStyle.function.hasEntitlement("", u.userId, ApiRole.canGetWebUiProps, callContext)
+            explicitWebUiProps <- Future{ MappedWebUiPropsProvider.getAll() }
+            implicitWebUiProps = getWebUIPropsPairs.map(webUIPropsPairs=>WebUiPropsCommons(webUIPropsPairs._1, webUIPropsPairs._2, webUiPropsId= Some("default")))
+            result = what match {
+              case "database" => 
+                // Return only database props
+                explicitWebUiProps
+              case "config" =>
+                // Return only config file props
+                implicitWebUiProps.distinct
+              case "active" =>
+                // Return database props + config props (removing duplicates, database takes precedence)
+                val implicitWebUiPropsRemovedDuplicated = if(explicitWebUiProps.nonEmpty){
+                  val duplicatedProps : List[WebUiPropsCommons]= explicitWebUiProps.map(explicitWebUiProp => implicitWebUiProps.filter(_.name == explicitWebUiProp.name)).flatten
+                  implicitWebUiProps diff duplicatedProps
+                } else {
+                  implicitWebUiProps.distinct
+                }
+                explicitWebUiProps ++ implicitWebUiPropsRemovedDuplicated
+            }
+          } yield {
+            logger.info(s"========== GET /obp/v6.0.0/management/webui_props returning ${result.size} records ==========")
+            result.foreach { prop =>
+              logger.info(s"  - name: ${prop.name}, value: ${prop.value}, webUiPropsId: ${prop.webUiPropsId}")
+            }
+            logger.info(s"========== END GET /obp/v6.0.0/management/webui_props ==========")
+            (ListResult("webui_props", result), HttpCode.`200`(callContext))
+          }
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
+      getSystemDynamicEntities,
+      implementedInApiVersion,
+      nameOf(getSystemDynamicEntities),
+      "GET",
+      "/management/system-dynamic-entities",
+      "Get System Dynamic Entities",
+      s"""Get all System Dynamic Entities with record counts.
+         |
+         |Each dynamic entity in the response includes a `record_count` field showing how many data records exist for that entity.
+         |
+         |For more information see ${Glossary.getGlossaryItemLink(
+          "Dynamic-Entities"
+        )} """,
+      EmptyBody,
+      ListResult(
+        "dynamic_entities",
+        List(dynamicEntityResponseBodyExample)
+      ),
+      List(
+        $UserNotLoggedIn,
+        UserHasMissingRoles,
+        UnknownError
+      ),
+      List(apiTagManageDynamicEntity, apiTagApi),
+      Some(List(canGetSystemLevelDynamicEntities))
+    )
+
+    lazy val getSystemDynamicEntities: OBPEndpoint = {
+      case "management" :: "system-dynamic-entities" :: Nil JsonGet req => {
+        cc =>
+          implicit val ec = EndpointContext(Some(cc))
+          for {
+            dynamicEntities <- Future(
+              NewStyle.function.getDynamicEntities(None, false)
+            )
+          } yield {
+            val listCommons: List[DynamicEntityCommons] = dynamicEntities.sortBy(_.entityName)
+            val jObjectsWithCounts = listCommons.map { entity =>
+              val recordCount = DynamicData.count(
+                By(DynamicData.DynamicEntityName, entity.entityName),
+                By(DynamicData.IsPersonalEntity, false),
+                if (entity.bankId.isEmpty) NullRef(DynamicData.BankId) else By(DynamicData.BankId, entity.bankId.get)
+              )
+              entity.jValue.asInstanceOf[JObject] ~ ("record_count" -> recordCount)
+            }
+            (
+              ListResult("dynamic_entities", jObjectsWithCounts),
+              HttpCode.`200`(cc.callContext)
+            )
+          }
+      }
+    }
+
+    private def unboxResult[T: Manifest](box: Box[T], entityName: String): T = {
+      if (box.isInstanceOf[Failure]) {
+        val failure = box.asInstanceOf[Failure]
+        // change the internal db column name 'dynamicdataid' to entity's id name
+        val msg = failure.msg.replace(
+          DynamicData.DynamicDataId.dbColumnName,
+          StringUtils.uncapitalize(entityName) + "Id"
+        )
+        val changedMsgFailure = failure.copy(msg = s"$InternalServerError $msg")
+        fullBoxOrException[T](changedMsgFailure)
+      }
+      box.openOrThrowException(s"$UnknownError ")
+    }
+
+    staticResourceDocs += ResourceDoc(
+      deleteSystemDynamicEntityCascade,
+      implementedInApiVersion,
+      nameOf(deleteSystemDynamicEntityCascade),
+      "DELETE",
+      "/management/system-dynamic-entities/cascade/DYNAMIC_ENTITY_ID",
+      "Delete System Level Dynamic Entity Cascade",
+      s"""Delete a DynamicEntity specified by DYNAMIC_ENTITY_ID and all its data records.
+         |
+         |This endpoint performs a cascade delete:
+         |1. Deletes all data records associated with the dynamic entity
+         |2. Deletes the dynamic entity definition itself
+         |
+         |Use with caution - this operation cannot be undone.
+         |
+         |For more information see ${Glossary.getGlossaryItemLink(
+          "Dynamic-Entities"
+        )}/
+         |
+         |""",
+      EmptyBody,
+      EmptyBody,
+      List(
+        $UserNotLoggedIn,
+        UserHasMissingRoles,
+        UnknownError
+      ),
+      List(apiTagManageDynamicEntity, apiTagApi),
+      Some(List(canDeleteCascadeSystemDynamicEntity))
+    )
+    lazy val deleteSystemDynamicEntityCascade: OBPEndpoint = {
+      case "management" :: "system-dynamic-entities" :: "cascade" :: dynamicEntityId :: Nil JsonDelete _ => {
+        cc =>
+          implicit val ec = EndpointContext(Some(cc))
+          deleteDynamicEntityCascadeMethod(None, dynamicEntityId, cc)
+      }
+    }
+
+    private def deleteDynamicEntityCascadeMethod(
+        bankId: Option[String],
+        dynamicEntityId: String,
+        cc: CallContext
+    ) = {
+      for {
+        // Get the dynamic entity
+        (entity, _) <- NewStyle.function.getDynamicEntityById(
+          bankId,
+          dynamicEntityId,
+          cc.callContext
+        )
+        // Get all data records for this entity
+        (box, _) <- NewStyle.function.invokeDynamicConnector(
+          GET_ALL,
+          entity.entityName,
+          None,
+          None,
+          entity.bankId,
+          None,
+          None,
+          false,
+          cc.callContext
+        )
+        resultList: JArray = unboxResult(
+          box.asInstanceOf[Box[JArray]],
+          entity.entityName
+        )
+        // Delete all data records
+        _ <- Future.sequence {
+          resultList.arr.map { record =>
+            val idFieldName = DynamicEntityHelper.createEntityId(entity.entityName)
+            val recordId = (record \ idFieldName).asInstanceOf[JString].s
+            Future {
+              DynamicDataProvider.connectorMethodProvider.vend.delete(
+                entity.bankId,
+                entity.entityName,
+                recordId,
+                None,
+                false
+              )
+            }
+          }
+        }
+        // Delete the dynamic entity definition
+        deleted: Box[Boolean] <- NewStyle.function.deleteDynamicEntity(
+          bankId,
+          dynamicEntityId
+        )
+      } yield {
+        (deleted, HttpCode.`200`(cc.callContext))
       }
     }
 

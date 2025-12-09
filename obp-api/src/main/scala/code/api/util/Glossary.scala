@@ -2966,7 +2966,7 @@ object Glossary extends MdcLoggable  {
 |
 |**Supported field types:**
 |
-|STRING, INTEGER, DOUBLE, BOOLEAN, DATE_WITH_DAY (format: yyyy-MM-dd), and reference types (foreign keys)
+|STRING, INTEGER, DOUBLE, BOOLEAN, DATE_WITH_DAY (format: yyyy-MM-dd), JSON (objects and arrays), and reference types (foreign keys)
 |
 |**The hasPersonalEntity flag:**
 |

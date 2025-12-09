@@ -14,7 +14,7 @@ import code.api.dynamic.endpoint.helper.practise.{
   PractiseEndpoint
 }
 import code.api.dynamic.endpoint.helper.{CompiledObjects, DynamicEndpointHelper}
-import code.api.dynamic.entity.helper.DynamicEntityInfo
+import code.api.dynamic.entity.helper.{DynamicEntityHelper, DynamicEntityInfo}
 import code.api.util.APIUtil.{fullBoxOrException, _}
 import code.api.util.ApiRole._
 import code.api.util.ApiTag._
@@ -2321,6 +2321,17 @@ trait APIMethods400 extends MdcLoggable {
          |      "summary": {
          |        "type": "string",
          |        "example": "User received 'No such price' error using Stripe API"
+         |      },
+         |      "custom_metadata": {
+         |        "type": "json",
+         |        "example": {
+         |          "priority": "high",
+         |          "tags": ["support", "billing"],
+         |          "context": {
+         |            "page": "checkout",
+         |            "step": 3
+         |          }
+         |        }
          |      }
          |    }
          |  },
@@ -2513,6 +2524,17 @@ trait APIMethods400 extends MdcLoggable {
          |      "summary": {
          |        "type": "string",
          |        "example": "User received 'No such price' error using Stripe API"
+         |      },
+         |      "custom_metadata": {
+         |        "type": "json",
+         |        "example": {
+         |          "priority": "high",
+         |          "tags": ["support", "billing"],
+         |          "context": {
+         |            "page": "checkout",
+         |            "step": 3
+         |          }
+         |        }
          |      }
          |    }
          |  },
@@ -2800,6 +2822,8 @@ trait APIMethods400 extends MdcLoggable {
           deleteDynamicEntityMethod(None, dynamicEntityId, cc)
       }
     }
+
+
 
     private def deleteDynamicEntityMethod(
         bankId: Option[String],
