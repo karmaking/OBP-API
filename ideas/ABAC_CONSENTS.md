@@ -511,6 +511,185 @@ abac.log_all_evaluations=true
 abac.log_denied_attempts=true
 ```
 
+## Context Mutation Concerns: Should ABAC Auto-Generate Consents?
+
+An important architectural question: **Should the ABAC system automatically generate consents during request processing, or should consent generation be explicit?**
+
+### The Context Mutation Problem
+
+**Proposed Flow:**
+1. User calls endpoint with OAuth2/OIDC header + `CanUseAbac` role
+2. During request processing, ABAC evaluates policies
+3. If policy matches, system creates a consent
+4. Consent gets attached to current call context
+5. Request proceeds using the newly-created consent
+
+**Why This Is Problematic:**
+
+**1. Violates Principle of Least Surprise**
+- Caller makes request with OAuth2 credentials
+- Behind the scenes, system creates a persistent consent entity
+- This implicit behavior makes debugging and understanding the system harder
+- Side effects hidden from the caller violate transparency
+
+**2. Semantic Confusion**
+- **Consents** traditionally represent explicit user agreements ("I consent to share my data")
+- **ABAC evaluations** are policy-based decisions ("Your attributes match policy criteria")
+- Mixing these concepts muddies the semantic waters
+- For compliance/regulatory purposes, this distinction matters
+
+**3. Lifecycle Management Complexity**
+- When should auto-generated consents expire?
+- How do you clean them up?
+- What happens if attributes change mid-request?
+- Does the consent persist beyond the current call?
+- Creates timing issues and potential race conditions
+
+**4. Audit Trail Ambiguity**
+- Was this consent user-initiated or system-generated?
+- Who authorized it - the user or the policy engine?
+- Compliance systems need clear distinctions
+
+### Alternative Approaches
+
+**Option 1: ABAC as Pure Policy Evaluation (Recommended)**
+
+Keep ABAC as a **transparent evaluation layer** without side effects:
+
+```scala
+def checkAccess(user: User, resource: Resource, action: Action): Boolean = {
+  val attributes = gatherAttributes(user, resource, action)
+  val policies = findApplicablePolicies(resource, action)
+  
+  evaluatePolicies(policies, attributes) match {
+    case PolicyResult.Allow(reason) =>
+      auditLog.record(s"ABAC allowed: $reason")
+      true
+    case PolicyResult.Deny(reason) =>
+      auditLog.record(s"ABAC denied: $reason")
+      false
+  }
+}
+```
+
+The ABAC evaluation should be:
+- **Fast** (in-memory policy evaluation)
+- **Stateless** (no persistent side effects)
+- **Auditable** (logged but not persisted as consent)
+- **Transparent** (clear in logs, but invisible to caller)
+
+**Option 2: ABAC Evaluation Result as Request Metadata**
+
+Instead of creating a consent, attach the evaluation result to request context:
+
+```scala
+case class RequestContext(
+  oauth2Token: Token,
+  userRoles: Set[Role],
+  abacEvaluation: Option[AbacEvaluationResult] = None
+)
+
+case class AbacEvaluationResult(
+  decision: Decision,
+  matchedPolicies: List[Policy],
+  evaluatedAttributes: Map[String, String],
+  evaluatedAt: DateTime,
+  validUntil: DateTime
+)
+```
+
+This allows:
+- Caching evaluation results within request scope
+- Passing results to downstream services
+- Audit logging without persistence
+- No database writes on every request
+
+**Option 3: Explicit Two-Step Flow**
+
+If you must use consents, make it **explicit**:
+
+```
+# Step 1: Acquire ABAC Consent (explicit call)
+POST /consents/abac
+Authorization: Bearer {oauth2_token}
+{
+  "resource_type": "account",
+  "resource_id": "123",
+  "action": "view_balance"
+}
+
+Response: 
+{
+  "consent_id": "abac-consent-xyz",
+  "valid_until": "2024-01-15T10:30:00Z",
+  "granted_accounts": ["123", "456", "789"]
+}
+
+# Step 2: Use the Consent (separate call)
+GET /accounts/123/balance
+Authorization: Bearer {oauth2_token}
+X-ABAC-Consent: abac-consent-xyz
+```
+
+**Option 4: Consent as Cache (Current Document Approach)**
+
+The approach described in this document treats consents as a **cache** for ABAC decisions:
+
+- First request: No consent exists → Evaluate ABAC → Create consent → Use it
+- Subsequent requests: Consent exists → Skip evaluation → Use cached decision
+- Consent expires: Back to evaluation on next request
+
+This is a middle ground but still has mutation concerns:
+- ✅ Reuses existing infrastructure
+- ✅ Provides caching benefits
+- ✅ Creates audit trail
+- ⚠️ Still creates side effects on first request
+- ⚠️ Requires cleanup/garbage collection
+- ⚠️ Database writes on policy evaluation
+
+### When Context Enrichment Is Acceptable
+
+Some forms of context modification are fine:
+- **Adding computed attributes** (in-memory, non-persistent)
+- **Attaching evaluation results** for downstream use within request
+- **Caching policy decisions** within request scope
+- **Adding trace/correlation IDs** for debugging
+
+But creating **persistent entities** (like database records) crosses from enrichment to mutation with side effects.
+
+### Recommendation
+
+For production ABAC implementation:
+
+1. **Evaluation Phase**: ABAC evaluates policies (fast, stateless)
+2. **Authorization Phase**: Result determines allow/deny
+3. **Audit Phase**: Log decision with context
+4. **No Consent Generation**: Unless explicitly requested
+
+If caching is needed:
+- Use in-memory cache (Redis, Memcached)
+- Cache evaluation results, not consents
+- Clear cache on attribute changes
+- TTL matches policy freshness requirements
+
+If consents are truly needed:
+- Make acquisition explicit (separate endpoint)
+- Document the semantic difference from user consents
+- Implement clear lifecycle management
+- Provide revocation endpoints
+
+### Summary: Implicit vs Explicit
+
+| Aspect | Implicit (Auto-Generate) | Explicit (Separate Call) |
+|--------|-------------------------|--------------------------|
+| Caller experience | Simple, transparent | Two-step, more complex |
+| Debugging | Harder, hidden behavior | Easier, clear flow |
+| Performance | Better (caching built-in) | Requires separate cache |
+| Side effects | Yes (database writes) | Only when requested |
+| Semantic clarity | Confused | Clear |
+| Audit trail | Ambiguous source | Clear initiator |
+| **Recommendation** | ❌ Avoid | ✅ Prefer if using consents |
+
 ## Challenges and Open Questions
 
 1. **Schema change**: Add `source` field or use `note`?
