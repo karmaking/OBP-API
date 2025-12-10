@@ -95,7 +95,7 @@ object OBPAPI6_0_0 extends OBPRestHelper
   ).filterNot(it => it.partialFunctionName.matches(excludeEndpoints.mkString("|")))
 
   // all endpoints - v6.0.0 endpoints first so they take precedence over v5.1.0
-  private val endpoints: List[OBPEndpoint] = endpointsOf6_0_0 ++ endpointsOf5_1_0_without_root
+  private val endpoints: List[OBPEndpoint] = endpointsOf6_0_0.toList ++ endpointsOf5_1_0_without_root
 
   // Filter the possible endpoints by the disabled / enabled Props settings and add them together
   // Make root endpoint mandatory (prepend it)
