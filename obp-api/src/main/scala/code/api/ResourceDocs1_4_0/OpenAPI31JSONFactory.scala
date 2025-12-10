@@ -348,7 +348,7 @@ object OpenAPI31JSONFactory extends MdcLoggable {
   def createOpenAPI31Json(
     resourceDocs: List[ResourceDocJson], 
     requestedApiVersion: String,
-    hostname: String = "api.openbankproject.com"
+    hostname: String
   ): OpenAPI31Json = {
 
     val timestamp = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
@@ -380,12 +380,8 @@ object OpenAPI31JSONFactory extends MdcLoggable {
     // Create Servers
     val servers = List(
       ServerJson(
-        url = s"https://$hostname",
-        description = Some("Production server")
-      ),
-      ServerJson(
-        url = "https://apisandbox.openbankproject.com",
-        description = Some("Sandbox server")
+        url = hostname,
+        description = Some("Back-end server")
       )
     )
 
