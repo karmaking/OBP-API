@@ -42,6 +42,19 @@
               <descriptorRefs>
                 <descriptorRef>jar-with-dependencies</descriptorRef>
               </descriptorRefs>
+              <dependencySets>
+                <dependencySet>
+                  <outputDirectory>/</outputDirectory>
+                  <unpack>true</unpack>
+                  <scope>runtime</scope>
+                </dependencySet>
+              </dependencySets>
+              <fileSets>
+                <fileSet>
+                  <directory>${project.build.outputDirectory}</directory>
+                  <outputDirectory>/</outputDirectory>
+                </fileSet>
+              </fileSets>
             </configuration>
             <executions>
               <execution>
@@ -388,7 +401,7 @@
     <dependency>
       <groupId>org.clapper</groupId>
       <artifactId>classutil_${scala.version}</artifactId>
-      <version>1.4.0</version>
+      <version>1.5.1</version>
     </dependency>
     <dependency>
       <groupId>com.github.grumlimited</groupId>
@@ -666,6 +679,8 @@
           <version>3.4.0</version>
           <configuration>
             <webXml>${webXmlPath}</webXml>
+            <attachClasses>true</attachClasses>
+            <classesClassifier>classes</classesClassifier>
           </configuration>
         </plugin>
         <plugin>

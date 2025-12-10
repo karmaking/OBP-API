@@ -33,7 +33,7 @@ import code.UserRefreshes.MappedUserRefreshes
 import code.accountapplication.MappedAccountApplication
 import code.accountattribute.MappedAccountAttribute
 import code.accountholders.MapperAccountHolders
-import code.actorsystem.ObpActorSystem
+//import code.actorsystem.ObpActorSystem
 import code.api.Constant._
 import code.api.ResourceDocs1_4_0.ResourceDocs300.{ResourceDocs310, ResourceDocs400, ResourceDocs500, ResourceDocs510, ResourceDocs600}
 import code.api.ResourceDocs1_4_0._
@@ -328,7 +328,7 @@ class Boot extends MdcLoggable {
     createBootstrapSuperUser()
 
     //launch the scheduler to clean the database from the expired tokens and nonces, 1 hour
-    DataBaseCleanerScheduler.start(intervalInSeconds = 60*60)
+//    DataBaseCleanerScheduler.start(intervalInSeconds = 60*60)
 
 //    if (Props.devMode || Props.testMode) {
 //      StoredProceduresMockedData.createOrDropMockedPostgresStoredProcedures()
@@ -428,15 +428,15 @@ class Boot extends MdcLoggable {
 
     logger.debug(s"If you can read this, logging level is debug")
 
-    val actorSystem = ObpActorSystem.startLocalActorSystem()
-    connector match {
-      case "akka_vDec2018" =>
-        // Start Actor system of Akka connector
-        ObpActorSystem.startNorthSideAkkaConnectorActorSystem()
-      case "star" if (APIUtil.getPropsValue("starConnector_supported_types","").split(",").contains("akka"))  =>
-        ObpActorSystem.startNorthSideAkkaConnectorActorSystem()
-      case _ => // Do nothing
-    }
+//    val actorSystem = ObpActorSystem.startLocalActorSystem()
+//    connector match {
+//      case "akka_vDec2018" =>
+//        // Start Actor system of Akka connector
+//        ObpActorSystem.startNorthSideAkkaConnectorActorSystem()
+//      case "star" if (APIUtil.getPropsValue("starConnector_supported_types","").split(",").contains("akka"))  =>
+//        ObpActorSystem.startNorthSideAkkaConnectorActorSystem()
+//      case _ => // Do nothing
+//    }
 
     // where to search snippets
     LiftRules.addToPackages("code")
@@ -751,13 +751,13 @@ class Boot extends MdcLoggable {
     TransactionScheduler.startAll()
 
 
-    APIUtil.getPropsAsBoolValue("enable_metrics_scheduler", true) match {
-      case true =>
-        val interval =
-          APIUtil.getPropsAsIntValue("retain_metrics_scheduler_interval_in_seconds", 3600)
-        MetricsArchiveScheduler.start(intervalInSeconds = interval)
-      case false => // Do not start it
-    }
+//    APIUtil.getPropsAsBoolValue("enable_metrics_scheduler", true) match {
+//      case true =>
+//        val interval =
+//          APIUtil.getPropsAsIntValue("retain_metrics_scheduler_interval_in_seconds", 3600)
+//        MetricsArchiveScheduler.start(intervalInSeconds = interval)
+//      case false => // Do not start it
+//    }
 
     object UsernameLockedChecker  {
       def onBeginServicing(session: LiftSession, req: Req): Unit = {

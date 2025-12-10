@@ -113,7 +113,7 @@ import java.util.{Calendar, Date}
 import scala.collection.immutable.{List, Nil}
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
-import scala.jdk.CollectionConverters.collectionAsScalaIterableConverter
+import scala.collection.JavaConverters._
 
 trait APIMethods400 extends MdcLoggable {
   self: RestHelper =>
