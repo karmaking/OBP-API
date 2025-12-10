@@ -3405,6 +3405,7 @@ trait APIMethods600 {
     lazy val getWebUiProp: OBPEndpoint = {
       case "webui-props" :: webUiPropName :: Nil JsonGet req => {
         cc => implicit val ec = EndpointContext(Some(cc))
+          logger.info(s"========== GET /obp/v6.0.0/webui-props/$webUiPropName (SINGLE PROP) called ==========")
           val active = ObpS.param("active").getOrElse("false")
           for {
             invalidMsg <- Future(s"""$InvalidFilterParameterFormat `active` must be a boolean, but current `active` value is: ${active} """)
@@ -3444,7 +3445,7 @@ trait APIMethods600 {
       implementedInApiVersion,
       nameOf(getWebUiProps),
       "GET",
-      "/management/webui_props",
+      "/webui-props",
       "Get WebUiProps",
       s"""
          |
@@ -3461,23 +3462,24 @@ trait APIMethods600 {
          |**Query Parameter:**
          |
          |* `what` (optional, string, default: "active")
-         |  - `active`: Returns explicit props from database + implicit (default) props from configuration file
-         |    - When both sources have the same property name, the database value takes precedence
-         |    - Implicit props are marked with `webUiPropsId = "default"`
-         |  - `database`: Returns only explicit props from the database
-         |  - `config`: Returns only implicit (default) props from configuration file
+         |  - `active`: Returns one value per property name
+         |    - If property exists in database: returns database value
+         |    - If property only in config file: returns config default value
+         |    - Database values have UUID `webUiPropsId`, config values have `webUiPropsId = "default"`
+         |  - `database`: Returns ONLY properties explicitly stored in the database
+         |  - `config`: Returns ONLY default properties from configuration file
          |
          |**Examples:**
          |
-         |Get database props combined with defaults (default behavior):
-         |${getObpApiRoot}/v6.0.0/management/webui_props
-         |${getObpApiRoot}/v6.0.0/management/webui_props?what=active
+         |Get active props (database overrides config, one value per prop):
+         |${getObpApiRoot}/v6.0.0/webui-props
+         |${getObpApiRoot}/v6.0.0/webui-props?what=active
          |
          |Get only database-stored props:
-         |${getObpApiRoot}/v6.0.0/management/webui_props?what=database
+         |${getObpApiRoot}/v6.0.0/webui-props?what=database
          |
          |Get only default props from configuration:
-         |${getObpApiRoot}/v6.0.0/management/webui_props?what=config
+         |${getObpApiRoot}/v6.0.0/webui-props?what=config
          |
          |For more details about WebUI Props, including how to set config file defaults and precedence order, see ${Glossary.getGlossaryItemLink("webui_props")}.
          |
@@ -3489,29 +3491,25 @@ trait APIMethods600 {
       )
       ,
       List(
-        UserNotLoggedIn,
-        UserHasMissingRoles,
         UnknownError
       ),
-      List(apiTagWebUiProps),
-      Some(List(canGetWebUiProps))
+      List(apiTagWebUiProps)
     )
 
 
     lazy val getWebUiProps: OBPEndpoint = {
-      case "management" :: "webui_props":: Nil JsonGet req => {
+      case "webui-props":: Nil JsonGet req => {
         cc => implicit val ec = EndpointContext(Some(cc))
           val what = ObpS.param("what").getOrElse("active")
-          logger.info(s"========== GET /obp/v6.0.0/management/webui_props called with what=$what ==========")
+          logger.info(s"========== GET /obp/v6.0.0/webui-props (ALL PROPS) called with what=$what ==========")
           for {
-            (Full(u), callContext) <- authenticatedAccess(cc)
+            callContext <- Future.successful(cc.callContext)
             _ <- NewStyle.function.tryons(s"""$InvalidFilterParameterFormat `what` must be one of: active, database, config. Current value: $what""", 400, callContext) {
               what match {
                 case "active" | "database" | "config" => true
                 case _ => false
               }
             }
-            _ <- NewStyle.function.hasEntitlement("", u.userId, ApiRole.canGetWebUiProps, callContext)
             explicitWebUiProps <- Future{ MappedWebUiPropsProvider.getAll() }
             implicitWebUiProps = getWebUIPropsPairs.map(webUIPropsPairs=>WebUiPropsCommons(webUIPropsPairs._1, webUIPropsPairs._2, webUiPropsId= Some("default")))
             result = what match {
@@ -3522,21 +3520,17 @@ trait APIMethods600 {
                 // Return only config file props
                 implicitWebUiProps.distinct
               case "active" =>
-                // Return database props + config props (removing duplicates, database takes precedence)
-                val implicitWebUiPropsRemovedDuplicated = if(explicitWebUiProps.nonEmpty){
-                  val duplicatedProps : List[WebUiPropsCommons]= explicitWebUiProps.map(explicitWebUiProp => implicitWebUiProps.filter(_.name == explicitWebUiProp.name)).flatten
-                  implicitWebUiProps diff duplicatedProps
-                } else {
-                  implicitWebUiProps.distinct
-                }
-                explicitWebUiProps ++ implicitWebUiPropsRemovedDuplicated
+                // Return one value per prop: database value if exists, otherwise config value
+                val databasePropNames = explicitWebUiProps.map(_.name).toSet
+                val configPropsNotInDatabase = implicitWebUiProps.distinct.filterNot(prop => databasePropNames.contains(prop.name))
+                explicitWebUiProps ++ configPropsNotInDatabase
             }
           } yield {
-            logger.info(s"========== GET /obp/v6.0.0/management/webui_props returning ${result.size} records ==========")
+            logger.info(s"========== GET /obp/v6.0.0/webui-props returning ${result.size} records ==========")
             result.foreach { prop =>
               logger.info(s"  - name: ${prop.name}, value: ${prop.value}, webUiPropsId: ${prop.webUiPropsId}")
             }
-            logger.info(s"========== END GET /obp/v6.0.0/management/webui_props ==========")
+            logger.info(s"========== END GET /obp/v6.0.0/webui-props ==========")
             (ListResult("webui_props", result), HttpCode.`200`(callContext))
           }
       }
