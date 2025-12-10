@@ -3462,15 +3462,16 @@ trait APIMethods600 {
          |**Query Parameter:**
          |
          |* `what` (optional, string, default: "active")
-         |  - `active`: Returns explicit props from database + implicit (default) props from configuration file
-         |    - When both sources have the same property name, the database value takes precedence
-         |    - Implicit props are marked with `webUiPropsId = "default"`
-         |  - `database`: Returns only explicit props from the database
-         |  - `config`: Returns only implicit (default) props from configuration file
+         |  - `active`: Returns one value per property name
+         |    - If property exists in database: returns database value
+         |    - If property only in config file: returns config default value
+         |    - Database values have UUID `webUiPropsId`, config values have `webUiPropsId = "default"`
+         |  - `database`: Returns ONLY properties explicitly stored in the database
+         |  - `config`: Returns ONLY default properties from configuration file
          |
          |**Examples:**
          |
-         |Get database props combined with defaults (default behavior):
+         |Get active props (database overrides config, one value per prop):
          |${getObpApiRoot}/v6.0.0/webui-props
          |${getObpApiRoot}/v6.0.0/webui-props?what=active
          |
@@ -3519,14 +3520,10 @@ trait APIMethods600 {
                 // Return only config file props
                 implicitWebUiProps.distinct
               case "active" =>
-                // Return database props + config props (removing duplicates, database takes precedence)
-                val implicitWebUiPropsRemovedDuplicated = if(explicitWebUiProps.nonEmpty){
-                  val duplicatedProps : List[WebUiPropsCommons]= explicitWebUiProps.map(explicitWebUiProp => implicitWebUiProps.filter(_.name == explicitWebUiProp.name)).flatten
-                  implicitWebUiProps diff duplicatedProps
-                } else {
-                  implicitWebUiProps.distinct
-                }
-                explicitWebUiProps ++ implicitWebUiPropsRemovedDuplicated
+                // Return one value per prop: database value if exists, otherwise config value
+                val databasePropNames = explicitWebUiProps.map(_.name).toSet
+                val configPropsNotInDatabase = implicitWebUiProps.distinct.filterNot(prop => databasePropNames.contains(prop.name))
+                explicitWebUiProps ++ configPropsNotInDatabase
             }
           } yield {
             logger.info(s"========== GET /obp/v6.0.0/webui-props returning ${result.size} records ==========")
