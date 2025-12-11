@@ -66,33 +66,7 @@ class Http4sBoot extends MdcLoggable {
     val resourceDir = System.getProperty("props.resource.dir") ?: System.getenv("props.resource.dir")
     val propsPath = tryo{Box.legacyNullTest(resourceDir)}.toList.flatten
 
-    /**
-     * Where this application looks for props files:
-     *
-     * All properties files follow the standard lift naming scheme for order of preference (see https://www.assembla.com/wiki/show/liftweb/Properties)
-     * within a directory.
-     *
-     * The first choice of directory is $props.resource.dir/CONTEXT_PATH where $props.resource.dir is the java option set via -Dprops.resource.dir=...
-     * The second choice of directory is $props.resource.dir
-     *
-     * For example, on a production system:
-     *
-     * api1.example.com with context path /api1
-     *
-     * Looks first in (outside of war file): $props.resource.dir/api1, following the normal lift naming rules (e.g. production.default.props)
-     * Looks second in (outside of war file): $props.resource.dir, following the normal lift naming rules (e.g. production.default.props)
-     * Looks third in the war file
-     *
-     * and
-     *
-     * api2.example.com with context path /api2
-     *
-     * Looks first in (outside of war file): $props.resource.dir/api2, following the normal lift naming rules (e.g. production.default.props)
-     * Looks second in (outside of war file): $props.resource.dir, following the normal lift naming rules (e.g. production.default.props)
-     * Looks third in the war file, following the normal lift naming rules
-     *
-     */
-    val secondChoicePropsDir = for {
+    val propsDir = for {
       propsPath <- propsPath
     } yield {
       Props.toTry.map {
@@ -104,7 +78,7 @@ class Http4sBoot extends MdcLoggable {
     }
 
     Props.whereToLook = () => {
-      secondChoicePropsDir.flatten
+      propsDir.flatten
     }
 
     if (Props.mode == Props.RunModes.Development) logger.info("OBP-API Props all fields : \n" + Props.props.mkString("\n"))
@@ -206,14 +180,7 @@ class Http4sBoot extends MdcLoggable {
     createDefaultBankAndDefaultAccountsIfNotExisting()
 
     createBootstrapSuperUser()
-
-    //launch the scheduler to clean the database from the expired tokens and nonces, 1 hour
-    DataBaseCleanerScheduler.start(intervalInSeconds = 60*60)
-
-//    if (Props.devMode || Props.testMode) {
-//      StoredProceduresMockedData.createOrDropMockedPostgresStoredProcedures()
-//    }
-
+    
     if (APIUtil.getPropsAsBoolValue("logging.database.queries.enable", false)) {
       DB.addLogFunc
      {
@@ -234,33 +201,11 @@ class Http4sBoot extends MdcLoggable {
       code.bankconnectors.rabbitmq.Adapter.startRabbitMqAdapter.main(Array(""))
     }
 
-
-
-
     // ensure our relational database's tables are created/fit the schema
     val connector = code.api.Constant.CONNECTOR.openOrThrowException(s"$MandatoryPropertyIsNotSet. The missing prop is `connector` ")
-
-    val runningMode = Props.mode match {
-      case Props.RunModes.Production => "Production mode"
-      case Props.RunModes.Staging => "Staging mode"
-      case Props.RunModes.Development => "Development mode"
-      case Props.RunModes.Test => "test mode"
-      case _ => "other mode"
-    }
-
-    logger.info("running mode: " + runningMode)
+    
     logger.info(s"ApiPathZero (the bit before version) is $ApiPathZero")
     logger.debug(s"If you can read this, logging level is debug")
-
-
-
-
-
-    
-
-
-
-
 
     // API Metrics (logs of API calls)
     // If set to true we will write each URL with params to a datastore / log file
