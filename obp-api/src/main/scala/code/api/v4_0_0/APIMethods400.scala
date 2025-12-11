@@ -5,16 +5,10 @@ import code.DynamicEndpoint.DynamicEndpointSwagger
 import code.accountattribute.AccountAttributeX
 import code.api.Constant._
 import code.api.ResourceDocs1_4_0.SwaggerDefinitionsJSON
-import code.api.ResourceDocs1_4_0.SwaggerDefinitionsJSON.{
-  jsonDynamicResourceDoc,
-  _
-}
-import code.api.dynamic.endpoint.helper.practise.{
-  DynamicEndpointCodeGenerator,
-  PractiseEndpoint
-}
+import code.api.ResourceDocs1_4_0.SwaggerDefinitionsJSON.{jsonDynamicResourceDoc, _}
+import code.api.dynamic.endpoint.helper.practise.{DynamicEndpointCodeGenerator, PractiseEndpoint}
 import code.api.dynamic.endpoint.helper.{CompiledObjects, DynamicEndpointHelper}
-import code.api.dynamic.entity.helper.{DynamicEntityHelper, DynamicEntityInfo}
+import code.api.dynamic.entity.helper.DynamicEntityInfo
 import code.api.util.APIUtil.{fullBoxOrException, _}
 import code.api.util.ApiRole._
 import code.api.util.ApiTag._
@@ -31,20 +25,11 @@ import code.api.util.migration.Migration
 import code.api.util.newstyle.AttributeDefinition._
 import code.api.util.newstyle.Consumer._
 import code.api.util.newstyle.UserCustomerLinkNewStyle.getUserCustomerLinks
-import code.api.util.newstyle.{
-  BalanceNewStyle,
-  UserCustomerLinkNewStyle,
-  ViewNewStyle
-}
+import code.api.util.newstyle.{BalanceNewStyle, UserCustomerLinkNewStyle, ViewNewStyle}
 import code.api.v1_2_1.{JSONFactory, PostTransactionTagJSON}
 import code.api.v1_4_0.JSONFactory1_4_0
 import code.api.v2_0_0.OBPAPI2_0_0.Implementations2_0_0
-import code.api.v2_0_0.{
-  CreateEntitlementJSON,
-  CreateUserCustomerLinkJson,
-  EntitlementJSONs,
-  JSONFactory200
-}
+import code.api.v2_0_0.{CreateEntitlementJSON, CreateUserCustomerLinkJson, EntitlementJSONs, JSONFactory200}
 import code.api.v2_1_0._
 import code.api.v3_0_0.{CreateScopeJson, JSONFactory300}
 import code.api.v3_1_0._
@@ -54,15 +39,10 @@ import code.apicollection.MappedApiCollectionsProvider
 import code.apicollectionendpoint.MappedApiCollectionEndpointsProvider
 import code.authtypevalidation.JsonAuthTypeValidation
 import code.bankconnectors.LocalMappedConnectorInternal._
-import code.bankconnectors.{
-  Connector,
-  DynamicConnector,
-  InternalConnector,
-  LocalMappedConnectorInternal
-}
+import code.bankconnectors.{Connector, DynamicConnector, InternalConnector, LocalMappedConnectorInternal}
 import code.connectormethod.{JsonConnectorMethod, JsonConnectorMethodMethodBody}
 import code.consent.{ConsentStatus, Consents}
-import code.dynamicEntity.{DynamicEntityCommons, ReferenceType}
+import code.dynamicEntity.DynamicEntityCommons
 import code.dynamicMessageDoc.JsonDynamicMessageDoc
 import code.dynamicResourceDoc.JsonDynamicResourceDoc
 import code.endpointMapping.EndpointMappingCommons
@@ -82,10 +62,7 @@ import code.util.Helper.{MdcLoggable, ObpS, SILENCE_IS_GOLDEN, booleanToFuture}
 import code.util.{Helper, JsonSchemaUtil}
 import code.validation.JsonValidation
 import code.views.Views
-import code.webhook.{
-  BankAccountNotificationWebhookTrait,
-  SystemAccountNotificationWebhookTrait
-}
+import code.webhook.{BankAccountNotificationWebhookTrait, SystemAccountNotificationWebhookTrait}
 import code.webuiprops.MappedWebUiPropsProvider.getWebUiPropsValue
 import com.github.dwickern.macros.NameOf.nameOf
 import com.networknt.schema.ValidationMessage
@@ -110,10 +87,10 @@ import java.net.URLEncoder
 import java.text.SimpleDateFormat
 import java.util
 import java.util.{Calendar, Date}
+import scala.collection.JavaConverters._
 import scala.collection.immutable.{List, Nil}
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
-import scala.collection.JavaConverters._
 
 trait APIMethods400 extends MdcLoggable {
   self: RestHelper =>
@@ -11796,10 +11773,10 @@ trait APIMethods400 extends MdcLoggable {
         Future {
           val versions: List[ScannedApiVersion] =
             ApiVersion.allScannedApiVersion.asScala.toList.filter { version =>
-              version.urlPrefix.trim.nonEmpty
+              version.urlPrefix.trim.nonEmpty && APIUtil.versionIsAllowed(version)
             }
           (
-            ListResult("scanned_api_versions", versions),
+              ListResult("scanned_api_versions", versions),
             HttpCode.`200`(cc.callContext)
           )
         }
