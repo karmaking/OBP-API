@@ -1,7 +1,7 @@
 package code.api.util
 
 
-import akka.http.scaladsl.model.HttpMethod
+import org.apache.pekko.http.scaladsl.model.HttpMethod
 import code.DynamicEndpoint.{DynamicEndpointProvider, DynamicEndpointT}
 import code.api.Constant.{SYSTEM_READ_ACCOUNTS_BERLIN_GROUP_VIEW_ID, SYSTEM_READ_BALANCES_BERLIN_GROUP_VIEW_ID}
 import code.api.builder.PaymentInitiationServicePISApi.APIMethods_PaymentInitiationServicePISApi.checkPaymentServerTypeError
