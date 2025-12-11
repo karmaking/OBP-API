@@ -3378,12 +3378,18 @@ trait APIMethods600 {
          |
          |2. **Implicit WebUiProps (Configuration File)**: Default values defined in the `sample.props.template` configuration file.
          |
+         |**Response Fields:**
+         |
+         |* `name`: The property name
+         |* `value`: The property value
+         |* `webUiPropsId` (optional): UUID for database props, omitted for config props
+         |* `source`: Either "database" (editable via API) or "config" (read-only from config file)
+         |
          |**Query Parameter:**
          |
          |* `active` (optional, boolean string, default: "false")
-         |  - If `active=false` or omitted: Returns only explicit prop from the database
-         |  - If `active=true`: Returns explicit prop from database, or if not found, returns implicit (default) prop from configuration file
-         |    - Implicit props are marked with `webUiPropsId = "default"`
+         |  - If `active=false` or omitted: Returns only explicit prop from the database (source="database")
+         |  - If `active=true`: Returns explicit prop from database, or if not found, returns implicit (default) prop from configuration file (source="config")
          |
          |**Examples:**
          |
@@ -3395,7 +3401,7 @@ trait APIMethods600 {
          |
          |""",
       EmptyBody,
-      WebUiPropsCommons("webui_api_explorer_url", "https://apiexplorer.openbankproject.com", Some("web-ui-props-id")),
+      WebUiPropsCommons("webui_api_explorer_url", "https://apiexplorer.openbankproject.com", Some("web-ui-props-id"), "database"),
       List(
         WebUiPropsNotFoundByName,
         UnknownError
@@ -3418,11 +3424,11 @@ trait APIMethods600 {
               explicitProp match {
                 case Some(prop) =>
                   // Found in database
-                  Future.successful(prop)
+                  Future.successful(WebUiPropsCommons(prop.name, prop.value, prop.webUiPropsId, source = "database"))
                 case None if isActived =>
                   // Not in database, check implicit props if active=true
                   val implicitWebUiProps = getWebUIPropsPairs.map(webUIPropsPairs =>
-                    WebUiPropsCommons(webUIPropsPairs._1, webUIPropsPairs._2, webUiPropsId = Some("default"))
+                    WebUiPropsCommons(webUIPropsPairs._1, webUIPropsPairs._2, webUiPropsId = None, source = "config")
                   )
                   val implicitProp = implicitWebUiProps.find(_.name == webUiPropName)
                   implicitProp match {
@@ -3459,15 +3465,21 @@ trait APIMethods600 {
          |
          |2. **Implicit WebUiProps (Configuration File)**: Default values defined in the `sample.props.template` configuration file.
          |
+         |**Response Fields:**
+         |
+         |* `name`: The property name
+         |* `value`: The property value
+         |* `webUiPropsId` (optional): UUID for database props, omitted for config props
+         |* `source`: Either "database" (editable via API) or "config" (read-only from config file)
+         |
          |**Query Parameter:**
          |
          |* `what` (optional, string, default: "active")
          |  - `active`: Returns one value per property name
-         |    - If property exists in database: returns database value
-         |    - If property only in config file: returns config default value
-         |    - Database values have UUID `webUiPropsId`, config values have `webUiPropsId = "default"`
-         |  - `database`: Returns ONLY properties explicitly stored in the database
-         |  - `config`: Returns ONLY default properties from configuration file
+         |    - If property exists in database: returns database value (source="database")
+         |    - If property only in config file: returns config default value (source="config")
+         |  - `database`: Returns ONLY properties explicitly stored in the database (source="database")
+         |  - `config`: Returns ONLY default properties from configuration file (source="config")
          |
          |**Examples:**
          |
@@ -3487,7 +3499,7 @@ trait APIMethods600 {
       EmptyBody,
       ListResult(
         "webui_props",
-        (List(WebUiPropsCommons("webui_api_explorer_url", "https://apiexplorer.openbankproject.com", Some("web-ui-props-id"))))
+        (List(WebUiPropsCommons("webui_api_explorer_url", "https://apiexplorer.openbankproject.com", Some("web-ui-props-id"), "database")))
       )
       ,
       List(
@@ -3511,19 +3523,20 @@ trait APIMethods600 {
               }
             }
             explicitWebUiProps <- Future{ MappedWebUiPropsProvider.getAll() }
-            implicitWebUiProps = getWebUIPropsPairs.map(webUIPropsPairs=>WebUiPropsCommons(webUIPropsPairs._1, webUIPropsPairs._2, webUiPropsId= Some("default")))
+            explicitWebUiPropsWithSource = explicitWebUiProps.map(prop => WebUiPropsCommons(prop.name, prop.value, prop.webUiPropsId, source = "database"))
+            implicitWebUiProps = getWebUIPropsPairs.map(webUIPropsPairs=>WebUiPropsCommons(webUIPropsPairs._1, webUIPropsPairs._2, webUiPropsId = None, source = "config"))
             result = what match {
               case "database" => 
                 // Return only database props
-                explicitWebUiProps
+                explicitWebUiPropsWithSource
               case "config" =>
                 // Return only config file props
                 implicitWebUiProps.distinct
               case "active" =>
                 // Return one value per prop: database value if exists, otherwise config value
-                val databasePropNames = explicitWebUiProps.map(_.name).toSet
+                val databasePropNames = explicitWebUiPropsWithSource.map(_.name).toSet
                 val configPropsNotInDatabase = implicitWebUiProps.distinct.filterNot(prop => databasePropNames.contains(prop.name))
-                explicitWebUiProps ++ configPropsNotInDatabase
+                explicitWebUiPropsWithSource ++ configPropsNotInDatabase
             }
           } yield {
             logger.info(s"========== GET /obp/v6.0.0/webui-props returning ${result.size} records ==========")
