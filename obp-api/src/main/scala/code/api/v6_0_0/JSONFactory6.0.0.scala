@@ -646,4 +646,12 @@ case class PostResetPasswordUrlJsonV600(username: String, email: String, user_id
 
 case class ResetPasswordUrlJsonV600(reset_password_url: String)
 
+case class ScannedApiVersionJsonV600(
+  url_prefix: String,
+  api_standard: String,
+  api_short_version: String,
+  fully_qualified_version: String,
+  is_active: Boolean
+)
+
 }

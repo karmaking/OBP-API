@@ -26,7 +26,7 @@ import code.api.v5_0_0.JSONFactory500
 import code.api.v5_0_0.{ViewJsonV500, ViewsJsonV500}
 import code.api.v5_1_0.{JSONFactory510, PostCustomerLegalNameJsonV510}
 import code.api.dynamic.entity.helper.{DynamicEntityHelper, DynamicEntityInfo}
-import code.api.v6_0_0.JSONFactory600.{DynamicEntityDiagnosticsJsonV600, DynamicEntityIssueJsonV600, GroupJsonV600, GroupMembershipJsonV600, GroupMembershipsJsonV600, GroupsJsonV600, PostGroupJsonV600, PostGroupMembershipJsonV600, PostResetPasswordUrlJsonV600, PutGroupJsonV600, ReferenceTypeJsonV600, ReferenceTypesJsonV600, ResetPasswordUrlJsonV600, RoleWithEntitlementCountJsonV600, RolesWithEntitlementCountsJsonV600, ValidateUserEmailJsonV600, ValidateUserEmailResponseJsonV600, createActiveCallLimitsJsonV600, createCallLimitJsonV600, createCurrentUsageJson}
+import code.api.v6_0_0.JSONFactory600.{DynamicEntityDiagnosticsJsonV600, DynamicEntityIssueJsonV600, GroupJsonV600, GroupMembershipJsonV600, GroupMembershipsJsonV600, GroupsJsonV600, PostGroupJsonV600, PostGroupMembershipJsonV600, PostResetPasswordUrlJsonV600, PutGroupJsonV600, ReferenceTypeJsonV600, ReferenceTypesJsonV600, ResetPasswordUrlJsonV600, RoleWithEntitlementCountJsonV600, RolesWithEntitlementCountsJsonV600, ScannedApiVersionJsonV600, ValidateUserEmailJsonV600, ValidateUserEmailResponseJsonV600, createActiveCallLimitsJsonV600, createCallLimitJsonV600, createCurrentUsageJson}
 import code.api.v6_0_0.OBPAPI6_0_0
 import code.metrics.APIMetrics
 import code.bankconnectors.LocalMappedConnectorInternal
@@ -65,6 +65,7 @@ import scala.collection.immutable.{List, Nil}
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
 import scala.concurrent.duration._
+import scala.jdk.CollectionConverters._
 import scala.util.Random
 
 
@@ -1243,6 +1244,90 @@ trait APIMethods600 {
           } yield {
             (JSONFactory600.createConnectorMethodNamesJson(methodNames), HttpCode.`200`(callContext))
           }
+    }
+
+    staticResourceDocs += ResourceDoc(
+      getScannedApiVersions,
+      implementedInApiVersion,
+      nameOf(getScannedApiVersions),
+      "GET",
+      "/api/versions",
+      "Get Scanned API Versions",
+      s"""Get all scanned API versions available in this codebase.
+         |
+         |This endpoint returns all API versions that have been discovered/scanned, along with their active status.
+         |
+         |**Response Fields:**
+         |
+         |* `url_prefix`: The URL prefix for the version (e.g., "obp", "berlin-group", "open-banking")
+         |* `api_standard`: The API standard name (e.g., "OBP", "BG", "UK", "STET")
+         |* `api_short_version`: The version number (e.g., "v4.0.0", "v1.3")
+         |* `fully_qualified_version`: The fully qualified version combining standard and version (e.g., "OBPv4.0.0", "BGv1.3")
+         |* `is_active`: Boolean indicating if the version is currently enabled and accessible
+         |
+         |**Active Status:**
+         |
+         |* `is_active=true`: Version is enabled and can be accessed via its URL prefix
+         |* `is_active=false`: Version is scanned but disabled (via `api_disabled_versions` props)
+         |
+         |**Use Cases:**
+         |
+         |* Discover what API versions are available in the codebase
+         |* Check which versions are currently enabled
+         |* Verify that disabled versions configuration is working correctly
+         |* API documentation and discovery
+         |
+         |**Note:** This differs from v4.0.0's `/api/versions` endpoint which shows all scanned versions without is_active status.
+         |
+         |""",
+      EmptyBody,
+      ListResult(
+        "scanned_api_versions",
+        List(
+          ScannedApiVersionJsonV600(url_prefix = "obp", api_standard = "OBP", api_short_version = "v1.2.1", fully_qualified_version = "OBPv1.2.1", is_active = true),
+          ScannedApiVersionJsonV600(url_prefix = "obp", api_standard = "OBP", api_short_version = "v1.3.0", fully_qualified_version = "OBPv1.3.0", is_active = true),
+          ScannedApiVersionJsonV600(url_prefix = "obp", api_standard = "OBP", api_short_version = "v1.4.0", fully_qualified_version = "OBPv1.4.0", is_active = true),
+          ScannedApiVersionJsonV600(url_prefix = "obp", api_standard = "OBP", api_short_version = "v2.0.0", fully_qualified_version = "OBPv2.0.0", is_active = true),
+          ScannedApiVersionJsonV600(url_prefix = "obp", api_standard = "OBP", api_short_version = "v2.1.0", fully_qualified_version = "OBPv2.1.0", is_active = true),
+          ScannedApiVersionJsonV600(url_prefix = "obp", api_standard = "OBP", api_short_version = "v2.2.0", fully_qualified_version = "OBPv2.2.0", is_active = true),
+          ScannedApiVersionJsonV600(url_prefix = "obp", api_standard = "OBP", api_short_version = "v3.0.0", fully_qualified_version = "OBPv3.0.0", is_active = true),
+          ScannedApiVersionJsonV600(url_prefix = "obp", api_standard = "OBP", api_short_version = "v3.1.0", fully_qualified_version = "OBPv3.1.0", is_active = true),
+          ScannedApiVersionJsonV600(url_prefix = "obp", api_standard = "OBP", api_short_version = "v4.0.0", fully_qualified_version = "OBPv4.0.0", is_active = true),
+          ScannedApiVersionJsonV600(url_prefix = "obp", api_standard = "OBP", api_short_version = "v5.0.0", fully_qualified_version = "OBPv5.0.0", is_active = true),
+          ScannedApiVersionJsonV600(url_prefix = "obp", api_standard = "OBP", api_short_version = "v5.1.0", fully_qualified_version = "OBPv5.1.0", is_active = true),
+          ScannedApiVersionJsonV600(url_prefix = "obp", api_standard = "OBP", api_short_version = "v6.0.0", fully_qualified_version = "OBPv6.0.0", is_active = true),
+          ScannedApiVersionJsonV600(url_prefix = "berlin-group", api_standard = "BG", api_short_version = "v1.3", fully_qualified_version = "BGv1.3", is_active = false)
+        )
+      ),
+      List(
+        UnknownError
+      ),
+      List(apiTagDocumentation, apiTagApi),
+      Some(Nil)
+    )
+
+    lazy val getScannedApiVersions: OBPEndpoint = {
+      case "api" :: "versions" :: Nil JsonGet _ => { cc =>
+        implicit val ec = EndpointContext(Some(cc))
+        Future {
+          val versions: List[ScannedApiVersionJsonV600] =
+            ApiVersion.allScannedApiVersion.asScala.toList
+              .filter(version => version.urlPrefix.trim.nonEmpty)
+              .map { version =>
+                ScannedApiVersionJsonV600(
+                  url_prefix = version.urlPrefix,
+                  api_standard = version.apiStandard,
+                  api_short_version = version.apiShortVersion,
+                  fully_qualified_version = version.fullyQualifiedVersion,
+                  is_active = versionIsAllowed(version)
+                )
+              }
+          (
+            ListResult("scanned_api_versions", versions),
+            HttpCode.`200`(cc.callContext)
+          )
+        }
+      }
     }
 
     staticResourceDocs += ResourceDoc(
