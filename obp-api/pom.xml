@@ -23,6 +23,52 @@
         <webXmlPath>src/main/resources/web.xml</webXmlPath>
       </properties>
     </profile>
+    <profile>
+      <id>http4s-jar</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-assembly-plugin</artifactId>
+            <version>3.6.0</version>
+            <configuration>
+              <appendAssemblyId>false</appendAssemblyId>
+              <finalName>${project.artifactId}-http4s</finalName>
+              <archive>
+                <manifest>
+                  <mainClass>bootstrap.http4s.Http4sServer</mainClass>
+                </manifest>
+              </archive>
+              <descriptorRefs>
+                <descriptorRef>jar-with-dependencies</descriptorRef>
+              </descriptorRefs>
+              <dependencySets>
+                <dependencySet>
+                  <outputDirectory>/</outputDirectory>
+                  <unpack>true</unpack>
+                  <scope>runtime</scope>
+                </dependencySet>
+              </dependencySets>
+              <fileSets>
+                <fileSet>
+                  <directory>${project.build.outputDirectory}</directory>
+                  <outputDirectory>/</outputDirectory>
+                </fileSet>
+              </fileSets>
+            </configuration>
+            <executions>
+              <execution>
+                <id>http4s-fat-jar</id>
+                <phase>package</phase>
+                <goals>
+                  <goal>single</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
   </profiles>
   <pluginRepositories>
     <pluginRepository>
@@ -83,6 +129,16 @@
       <groupId>org.bouncycastle</groupId>
       <artifactId>bcpg-jdk15on</artifactId>
       <version>1.70</version>
+    </dependency>
+    <dependency>
+      <groupId>org.http4s</groupId>
+      <artifactId>http4s-ember-server_${scala.version}</artifactId>
+      <version>${http4s.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.http4s</groupId>
+      <artifactId>http4s-dsl_${scala.version}</artifactId>
+      <version>${http4s.version}</version>
     </dependency>
     <dependency>
       <groupId>org.bouncycastle</groupId>
@@ -345,7 +401,7 @@
     <dependency>
       <groupId>org.clapper</groupId>
       <artifactId>classutil_${scala.version}</artifactId>
-      <version>1.4.0</version>
+      <version>1.5.1</version>
     </dependency>
     <dependency>
       <groupId>com.github.grumlimited</groupId>
@@ -602,6 +658,20 @@
         <plugin>
           <groupId>net.alchim31.maven</groupId>
           <artifactId>scala-maven-plugin</artifactId>
+          <version>4.8.1</version>
+          <configuration>
+            <fork>true</fork>
+            <jvmArgs>
+              <jvmArg>-Xms4G</jvmArg>
+              <jvmArg>-Xmx12G</jvmArg>
+              <jvmArg>-XX:MaxMetaspaceSize=4G</jvmArg>
+              <jvmArg>-XX:+UseG1GC</jvmArg>
+            </jvmArgs>
+            <args>
+              <arg>-deprecation</arg>
+              <arg>-feature</arg>
+            </args>
+          </configuration>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
@@ -609,6 +679,8 @@
           <version>3.4.0</version>
           <configuration>
             <webXml>${webXmlPath}</webXml>
+            <attachClasses>true</attachClasses>
+            <classesClassifier>classes</classesClassifier>
           </configuration>
         </plugin>
         <plugin>
