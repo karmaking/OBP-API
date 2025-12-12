@@ -65,7 +65,7 @@ import scala.collection.immutable.{List, Nil}
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
 import scala.concurrent.duration._
-import scala.jdk.CollectionConverters._
+import scala.collection.JavaConverters._
 import scala.util.Random
 
 

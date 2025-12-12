@@ -2679,8 +2679,7 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
   }
 
   def getDisabledVersions() : List[String] = {
-    val defaultDisabledVersions = "OBPv1.2.1,OBPv1.3.0,OBPv1.4.0,OBPv2.0.0,OBPv2.1.0,OBPv2.2.0,OBPv3.0.0,OBPv3.1.0,OBPv4.0.0,OBPv5.0.0"
-    val disabledVersions = APIUtil.getPropsValue("api_disabled_versions").getOrElse(defaultDisabledVersions).replace("[", "").replace("]", "").split(",").toList.filter(_.nonEmpty)
+    val disabledVersions = APIUtil.getPropsValue("api_disabled_versions").getOrElse("").replace("[", "").replace("]", "").split(",").toList.filter(_.nonEmpty)
     if (disabledVersions.nonEmpty) {
       logger.info(s"Disabled API versions: ${disabledVersions.mkString(", ")}")
     }
