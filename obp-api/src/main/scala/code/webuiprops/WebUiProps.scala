@@ -9,12 +9,13 @@ trait WebUiPropsT {
   def webUiPropsId: Option[String]
   def name: String
   def value: String
+  def source: Option[String]
 }
 
 case class WebUiPropsCommons(name: String,
                              value: String, 
                              webUiPropsId: Option[String] = None,
-                             source: String = "database") extends WebUiPropsT with JsonFieldReName
+                             source: Option[String] = None) extends WebUiPropsT with JsonFieldReName
 
 object WebUiPropsCommons extends Converter[WebUiPropsT, WebUiPropsCommons]
 

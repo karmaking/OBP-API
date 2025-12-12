@@ -77,6 +77,7 @@ class WebUiProps extends WebUiPropsT with LongKeyedMapper[WebUiProps] with IdPK 
   override def webUiPropsId: Option[String] = Option(WebUiPropsId.get)
   override def name: String = Name.get
   override def value: String = Value.get
+  override def source: Option[String] = Some("database")
 }
 
 object WebUiProps extends WebUiProps with LongKeyedMetaMapper[WebUiProps] {

@@ -3486,7 +3486,7 @@ trait APIMethods600 {
          |
          |""",
       EmptyBody,
-      WebUiPropsCommons("webui_api_explorer_url", "https://apiexplorer.openbankproject.com", Some("web-ui-props-id"), "database"),
+      WebUiPropsCommons("webui_api_explorer_url", "https://apiexplorer.openbankproject.com", Some("web-ui-props-id"), Some("config")),
       List(
         WebUiPropsNotFoundByName,
         UnknownError
@@ -3509,11 +3509,11 @@ trait APIMethods600 {
               explicitProp match {
                 case Some(prop) =>
                   // Found in database
-                  Future.successful(WebUiPropsCommons(prop.name, prop.value, prop.webUiPropsId, source = "database"))
+                  Future.successful(WebUiPropsCommons(prop.name, prop.value, prop.webUiPropsId, source = Some("database")))
                 case None if isActived =>
                   // Not in database, check implicit props if active=true
                   val implicitWebUiProps = getWebUIPropsPairs.map(webUIPropsPairs =>
-                    WebUiPropsCommons(webUIPropsPairs._1, webUIPropsPairs._2, webUiPropsId = None, source = "config")
+                    WebUiPropsCommons(webUIPropsPairs._1, webUIPropsPairs._2, webUiPropsId = Some("default"), source = Some("config"))
                   )
                   val implicitProp = implicitWebUiProps.find(_.name == webUiPropName)
                   implicitProp match {
@@ -3584,7 +3584,7 @@ trait APIMethods600 {
       EmptyBody,
       ListResult(
         "webui_props",
-        (List(WebUiPropsCommons("webui_api_explorer_url", "https://apiexplorer.openbankproject.com", Some("web-ui-props-id"), "database")))
+        (List(WebUiPropsCommons("webui_api_explorer_url", "https://apiexplorer.openbankproject.com", Some("web-ui-props-id"), Some("database"))))
       )
       ,
       List(
@@ -3608,8 +3608,8 @@ trait APIMethods600 {
               }
             }
             explicitWebUiProps <- Future{ MappedWebUiPropsProvider.getAll() }
-            explicitWebUiPropsWithSource = explicitWebUiProps.map(prop => WebUiPropsCommons(prop.name, prop.value, prop.webUiPropsId, source = "database"))
-            implicitWebUiProps = getWebUIPropsPairs.map(webUIPropsPairs=>WebUiPropsCommons(webUIPropsPairs._1, webUIPropsPairs._2, webUiPropsId = None, source = "config"))
+            explicitWebUiPropsWithSource = explicitWebUiProps.map(prop => WebUiPropsCommons(prop.name, prop.value, prop.webUiPropsId, source = Some("database")))
+            implicitWebUiProps = getWebUIPropsPairs.map(webUIPropsPairs=>WebUiPropsCommons(webUIPropsPairs._1, webUIPropsPairs._2, webUiPropsId = Some("default"), source = Some("config")))
             result = what match {
               case "database" => 
                 // Return only database props
