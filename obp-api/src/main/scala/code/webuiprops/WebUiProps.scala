@@ -12,7 +12,9 @@ trait WebUiPropsT {
 }
 
 case class WebUiPropsCommons(name: String,
-                             value: String, webUiPropsId: Option[String] = None) extends WebUiPropsT with JsonFieldReName
+                             value: String, 
+                             webUiPropsId: Option[String] = None,
+                             source: String = "database") extends WebUiPropsT with JsonFieldReName
 
 object WebUiPropsCommons extends Converter[WebUiPropsT, WebUiPropsCommons]
 

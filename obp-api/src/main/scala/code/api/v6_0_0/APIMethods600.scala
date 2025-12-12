@@ -26,7 +26,7 @@ import code.api.v5_0_0.JSONFactory500
 import code.api.v5_0_0.{ViewJsonV500, ViewsJsonV500}
 import code.api.v5_1_0.{JSONFactory510, PostCustomerLegalNameJsonV510}
 import code.api.dynamic.entity.helper.{DynamicEntityHelper, DynamicEntityInfo}
-import code.api.v6_0_0.JSONFactory600.{DynamicEntityDiagnosticsJsonV600, DynamicEntityIssueJsonV600, GroupJsonV600, GroupMembershipJsonV600, GroupMembershipsJsonV600, GroupsJsonV600, PostGroupJsonV600, PostGroupMembershipJsonV600, PostResetPasswordUrlJsonV600, PutGroupJsonV600, ReferenceTypeJsonV600, ReferenceTypesJsonV600, ResetPasswordUrlJsonV600, RoleWithEntitlementCountJsonV600, RolesWithEntitlementCountsJsonV600, ValidateUserEmailJsonV600, ValidateUserEmailResponseJsonV600, createActiveCallLimitsJsonV600, createCallLimitJsonV600, createCurrentUsageJson}
+import code.api.v6_0_0.JSONFactory600.{DynamicEntityDiagnosticsJsonV600, DynamicEntityIssueJsonV600, GroupJsonV600, GroupMembershipJsonV600, GroupMembershipsJsonV600, GroupsJsonV600, PostGroupJsonV600, PostGroupMembershipJsonV600, PostResetPasswordUrlJsonV600, PutGroupJsonV600, ReferenceTypeJsonV600, ReferenceTypesJsonV600, ResetPasswordUrlJsonV600, RoleWithEntitlementCountJsonV600, RolesWithEntitlementCountsJsonV600, ScannedApiVersionJsonV600, ValidateUserEmailJsonV600, ValidateUserEmailResponseJsonV600, createActiveCallLimitsJsonV600, createCallLimitJsonV600, createCurrentUsageJson}
 import code.api.v6_0_0.OBPAPI6_0_0
 import code.metrics.APIMetrics
 import code.bankconnectors.LocalMappedConnectorInternal
@@ -65,6 +65,7 @@ import scala.collection.immutable.{List, Nil}
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
 import scala.concurrent.duration._
+import scala.jdk.CollectionConverters._
 import scala.util.Random
 
 
@@ -1243,6 +1244,90 @@ trait APIMethods600 {
           } yield {
             (JSONFactory600.createConnectorMethodNamesJson(methodNames), HttpCode.`200`(callContext))
           }
+    }
+
+    staticResourceDocs += ResourceDoc(
+      getScannedApiVersions,
+      implementedInApiVersion,
+      nameOf(getScannedApiVersions),
+      "GET",
+      "/api/versions",
+      "Get Scanned API Versions",
+      s"""Get all scanned API versions available in this codebase.
+         |
+         |This endpoint returns all API versions that have been discovered/scanned, along with their active status.
+         |
+         |**Response Fields:**
+         |
+         |* `url_prefix`: The URL prefix for the version (e.g., "obp", "berlin-group", "open-banking")
+         |* `api_standard`: The API standard name (e.g., "OBP", "BG", "UK", "STET")
+         |* `api_short_version`: The version number (e.g., "v4.0.0", "v1.3")
+         |* `fully_qualified_version`: The fully qualified version combining standard and version (e.g., "OBPv4.0.0", "BGv1.3")
+         |* `is_active`: Boolean indicating if the version is currently enabled and accessible
+         |
+         |**Active Status:**
+         |
+         |* `is_active=true`: Version is enabled and can be accessed via its URL prefix
+         |* `is_active=false`: Version is scanned but disabled (via `api_disabled_versions` props)
+         |
+         |**Use Cases:**
+         |
+         |* Discover what API versions are available in the codebase
+         |* Check which versions are currently enabled
+         |* Verify that disabled versions configuration is working correctly
+         |* API documentation and discovery
+         |
+         |**Note:** This differs from v4.0.0's `/api/versions` endpoint which shows all scanned versions without is_active status.
+         |
+         |""",
+      EmptyBody,
+      ListResult(
+        "scanned_api_versions",
+        List(
+          ScannedApiVersionJsonV600(url_prefix = "obp", api_standard = "OBP", api_short_version = "v1.2.1", fully_qualified_version = "OBPv1.2.1", is_active = true),
+          ScannedApiVersionJsonV600(url_prefix = "obp", api_standard = "OBP", api_short_version = "v1.3.0", fully_qualified_version = "OBPv1.3.0", is_active = true),
+          ScannedApiVersionJsonV600(url_prefix = "obp", api_standard = "OBP", api_short_version = "v1.4.0", fully_qualified_version = "OBPv1.4.0", is_active = true),
+          ScannedApiVersionJsonV600(url_prefix = "obp", api_standard = "OBP", api_short_version = "v2.0.0", fully_qualified_version = "OBPv2.0.0", is_active = true),
+          ScannedApiVersionJsonV600(url_prefix = "obp", api_standard = "OBP", api_short_version = "v2.1.0", fully_qualified_version = "OBPv2.1.0", is_active = true),
+          ScannedApiVersionJsonV600(url_prefix = "obp", api_standard = "OBP", api_short_version = "v2.2.0", fully_qualified_version = "OBPv2.2.0", is_active = true),
+          ScannedApiVersionJsonV600(url_prefix = "obp", api_standard = "OBP", api_short_version = "v3.0.0", fully_qualified_version = "OBPv3.0.0", is_active = true),
+          ScannedApiVersionJsonV600(url_prefix = "obp", api_standard = "OBP", api_short_version = "v3.1.0", fully_qualified_version = "OBPv3.1.0", is_active = true),
+          ScannedApiVersionJsonV600(url_prefix = "obp", api_standard = "OBP", api_short_version = "v4.0.0", fully_qualified_version = "OBPv4.0.0", is_active = true),
+          ScannedApiVersionJsonV600(url_prefix = "obp", api_standard = "OBP", api_short_version = "v5.0.0", fully_qualified_version = "OBPv5.0.0", is_active = true),
+          ScannedApiVersionJsonV600(url_prefix = "obp", api_standard = "OBP", api_short_version = "v5.1.0", fully_qualified_version = "OBPv5.1.0", is_active = true),
+          ScannedApiVersionJsonV600(url_prefix = "obp", api_standard = "OBP", api_short_version = "v6.0.0", fully_qualified_version = "OBPv6.0.0", is_active = true),
+          ScannedApiVersionJsonV600(url_prefix = "berlin-group", api_standard = "BG", api_short_version = "v1.3", fully_qualified_version = "BGv1.3", is_active = false)
+        )
+      ),
+      List(
+        UnknownError
+      ),
+      List(apiTagDocumentation, apiTagApi),
+      Some(Nil)
+    )
+
+    lazy val getScannedApiVersions: OBPEndpoint = {
+      case "api" :: "versions" :: Nil JsonGet _ => { cc =>
+        implicit val ec = EndpointContext(Some(cc))
+        Future {
+          val versions: List[ScannedApiVersionJsonV600] =
+            ApiVersion.allScannedApiVersion.asScala.toList
+              .filter(version => version.urlPrefix.trim.nonEmpty)
+              .map { version =>
+                ScannedApiVersionJsonV600(
+                  url_prefix = version.urlPrefix,
+                  api_standard = version.apiStandard,
+                  api_short_version = version.apiShortVersion,
+                  fully_qualified_version = version.fullyQualifiedVersion,
+                  is_active = versionIsAllowed(version)
+                )
+              }
+          (
+            ListResult("scanned_api_versions", versions),
+            HttpCode.`200`(cc.callContext)
+          )
+        }
+      }
     }
 
     staticResourceDocs += ResourceDoc(
@@ -3378,12 +3463,18 @@ trait APIMethods600 {
          |
          |2. **Implicit WebUiProps (Configuration File)**: Default values defined in the `sample.props.template` configuration file.
          |
+         |**Response Fields:**
+         |
+         |* `name`: The property name
+         |* `value`: The property value
+         |* `webUiPropsId` (optional): UUID for database props, omitted for config props
+         |* `source`: Either "database" (editable via API) or "config" (read-only from config file)
+         |
          |**Query Parameter:**
          |
          |* `active` (optional, boolean string, default: "false")
-         |  - If `active=false` or omitted: Returns only explicit prop from the database
-         |  - If `active=true`: Returns explicit prop from database, or if not found, returns implicit (default) prop from configuration file
-         |    - Implicit props are marked with `webUiPropsId = "default"`
+         |  - If `active=false` or omitted: Returns only explicit prop from the database (source="database")
+         |  - If `active=true`: Returns explicit prop from database, or if not found, returns implicit (default) prop from configuration file (source="config")
          |
          |**Examples:**
          |
@@ -3395,7 +3486,7 @@ trait APIMethods600 {
          |
          |""",
       EmptyBody,
-      WebUiPropsCommons("webui_api_explorer_url", "https://apiexplorer.openbankproject.com", Some("web-ui-props-id")),
+      WebUiPropsCommons("webui_api_explorer_url", "https://apiexplorer.openbankproject.com", Some("web-ui-props-id"), "database"),
       List(
         WebUiPropsNotFoundByName,
         UnknownError
@@ -3405,6 +3496,7 @@ trait APIMethods600 {
     lazy val getWebUiProp: OBPEndpoint = {
       case "webui-props" :: webUiPropName :: Nil JsonGet req => {
         cc => implicit val ec = EndpointContext(Some(cc))
+          logger.info(s"========== GET /obp/v6.0.0/webui-props/$webUiPropName (SINGLE PROP) called ==========")
           val active = ObpS.param("active").getOrElse("false")
           for {
             invalidMsg <- Future(s"""$InvalidFilterParameterFormat `active` must be a boolean, but current `active` value is: ${active} """)
@@ -3417,11 +3509,11 @@ trait APIMethods600 {
               explicitProp match {
                 case Some(prop) =>
                   // Found in database
-                  Future.successful(prop)
+                  Future.successful(WebUiPropsCommons(prop.name, prop.value, prop.webUiPropsId, source = "database"))
                 case None if isActived =>
                   // Not in database, check implicit props if active=true
                   val implicitWebUiProps = getWebUIPropsPairs.map(webUIPropsPairs =>
-                    WebUiPropsCommons(webUIPropsPairs._1, webUIPropsPairs._2, webUiPropsId = Some("default"))
+                    WebUiPropsCommons(webUIPropsPairs._1, webUIPropsPairs._2, webUiPropsId = None, source = "config")
                   )
                   val implicitProp = implicitWebUiProps.find(_.name == webUiPropName)
                   implicitProp match {
@@ -3444,7 +3536,7 @@ trait APIMethods600 {
       implementedInApiVersion,
       nameOf(getWebUiProps),
       "GET",
-      "/management/webui_props",
+      "/webui-props",
       "Get WebUiProps",
       s"""
          |
@@ -3458,26 +3550,33 @@ trait APIMethods600 {
          |
          |2. **Implicit WebUiProps (Configuration File)**: Default values defined in the `sample.props.template` configuration file.
          |
+         |**Response Fields:**
+         |
+         |* `name`: The property name
+         |* `value`: The property value
+         |* `webUiPropsId` (optional): UUID for database props, omitted for config props
+         |* `source`: Either "database" (editable via API) or "config" (read-only from config file)
+         |
          |**Query Parameter:**
          |
          |* `what` (optional, string, default: "active")
-         |  - `active`: Returns explicit props from database + implicit (default) props from configuration file
-         |    - When both sources have the same property name, the database value takes precedence
-         |    - Implicit props are marked with `webUiPropsId = "default"`
-         |  - `database`: Returns only explicit props from the database
-         |  - `config`: Returns only implicit (default) props from configuration file
+         |  - `active`: Returns one value per property name
+         |    - If property exists in database: returns database value (source="database")
+         |    - If property only in config file: returns config default value (source="config")
+         |  - `database`: Returns ONLY properties explicitly stored in the database (source="database")
+         |  - `config`: Returns ONLY default properties from configuration file (source="config")
          |
          |**Examples:**
          |
-         |Get database props combined with defaults (default behavior):
-         |${getObpApiRoot}/v6.0.0/management/webui_props
-         |${getObpApiRoot}/v6.0.0/management/webui_props?what=active
+         |Get active props (database overrides config, one value per prop):
+         |${getObpApiRoot}/v6.0.0/webui-props
+         |${getObpApiRoot}/v6.0.0/webui-props?what=active
          |
          |Get only database-stored props:
-         |${getObpApiRoot}/v6.0.0/management/webui_props?what=database
+         |${getObpApiRoot}/v6.0.0/webui-props?what=database
          |
          |Get only default props from configuration:
-         |${getObpApiRoot}/v6.0.0/management/webui_props?what=config
+         |${getObpApiRoot}/v6.0.0/webui-props?what=config
          |
          |For more details about WebUI Props, including how to set config file defaults and precedence order, see ${Glossary.getGlossaryItemLink("webui_props")}.
          |
@@ -3485,58 +3584,51 @@ trait APIMethods600 {
       EmptyBody,
       ListResult(
         "webui_props",
-        (List(WebUiPropsCommons("webui_api_explorer_url", "https://apiexplorer.openbankproject.com", Some("web-ui-props-id"))))
+        (List(WebUiPropsCommons("webui_api_explorer_url", "https://apiexplorer.openbankproject.com", Some("web-ui-props-id"), "database")))
       )
       ,
       List(
-        UserNotLoggedIn,
-        UserHasMissingRoles,
         UnknownError
       ),
-      List(apiTagWebUiProps),
-      Some(List(canGetWebUiProps))
+      List(apiTagWebUiProps)
     )
 
 
     lazy val getWebUiProps: OBPEndpoint = {
-      case "management" :: "webui_props":: Nil JsonGet req => {
+      case "webui-props":: Nil JsonGet req => {
         cc => implicit val ec = EndpointContext(Some(cc))
           val what = ObpS.param("what").getOrElse("active")
-          logger.info(s"========== GET /obp/v6.0.0/management/webui_props called with what=$what ==========")
+          logger.info(s"========== GET /obp/v6.0.0/webui-props (ALL PROPS) called with what=$what ==========")
           for {
-            (Full(u), callContext) <- authenticatedAccess(cc)
+            callContext <- Future.successful(cc.callContext)
             _ <- NewStyle.function.tryons(s"""$InvalidFilterParameterFormat `what` must be one of: active, database, config. Current value: $what""", 400, callContext) {
               what match {
                 case "active" | "database" | "config" => true
                 case _ => false
               }
             }
-            _ <- NewStyle.function.hasEntitlement("", u.userId, ApiRole.canGetWebUiProps, callContext)
             explicitWebUiProps <- Future{ MappedWebUiPropsProvider.getAll() }
-            implicitWebUiProps = getWebUIPropsPairs.map(webUIPropsPairs=>WebUiPropsCommons(webUIPropsPairs._1, webUIPropsPairs._2, webUiPropsId= Some("default")))
+            explicitWebUiPropsWithSource = explicitWebUiProps.map(prop => WebUiPropsCommons(prop.name, prop.value, prop.webUiPropsId, source = "database"))
+            implicitWebUiProps = getWebUIPropsPairs.map(webUIPropsPairs=>WebUiPropsCommons(webUIPropsPairs._1, webUIPropsPairs._2, webUiPropsId = None, source = "config"))
             result = what match {
               case "database" => 
                 // Return only database props
-                explicitWebUiProps
+                explicitWebUiPropsWithSource
               case "config" =>
                 // Return only config file props
                 implicitWebUiProps.distinct
               case "active" =>
-                // Return database props + config props (removing duplicates, database takes precedence)
-                val implicitWebUiPropsRemovedDuplicated = if(explicitWebUiProps.nonEmpty){
-                  val duplicatedProps : List[WebUiPropsCommons]= explicitWebUiProps.map(explicitWebUiProp => implicitWebUiProps.filter(_.name == explicitWebUiProp.name)).flatten
-                  implicitWebUiProps diff duplicatedProps
-                } else {
-                  implicitWebUiProps.distinct
-                }
-                explicitWebUiProps ++ implicitWebUiPropsRemovedDuplicated
+                // Return one value per prop: database value if exists, otherwise config value
+                val databasePropNames = explicitWebUiPropsWithSource.map(_.name).toSet
+                val configPropsNotInDatabase = implicitWebUiProps.distinct.filterNot(prop => databasePropNames.contains(prop.name))
+                explicitWebUiPropsWithSource ++ configPropsNotInDatabase
             }
           } yield {
-            logger.info(s"========== GET /obp/v6.0.0/management/webui_props returning ${result.size} records ==========")
+            logger.info(s"========== GET /obp/v6.0.0/webui-props returning ${result.size} records ==========")
             result.foreach { prop =>
               logger.info(s"  - name: ${prop.name}, value: ${prop.value}, webUiPropsId: ${prop.webUiPropsId}")
             }
-            logger.info(s"========== END GET /obp/v6.0.0/management/webui_props ==========")
+            logger.info(s"========== END GET /obp/v6.0.0/webui-props ==========")
             (ListResult("webui_props", result), HttpCode.`200`(callContext))
           }
       }
