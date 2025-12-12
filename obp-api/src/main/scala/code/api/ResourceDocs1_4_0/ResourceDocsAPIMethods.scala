@@ -24,6 +24,7 @@ import code.api.dynamic.entity.OBPAPIDynamicEntity
 import code.apicollectionendpoint.MappedApiCollectionEndpointsProvider
 import code.util.Helper
 import code.util.Helper.{MdcLoggable, ObpS, SILENCE_IS_GOLDEN}
+import net.liftweb.http.S
 import com.github.dwickern.macros.NameOf.nameOf
 import com.openbankproject.commons.model.enums.ContentParam
 import com.openbankproject.commons.model.enums.ContentParam.{ALL, DYNAMIC, STATIC}
@@ -735,39 +736,124 @@ trait ResourceDocsAPIMethods extends MdcLoggable with APIMethods220 with APIMeth
          |
          |API_VERSION is the version you want documentation about e.g. v6.0.0
          |
-         |You may filter this endpoint using the 'tags' url parameter e.g. ?tags=Account,Bank
+         |## Query Parameters
          |
-         |(All endpoints are given one or more tags which for used in grouping)
+         |You may filter this endpoint using the following optional query parameters:
          |
-         |You may filter this endpoint using the 'functions' url parameter e.g. ?functions=getBanks,bankById
+         |**tags** - Filter by endpoint tags (comma-separated list)
+         |  • Example: ?tags=Account,Bank or ?tags=Account-Firehose
+         |  • All endpoints are given one or more tags which are used for grouping
+         |  • Empty values will return error OBP-10053
          |
-         |(Each endpoint is implemented in the OBP Scala code by a 'function')
+         |**functions** - Filter by function names (comma-separated list) 
+         |  • Example: ?functions=getBanks,bankById
+         |  • Each endpoint is implemented in the OBP Scala code by a 'function'
+         |  • Empty values will return error OBP-10054
+         |
+         |**content** - Filter by endpoint type
+         |  • Values: static, dynamic, all (case-insensitive)
+         |  • static: Only show static/core API endpoints
+         |  • dynamic: Only show dynamic/custom endpoints
+         |  • all: Show both static and dynamic endpoints (default)
+         |  • Invalid values will return error OBP-10052
+         |
+         |**locale** - Language for localized documentation
+         |  • Example: ?locale=en_GB or ?locale=es_ES
+         |  • Supported locales: en_GB, es_ES, ro_RO
+         |  • Invalid locales will return error OBP-10041
+         |
+         |**api-collection-id** - Filter by API collection UUID
+         |  • Example: ?api-collection-id=4e866c86-60c3-4268-a221-cb0bbf1ad221
+         |  • Returns only endpoints belonging to the specified collection
+         |  • Empty values will return error OBP-10055
          |
          |This endpoint generates OpenAPI 3.1 compliant documentation with modern JSON Schema support.
          |
          |See the Resource Doc endpoint for more information.
          |
-         | Note: Resource Docs are cached, TTL is ${GET_DYNAMIC_RESOURCE_DOCS_TTL} seconds
+         |Note: Resource Docs are cached, TTL is ${GET_DYNAMIC_RESOURCE_DOCS_TTL} seconds
          |
-         |Following are more examples:
+         |## Examples
+         |
+         |Basic usage:
          |${getObpApiRoot}/v6.0.0/resource-docs/v6.0.0/openapi
+         |
+         |Filter by tags:
          |${getObpApiRoot}/v6.0.0/resource-docs/v6.0.0/openapi?tags=Account,Bank
+         |${getObpApiRoot}/v6.0.0/resource-docs/v6.0.0/openapi?tags=Account-Firehose
+         |
+         |Filter by content type:
+         |${getObpApiRoot}/v6.0.0/resource-docs/v6.0.0/openapi?content=static
+         |${getObpApiRoot}/v6.0.0/resource-docs/v6.0.0/openapi?content=dynamic
+         |
+         |Filter by functions:
          |${getObpApiRoot}/v6.0.0/resource-docs/v6.0.0/openapi?functions=getBanks,bankById
+         |
+         |Combine multiple parameters:
+         |${getObpApiRoot}/v6.0.0/resource-docs/v6.0.0/openapi?content=static&tags=Account-Firehose
          |${getObpApiRoot}/v6.0.0/resource-docs/v6.0.0/openapi?tags=Account,Bank,PSD2&functions=getBanks,bankById
+         |${getObpApiRoot}/v6.0.0/resource-docs/v6.0.0/openapi?content=static&locale=en_GB&tags=Account
+         |
+         |Filter by API collection:
+         |${getObpApiRoot}/v6.0.0/resource-docs/v6.0.0/openapi?api-collection-id=4e866c86-60c3-4268-a221-cb0bbf1ad221
          |
       """,
       EmptyBody,
       EmptyBody,
+      InvalidApiVersionString ::
+      ApiVersionNotSupported ::
+      InvalidLocale ::
+      InvalidContentParameter ::
+      InvalidTagsParameter ::
+      InvalidFunctionsParameter ::
+      InvalidApiCollectionIdParameter ::
       UnknownError :: Nil,
       List(apiTagDocumentation, apiTagApi)
     )
 
+    /**
+     * OpenAPI 3.1 endpoint with comprehensive parameter validation.
+     * 
+     * This endpoint generates OpenAPI 3.1 documentation with the following validated query parameters:
+     * - tags: Comma-separated list of tags to filter endpoints (e.g., ?tags=Account,Bank)
+     * - functions: Comma-separated list of function names to filter endpoints
+     * - content: Filter type - "static", "dynamic", or "all" 
+     * - locale: Language code for localization (e.g., "en_GB", "es_ES")
+     * - api-collection-id: UUID to filter by specific API collection
+     * 
+     * Parameter validation guards ensure:
+     * - Empty parameters (e.g., ?tags=) return 400 error
+     * - Invalid content values return 400 error with valid options
+     * - All parameters are properly trimmed and sanitized
+     * 
+     * Examples:
+     * - ?content=static&tags=Account-Firehose
+     * - ?tags=Account,Bank&functions=getBanks,bankById
+     * - ?content=dynamic&locale=en_GB
+     */
     def getResourceDocsOpenAPI31 : OBPEndpoint = {
       case "resource-docs" :: requestedApiVersionString :: "openapi" :: Nil JsonGet _ => {
         cc => {
           implicit val ec = EndpointContext(Some(cc))
-          val (resourceDocTags, partialFunctions, locale, contentParam,  apiCollectionIdParam) = ResourceDocsAPIMethodsUtil.getParams()
+          
+          // Early validation for empty parameters using underlying S to bypass ObpS filtering
+          if (S.param("tags").exists(_.trim.isEmpty)) {
+            Full(errorJsonResponse(InvalidTagsParameter, 400))
+          } else if (S.param("functions").exists(_.trim.isEmpty)) {
+            Full(errorJsonResponse(InvalidFunctionsParameter, 400))
+          } else if (S.param("api-collection-id").exists(_.trim.isEmpty)) {
+            Full(errorJsonResponse(InvalidApiCollectionIdParameter, 400))
+          } else {
+            val (resourceDocTags, partialFunctions, locale, contentParam, apiCollectionIdParam) = ResourceDocsAPIMethodsUtil.getParams()
           for {
+            // Validate content parameter if provided
+            _ <- if (S.param("content").isDefined && contentParam.isEmpty) {
+              Helper.booleanToFuture(failMsg = InvalidContentParameter, cc = cc.callContext) {
+                false
+              }
+            } else {
+              Future.successful(true)
+            }
             requestedApiVersion <- NewStyle.function.tryons(s"$InvalidApiVersionString Current Version is $requestedApiVersionString", 400, cc.callContext) {
               ApiVersionUtils.valueOf(requestedApiVersionString)
             }
@@ -819,8 +905,9 @@ trait ResourceDocsAPIMethods extends MdcLoggable with APIMethods220 with APIMeth
                 convertResourceDocsToOpenAPI31JvalueAndSetCache(cacheKey, requestedApiVersionString, resourceDocsJsonFiltered)
               }
             }
-          } yield {
-            (openApiJValue, HttpCode.`200`(cc.callContext))
+            } yield {
+              (openApiJValue, HttpCode.`200`(cc.callContext))
+            }
           }
         }
       }
@@ -980,7 +1067,7 @@ object ResourceDocsAPIMethodsUtil extends MdcLoggable{
     case _ => Empty
   }
 
-  def stringToContentParam (x: String) : Option[ContentParam] = x.toLowerCase match {
+  def stringToContentParam (x: String) : Option[ContentParam] = x.toLowerCase.trim match {
     case "dynamic"  => Some(DYNAMIC)
     case "static"  => Some(STATIC)
     case "all"  => Some(ALL)
@@ -1000,14 +1087,18 @@ object ResourceDocsAPIMethodsUtil extends MdcLoggable{
         case Empty => None
         case _  => {
           val commaSeparatedList : String = rawTagsParam.getOrElse("")
-          val tagList : List[String] = commaSeparatedList.trim().split(",").toList
-          val resourceDocTags =
-            for {
-              y <- tagList
-            } yield {
-              ResourceDocTag(y)
-            }
-          Some(resourceDocTags)
+          val tagList : List[String] = commaSeparatedList.trim().split(",").toList.filter(_.nonEmpty)
+          if (tagList.nonEmpty) {
+            val resourceDocTags =
+              for {
+                y <- tagList
+              } yield {
+                ResourceDocTag(y.trim())
+              }
+            Some(resourceDocTags)
+          } else {
+            None
+          }
         }
       }
     logger.debug(s"tagsOption is $tags")
@@ -1023,14 +1114,18 @@ object ResourceDocsAPIMethodsUtil extends MdcLoggable{
         case Empty => None
         case _  => {
           val commaSeparatedList : String = rawPartialFunctionNames.getOrElse("")
-          val stringList : List[String] = commaSeparatedList.trim().split(",").toList
-          val pfns =
-            for {
-              y <- stringList
-            } yield {
-              y
-            }
-          Some(pfns)
+          val stringList : List[String] = commaSeparatedList.trim().split(",").toList.filter(_.nonEmpty)
+          if (stringList.nonEmpty) {
+            val pfns =
+              for {
+                y <- stringList
+              } yield {
+                y.trim()
+              }
+            Some(pfns)
+          } else {
+            None
+          }
         }
       }
     logger.debug(s"partialFunctionNames is $partialFunctionNames")
@@ -1047,7 +1142,8 @@ object ResourceDocsAPIMethodsUtil extends MdcLoggable{
 
     val apiCollectionIdParam = for {
       x <- ObpS.param("api-collection-id")
-    } yield x
+      if x.trim.nonEmpty
+    } yield x.trim
     logger.debug(s"apiCollectionIdParam is $apiCollectionIdParam")
     
   

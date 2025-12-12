@@ -129,6 +129,11 @@ object ErrorMessages {
 
   val createFxCurrencyIssue = "OBP-10050: Cannot create FX currency. "
   val invalidLogLevel = "OBP-10051: Invalid log level. "
+  val InvalidContentParameter = "OBP-10052: Invalid content parameter. Valid values are: static, dynamic, all"
+  val InvalidTagsParameter = "OBP-10053: Invalid tags parameter. Tags cannot be empty when provided"
+  val InvalidFunctionsParameter = "OBP-10054: Invalid functions parameter. Functions cannot be empty when provided"
+  val InvalidApiCollectionIdParameter = "OBP-10055: Invalid api-collection-id parameter. API collection ID cannot be empty when provided"
+
 
 
 
