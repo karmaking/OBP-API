@@ -26,7 +26,7 @@ import code.api.v5_0_0.JSONFactory500
 import code.api.v5_0_0.{ViewJsonV500, ViewsJsonV500}
 import code.api.v5_1_0.{JSONFactory510, PostCustomerLegalNameJsonV510}
 import code.api.dynamic.entity.helper.{DynamicEntityHelper, DynamicEntityInfo}
-import code.api.v6_0_0.JSONFactory600.{DynamicEntityDiagnosticsJsonV600, DynamicEntityIssueJsonV600, GroupJsonV600, GroupMembershipJsonV600, GroupMembershipsJsonV600, GroupsJsonV600, PostGroupJsonV600, PostGroupMembershipJsonV600, PostResetPasswordUrlJsonV600, PutGroupJsonV600, ReferenceTypeJsonV600, ReferenceTypesJsonV600, ResetPasswordUrlJsonV600, RoleWithEntitlementCountJsonV600, RolesWithEntitlementCountsJsonV600, ScannedApiVersionJsonV600, UpdateViewJsonV600, ValidateUserEmailJsonV600, ValidateUserEmailResponseJsonV600, ViewJsonV600, ViewPermissionJsonV600, ViewPermissionsJsonV600, createActiveCallLimitsJsonV600, createCallLimitJsonV600, createCurrentUsageJson}
+import code.api.v6_0_0.JSONFactory600.{DynamicEntityDiagnosticsJsonV600, DynamicEntityIssueJsonV600, GroupJsonV600, GroupMembershipJsonV600, GroupMembershipsJsonV600, GroupsJsonV600, PostGroupJsonV600, PostGroupMembershipJsonV600, PostResetPasswordUrlJsonV600, PutGroupJsonV600, ReferenceTypeJsonV600, ReferenceTypesJsonV600, ResetPasswordUrlJsonV600, RoleWithEntitlementCountJsonV600, RolesWithEntitlementCountsJsonV600, ScannedApiVersionJsonV600, UpdateViewJsonV600, ValidateUserEmailJsonV600, ValidateUserEmailResponseJsonV600, ViewJsonV600, ViewPermissionJsonV600, ViewPermissionsJsonV600, ViewsJsonV600, createActiveCallLimitsJsonV600, createCallLimitJsonV600, createCurrentUsageJson}
 import code.api.v6_0_0.OBPAPI6_0_0
 import code.metrics.APIMetrics
 import code.bankconnectors.LocalMappedConnectorInternal
@@ -3055,11 +3055,28 @@ trait APIMethods600 {
          |- auditor
          |- standard
          |
+         |Each view is returned with an `allowed_actions` array containing all permissions for that view.
+         |
          |${userAuthenticationMessage(true)}
          |
          |""".stripMargin,
       EmptyBody,
-      ViewsJsonV500(List()),
+      ViewsJsonV600(List(
+        ViewJsonV600(
+          view_id = "owner",
+          short_name = "Owner",
+          description = "The owner of the account",
+          metadata_view = "owner",
+          is_public = false,
+          is_system = true,
+          is_firehose = Some(false),
+          alias = "private",
+          hide_metadata_if_alias_used = false,
+          can_grant_access_to_views = List("owner"),
+          can_revoke_access_to_views = List("owner"),
+          allowed_actions = List("can_see_transaction_amount", "can_see_bank_account_balance")
+        )
+      )),
       List(
         UserNotLoggedIn,
         UserHasMissingRoles,
@@ -3076,7 +3093,7 @@ trait APIMethods600 {
             (Full(u), callContext) <- authenticatedAccess(cc)
             views <- Views.views.vend.getSystemViews()
           } yield {
-            (JSONFactory500.createViewsJsonV500(views), HttpCode.`200`(callContext))
+            (JSONFactory600.createViewsJsonV600(views), HttpCode.`200`(callContext))
           }
       }
     }
@@ -3095,6 +3112,8 @@ trait APIMethods600 {
          |- accountant
          |- auditor
          |- standard
+         |
+         |The view is returned with an `allowed_actions` array containing all permissions for that view.
          |
          |${userAuthenticationMessage(true)}
          |
@@ -3141,66 +3160,67 @@ trait APIMethods600 {
       }
     }
 
-    staticResourceDocs += ResourceDoc(
-      getSystemView,
-      implementedInApiVersion,
-      nameOf(getSystemView),
-      "GET",
-      "/system-views/VIEW_ID",
-      "Get System View",
-      s"""Get a single system view by its ID.
-         |
-         |System views are predefined views that apply to all accounts, such as:
-         |- owner
-         |- accountant
-         |- auditor
-         |- standard
-         |
-         |This endpoint returns the view with an `allowed_actions` array containing all permissions.
-         |
-         |${userAuthenticationMessage(true)}
-         |
-         |""".stripMargin,
-      EmptyBody,
-      ViewJsonV600(
-        view_id = "owner",
-        short_name = "Owner",
-        description = "The owner of the account. Has full privileges.",
-        metadata_view = "owner",
-        is_public = false,
-        is_system = true,
-        is_firehose = Some(false),
-        alias = "private",
-        hide_metadata_if_alias_used = false,
-        can_grant_access_to_views = List("owner", "accountant"),
-        can_revoke_access_to_views = List("owner", "accountant"),
-        allowed_actions = List(
-          "can_see_transaction_amount",
-          "can_see_bank_account_balance",
-          "can_add_comment",
-          "can_create_custom_view"
-        )
-      ),
-      List(
-        UserNotLoggedIn,
-        SystemViewNotFound,
-        UnknownError
-      ),
-      List(apiTagSystemView, apiTagView),
-      Some(List(canGetSystemViews))
-    )
-
-    lazy val getSystemView: OBPEndpoint = {
-      case "system-views" :: viewId :: Nil JsonGet _ => {
-        cc => implicit val ec = EndpointContext(Some(cc))
-          for {
-            (Full(u), callContext) <- authenticatedAccess(cc)
-            view <- ViewNewStyle.systemView(ViewId(viewId), callContext)
-          } yield {
-            (JSONFactory600.createViewJsonV600(view), HttpCode.`200`(callContext))
-          }
-      }
-    }
+//    staticResourceDocs += ResourceDoc(
+//      getSystemView,
+//      implementedInApiVersion,
+//      nameOf(getSystemView),
+//      "GET",
+//      "/system-views/VIEW_ID",
+//      "Get System View",
+//      s"""Get a single system view by its ID.
+//         |
+//         |System views are predefined views that apply to all accounts, such as:
+//         |- owner
+//         |- accountant
+//         |- auditor
+//         |- standard
+//         |
+//         |This endpoint returns the view with an `allowed_actions` array containing all permissions.
+//         |
+//         |${userAuthenticationMessage(true)}
+//         |
+//         |""".stripMargin,
+//      EmptyBody,
+//      ViewJsonV600(
+//        view_id = "owner",
+//        short_name = "Owner",
+//        description = "The owner of the account. Has full privileges.",
+//        metadata_view = "owner",
+//        is_public = false,
+//        is_system = true,
+//        is_firehose = Some(false),
+//        alias = "private",
+//        hide_metadata_if_alias_used = false,
+//        can_grant_access_to_views = List("owner", "accountant"),
+//        can_revoke_access_to_views = List("owner", "accountant"),
+//        allowed_actions = List(
+//          "can_see_transaction_amount",
+//          "can_see_bank_account_balance",
+//          "can_add_comment",
+//          "can_create_custom_view"
+//        )
+//      ),
+//      List(
+//        UserNotLoggedIn,
+//        UserHasMissingRoles,
+//        SystemViewNotFound,
+//        UnknownError
+//      ),
+//      List(apiTagSystemView, apiTagView),
+//      Some(List(canGetSystemViews))
+//    )
+//
+//    lazy val getSystemView: OBPEndpoint = {
+//      case "system-views" :: viewId :: Nil JsonGet _ => {
+//        cc => implicit val ec = EndpointContext(Some(cc))
+//          for {
+//            (Full(u), callContext) <- authenticatedAccess(cc)
+//            view <- ViewNewStyle.systemView(ViewId(viewId), callContext)
+//          } yield {
+//            (JSONFactory600.createViewJsonV600(view), HttpCode.`200`(callContext))
+//          }
+//      }
+//    }
 
     staticResourceDocs += ResourceDoc(
       updateSystemView,

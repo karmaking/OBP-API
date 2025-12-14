@@ -678,6 +678,8 @@ case class ViewJsonV600(
   allowed_actions: List[String]
 )
 
+case class ViewsJsonV600(views: List[ViewJsonV600])
+
 case class UpdateViewJsonV600(
   description: String,
   metadata_view: String,
@@ -728,5 +730,9 @@ case class UpdateViewJsonV600(
       can_revoke_access_to_views = view.canRevokeAccessToViews.getOrElse(Nil),
       allowed_actions = allowed_actions
     )
+  }
+  
+  def createViewsJsonV600(views: List[View]): ViewsJsonV600 = {
+    ViewsJsonV600(views.map(createViewJsonV600))
   }
 }
