@@ -654,4 +654,13 @@ case class ScannedApiVersionJsonV600(
   is_active: Boolean
 )
 
+case class ViewPermissionJsonV600(
+  permission: String,
+  category: String
+)
+
+case class ViewPermissionsJsonV600(
+  permissions: List[ViewPermissionJsonV600]
+)
+
 }

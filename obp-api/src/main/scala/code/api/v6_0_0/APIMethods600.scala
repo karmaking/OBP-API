@@ -26,7 +26,7 @@ import code.api.v5_0_0.JSONFactory500
 import code.api.v5_0_0.{ViewJsonV500, ViewsJsonV500}
 import code.api.v5_1_0.{JSONFactory510, PostCustomerLegalNameJsonV510}
 import code.api.dynamic.entity.helper.{DynamicEntityHelper, DynamicEntityInfo}
-import code.api.v6_0_0.JSONFactory600.{DynamicEntityDiagnosticsJsonV600, DynamicEntityIssueJsonV600, GroupJsonV600, GroupMembershipJsonV600, GroupMembershipsJsonV600, GroupsJsonV600, PostGroupJsonV600, PostGroupMembershipJsonV600, PostResetPasswordUrlJsonV600, PutGroupJsonV600, ReferenceTypeJsonV600, ReferenceTypesJsonV600, ResetPasswordUrlJsonV600, RoleWithEntitlementCountJsonV600, RolesWithEntitlementCountsJsonV600, ScannedApiVersionJsonV600, ValidateUserEmailJsonV600, ValidateUserEmailResponseJsonV600, createActiveCallLimitsJsonV600, createCallLimitJsonV600, createCurrentUsageJson}
+import code.api.v6_0_0.JSONFactory600.{DynamicEntityDiagnosticsJsonV600, DynamicEntityIssueJsonV600, GroupJsonV600, GroupMembershipJsonV600, GroupMembershipsJsonV600, GroupsJsonV600, PostGroupJsonV600, PostGroupMembershipJsonV600, PostResetPasswordUrlJsonV600, PutGroupJsonV600, ReferenceTypeJsonV600, ReferenceTypesJsonV600, ResetPasswordUrlJsonV600, RoleWithEntitlementCountJsonV600, RolesWithEntitlementCountsJsonV600, ScannedApiVersionJsonV600, ValidateUserEmailJsonV600, ValidateUserEmailResponseJsonV600, ViewPermissionJsonV600, ViewPermissionsJsonV600, createActiveCallLimitsJsonV600, createCallLimitJsonV600, createCurrentUsageJson}
 import code.api.v6_0_0.OBPAPI6_0_0
 import code.metrics.APIMetrics
 import code.bankconnectors.LocalMappedConnectorInternal
@@ -3205,6 +3205,80 @@ trait APIMethods600 {
             view <- ViewNewStyle.systemView(ViewId(viewId), callContext)
           } yield {
             (JSONFactory500.createViewJsonV500(view), HttpCode.`200`(callContext))
+          }
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
+      getViewPermissions,
+      implementedInApiVersion,
+      nameOf(getViewPermissions),
+      "GET",
+      "/management/view-permissions",
+      "Get View Permissions",
+      s"""Get a list of all available view permissions.
+         |
+         |This endpoint returns all the available permissions that can be assigned to views, 
+         |organized by category. These permissions control what actions and data can be accessed
+         |through a view.
+         |
+         |${userAuthenticationMessage(true)}
+         |
+         |The response contains all available view permission names that can be used in the 
+         |`allowed_actions` field when creating or updating custom views.
+         |
+         |""".stripMargin,
+      EmptyBody,
+      ViewPermissionsJsonV600(
+        permissions = List(
+          ViewPermissionJsonV600("can_see_transaction_amount", "Transaction"),
+          ViewPermissionJsonV600("can_see_bank_account_balance", "Account"),
+          ViewPermissionJsonV600("can_create_custom_view", "View")
+        )
+      ),
+      List(
+        UserNotLoggedIn,
+        UserHasMissingRoles,
+        UnknownError
+      ),
+      List(apiTagViewSystem, apiTagView),
+      Some(List(canGetViewPermissionsAtAllBanks))
+    )
+
+    lazy val getViewPermissions: OBPEndpoint = {
+      case "management" :: "view-permissions" :: Nil JsonGet _ => {
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(u), callContext) <- authenticatedAccess(cc)
+            _ <- NewStyle.function.hasEntitlement("", u.userId, ApiRole.canGetViewPermissionsAtAllBanks, callContext)
+          } yield {
+            import Constant._
+            
+            // Helper function to determine category from permission name
+            def categorizePermission(permission: String): String = {
+              permission match {
+                case p if p.contains("transaction") && !p.contains("request") => "Transaction"
+                case p if p.contains("bank_account") || p.contains("bank_routing") || p.contains("available_funds") => "Account"
+                case p if p.contains("other_account") || p.contains("other_bank") || 
+                         p.contains("counterparty") || p.contains("more_info") || 
+                         p.contains("url") || p.contains("corporates") || 
+                         p.contains("location") || p.contains("alias") => "Counterparty"
+                case p if p.contains("comment") || p.contains("tag") || 
+                         p.contains("image") || p.contains("where_tag") => "Metadata"
+                case p if p.contains("transaction_request") || p.contains("direct_debit") || 
+                         p.contains("standing_order") => "Transaction Request"
+                case p if p.contains("view") => "View"
+                case p if p.contains("grant") || p.contains("revoke") => "Access Control"
+                case _ => "Other"
+              }
+            }
+            
+            // Return all view permissions directly from the constants with generated categories
+            val permissions = ALL_VIEW_PERMISSION_NAMES.map { permission =>
+              ViewPermissionJsonV600(permission, categorizePermission(permission))
+            }.sortBy(p => (p.category, p.permission))
+            
+            (ViewPermissionsJsonV600(permissions), HttpCode.`200`(callContext))
           }
       }
     }

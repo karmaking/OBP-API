@@ -675,6 +675,9 @@ object ApiRole extends MdcLoggable{
   case class CanDeleteWebUiProps(requiresBankId: Boolean = false) extends ApiRole
   lazy val canDeleteWebUiProps = CanDeleteWebUiProps()
 
+  case class CanGetViewPermissionsAtAllBanks(requiresBankId: Boolean = false) extends ApiRole
+  lazy val canGetViewPermissionsAtAllBanks = CanGetViewPermissionsAtAllBanks()
+
   case class CanGetSystemLevelDynamicEntities(requiresBankId: Boolean = false) extends ApiRole
   lazy val canGetSystemLevelDynamicEntities = CanGetSystemLevelDynamicEntities()
 
