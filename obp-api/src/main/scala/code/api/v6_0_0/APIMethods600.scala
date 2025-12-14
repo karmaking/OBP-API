@@ -26,7 +26,7 @@ import code.api.v5_0_0.JSONFactory500
 import code.api.v5_0_0.{ViewJsonV500, ViewsJsonV500}
 import code.api.v5_1_0.{JSONFactory510, PostCustomerLegalNameJsonV510}
 import code.api.dynamic.entity.helper.{DynamicEntityHelper, DynamicEntityInfo}
-import code.api.v6_0_0.JSONFactory600.{DynamicEntityDiagnosticsJsonV600, DynamicEntityIssueJsonV600, GroupJsonV600, GroupMembershipJsonV600, GroupMembershipsJsonV600, GroupsJsonV600, PostGroupJsonV600, PostGroupMembershipJsonV600, PostResetPasswordUrlJsonV600, PutGroupJsonV600, ReferenceTypeJsonV600, ReferenceTypesJsonV600, ResetPasswordUrlJsonV600, RoleWithEntitlementCountJsonV600, RolesWithEntitlementCountsJsonV600, ScannedApiVersionJsonV600, ValidateUserEmailJsonV600, ValidateUserEmailResponseJsonV600, ViewPermissionJsonV600, ViewPermissionsJsonV600, createActiveCallLimitsJsonV600, createCallLimitJsonV600, createCurrentUsageJson}
+import code.api.v6_0_0.JSONFactory600.{DynamicEntityDiagnosticsJsonV600, DynamicEntityIssueJsonV600, GroupJsonV600, GroupMembershipJsonV600, GroupMembershipsJsonV600, GroupsJsonV600, PostGroupJsonV600, PostGroupMembershipJsonV600, PostResetPasswordUrlJsonV600, PutGroupJsonV600, ReferenceTypeJsonV600, ReferenceTypesJsonV600, ResetPasswordUrlJsonV600, RoleWithEntitlementCountJsonV600, RolesWithEntitlementCountsJsonV600, ScannedApiVersionJsonV600, UpdateViewJsonV600, ValidateUserEmailJsonV600, ValidateUserEmailResponseJsonV600, ViewJsonV600, ViewPermissionJsonV600, ViewPermissionsJsonV600, createActiveCallLimitsJsonV600, createCallLimitJsonV600, createCurrentUsageJson}
 import code.api.v6_0_0.OBPAPI6_0_0
 import code.metrics.APIMetrics
 import code.bankconnectors.LocalMappedConnectorInternal
@@ -3100,8 +3100,8 @@ trait APIMethods600 {
          |
          |""".stripMargin,
       EmptyBody,
-      ViewJsonV500(
-        id = "owner",
+      ViewJsonV600(
+        view_id = "owner",
         short_name = "Owner",
         description = "The owner of the account. Has full privileges.",
         metadata_view = "owner",
@@ -3112,80 +3112,12 @@ trait APIMethods600 {
         hide_metadata_if_alias_used = false,
         can_grant_access_to_views = List("owner", "accountant"),
         can_revoke_access_to_views = List("owner", "accountant"),
-        can_add_comment = true,
-        can_add_corporate_location = true,
-        can_add_image = true,
-        can_add_image_url = true,
-        can_add_more_info = true,
-        can_add_open_corporates_url = true,
-        can_add_physical_location = true,
-        can_add_private_alias = true,
-        can_add_public_alias = true,
-        can_add_tag = true,
-        can_add_url = true,
-        can_add_where_tag = true,
-        can_delete_comment = true,
-        can_add_counterparty = true,
-        can_delete_corporate_location = true,
-        can_delete_image = true,
-        can_delete_physical_location = true,
-        can_delete_tag = true,
-        can_delete_where_tag = true,
-        can_edit_owner_comment = true,
-        can_see_bank_account_balance = true,
-        can_query_available_funds = true,
-        can_see_bank_account_bank_name = true,
-        can_see_bank_account_currency = true,
-        can_see_bank_account_iban = true,
-        can_see_bank_account_label = true,
-        can_see_bank_account_national_identifier = true,
-        can_see_bank_account_number = true,
-        can_see_bank_account_owners = true,
-        can_see_bank_account_swift_bic = true,
-        can_see_bank_account_type = true,
-        can_see_comments = true,
-        can_see_corporate_location = true,
-        can_see_image_url = true,
-        can_see_images = true,
-        can_see_more_info = true,
-        can_see_open_corporates_url = true,
-        can_see_other_account_bank_name = true,
-        can_see_other_account_iban = true,
-        can_see_other_account_kind = true,
-        can_see_other_account_metadata = true,
-        can_see_other_account_national_identifier = true,
-        can_see_other_account_number = true,
-        can_see_other_account_swift_bic = true,
-        can_see_owner_comment = true,
-        can_see_physical_location = true,
-        can_see_private_alias = true,
-        can_see_public_alias = true,
-        can_see_tags = true,
-        can_see_transaction_amount = true,
-        can_see_transaction_balance = true,
-        can_see_transaction_currency = true,
-        can_see_transaction_description = true,
-        can_see_transaction_finish_date = true,
-        can_see_transaction_metadata = true,
-        can_see_transaction_other_bank_account = true,
-        can_see_transaction_start_date = true,
-        can_see_transaction_this_bank_account = true,
-        can_see_transaction_type = true,
-        can_see_url = true,
-        can_see_where_tag = true,
-        can_see_bank_routing_scheme = true,
-        can_see_bank_routing_address = true,
-        can_see_bank_account_routing_scheme = true,
-        can_see_bank_account_routing_address = true,
-        can_see_other_bank_routing_scheme = true,
-        can_see_other_bank_routing_address = true,
-        can_see_other_account_routing_scheme = true,
-        can_see_other_account_routing_address = true,
-        can_add_transaction_request_to_own_account = true,
-        can_add_transaction_request_to_any_account = true,
-        can_see_bank_account_credit_limit = true,
-        can_create_direct_debit = true,
-        can_create_standing_order = true
+        allowed_actions = List(
+          "can_see_transaction_amount",
+          "can_see_bank_account_balance",
+          "can_add_comment",
+          "can_create_custom_view"
+        )
       ),
       List(
         UserNotLoggedIn,
@@ -3204,7 +3136,150 @@ trait APIMethods600 {
             (Full(u), callContext) <- authenticatedAccess(cc)
             view <- ViewNewStyle.systemView(ViewId(viewId), callContext)
           } yield {
-            (JSONFactory500.createViewJsonV500(view), HttpCode.`200`(callContext))
+            (JSONFactory600.createViewJsonV600(view), HttpCode.`200`(callContext))
+          }
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
+      getSystemView,
+      implementedInApiVersion,
+      nameOf(getSystemView),
+      "GET",
+      "/system-views/VIEW_ID",
+      "Get System View",
+      s"""Get a single system view by its ID.
+         |
+         |System views are predefined views that apply to all accounts, such as:
+         |- owner
+         |- accountant
+         |- auditor
+         |- standard
+         |
+         |This endpoint returns the view with an `allowed_actions` array containing all permissions.
+         |
+         |${userAuthenticationMessage(true)}
+         |
+         |""".stripMargin,
+      EmptyBody,
+      ViewJsonV600(
+        view_id = "owner",
+        short_name = "Owner",
+        description = "The owner of the account. Has full privileges.",
+        metadata_view = "owner",
+        is_public = false,
+        is_system = true,
+        is_firehose = Some(false),
+        alias = "private",
+        hide_metadata_if_alias_used = false,
+        can_grant_access_to_views = List("owner", "accountant"),
+        can_revoke_access_to_views = List("owner", "accountant"),
+        allowed_actions = List(
+          "can_see_transaction_amount",
+          "can_see_bank_account_balance",
+          "can_add_comment",
+          "can_create_custom_view"
+        )
+      ),
+      List(
+        UserNotLoggedIn,
+        SystemViewNotFound,
+        UnknownError
+      ),
+      List(apiTagSystemView, apiTagView),
+      Some(List(canGetSystemViews))
+    )
+
+    lazy val getSystemView: OBPEndpoint = {
+      case "system-views" :: viewId :: Nil JsonGet _ => {
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(u), callContext) <- authenticatedAccess(cc)
+            view <- ViewNewStyle.systemView(ViewId(viewId), callContext)
+          } yield {
+            (JSONFactory600.createViewJsonV600(view), HttpCode.`200`(callContext))
+          }
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
+      updateSystemView,
+      implementedInApiVersion,
+      nameOf(updateSystemView),
+      "PUT",
+      "/system-views/VIEW_ID",
+      "Update System View",
+      s"""Update an existing system view.
+         |
+         |${userAuthenticationMessage(true)}
+         |
+         |The JSON sent is the same as during view creation, with one difference: the 'name' field
+         |of a view is not editable (it is only set when a view is created).
+         |
+         |The response contains the updated view with an `allowed_actions` array.
+         |
+         |""".stripMargin,
+      UpdateViewJsonV600(
+        description = "This is the owner view",
+        metadata_view = "owner",
+        is_public = false,
+        is_firehose = Some(false),
+        which_alias_to_use = "private",
+        hide_metadata_if_alias_used = false,
+        allowed_actions = List(
+          "can_see_transaction_amount",
+          "can_see_bank_account_balance",
+          "can_add_comment"
+        ),
+        can_grant_access_to_views = Some(List("owner", "accountant")),
+        can_revoke_access_to_views = Some(List("owner", "accountant"))
+      ),
+      ViewJsonV600(
+        view_id = "owner",
+        short_name = "Owner",
+        description = "This is the owner view",
+        metadata_view = "owner",
+        is_public = false,
+        is_system = true,
+        is_firehose = Some(false),
+        alias = "private",
+        hide_metadata_if_alias_used = false,
+        can_grant_access_to_views = List("owner", "accountant"),
+        can_revoke_access_to_views = List("owner", "accountant"),
+        allowed_actions = List(
+          "can_see_transaction_amount",
+          "can_see_bank_account_balance",
+          "can_add_comment"
+        )
+      ),
+      List(
+        InvalidJsonFormat,
+        UserNotLoggedIn,
+        UserHasMissingRoles,
+        SystemViewNotFound,
+        SystemViewCannotBePublicError,
+        UnknownError
+      ),
+      List(apiTagSystemView, apiTagView),
+      Some(List(canUpdateSystemView))
+    )
+
+    lazy val updateSystemView: OBPEndpoint = {
+      case "system-views" :: viewId :: Nil JsonPut json -> _ => {
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(u), callContext) <- authenticatedAccess(cc)
+            _ <- NewStyle.function.hasEntitlement("", u.userId, ApiRole.canUpdateSystemView, callContext)
+            updateJson <- NewStyle.function.tryons(s"$InvalidJsonFormat The Json body should be the UpdateViewJsonV600", 400, callContext) {
+              json.extract[UpdateViewJsonV600]
+            }
+            _ <- Helper.booleanToFuture(SystemViewCannotBePublicError, failCode = 400, cc = callContext) {
+              updateJson.is_public == false
+            }
+            _ <- ViewNewStyle.systemView(ViewId(viewId), callContext)
+            updatedView <- ViewNewStyle.updateSystemView(ViewId(viewId), updateJson.toUpdateViewJson, callContext)
+          } yield {
+            (JSONFactory600.createViewJsonV600(updatedView), HttpCode.`200`(callContext))
           }
       }
     }
@@ -3241,7 +3316,7 @@ trait APIMethods600 {
         UserHasMissingRoles,
         UnknownError
       ),
-      List(apiTagViewSystem, apiTagView),
+      List(apiTagSystemView, apiTagView),
       Some(List(canGetViewPermissionsAtAllBanks))
     )
 
