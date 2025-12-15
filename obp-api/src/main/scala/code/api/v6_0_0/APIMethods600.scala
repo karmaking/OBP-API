@@ -74,12 +74,12 @@ trait APIMethods600 {
 
   val Implementations6_0_0 = new Implementations600()
 
-  class Implementations600 extends MdcLoggable {
+  class Implementations600 extends RestHelper with MdcLoggable with AbacRuleEndpoints {
 
     val implementedInApiVersion: ScannedApiVersion = ApiVersion.v6_0_0
 
-    private val staticResourceDocs = ArrayBuffer[ResourceDoc]()
-    def resourceDocs = staticResourceDocs
+    val staticResourceDocs = ArrayBuffer[ResourceDoc]()
+    val resourceDocs = staticResourceDocs
 
     val apiRelations = ArrayBuffer[ApiRelation]()
     val codeContext = CodeContext(staticResourceDocs, apiRelations)

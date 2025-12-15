@@ -290,6 +290,47 @@ case class CustomerWithAttributesJsonV600(
   customer_attributes: List[CustomerAttributeResponseJsonV300]
 )
 
+// ABAC Rule JSON models
+case class CreateAbacRuleJsonV600(
+  rule_name: String,
+  rule_code: String,
+  description: String,
+  is_active: Boolean
+)
+
+case class UpdateAbacRuleJsonV600(
+  rule_name: String,
+  rule_code: String,
+  description: String,
+  is_active: Boolean
+)
+
+case class AbacRuleJsonV600(
+  abac_rule_id: String,
+  rule_name: String,
+  rule_code: String,
+  is_active: Boolean,
+  description: String,
+  created_by_user_id: String,
+  updated_by_user_id: String
+)
+
+case class AbacRulesJsonV600(abac_rules: List[AbacRuleJsonV600])
+
+case class ExecuteAbacRuleJsonV600(
+  bank_id: Option[String],
+  account_id: Option[String],
+  transaction_id: Option[String],
+  customer_id: Option[String]
+)
+
+case class AbacRuleResultJsonV600(
+  rule_id: String,
+  rule_name: String,
+  result: Boolean,
+  message: String
+)
+
 object JSONFactory600 extends CustomJsonFormats with MdcLoggable{
 
   def createCurrentUsageJson(rateLimits: List[((Option[Long], Option[Long]), LimitCallPeriod)]): Option[RedisCallLimitJson] = {
@@ -734,5 +775,21 @@ case class UpdateViewJsonV600(
   
   def createViewsJsonV600(views: List[View]): ViewsJsonV600 = {
     ViewsJsonV600(views.map(createViewJsonV600))
+  }
+  
+  def createAbacRuleJsonV600(rule: code.abacrule.AbacRule): AbacRuleJsonV600 = {
+    AbacRuleJsonV600(
+      abac_rule_id = rule.abacRuleId,
+      rule_name = rule.ruleName,
+      rule_code = rule.ruleCode,
+      is_active = rule.isActive,
+      description = rule.description,
+      created_by_user_id = rule.createdByUserId,
+      updated_by_user_id = rule.updatedByUserId
+    )
+  }
+  
+  def createAbacRulesJsonV600(rules: List[code.abacrule.AbacRule]): AbacRulesJsonV600 = {
+    AbacRulesJsonV600(rules.map(createAbacRuleJsonV600))
   }
 }
