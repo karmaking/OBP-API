@@ -37,7 +37,8 @@
       <groupId>com.tesobe</groupId>
       <artifactId>obp-commons</artifactId>
     </dependency>
-    <!--embed akka adapter start-->
+    <!--embed akka adapter start - COMMENTED OUT FOR PEKKO MIGRATION-->
+    <!-- TODO: Find or create Pekko equivalent for adapter-akka-commons
     <dependency>
       <groupId>com.github.OpenBankProject.OBP-Adapter-Akka-SpringBoot</groupId>
       <artifactId>adapter-akka-commons</artifactId>
@@ -49,6 +50,7 @@
         </exclusion>
       </exclusions>
     </dependency>
+    -->
     <!--embed akka adapter end-->
     <dependency>
       <groupId>com.github.everit-org.json-schema</groupId>
@@ -242,21 +244,21 @@
       <artifactId>signpost-commonshttp4</artifactId>
       <version>1.2.1.2</version>
     </dependency>
-    <!-- https://mvnrepository.com/artifact/com.typesafe.akka/akka-http-core -->
+    <!-- https://mvnrepository.com/artifact/org.apache.pekko/pekko-http-core -->
     <dependency>
-      <groupId>com.typesafe.akka</groupId>
-      <artifactId>akka-http-core_${scala.version}</artifactId>
-      <version>10.1.6</version>
+      <groupId>org.apache.pekko</groupId>
+      <artifactId>pekko-http-core_${scala.version}</artifactId>
+      <version>1.1.0</version>
     </dependency>
     <dependency>
-      <groupId>com.typesafe.akka</groupId>
-      <artifactId>akka-actor_${scala.version}</artifactId>
-      <version>${akka.version}</version>
+      <groupId>org.apache.pekko</groupId>
+      <artifactId>pekko-actor_${scala.version}</artifactId>
+      <version>${pekko.version}</version>
     </dependency>
     <dependency>
-      <groupId>com.typesafe.akka</groupId>
-      <artifactId>akka-remote_${scala.version}</artifactId>
-      <version>${akka.version}</version>
+      <groupId>org.apache.pekko</groupId>
+      <artifactId>pekko-remote_${scala.version}</artifactId>
+      <version>${pekko.version}</version>
     </dependency>
     <dependency>
       <groupId>com.sksamuel.avro4s</groupId>
@@ -270,8 +272,8 @@
     </dependency>
     <dependency>
       <groupId>com.twitter</groupId>
-      <artifactId>chill-akka_${scala.version}</artifactId>
-      <version>0.9.1</version>
+      <artifactId>chill_${scala.version}</artifactId>
+      <version>0.9.3</version>
     </dependency>
     <dependency>
       <groupId>com.twitter</groupId>
@@ -291,9 +293,9 @@
       <version>0.9.3</version>
     </dependency>
     <dependency>
-      <groupId>com.typesafe.akka</groupId>
-      <artifactId>akka-slf4j_${scala.version}</artifactId>
-      <version>${akka.version}</version>
+      <groupId>org.apache.pekko</groupId>
+      <artifactId>pekko-slf4j_${scala.version}</artifactId>
+      <version>${pekko.version}</version>
     </dependency>
     <!-- https://mvnrepository.com/artifact/com.github.dwickern/scala-nameof_2.11 -->
     <dependency>
