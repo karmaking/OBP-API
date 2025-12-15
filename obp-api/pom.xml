@@ -23,52 +23,6 @@
         <webXmlPath>src/main/resources/web.xml</webXmlPath>
       </properties>
     </profile>
-    <profile>
-      <id>http4s-jar</id>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-assembly-plugin</artifactId>
-            <version>3.6.0</version>
-            <configuration>
-              <appendAssemblyId>false</appendAssemblyId>
-              <finalName>${project.artifactId}-http4s</finalName>
-              <archive>
-                <manifest>
-                  <mainClass>bootstrap.http4s.Http4sServer</mainClass>
-                </manifest>
-              </archive>
-              <descriptorRefs>
-                <descriptorRef>jar-with-dependencies</descriptorRef>
-              </descriptorRefs>
-              <dependencySets>
-                <dependencySet>
-                  <outputDirectory>/</outputDirectory>
-                  <unpack>true</unpack>
-                  <scope>runtime</scope>
-                </dependencySet>
-              </dependencySets>
-              <fileSets>
-                <fileSet>
-                  <directory>${project.build.outputDirectory}</directory>
-                  <outputDirectory>/</outputDirectory>
-                </fileSet>
-              </fileSets>
-            </configuration>
-            <executions>
-              <execution>
-                <id>http4s-fat-jar</id>
-                <phase>package</phase>
-                <goals>
-                  <goal>single</goal>
-                </goals>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
   </profiles>
   <pluginRepositories>
     <pluginRepository>

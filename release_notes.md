@@ -3,6 +3,12 @@
 ### Most recent changes at top of file
 ```
 Date          Commit        Action
+12/12/2025    f2e7b827      Http4s runner configuration
+                            Added http4s.host and http4s.port to props sample template:
+                            - http4s.host=127.0.0.1
+                            - http4s.port=8086
+                            These properties control the bind address of bootstrap.http4s.Http4sServer
+                            when running via the obp-http4s-runner fat JAR. 
 TBD           TBD           Performance Improvement: Added caching to getProviders endpoint
                             Added configurable caching with memoization to GET /obp/v6.0.0/providers endpoint.
                             - Default cache TTL: 3600 seconds (1 hour)
