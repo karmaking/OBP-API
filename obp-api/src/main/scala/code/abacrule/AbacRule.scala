@@ -21,29 +21,42 @@ trait AbacRule {
 class MappedAbacRule extends AbacRule with LongKeyedMapper[MappedAbacRule] with IdPK with CreatedUpdated {
   def getSingleton = MappedAbacRule
 
-  object mAbacRuleId extends MappedString(this, 255) {
+  object AbacRuleId extends MappedString(this, 255) {
     override def defaultValue = APIUtil.generateUUID()
+    override def dbColumnName = "abac_rule_id"
   }
-  object mRuleName extends MappedString(this, 255)
-  object mRuleCode extends MappedText(this)
-  object mIsActive extends MappedBoolean(this) {
+  object RuleName extends MappedString(this, 255) {
+    override def dbColumnName = "rule_name"
+  }
+  object RuleCode extends MappedText(this) {
+    override def dbColumnName = "rule_code"
+  }
+  object IsActive extends MappedBoolean(this) {
     override def defaultValue = true
+    override def dbColumnName = "is_active"
   }
-  object mDescription extends MappedText(this)
-  object mCreatedByUserId extends MappedString(this, 255)
-  object mUpdatedByUserId extends MappedString(this, 255)
+  object Description extends MappedText(this) {
+    override def dbColumnName = "description"
+  }
+  object CreatedByUserId extends MappedString(this, 255) {
+    override def dbColumnName = "created_by_user_id"
+  }
+  object UpdatedByUserId extends MappedString(this, 255) {
+    override def dbColumnName = "updated_by_user_id"
+  }
 
-  override def abacRuleId: String = mAbacRuleId.get
-  override def ruleName: String = mRuleName.get
-  override def ruleCode: String = mRuleCode.get
-  override def isActive: Boolean = mIsActive.get
-  override def description: String = mDescription.get
-  override def createdByUserId: String = mCreatedByUserId.get
-  override def updatedByUserId: String = mUpdatedByUserId.get
+  override def abacRuleId: String = AbacRuleId.get
+  override def ruleName: String = RuleName.get
+  override def ruleCode: String = RuleCode.get
+  override def isActive: Boolean = IsActive.get
+  override def description: String = Description.get
+  override def createdByUserId: String = CreatedByUserId.get
+  override def updatedByUserId: String = UpdatedByUserId.get
 }
 
 object MappedAbacRule extends MappedAbacRule with LongKeyedMetaMapper[MappedAbacRule] {
-  override def dbIndexes: List[BaseIndex[MappedAbacRule]] = Index(mAbacRuleId) :: Index(mRuleName) :: Index(mCreatedByUserId) :: super.dbIndexes
+  override def dbTableName = "abac_rule"
+  override def dbIndexes: List[BaseIndex[MappedAbacRule]] = Index(AbacRuleId) :: Index(RuleName) :: Index(CreatedByUserId) :: super.dbIndexes
 }
 
 trait AbacRuleProvider {
@@ -72,11 +85,11 @@ trait AbacRuleProvider {
 object MappedAbacRuleProvider extends AbacRuleProvider {
   
   override def getAbacRuleById(ruleId: String): Box[AbacRule] = {
-    MappedAbacRule.find(By(MappedAbacRule.mAbacRuleId, ruleId))
+    MappedAbacRule.find(By(MappedAbacRule.AbacRuleId, ruleId))
   }
 
   override def getAbacRuleByName(ruleName: String): Box[AbacRule] = {
-    MappedAbacRule.find(By(MappedAbacRule.mRuleName, ruleName))
+    MappedAbacRule.find(By(MappedAbacRule.RuleName, ruleName))
   }
 
   override def getAllAbacRules(): List[AbacRule] = {
@@ -84,7 +97,7 @@ object MappedAbacRuleProvider extends AbacRuleProvider {
   }
 
   override def getActiveAbacRules(): List[AbacRule] = {
-    MappedAbacRule.findAll(By(MappedAbacRule.mIsActive, true))
+    MappedAbacRule.findAll(By(MappedAbacRule.IsActive, true))
   }
 
   override def createAbacRule(
@@ -96,12 +109,12 @@ object MappedAbacRuleProvider extends AbacRuleProvider {
   ): Box[AbacRule] = {
     tryo {
       MappedAbacRule.create
-        .mRuleName(ruleName)
-        .mRuleCode(ruleCode)
-        .mDescription(description)
-        .mIsActive(isActive)
-        .mCreatedByUserId(createdBy)
-        .mUpdatedByUserId(createdBy)
+        .RuleName(ruleName)
+        .RuleCode(ruleCode)
+        .Description(description)
+        .IsActive(isActive)
+        .CreatedByUserId(createdBy)
+        .UpdatedByUserId(createdBy)
         .saveMe()
     }
   }
@@ -115,14 +128,14 @@ object MappedAbacRuleProvider extends AbacRuleProvider {
     updatedBy: String
   ): Box[AbacRule] = {
     for {
-      rule <- MappedAbacRule.find(By(MappedAbacRule.mAbacRuleId, ruleId))
+      rule <- MappedAbacRule.find(By(MappedAbacRule.AbacRuleId, ruleId))
       updatedRule <- tryo {
         rule
-          .mRuleName(ruleName)
-          .mRuleCode(ruleCode)
-          .mDescription(description)
-          .mIsActive(isActive)
-          .mUpdatedByUserId(updatedBy)
+          .RuleName(ruleName)
+          .RuleCode(ruleCode)
+          .Description(description)
+          .IsActive(isActive)
+          .UpdatedByUserId(updatedBy)
           .saveMe()
       }
     } yield updatedRule
@@ -130,7 +143,7 @@ object MappedAbacRuleProvider extends AbacRuleProvider {
 
   override def deleteAbacRule(ruleId: String): Box[Boolean] = {
     for {
-      rule <- MappedAbacRule.find(By(MappedAbacRule.mAbacRuleId, ruleId))
+      rule <- MappedAbacRule.find(By(MappedAbacRule.AbacRuleId, ruleId))
       deleted <- tryo(rule.delete_!)
     } yield deleted
   }
