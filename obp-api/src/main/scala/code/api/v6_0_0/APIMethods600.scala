@@ -4153,10 +4153,10 @@ trait APIMethods600 {
          |ABAC rules are Scala functions that return a Boolean value indicating whether access should be granted.
          |
          |**Documentation:**
-         |- [ABAC Simple Guide](glossary#ABAC_Simple_Guide.md) - Getting started with ABAC rules
-         |- [ABAC Parameters Summary](glossary#ABAC_Parameters_Summary.md) - Complete list of all 18 parameters
-         |- [ABAC Object Properties Reference](glossary#ABAC_Object_Properties_Reference.md) - Detailed property reference
-         |- [ABAC Testing Examples](glossary#ABAC_Testing_Examples.md) - Testing examples and patterns
+         |- ${Glossary.getGlossaryItemLink("ABAC_Simple_Guide")} - Getting started with ABAC rules
+         |- ${Glossary.getGlossaryItemLink("ABAC_Parameters_Summary")} - Complete list of all 18 parameters
+         |- ${Glossary.getGlossaryItemLink("ABAC_Object_Properties_Reference")} - Detailed property reference
+         |- ${Glossary.getGlossaryItemLink("ABAC_Testing_Examples")} - Testing examples and patterns
          |
          |The rule function receives 18 parameters including authenticatedUser, attributes, auth context, and optional objects (bank, account, transaction, etc.).
          |
@@ -4247,9 +4247,9 @@ trait APIMethods600 {
       s"""Get an ABAC rule by its ID.
          |
          |**Documentation:**
-         |- [ABAC Simple Guide](glossary#ABAC_Simple_Guide.md) - Getting started with ABAC rules
-         |- [ABAC Parameters Summary](glossary#ABAC_Parameters_Summary.md) - Complete list of all 18 parameters
-         |- [ABAC Object Properties Reference](glossary#ABAC_Object_Properties_Reference.md) - Detailed property reference
+         |- ${Glossary.getGlossaryItemLink("ABAC_Simple_Guide")} - Getting started with ABAC rules
+         |- ${Glossary.getGlossaryItemLink("ABAC_Parameters_Summary")} - Complete list of all 18 parameters
+         |- ${Glossary.getGlossaryItemLink("ABAC_Object_Properties_Reference")} - Detailed property reference
          |
          |${userAuthenticationMessage(true)}
          |
@@ -4300,9 +4300,9 @@ trait APIMethods600 {
       s"""Get all ABAC rules.
          |
          |**Documentation:**
-         |- [ABAC Simple Guide](glossary#ABAC_Simple_Guide.md) - Getting started with ABAC rules
-         |- [ABAC Parameters Summary](glossary#ABAC_Parameters_Summary.md) - Complete list of all 18 parameters
-         |- [ABAC Object Properties Reference](glossary#ABAC_Object_Properties_Reference.md) - Detailed property reference
+         |- ${Glossary.getGlossaryItemLink("ABAC_Simple_Guide")} - Getting started with ABAC rules
+         |- ${Glossary.getGlossaryItemLink("ABAC_Parameters_Summary")} - Complete list of all 18 parameters
+         |- ${Glossary.getGlossaryItemLink("ABAC_Object_Properties_Reference")} - Detailed property reference
          |
          |${userAuthenticationMessage(true)}
          |
@@ -4355,9 +4355,9 @@ trait APIMethods600 {
       s"""Update an existing ABAC rule.
          |
          |**Documentation:**
-         |- [ABAC Simple Guide](glossary#ABAC_Simple_Guide.md) - Getting started with ABAC rules
-         |- [ABAC Parameters Summary](glossary#ABAC_Parameters_Summary.md) - Complete list of all 18 parameters
-         |- [ABAC Object Properties Reference](glossary#ABAC_Object_Properties_Reference.md) - Detailed property reference
+         |- ${Glossary.getGlossaryItemLink("ABAC_Simple_Guide")} - Getting started with ABAC rules
+         |- ${Glossary.getGlossaryItemLink("ABAC_Parameters_Summary")} - Complete list of all 18 parameters
+         |- ${Glossary.getGlossaryItemLink("ABAC_Object_Properties_Reference")} - Detailed property reference
          |
          |${userAuthenticationMessage(true)}
          |
@@ -4434,8 +4434,8 @@ trait APIMethods600 {
       s"""Delete an ABAC rule by its ID.
          |
          |**Documentation:**
-         |- [ABAC Simple Guide](glossary#ABAC_Simple_Guide.md) - Getting started with ABAC rules
-         |- [ABAC Parameters Summary](glossary#ABAC_Parameters_Summary.md) - Complete list of all 18 parameters
+         |- ${Glossary.getGlossaryItemLink("ABAC_Simple_Guide")} - Getting started with ABAC rules
+         |- ${Glossary.getGlossaryItemLink("ABAC_Parameters_Summary")} - Complete list of all 18 parameters
          |
          |${userAuthenticationMessage(true)}
          |
@@ -4484,10 +4484,10 @@ trait APIMethods600 {
          |This endpoint allows you to test an ABAC rule with specific context (authenticated user, bank, account, transaction, customer, etc.).
          |
          |**Documentation:**
-         |- [ABAC Simple Guide](glossary#ABAC_Simple_Guide.md) - Getting started with ABAC rules
-         |- [ABAC Parameters Summary](glossary#ABAC_Parameters_Summary.md) - Complete list of all 18 parameters
-         |- [ABAC Object Properties Reference](glossary#ABAC_Object_Properties_Reference.md) - Detailed property reference
-         |- [ABAC Testing Examples](glossary#ABAC_Testing_Examples.md) - Testing examples and patterns
+         |- ${Glossary.getGlossaryItemLink("ABAC_Simple_Guide")} - Getting started with ABAC rules
+         |- ${Glossary.getGlossaryItemLink("ABAC_Parameters_Summary")} - Complete list of all 18 parameters
+         |- ${Glossary.getGlossaryItemLink("ABAC_Object_Properties_Reference")} - Detailed property reference
+         |- ${Glossary.getGlossaryItemLink("ABAC_Testing_Examples")} - Testing examples and patterns
          |
          |You can provide optional IDs in the request body to test the rule with specific context.
          |
