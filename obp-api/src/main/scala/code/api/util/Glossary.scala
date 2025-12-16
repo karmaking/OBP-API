@@ -3903,6 +3903,468 @@ object Glossary extends MdcLoggable  {
 				 |""".stripMargin)
 
 
+	glossaryItems += GlossaryItem(
+		title = "ABAC_Simple_Guide",
+		description =
+			s"""
+				 |# ABAC Rules Engine - Simple Guide
+				 |
+				 |## Overview
+				 |
+				 |The ABAC (Attribute-Based Access Control) Rules Engine allows you to create dynamic access control rules in Scala that evaluate whether a user should have access to a resource.
+				 |
+				 |## API Usage
+				 |
+				 |### Endpoint
+				 |```
+				 |POST $getObpApiRoot/v6.0.0/management/abac-rules/{RULE_ID}/execute
+				 |```
+				 |
+				 |### Request Example
+				 |```bash
+				 |curl -X POST \\
+				 |  '$getObpApiRoot/v6.0.0/management/abac-rules/admin-only-rule/execute' \\
+				 |  -H 'Authorization: DirectLogin token=eyJhbGciOiJIUzI1...' \\
+				 |  -H 'Content-Type: application/json' \\
+				 |  -d '{
+				 |    "bank_id": "gh.29.uk",
+				 |    "account_id": "8ca8a7e4-6d02-48e3-a029-0b2bf89de9f0"
+				 |  }'
+				 |```
+				 |
+				 |## Understanding the Three User Parameters
+				 |
+				 |### 1. `authenticatedUserId` (Required)
+				 |**The person actually logged in and making the API call**
+				 |
+				 |- This is ALWAYS the real user who authenticated
+				 |- Retrieved from the authentication token
+				 |- Cannot be faked or changed
+				 |
+				 |### 2. `onBehalfOfUserId` (Optional)
+				 |**When someone acts on behalf of another user (delegation)**
+				 |
+				 |- Used for delegation scenarios
+				 |- The authenticated user is acting for someone else
+				 |- Common in customer service, admin tools, power of attorney
+				 |
+				 |### 3. `userId` (Optional)
+				 |**The target user being evaluated by the rule**
+				 |
+				 |- Defaults to `authenticatedUserId` if not provided
+				 |- The user whose permissions/attributes are being checked
+				 |- Useful for testing rules for different users
+				 |
+				 |## Writing ABAC Rules
+				 |
+				 |### Simple Rule Examples
+				 |
+				 |**Rule 1: User Must Own Account**
+				 |```scala
+				 |accountOpt.exists(account => 
+				 |  account.owners.exists(owner => owner.userId == user.userId)
+				 |)
+				 |```
+				 |
+				 |**Rule 2: Admin or Owner**
+				 |```scala
+				 |val isAdmin = authenticatedUser.emailAddress.endsWith("@admin.com")
+				 |val isOwner = accountOpt.exists(account =>
+				 |  account.owners.exists(owner => owner.userId == user.userId)
+				 |)
+				 |
+				 |isAdmin || isOwner
+				 |```
+				 |
+				 |**Rule 3: Account Balance Check**
+				 |```scala
+				 |accountOpt.exists(account => account.balance.toDouble >= 1000.0)
+				 |```
+				 |
+				 |## Available Objects in Rules
+				 |
+				 |```scala
+				 |authenticatedUser: User                    // Always present - the logged in user
+				 |onBehalfOfUserOpt: Option[User]           // Present if delegation
+				 |user: User                                 // Always present - the target user
+				 |bankOpt: Option[Bank]                      // Present if bank_id provided
+				 |accountOpt: Option[BankAccount]            // Present if account_id provided
+				 |transactionOpt: Option[Transaction]        // Present if transaction_id provided
+				 |customerOpt: Option[Customer]              // Present if customer_id provided
+				 |```
+				 |
+				 |**Related Documentation:**
+				 |- ABAC_Parameters_Summary - Complete list of all 18 parameters
+				 |- ABAC_Object_Properties_Reference - Detailed property reference
+				 |- ABAC_Testing_Examples - More testing examples
+				 |""".stripMargin)
+
+	glossaryItems += GlossaryItem(
+		title = "ABAC_Parameters_Summary",
+		description =
+			s"""
+				 |# ABAC Rule Parameters Summary
+				 |
+				 |The ABAC Rules Engine provides 18 parameters to your rule function, organized into three categories:
+				 |
+				 |## User Parameters (6 parameters)
+				 |
+				 |1. **authenticatedUser: User** - The logged-in user (always present)
+				 |2. **authenticatedUserAttributes: List[UserAttributeTrait]** - Non-personal attributes of authenticated user
+				 |3. **authenticatedUserAuthContext: List[UserAuthContext]** - Auth context of authenticated user
+				 |4. **onBehalfOfUserOpt: Option[User]** - User being acted on behalf of (delegation)
+				 |5. **onBehalfOfUserAttributes: List[UserAttributeTrait]** - Attributes of delegated user
+				 |6. **onBehalfOfUserAuthContext: List[UserAuthContext]** - Auth context of delegated user
+				 |
+				 |## Target User Parameters (3 parameters)
+				 |
+				 |7. **userOpt: Option[User]** - Target user being evaluated
+				 |8. **userAttributes: List[UserAttributeTrait]** - Attributes of target user
+				 |9. **user: User** - Resolved target user (defaults to authenticatedUser)
+				 |
+				 |## Resource Context Parameters (9 parameters)
+				 |
+				 |10. **bankOpt: Option[Bank]** - Bank context (if bank_id provided)
+				 |11. **bankAttributes: List[BankAttributeTrait]** - Bank attributes
+				 |12. **accountOpt: Option[BankAccount]** - Account context (if account_id provided)
+				 |13. **accountAttributes: List[AccountAttribute]** - Account attributes
+				 |14. **transactionOpt: Option[Transaction]** - Transaction context (if transaction_id provided)
+				 |15. **transactionAttributes: List[TransactionAttribute]** - Transaction attributes
+				 |16. **transactionRequestOpt: Option[TransactionRequest]** - Transaction request context
+				 |17. **transactionRequestAttributes: List[TransactionRequestAttributeTrait]** - Transaction request attributes
+				 |18. **customerOpt: Option[Customer]** - Customer context (if customer_id provided)
+				 |19. **customerAttributes: List[CustomerAttribute]** - Customer attributes
+				 |
+				 |## Usage in Rules
+				 |
+				 |```scala
+				 |// Access user email
+				 |authenticatedUser.emailAddress
+				 |
+				 |// Check if account exists and has sufficient balance
+				 |accountOpt.exists(account => account.balance.toDouble >= 1000.0)
+				 |
+				 |// Check user attributes
+				 |authenticatedUserAttributes.exists(attr => 
+				 |  attr.name == "role" && attr.value == "admin"
+				 |)
+				 |
+				 |// Check delegation
+				 |onBehalfOfUserOpt.isDefined
+				 |```
+				 |
+				 |**Related Documentation:**
+				 |- ABAC_Simple_Guide - Getting started guide
+				 |- ABAC_Object_Properties_Reference - Detailed property reference
+				 |""".stripMargin)
+
+	glossaryItems += GlossaryItem(
+		title = "ABAC_Object_Properties_Reference",
+		description =
+			s"""
+				 |# ABAC Object Properties Reference
+				 |
+				 |This document lists all properties available on objects passed to ABAC rules.
+				 |
+				 |## User Object
+				 |
+				 |Available as: `authenticatedUser`, `user`, `onBehalfOfUserOpt.get`
+				 |
+				 |### Core Properties
+				 |
+				 |```scala
+				 |user.userId              // String - Unique user ID
+				 |user.emailAddress        // String - User's email
+				 |user.name                // String - Display name
+				 |user.provider            // String - Auth provider
+				 |user.providerId          // String - Provider's user ID
+				 |```
+				 |
+				 |### Usage Examples
+				 |
+				 |```scala
+				 |// Check if user is admin
+				 |user.emailAddress.endsWith("@admin.com")
+				 |
+				 |// Check specific user
+				 |user.userId == "alice@example.com"
+				 |```
+				 |
+				 |## BankAccount Object
+				 |
+				 |Available as: `accountOpt.get`
+				 |
+				 |### Core Properties
+				 |
+				 |```scala
+				 |account.accountId         // AccountId - Account identifier
+				 |account.bankId            // BankId - Bank identifier
+				 |account.accountType       // String - Account type
+				 |account.balance           // BigDecimal - Current balance
+				 |account.currency          // String - Currency code (e.g., "EUR")
+				 |account.name              // String - Account name
+				 |account.label             // String - Account label
+				 |account.owners            // List[User] - Account owners
+				 |```
+				 |
+				 |### Usage Examples
+				 |
+				 |```scala
+				 |// Check balance
+				 |accountOpt.exists(_.balance.toDouble >= 1000.0)
+				 |
+				 |// Check ownership
+				 |accountOpt.exists(account =>
+				 |  account.owners.exists(owner => owner.userId == user.userId)
+				 |)
+				 |
+				 |// Check currency
+				 |accountOpt.exists(_.currency == "EUR")
+				 |```
+				 |
+				 |## Bank Object
+				 |
+				 |Available as: `bankOpt.get`
+				 |
+				 |### Core Properties
+				 |
+				 |```scala
+				 |bank.bankId               // BankId - Bank identifier
+				 |bank.shortName            // String - Short name
+				 |bank.fullName             // String - Full legal name
+				 |bank.logoUrl              // String - URL to bank logo
+				 |bank.websiteUrl           // String - Bank website URL
+				 |bank.bankRoutingScheme    // String - Routing scheme
+				 |bank.bankRoutingAddress   // String - Routing address
+				 |```
+				 |
+				 |### Usage Examples
+				 |
+				 |```scala
+				 |// Check specific bank
+				 |bankOpt.exists(_.bankId.value == "gh.29.uk")
+				 |
+				 |// Check bank by routing
+				 |bankOpt.exists(_.bankRoutingScheme == "SWIFT_BIC")
+				 |```
+				 |
+				 |## Transaction Object
+				 |
+				 |Available as: `transactionOpt.get`
+				 |
+				 |### Core Properties
+				 |
+				 |```scala
+				 |transaction.id            // TransactionId - Transaction ID
+				 |transaction.amount        // BigDecimal - Transaction amount
+				 |transaction.currency      // String - Currency code
+				 |transaction.description   // String - Description
+				 |transaction.startDate     // Option[Date] - Posted date
+				 |transaction.finishDate    // Option[Date] - Completed date
+				 |transaction.transactionType // String - Transaction type
+				 |```
+				 |
+				 |### Usage Examples
+				 |
+				 |```scala
+				 |// Check transaction amount
+				 |transactionOpt.exists(tx => tx.amount.abs.toDouble < 100.0)
+				 |
+				 |// Check transaction type
+				 |transactionOpt.exists(_.transactionType == "SEPA")
+				 |```
+				 |
+				 |## Customer Object
+				 |
+				 |Available as: `customerOpt.get`
+				 |
+				 |### Core Properties
+				 |
+				 |```scala
+				 |customer.customerId       // String - Customer ID
+				 |customer.customerNumber   // String - Customer number
+				 |customer.legalName        // String - Legal name
+				 |customer.mobileNumber     // String - Mobile number
+				 |customer.email            // String - Email address
+				 |customer.dateOfBirth      // Date - Date of birth
+				 |```
+				 |
+				 |### Usage Examples
+				 |
+				 |```scala
+				 |// Check customer email domain
+				 |customerOpt.exists(_.email.endsWith("@company.com"))
+				 |```
+				 |
+				 |## Attribute Objects
+				 |
+				 |### UserAttributeTrait
+				 |
+				 |```scala
+				 |attr.name                 // String - Attribute name
+				 |attr.value                // String - Attribute value
+				 |attr.attributeType        // UserAttributeType - Type of attribute
+				 |```
+				 |
+				 |### Usage Example
+				 |
+				 |```scala
+				 |// Check for specific attribute
+				 |authenticatedUserAttributes.exists(attr =>
+				 |  attr.name == "department" && attr.value == "finance"
+				 |)
+				 |```
+				 |
+				 |**Related Documentation:**
+				 |- ABAC_Simple_Guide - Getting started guide
+				 |- ABAC_Parameters_Summary - Complete parameter list
+				 |""".stripMargin)
+
+	glossaryItems += GlossaryItem(
+		title = "ABAC_Testing_Examples",
+		description =
+			s"""
+				 |# ABAC Testing Examples
+				 |
+				 |## API Endpoint
+				 |
+				 |```
+				 |POST $getObpApiRoot/v6.0.0/management/abac-rules/{RULE_ID}/execute
+				 |```
+				 |
+				 |## Example 1: Admin Only Rule
+				 |
+				 |**Rule Code:**
+				 |```scala
+				 |authenticatedUser.emailAddress.endsWith("@admin.com")
+				 |```
+				 |
+				 |**Test Request:**
+				 |```bash
+				 |curl -X POST \\
+				 |  '$getObpApiRoot/v6.0.0/management/abac-rules/admin-only-rule/execute' \\
+				 |  -H 'Authorization: DirectLogin token=YOUR_TOKEN' \\
+				 |  -H 'Content-Type: application/json' \\
+				 |  -d '{}'
+				 |```
+				 |
+				 |**Expected Result:**
+				 |- Admin user → `{"result": true}`
+				 |- Regular user → `{"result": false}`
+				 |
+				 |## Example 2: Account Owner Check
+				 |
+				 |**Rule Code:**
+				 |```scala
+				 |accountOpt.exists(account =>
+				 |  account.owners.exists(owner => owner.userId == user.userId)
+				 |)
+				 |```
+				 |
+				 |**Test Request:**
+				 |```bash
+				 |curl -X POST \\
+				 |  '$getObpApiRoot/v6.0.0/management/abac-rules/account-owner-only/execute' \\
+				 |  -H 'Authorization: DirectLogin token=YOUR_TOKEN' \\
+				 |  -H 'Content-Type: application/json' \\
+				 |  -d '{
+				 |    "user_id": "alice@example.com",
+				 |    "bank_id": "gh.29.uk",
+				 |    "account_id": "8ca8a7e4-6d02-48e3-a029-0b2bf89de9f0"
+				 |  }'
+				 |```
+				 |
+				 |## Example 3: Balance Check
+				 |
+				 |**Rule Code:**
+				 |```scala
+				 |accountOpt.exists(account => account.balance.toDouble >= 1000.0)
+				 |```
+				 |
+				 |**Test Request:**
+				 |```bash
+				 |curl -X POST \\
+				 |  '$getObpApiRoot/v6.0.0/management/abac-rules/high-balance-only/execute' \\
+				 |  -H 'Authorization: DirectLogin token=YOUR_TOKEN' \\
+				 |  -H 'Content-Type: application/json' \\
+				 |  -d '{
+				 |    "bank_id": "gh.29.uk",
+				 |    "account_id": "8ca8a7e4-6d02-48e3-a029-0b2bf89de9f0"
+				 |  }'
+				 |```
+				 |
+				 |## Example 4: Transaction Amount Check
+				 |
+				 |**Rule Code:**
+				 |```scala
+				 |transactionOpt.exists(tx => tx.amount.abs.toDouble < 100.0)
+				 |```
+				 |
+				 |**Test Request:**
+				 |```bash
+				 |curl -X POST \\
+				 |  '$getObpApiRoot/v6.0.0/management/abac-rules/small-transactions/execute' \\
+				 |  -H 'Authorization: DirectLogin token=YOUR_TOKEN' \\
+				 |  -H 'Content-Type: application/json' \\
+				 |  -d '{
+				 |    "bank_id": "gh.29.uk",
+				 |    "account_id": "8ca8a7e4-6d02-48e3-a029-0b2bf89de9f0",
+				 |    "transaction_id": "trans-123"
+				 |  }'
+				 |```
+				 |
+				 |## Testing Patterns
+				 |
+				 |### Pattern 1: Test Different Users
+				 |
+				 |```bash
+				 |# Test for admin
+				 |curl -X POST '$getObpApiRoot/v6.0.0/management/abac-rules/RULE_ID/execute' \\
+				 |  -d '{"user_id": "admin@admin.com", "bank_id": "gh.29.uk"}'
+				 |
+				 |# Test for regular user
+				 |curl -X POST '$getObpApiRoot/v6.0.0/management/abac-rules/RULE_ID/execute' \\
+				 |  -d '{"user_id": "alice@example.com", "bank_id": "gh.29.uk"}'
+				 |```
+				 |
+				 |### Pattern 2: Test Edge Cases
+				 |
+				 |```bash
+				 |# No context (minimal)
+				 |curl -X POST '$getObpApiRoot/v6.0.0/management/abac-rules/RULE_ID/execute' -d '{}'
+				 |
+				 |# Full context
+				 |curl -X POST '$getObpApiRoot/v6.0.0/management/abac-rules/RULE_ID/execute' -d '{
+				 |  "user_id": "alice@example.com",
+				 |  "bank_id": "gh.29.uk",
+				 |  "account_id": "8ca8a7e4-6d02-48e3-a029-0b2bf89de9f0",
+				 |  "transaction_id": "trans-123",
+				 |  "customer_id": "cust-456"
+				 |}'
+				 |```
+				 |
+				 |## Common Errors
+				 |
+				 |### Error 1: Rule Not Found
+				 |
+				 |```bash
+				 |curl -X POST '$getObpApiRoot/v6.0.0/management/abac-rules/nonexistent-rule/execute' \\
+				 |  -H 'Authorization: DirectLogin token=YOUR_TOKEN' \\
+				 |  -d '{}'
+				 |```
+				 |
+				 |**Response:** `{"error": "ABAC Rule not found with ID: nonexistent-rule"}`
+				 |
+				 |### Error 2: Invalid Context
+				 |
+				 |**Response:** Objects will be `None` if IDs are invalid, rule should handle gracefully
+				 |
+				 |**Related Documentation:**
+				 |- ABAC_Simple_Guide - Getting started guide
+				 |- ABAC_Parameters_Summary - Complete parameter list
+				 |- ABAC_Object_Properties_Reference - Property reference
+				 |""".stripMargin)
+
 	private def getContentFromMarkdownFile(path: String): String = {
 		val source = scala.io.Source.fromFile(path)
 		val lines: String = try source.mkString finally source.close()
