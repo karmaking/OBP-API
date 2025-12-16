@@ -3,6 +3,27 @@
 ### Most recent changes at top of file
 ```
 Date          Commit        Action
+11/12/2025    3c2df942      BREAKING CHANGE: Migration from Akka to Apache Pekko™ 1.1.2
+                            Replaced Akka 2.5.32 with Apache Pekko™ 1.1.2 to address Akka licensing changes.
+                            Updated all imports from com.typesafe.akka to org.apache.pekko.
+                            Updated Jetty from 9.4.50 to 9.4.58 for improved Java 17 compatibility.
+
+                            Migrated all actor systems to Apache Pekko™ and fixed critical scheduler
+                            actor system initialization conflicts.
+                            Consolidated all schedulers to use shared ObpActorSystem.localActorSystem.
+                            Prevented multiple actor system creation during application boot.
+
+                            Fixed actor system references in all schedulers:
+                            - DataBaseCleanerScheduler
+                            - DatabaseDriverScheduler
+                            - MetricsArchiveScheduler
+                            - SchedulerUtil
+                            - TransactionRequestStatusScheduler
+
+                            Resolved 'Address already in use' port binding errors.
+                            Eliminated ExceptionInInitializerError during startup.
+                            Fixed race conditions in actor system initialization.
+                            All scheduler functionality preserved with improved stability.
 TBD           TBD           Performance Improvement: Added caching to getProviders endpoint
                             Added configurable caching with memoization to GET /obp/v6.0.0/providers endpoint.
                             - Default cache TTL: 3600 seconds (1 hour)
