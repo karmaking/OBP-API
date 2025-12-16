@@ -4474,6 +4474,106 @@ trait APIMethods600 {
     }
 
     staticResourceDocs += ResourceDoc(
+      validateAbacRule,
+      implementedInApiVersion,
+      nameOf(validateAbacRule),
+      "POST",
+      "/management/abac-rules/validate",
+      "Validate ABAC Rule",
+      s"""Validate ABAC rule code syntax and structure without creating or executing the rule.
+         |
+         |This endpoint performs the following validations:
+         |- Parse the rule_code as a Scala expression
+         |- Validate syntax - check for parsing errors
+         |- Validate field references - check if referenced objects/fields exist
+         |- Check type consistency - verify the expression returns a Boolean
+         |
+         |**Available ABAC Context Objects:**
+         |- AuthenticatedUser - The user who is logged in
+         |- OnBehalfOfUser - Optional delegation user
+         |- User - Target user being evaluated
+         |- Bank, Account, View, Transaction, TransactionRequest, Customer
+         |- Attributes for each entity (e.g., userAttributes, accountAttributes)
+         |
+         |**Documentation:**
+         |- ${Glossary.getGlossaryItemLink("ABAC_Simple_Guide")} - Getting started with ABAC rules
+         |- ${Glossary.getGlossaryItemLink("ABAC_Parameters_Summary")} - Complete list of all 18 parameters
+         |- ${Glossary.getGlossaryItemLink("ABAC_Object_Properties_Reference")} - Detailed property reference
+         |
+         |This is a "dry-run" validation that does NOT save or execute the rule.
+         |
+         |${userAuthenticationMessage(true)}
+         |
+         |""".stripMargin,
+      ValidateAbacRuleJsonV600(
+        rule_code = """AuthenticatedUser.user_id == Account.owner_id"""
+      ),
+      ValidateAbacRuleSuccessJsonV600(
+        valid = true,
+        message = "ABAC rule code is valid"
+      ),
+      List(
+        UserNotLoggedIn,
+        UserHasMissingRoles,
+        InvalidJsonFormat,
+        UnknownError
+      ),
+      List(apiTagABAC),
+      Some(List(canCreateAbacRule))
+    )
+
+    lazy val validateAbacRule: OBPEndpoint = {
+      case "management" :: "abac-rules" :: "validate" :: Nil JsonPost json -> _ => {
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(user), callContext) <- authenticatedAccess(cc)
+            _ <- NewStyle.function.hasEntitlement("", user.userId, canCreateAbacRule, callContext)
+            validateJson <- NewStyle.function.tryons(s"$InvalidJsonFormat", 400, callContext) {
+              json.extract[ValidateAbacRuleJsonV600]
+            }
+            _ <- NewStyle.function.tryons(s"Rule code must not be empty", 400, callContext) {
+              validateJson.rule_code.trim.nonEmpty
+            }
+            validationResult <- Future {
+              AbacRuleEngine.validateRuleCode(validateJson.rule_code) match {
+                case Full(msg) => 
+                  Full(ValidateAbacRuleSuccessJsonV600(
+                    valid = true,
+                    message = msg
+                  ))
+                case Failure(errorMsg, _, _) =>
+                  // Extract error details from the error message
+                  val cleanError = errorMsg.replace("Invalid ABAC rule code: ", "").replace("Failed to compile ABAC rule: ", "")
+                  Full(ValidateAbacRuleFailureJsonV600(
+                    valid = false,
+                    error = cleanError,
+                    message = "Rule validation failed",
+                    details = ValidateAbacRuleErrorDetailsJsonV600(
+                      error_type = if (cleanError.toLowerCase.contains("syntax")) "SyntaxError" 
+                                   else if (cleanError.toLowerCase.contains("type")) "TypeError"
+                                   else "CompilationError"
+                    )
+                  ))
+                case Empty =>
+                  Full(ValidateAbacRuleFailureJsonV600(
+                    valid = false,
+                    error = "Unknown validation error",
+                    message = "Rule validation failed",
+                    details = ValidateAbacRuleErrorDetailsJsonV600(
+                      error_type = "UnknownError"
+                    )
+                  ))
+              }
+            } map {
+              unboxFullOrFail(_, callContext, "Validation failed", 400)
+            }
+          } yield {
+            (validationResult, HttpCode.`200`(callContext))
+          }
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
       executeAbacRule,
       implementedInApiVersion,
       nameOf(executeAbacRule),
