@@ -10,7 +10,7 @@ object AkkaConnectorActorConfig {
   val remotePort = APIUtil.getPropsValue("akka_connector.port").openOr("2662")
 
   val localHostname = "127.0.0.1"
-  val localPort = Helper.findAvailablePort()
+  def localPort = Helper.findAvailablePort()
 
   val akka_loglevel = APIUtil.getPropsValue("akka_connector.loglevel").openOr("INFO")
 

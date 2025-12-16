@@ -7,7 +7,7 @@ import code.util.Helper
 object ObpActorConfig {
 
   val localHostname = "127.0.0.1"
-  val localPort = Helper.findAvailablePort()
+  def localPort = Helper.findAvailablePort()
 
   val akka_loglevel = APIUtil.getPropsValue("remotedata.loglevel").openOr("INFO")
 
