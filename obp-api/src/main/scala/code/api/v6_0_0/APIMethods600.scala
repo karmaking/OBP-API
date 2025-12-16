@@ -31,7 +31,7 @@ import code.api.v6_0_0.{AbacRuleJsonV600, AbacRuleResultJsonV600, AbacRulesJsonV
 import code.api.v6_0_0.OBPAPI6_0_0
 import code.abacrule.{AbacRuleEngine, MappedAbacRuleProvider}
 import code.metrics.APIMetrics
-import code.bankconnectors.LocalMappedConnectorInternal
+import code.bankconnectors.{Connector, LocalMappedConnectorInternal}
 import code.bankconnectors.LocalMappedConnectorInternal._
 import code.entitlement.Entitlement
 import code.loginattempts.LoginAttempt
@@ -49,6 +49,7 @@ import com.github.dwickern.macros.NameOf.nameOf
 import com.openbankproject.commons.ExecutionContext.Implicits.global
 import com.openbankproject.commons.model.{CustomerAttribute, _}
 import com.openbankproject.commons.model.enums.DynamicEntityOperation._
+import com.openbankproject.commons.model.enums.UserAttributeType
 import com.openbankproject.commons.util.{ApiVersion, ScannedApiVersion}
 import net.liftweb.common.{Empty, Failure, Full}
 import org.apache.commons.lang3.StringUtils
@@ -4592,21 +4593,14 @@ trait APIMethods600 {
          |
          |The type field must be one of "STRING", "INTEGER", "DOUBLE" or "DATE_WITH_DAY"
          |
-         |${authenticationRequiredMessage(true)}
+         |${userAuthenticationMessage(true)}
          |""".stripMargin,
       code.api.v5_1_0.UserAttributeJsonV510(
         name = "account_type",
         `type` = "STRING",
         value = "premium"
       ),
-      code.api.v5_1_0.UserAttributeResponseJsonV510(
-        user_attribute_id = "613c83ea-80f9-4560-8404-b9cd4ec42a7f",
-        name = "account_type",
-        `type` = "STRING",
-        value = "premium",
-        is_personal = false,
-        insert_date = exampleDate
-      ),
+      userAttributeResponseJsonV510,
       List(
         $UserNotLoggedIn,
         UserHasMissingRoles,
@@ -4659,20 +4653,11 @@ trait APIMethods600 {
          |
          |Returns non-personal user attributes (IsPersonal=false) that can be used in ABAC rules.
          |
-         |${authenticationRequiredMessage(true)}
+         |${userAuthenticationMessage(true)}
          |""".stripMargin,
       EmptyBody,
       code.api.v5_1_0.UserAttributesResponseJsonV510(
-        user_attributes = List(
-          code.api.v5_1_0.UserAttributeResponseJsonV510(
-            user_attribute_id = "613c83ea-80f9-4560-8404-b9cd4ec42a7f",
-            name = "account_type",
-            `type` = "STRING",
-            value = "premium",
-            is_personal = false,
-            insert_date = exampleDate
-          )
-        )
+        user_attributes = List(userAttributeResponseJsonV510)
       ),
       List(
         $UserNotLoggedIn,
@@ -4707,17 +4692,10 @@ trait APIMethods600 {
       "Get User Attribute By Id",
       s"""Get a User Attribute by USER_ATTRIBUTE_ID for the user specified by USER_ID.
          |
-         |${authenticationRequiredMessage(true)}
+         |${userAuthenticationMessage(true)}
          |""".stripMargin,
       EmptyBody,
-      code.api.v5_1_0.UserAttributeResponseJsonV510(
-        user_attribute_id = "613c83ea-80f9-4560-8404-b9cd4ec42a7f",
-        name = "account_type",
-        `type` = "STRING",
-        value = "premium",
-        is_personal = false,
-        insert_date = exampleDate
-      ),
+      userAttributeResponseJsonV510,
       List(
         $UserNotLoggedIn,
         UserHasMissingRoles,
@@ -4757,21 +4735,14 @@ trait APIMethods600 {
       "Update User Attribute",
       s"""Update a User Attribute by USER_ATTRIBUTE_ID for the user specified by USER_ID.
          |
-         |${authenticationRequiredMessage(true)}
+         |${userAuthenticationMessage(true)}
          |""".stripMargin,
       code.api.v5_1_0.UserAttributeJsonV510(
         name = "account_type",
         `type` = "STRING",
         value = "enterprise"
       ),
-      code.api.v5_1_0.UserAttributeResponseJsonV510(
-        user_attribute_id = "613c83ea-80f9-4560-8404-b9cd4ec42a7f",
-        name = "account_type",
-        `type` = "STRING",
-        value = "enterprise",
-        is_personal = false,
-        insert_date = exampleDate
-      ),
+      userAttributeResponseJsonV510,
       List(
         $UserNotLoggedIn,
         UserHasMissingRoles,
@@ -4829,7 +4800,7 @@ trait APIMethods600 {
       "Delete User Attribute",
       s"""Delete a User Attribute by USER_ATTRIBUTE_ID for the user specified by USER_ID.
          |
-         |${authenticationRequiredMessage(true)}
+         |${userAuthenticationMessage(true)}
          |""".stripMargin,
       EmptyBody,
       EmptyBody,
@@ -4857,7 +4828,12 @@ trait APIMethods600 {
             } map {
               unboxFullOrFail(_, callContext, UserAttributeNotFound, 404)
             }
-            (deleted, callContext) <- NewStyle.function.deleteUserAttribute(userAttributeId, callContext)
+            (deleted, callContext) <- Connector.connector.vend.deleteUserAttribute(
+              userAttributeId,
+              callContext
+            ) map {
+              i => (connectorEmptyResponse(i._1, callContext), i._2)
+            }
           } yield {
             (Full(deleted), HttpCode.`204`(callContext))
           }
@@ -4884,21 +4860,14 @@ trait APIMethods600 {
          |
          |The type field must be one of "STRING", "INTEGER", "DOUBLE" or "DATE_WITH_DAY"
          |
-         |${authenticationRequiredMessage(true)}
+         |${userAuthenticationMessage(true)}
          |""".stripMargin,
       code.api.v5_1_0.UserAttributeJsonV510(
         name = "favorite_color",
         `type` = "STRING",
         value = "blue"
       ),
-      code.api.v5_1_0.UserAttributeResponseJsonV510(
-        user_attribute_id = "613c83ea-80f9-4560-8404-b9cd4ec42a7f",
-        name = "favorite_color",
-        `type` = "STRING",
-        value = "blue",
-        is_personal = true,
-        insert_date = exampleDate
-      ),
+      userAttributeResponseJsonV510,
       List(
         $UserNotLoggedIn,
         InvalidJsonFormat,
@@ -4947,20 +4916,11 @@ trait APIMethods600 {
          |
          |Returns personal data (IsPersonal=true) that is managed by the user.
          |
-         |${authenticationRequiredMessage(true)}
+         |${userAuthenticationMessage(true)}
          |""".stripMargin,
       EmptyBody,
       code.api.v5_1_0.UserAttributesResponseJsonV510(
-        user_attributes = List(
-          code.api.v5_1_0.UserAttributeResponseJsonV510(
-            user_attribute_id = "613c83ea-80f9-4560-8404-b9cd4ec42a7f",
-            name = "favorite_color",
-            `type` = "STRING",
-            value = "blue",
-            is_personal = true,
-            insert_date = exampleDate
-          )
-        )
+        user_attributes = List(userAttributeResponseJsonV510)
       ),
       List(
         $UserNotLoggedIn,
@@ -4991,17 +4951,10 @@ trait APIMethods600 {
       "Get My Personal Data By Id",
       s"""Get Personal Data by USER_ATTRIBUTE_ID for the currently authenticated user.
          |
-         |${authenticationRequiredMessage(true)}
+         |${userAuthenticationMessage(true)}
          |""".stripMargin,
       EmptyBody,
-      code.api.v5_1_0.UserAttributeResponseJsonV510(
-        user_attribute_id = "613c83ea-80f9-4560-8404-b9cd4ec42a7f",
-        name = "favorite_color",
-        `type` = "STRING",
-        value = "blue",
-        is_personal = true,
-        insert_date = exampleDate
-      ),
+      userAttributeResponseJsonV510,
       List(
         $UserNotLoggedIn,
         UserAttributeNotFound,
@@ -5037,21 +4990,14 @@ trait APIMethods600 {
       "Update My Personal Data",
       s"""Update Personal Data by USER_ATTRIBUTE_ID for the currently authenticated user.
          |
-         |${authenticationRequiredMessage(true)}
+         |${userAuthenticationMessage(true)}
          |""".stripMargin,
       code.api.v5_1_0.UserAttributeJsonV510(
         name = "favorite_color",
         `type` = "STRING",
         value = "green"
       ),
-      code.api.v5_1_0.UserAttributeResponseJsonV510(
-        user_attribute_id = "613c83ea-80f9-4560-8404-b9cd4ec42a7f",
-        name = "favorite_color",
-        `type` = "STRING",
-        value = "green",
-        is_personal = true,
-        insert_date = exampleDate
-      ),
+      userAttributeResponseJsonV510,
       List(
         $UserNotLoggedIn,
         UserAttributeNotFound,
@@ -5105,7 +5051,7 @@ trait APIMethods600 {
       "Delete My Personal Data",
       s"""Delete Personal Data by USER_ATTRIBUTE_ID for the currently authenticated user.
          |
-         |${authenticationRequiredMessage(true)}
+         |${userAuthenticationMessage(true)}
          |""".stripMargin,
       EmptyBody,
       EmptyBody,
@@ -5129,7 +5075,12 @@ trait APIMethods600 {
             } map {
               unboxFullOrFail(_, callContext, UserAttributeNotFound, 404)
             }
-            (deleted, callContext) <- NewStyle.function.deleteUserAttribute(userAttributeId, callContext)
+            (deleted, callContext) <- Connector.connector.vend.deleteUserAttribute(
+              userAttributeId,
+              callContext
+            ) map {
+              i => (connectorEmptyResponse(i._1, callContext), i._2)
+            }
           } yield {
             (Full(deleted), HttpCode.`204`(callContext))
           }
