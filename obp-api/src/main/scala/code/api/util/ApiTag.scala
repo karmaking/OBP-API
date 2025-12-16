@@ -57,6 +57,7 @@ object ApiTag {
   val apiTagExperimental = ResourceDocTag("Experimental")
   val apiTagPerson = ResourceDocTag("Person")
   val apiTagCard = ResourceDocTag("Card")
+  val apiTagCardAttribute = ResourceDocTag("Card-Attribute")
   val apiTagSandbox = ResourceDocTag("Sandbox")
   val apiTagBranch = ResourceDocTag("Branch")
   val apiTagATM = ResourceDocTag("ATM")

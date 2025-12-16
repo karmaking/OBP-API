@@ -5147,7 +5147,7 @@ trait APIMethods310 {
         InvalidJsonFormat,
         UnknownError
       ),
-      List(apiTagCard))
+      List(apiTagCard, apiTagCardAttribute, apiTagAttribute))
 
     lazy val createCardAttribute : OBPEndpoint = {
       case "management"::"banks" :: bankId :: "cards" :: cardId :: "attribute" :: Nil JsonPost json -> _=> {
@@ -5218,7 +5218,7 @@ trait APIMethods310 {
         InvalidJsonFormat,
         UnknownError
       ),
-      List(apiTagCard))
+      List(apiTagCard, apiTagCardAttribute, apiTagAttribute))
 
     lazy val updateCardAttribute : OBPEndpoint = {
       case "management"::"banks" :: bankId :: "cards" :: cardId :: "attributes" :: cardAttributeId :: Nil JsonPut json -> _=> {
