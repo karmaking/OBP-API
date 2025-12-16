@@ -43,6 +43,7 @@ object ApiTag {
   val apiTagCounterparty = ResourceDocTag("Counterparty")
   val apiTagKyc = ResourceDocTag("KYC")
   val apiTagCustomer = ResourceDocTag("Customer")
+  val apiTagCustomerAttribute = ResourceDocTag("Customer-Attribute")
   val apiTagOnboarding = ResourceDocTag("Onboarding")
   val apiTagUser = ResourceDocTag("User") // Use for User Management / Info APIs
   val apiTagUserInvitation = ResourceDocTag("User-Invitation")

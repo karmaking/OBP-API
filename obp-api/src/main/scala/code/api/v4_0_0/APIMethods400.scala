@@ -6106,7 +6106,7 @@ trait APIMethods400 extends MdcLoggable {
         InvalidJsonFormat,
         UnknownError
       ),
-      List(apiTagCustomer),
+      List(apiTagCustomer, apiTagCustomerAttribute, apiTagAttribute),
       Some(
         List(
           canCreateCustomerAttributeAtOneBank,
@@ -6186,7 +6186,7 @@ trait APIMethods400 extends MdcLoggable {
         InvalidJsonFormat,
         UnknownError
       ),
-      List(apiTagCustomer),
+      List(apiTagCustomer, apiTagCustomerAttribute, apiTagAttribute),
       Some(
         List(
           canUpdateCustomerAttributeAtOneBank,
@@ -6270,7 +6270,7 @@ trait APIMethods400 extends MdcLoggable {
         InvalidJsonFormat,
         UnknownError
       ),
-      List(apiTagCustomer),
+      List(apiTagCustomer, apiTagCustomerAttribute, apiTagAttribute),
       Some(
         List(
           canGetCustomerAttributesAtOneBank,
@@ -6327,7 +6327,7 @@ trait APIMethods400 extends MdcLoggable {
         InvalidJsonFormat,
         UnknownError
       ),
-      List(apiTagCustomer),
+      List(apiTagCustomer, apiTagCustomerAttribute, apiTagAttribute),
       Some(
         List(canGetCustomerAttributeAtOneBank, canGetCustomerAttributeAtAnyBank)
       )
@@ -7346,7 +7346,7 @@ trait APIMethods400 extends MdcLoggable {
         UserHasMissingRoles,
         UnknownError
       ),
-      List(apiTagCustomer),
+      List(apiTagCustomer, apiTagCustomerAttribute, apiTagAttribute),
       Some(
         List(
           canDeleteCustomerAttributeAtOneBank,
@@ -7908,7 +7908,7 @@ trait APIMethods400 extends MdcLoggable {
         InvalidJsonFormat,
         UnknownError
       ),
-      List(apiTagCustomer),
+      List(apiTagCustomer, apiTagCustomerAttribute, apiTagAttribute),
       Some(List(canCreateCustomerAttributeDefinitionAtOneBank))
     )
 
@@ -9202,7 +9202,7 @@ trait APIMethods400 extends MdcLoggable {
         $BankNotFound,
         UnknownError
       ),
-      List(apiTagCustomer),
+      List(apiTagCustomer, apiTagCustomerAttribute, apiTagAttribute),
       Some(List(canDeleteCustomerAttributeDefinitionAtOneBank))
     )
 
@@ -9408,7 +9408,7 @@ trait APIMethods400 extends MdcLoggable {
         $BankNotFound,
         UnknownError
       ),
-      List(apiTagCustomer),
+      List(apiTagCustomer, apiTagCustomerAttribute, apiTagAttribute),
       Some(List(canGetCustomerAttributeDefinitionAtOneBank))
     )
 
