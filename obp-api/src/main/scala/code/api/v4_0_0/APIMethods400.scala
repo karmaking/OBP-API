@@ -6446,7 +6446,7 @@ trait APIMethods400 extends MdcLoggable {
         InvalidJsonFormat,
         UnknownError
       ),
-      List(apiTagTransaction),
+      List(apiTagTransaction, apiTagTransactionAttribute, apiTagAttribute),
       Some(List(canCreateTransactionAttributeAtOneBank))
     )
 
@@ -6519,7 +6519,7 @@ trait APIMethods400 extends MdcLoggable {
         InvalidJsonFormat,
         UnknownError
       ),
-      List(apiTagTransaction),
+      List(apiTagTransaction, apiTagTransactionAttribute, apiTagAttribute),
       Some(List(canUpdateTransactionAttributeAtOneBank))
     )
 
@@ -6598,7 +6598,7 @@ trait APIMethods400 extends MdcLoggable {
         InvalidJsonFormat,
         UnknownError
       ),
-      List(apiTagTransaction),
+      List(apiTagTransaction, apiTagTransactionAttribute, apiTagAttribute),
       Some(List(canGetTransactionAttributesAtOneBank))
     )
 
@@ -6652,7 +6652,7 @@ trait APIMethods400 extends MdcLoggable {
         InvalidJsonFormat,
         UnknownError
       ),
-      List(apiTagTransaction),
+      List(apiTagTransaction, apiTagTransactionAttribute, apiTagAttribute),
       Some(List(canGetTransactionAttributeAtOneBank))
     )
 
@@ -9004,7 +9004,7 @@ trait APIMethods400 extends MdcLoggable {
         InvalidJsonFormat,
         UnknownError
       ),
-      List(apiTagTransaction),
+      List(apiTagTransaction, apiTagTransactionAttribute, apiTagAttribute),
       Some(List(canCreateTransactionAttributeDefinitionAtOneBank))
     )
 
@@ -9159,7 +9159,7 @@ trait APIMethods400 extends MdcLoggable {
         $BankNotFound,
         UnknownError
       ),
-      List(apiTagTransaction),
+      List(apiTagTransaction, apiTagTransactionAttribute, apiTagAttribute),
       Some(List(canDeleteTransactionAttributeDefinitionAtOneBank))
     )
 
@@ -9492,7 +9492,7 @@ trait APIMethods400 extends MdcLoggable {
         $BankNotFound,
         UnknownError
       ),
-      List(apiTagTransaction),
+      List(apiTagTransaction, apiTagTransactionAttribute, apiTagAttribute),
       Some(List(canGetTransactionAttributeDefinitionAtOneBank))
     )
 

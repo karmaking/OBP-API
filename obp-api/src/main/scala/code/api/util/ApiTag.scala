@@ -30,6 +30,7 @@ object ApiTag {
   val apiTagPublicData = ResourceDocTag("PublicData")
   val apiTagPrivateData = ResourceDocTag("PrivateData")
   val apiTagTransaction = ResourceDocTag("Transaction")
+  val apiTagTransactionAttribute = ResourceDocTag("Transaction-Attribute")
   val apiTagTransactionFirehose = ResourceDocTag("Transaction-Firehose")
   val apiTagCounterpartyMetaData = ResourceDocTag("Counterparty-Metadata")
   val apiTagTransactionMetaData = ResourceDocTag("Transaction-Metadata")
