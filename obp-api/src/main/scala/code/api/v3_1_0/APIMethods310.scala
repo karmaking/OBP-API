@@ -2667,7 +2667,7 @@ trait APIMethods310 {
         InvalidJsonFormat,
         UnknownError
       ),
-      List(apiTagAccount),
+      List(apiTagAccount, apiTagAccountAttribute, apiTagAttribute),
       Some(List(canCreateAccountAttributeAtOneBank))
     )
 
@@ -2740,7 +2740,7 @@ trait APIMethods310 {
         InvalidJsonFormat,
         UnknownError
       ),
-      List(apiTagAccount),
+      List(apiTagAccount, apiTagAccountAttribute, apiTagAttribute),
       Some(List(canUpdateAccountAttribute))
     )
 

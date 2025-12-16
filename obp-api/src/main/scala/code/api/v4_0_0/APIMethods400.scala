@@ -7988,7 +7988,7 @@ trait APIMethods400 extends MdcLoggable {
         InvalidJsonFormat,
         UnknownError
       ),
-      List(apiTagAccount),
+      List(apiTagAccount, apiTagAccountAttribute, apiTagAttribute),
       Some(List(canCreateAccountAttributeDefinitionAtOneBank))
     )
 
@@ -9243,7 +9243,7 @@ trait APIMethods400 extends MdcLoggable {
         $BankNotFound,
         UnknownError
       ),
-      List(apiTagAccount),
+      List(apiTagAccount, apiTagAccountAttribute, apiTagAttribute),
       Some(List(canDeleteAccountAttributeDefinitionAtOneBank))
     )
 
@@ -9450,7 +9450,7 @@ trait APIMethods400 extends MdcLoggable {
         $BankNotFound,
         UnknownError
       ),
-      List(apiTagAccount),
+      List(apiTagAccount, apiTagAccountAttribute, apiTagAttribute),
       Some(List(canGetAccountAttributeDefinitionAtOneBank))
     )
 

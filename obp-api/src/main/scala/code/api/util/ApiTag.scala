@@ -21,6 +21,7 @@ object ApiTag {
   val apiTagBank = ResourceDocTag("Bank")
   val apiTagBankAttribute = ResourceDocTag("Bank-Attribute")
   val apiTagAccount = ResourceDocTag("Account")
+  val apiTagAccountAttribute = ResourceDocTag("Account-Attribute")
   val apiTagAccountAccess = ResourceDocTag("Account-Access")
   val apiTagDirectDebit = ResourceDocTag("Direct-Debit")
   val apiTagStandingOrder = ResourceDocTag("Standing-Order")
