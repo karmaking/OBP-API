@@ -1,7 +1,9 @@
 package code.abacrule
 
-import code.api.util.{APIUtil, DynamicUtil}
+import code.api.util.{APIUtil, CallContext, DynamicUtil}
+import code.bankconnectors.Connector
 import code.model.dataAccess.ResourceUser
+import code.users.Users
 import com.openbankproject.commons.model._
 import net.liftweb.common.{Box, Empty, Failure, Full}
 import net.liftweb.util.Helpers.tryo
@@ -9,6 +11,8 @@ import net.liftweb.util.Helpers.tryo
 import java.util.concurrent.ConcurrentHashMap
 import scala.collection.JavaConverters._
 import scala.collection.concurrent
+import scala.concurrent.Await
+import scala.concurrent.duration._
 
 /**
  * ABAC Rule Engine for compiling and executing Attribute-Based Access Control rules
@@ -21,10 +25,12 @@ object AbacRuleEngine {
 
   /**
    * Type alias for compiled ABAC rule function
-   * Parameters: User, Option[Bank], Option[Account], Option[Transaction], Option[Customer]
+   * Parameters: authenticatedUser (logged in), authenticatedUserAttributes (non-personal), authenticatedUserAuthContext (auth context), 
+   *             onBehalfOfUser (delegation), onBehalfOfUserAttributes, onBehalfOfUserAuthContext,
+   *             user, userAttributes, bankOpt, bankAttributes, accountOpt, accountAttributes, transactionOpt, transactionAttributes, customerOpt, customerAttributes
    * Returns: Boolean (true = allow access, false = deny access)
    */
-  type AbacRuleFunction = (User, Option[Bank], Option[BankAccount], Option[Transaction], Option[Customer]) => Boolean
+  type AbacRuleFunction = (User, List[UserAttribute], List[UserAuthContext], Option[User], List[UserAttribute], List[UserAuthContext], Option[User], List[UserAttribute], Option[Bank], List[BankAttributeTrait], Option[BankAccount], List[AccountAttribute], Option[Transaction], List[TransactionAttribute], Option[TransactionRequest], List[TransactionRequestAttributeTrait], Option[Customer], List[CustomerAttribute]) => Boolean
 
   /**
    * Compile an ABAC rule from Scala code
@@ -68,14 +74,214 @@ object AbacRuleEngine {
        |import net.liftweb.common._
        |
        |// ABAC Rule Function
-       |(user: User, bankOpt: Option[Bank], accountOpt: Option[BankAccount], transactionOpt: Option[Transaction], customerOpt: Option[Customer]) => {
+       |(authenticatedUser: User, authenticatedUserAttributes: List[UserAttribute], authenticatedUserAuthContext: List[UserAuthContext], onBehalfOfUserOpt: Option[User], onBehalfOfUserAttributes: List[UserAttribute], onBehalfOfUserAuthContext: List[UserAuthContext], userOpt: Option[User], userAttributes: List[UserAttribute], bankOpt: Option[Bank], bankAttributes: List[BankAttributeTrait], accountOpt: Option[BankAccount], accountAttributes: List[AccountAttribute], transactionOpt: Option[Transaction], transactionAttributes: List[TransactionAttribute], transactionRequestOpt: Option[TransactionRequest], transactionRequestAttributes: List[TransactionRequestAttributeTrait], customerOpt: Option[Customer], customerAttributes: List[CustomerAttribute]) => {
        |  $ruleCode
        |}
        |""".stripMargin
   }
 
   /**
-   * Execute an ABAC rule
+   * Execute an ABAC rule by IDs (objects are fetched internally)
+   * 
+   * @param ruleId The ID of the rule to execute
+   * @param authenticatedUserId The ID of the authenticated user (the person logged in)
+   * @param onBehalfOfUserId Optional ID of user being acted on behalf of (delegation scenario)
+   * @param userId The ID of the target user to evaluate (defaults to authenticated user if not provided)
+   * @param callContext Call context for fetching objects
+   * @param bankId Optional bank ID
+   * @param accountId Optional account ID
+   * @param viewId Optional view ID (for future use)
+   * @param transactionId Optional transaction ID
+   * @param transactionRequestId Optional transaction request ID
+   * @param customerId Optional customer ID
+   * @return Box[Boolean] - Full(true) if allowed, Full(false) if denied, Failure on error
+   */
+  def executeRule(
+    ruleId: String,
+    authenticatedUserId: String,
+    onBehalfOfUserId: Option[String] = None,
+    userId: Option[String] = None,
+    callContext: Option[CallContext] = None,
+    bankId: Option[String] = None,
+    accountId: Option[String] = None,
+    viewId: Option[String] = None,
+    transactionId: Option[String] = None,
+    transactionRequestId: Option[String] = None,
+    customerId: Option[String] = None
+  ): Box[Boolean] = {
+    for {
+      rule <- MappedAbacRuleProvider.getAbacRuleById(ruleId)
+      _ <- if (rule.isActive) Full(true) else Failure(s"ABAC Rule ${rule.ruleName} is not active")
+      
+      // Fetch authenticated user (the actual person logged in)
+      authenticatedUser <- Users.users.vend.getUserByUserId(authenticatedUserId)
+      
+      // Fetch non-personal attributes for authenticated user
+      authenticatedUserAttributesBox <- tryo(Await.result(
+        code.api.util.NewStyle.function.getNonPersonalUserAttributes(authenticatedUserId, callContext).map(_._1),
+        5.seconds
+      ))
+      authenticatedUserAttributes = authenticatedUserAttributesBox.toList.flatten
+      
+      // Fetch auth context for authenticated user
+      authenticatedUserAuthContextBox <- tryo(Await.result(
+        code.api.util.NewStyle.function.getUserAuthContexts(authenticatedUserId, callContext).map(_._1),
+        5.seconds
+      ))
+      authenticatedUserAuthContext = authenticatedUserAuthContextBox.toList.flatten
+      
+      // Fetch onBehalfOf user if provided (delegation scenario)
+      onBehalfOfUserOpt <- onBehalfOfUserId match {
+        case Some(obUserId) => Users.users.vend.getUserByUserId(obUserId).map(Some(_))
+        case None => Full(None)
+      }
+      
+      // Fetch attributes for onBehalfOf user if provided
+      onBehalfOfUserAttributes <- onBehalfOfUserId match {
+        case Some(obUserId) =>
+          tryo(Await.result(
+            code.api.util.NewStyle.function.getNonPersonalUserAttributes(obUserId, callContext).map(_._1),
+            5.seconds
+          )).map(_.toList.flatten).map(attrs => attrs)
+        case None => Full(List.empty[UserAttribute])
+      }
+      
+      // Fetch auth context for onBehalfOf user if provided
+      onBehalfOfUserAuthContext <- onBehalfOfUserId match {
+        case Some(obUserId) =>
+          tryo(Await.result(
+            code.api.util.NewStyle.function.getUserAuthContexts(obUserId, callContext).map(_._1),
+            5.seconds
+          )).map(_.toList.flatten).map(ctx => ctx)
+        case None => Full(List.empty[UserAuthContext])
+      }
+      
+      // Fetch target user if userId is provided
+      userOpt <- userId match {
+        case Some(uId) => Users.users.vend.getUserByUserId(uId).map(Some(_))
+        case None => Full(None)
+      }
+      
+      // Fetch attributes for target user if provided
+      userAttributes <- userId match {
+        case Some(uId) =>
+          tryo(Await.result(
+            code.api.util.NewStyle.function.getNonPersonalUserAttributes(uId, callContext).map(_._1),
+            5.seconds
+          )).map(_.toList.flatten)
+        case None => Full(List.empty[UserAttribute])
+      }
+      
+      // Fetch bank if bankId is provided
+      bankOpt <- bankId match {
+        case Some(bId) => 
+          tryo(Await.result(
+            code.api.util.NewStyle.function.getBank(BankId(bId), callContext).map(_._1),
+            5.seconds
+          )).map(Some(_))
+        case None => Full(None)
+      }
+      
+      // Fetch bank attributes if bank is provided
+      bankAttributes <- bankId match {
+        case Some(bId) =>
+          tryo(Await.result(
+            code.api.util.NewStyle.function.getBankAttributesByBank(BankId(bId), callContext).map(_._1),
+            5.seconds
+          )).map(_.toList.flatten)
+        case None => Full(List.empty[BankAttributeTrait])
+      }
+      
+      // Fetch account if accountId and bankId are provided
+      accountOpt <- (bankId, accountId) match {
+        case (Some(bId), Some(aId)) =>
+          tryo(Await.result(
+            code.api.util.NewStyle.function.getBankAccount(BankId(bId), AccountId(aId), callContext).map(_._1),
+            5.seconds
+          )).map(Some(_))
+        case _ => Full(None)
+      }
+      
+      // Fetch account attributes if account is provided
+      accountAttributes <- (bankId, accountId) match {
+        case (Some(bId), Some(aId)) =>
+          tryo(Await.result(
+            code.api.util.NewStyle.function.getAccountAttributesByAccount(BankId(bId), AccountId(aId), callContext).map(_._1),
+            5.seconds
+          )).map(_.toList.flatten)
+        case _ => Full(List.empty[AccountAttribute])
+      }
+      
+      // Fetch transaction if transactionId, accountId, and bankId are provided
+      transactionOpt <- (bankId, accountId, transactionId) match {
+        case (Some(bId), Some(aId), Some(tId)) =>
+          tryo(Await.result(
+            code.api.util.NewStyle.function.getTransaction(BankId(bId), AccountId(aId), TransactionId(tId), callContext).map(_._1),
+            5.seconds
+          )).map(Some(_)).orElse(Full(None))
+        case _ => Full(None)
+      }
+      
+      // Fetch transaction attributes if transaction is provided
+      transactionAttributes <- (bankId, transactionId) match {
+        case (Some(bId), Some(tId)) =>
+          tryo(Await.result(
+            code.api.util.NewStyle.function.getTransactionAttributes(BankId(bId), TransactionId(tId), callContext).map(_._1),
+            5.seconds
+          )).map(_.toList.flatten)
+        case _ => Full(List.empty[TransactionAttribute])
+      }
+      
+      // Fetch transaction request if transactionRequestId is provided
+      transactionRequestOpt <- transactionRequestId match {
+        case Some(trId) =>
+          tryo(Await.result(
+            code.api.util.NewStyle.function.getTransactionRequestImpl(TransactionRequestId(trId), callContext).map(_._1),
+            5.seconds
+          )).map(Some(_)).orElse(Full(None))
+        case _ => Full(None)
+      }
+      
+      // Fetch transaction request attributes if transaction request is provided
+      transactionRequestAttributes <- (bankId, transactionRequestId) match {
+        case (Some(bId), Some(trId)) =>
+          tryo(Await.result(
+            code.api.util.NewStyle.function.getTransactionRequestAttributes(BankId(bId), TransactionRequestId(trId), callContext).map(_._1),
+            5.seconds
+          )).map(_.toList.flatten)
+        case _ => Full(List.empty[TransactionRequestAttributeTrait])
+      }
+      
+      // Fetch customer if customerId and bankId are provided
+      customerOpt <- (bankId, customerId) match {
+        case (Some(bId), Some(cId)) =>
+          tryo(Await.result(
+            code.api.util.NewStyle.function.getCustomerByCustomerId(cId, callContext).map(_._1),
+            5.seconds
+          )).map(Some(_)).orElse(Full(None))
+        case _ => Full(None)
+      }
+      
+      // Fetch customer attributes if customer is provided
+      customerAttributes <- (bankId, customerId) match {
+        case (Some(bId), Some(cId)) =>
+          tryo(Await.result(
+            code.api.util.NewStyle.function.getCustomerAttributes(BankId(bId), CustomerId(cId), callContext).map(_._1),
+            5.seconds
+          )).map(_.toList.flatten)
+        case _ => Full(List.empty[CustomerAttribute])
+      }
+      
+      // Compile and execute the rule
+      compiledFunc <- compileRule(ruleId, rule.ruleCode)
+      result <- tryo {
+        compiledFunc(authenticatedUser, authenticatedUserAttributes, authenticatedUserAuthContext, onBehalfOfUserOpt, onBehalfOfUserAttributes, onBehalfOfUserAuthContext, userOpt, userAttributes, bankOpt, bankAttributes, accountOpt, accountAttributes, transactionOpt, transactionAttributes, transactionRequestOpt, transactionRequestAttributes, customerOpt, customerAttributes)
+      }
+    } yield result
+  }
+  
+  /**
+   * Execute an ABAC rule with pre-fetched objects (for backward compatibility and testing)
    * 
    * @param ruleId The ID of the rule to execute
    * @param user The user requesting access
@@ -85,7 +291,7 @@ object AbacRuleEngine {
    * @param customerOpt Optional customer context
    * @return Box[Boolean] - Full(true) if allowed, Full(false) if denied, Failure on error
    */
-  def executeRule(
+  def executeRuleWithObjects(
     ruleId: String,
     user: User,
     bankOpt: Option[Bank] = None,
@@ -98,96 +304,12 @@ object AbacRuleEngine {
       _ <- if (rule.isActive) Full(true) else Failure(s"ABAC Rule ${rule.ruleName} is not active")
       compiledFunc <- compileRule(ruleId, rule.ruleCode)
       result <- tryo {
-        // Execute rule function directly
-        // Note: Sandbox execution can be added later if needed
-        compiledFunc(user, bankOpt, accountOpt, transactionOpt, customerOpt)
+        compiledFunc(user, List.empty, List.empty, None, List.empty, List.empty, Some(user), List.empty, bankOpt, List.empty, accountOpt, List.empty, transactionOpt, List.empty, None, List.empty, customerOpt, List.empty)
       }
     } yield result
   }
 
-  /**
-   * Execute multiple ABAC rules (AND logic - all must pass)
-   * 
-   * @param ruleIds List of rule IDs to execute
-   * @param user The user requesting access
-   * @param bankOpt Optional bank context
-   * @param accountOpt Optional account context
-   * @param transactionOpt Optional transaction context
-   * @param customerOpt Optional customer context
-   * @return Box[Boolean] - Full(true) if all rules pass, Full(false) if any rule fails
-   */
-  def executeRulesAnd(
-    ruleIds: List[String],
-    user: User,
-    bankOpt: Option[Bank] = None,
-    accountOpt: Option[BankAccount] = None,
-    transactionOpt: Option[Transaction] = None,
-    customerOpt: Option[Customer] = None
-  ): Box[Boolean] = {
-    if (ruleIds.isEmpty) {
-      Full(true) // No rules means allow by default
-    } else {
-      val results = ruleIds.map { ruleId =>
-        executeRule(ruleId, user, bankOpt, accountOpt, transactionOpt, customerOpt)
-      }
-      
-      // Check if any rule failed
-      results.find(_.exists(_ == false)) match {
-        case Some(_) => Full(false) // At least one rule denied access
-        case None =>
-          // Check if all succeeded
-          if (results.forall(_.isDefined)) {
-            Full(true) // All rules passed
-          } else {
-            // At least one rule had an error
-            val errors = results.collect { case Failure(msg, _, _) => msg }
-            Failure(s"ABAC rule execution errors: ${errors.mkString("; ")}")
-          }
-      }
-    }
-  }
 
-  /**
-   * Execute multiple ABAC rules (OR logic - at least one must pass)
-   * 
-   * @param ruleIds List of rule IDs to execute
-   * @param user The user requesting access
-   * @param bankOpt Optional bank context
-   * @param accountOpt Optional account context
-   * @param transactionOpt Optional transaction context
-   * @param customerOpt Optional customer context
-   * @return Box[Boolean] - Full(true) if any rule passes, Full(false) if all rules fail
-   */
-  def executeRulesOr(
-    ruleIds: List[String],
-    user: User,
-    bankOpt: Option[Bank] = None,
-    accountOpt: Option[BankAccount] = None,
-    transactionOpt: Option[Transaction] = None,
-    customerOpt: Option[Customer] = None
-  ): Box[Boolean] = {
-    if (ruleIds.isEmpty) {
-      Full(false) // No rules means deny by default for OR
-    } else {
-      val results = ruleIds.map { ruleId =>
-        executeRule(ruleId, user, bankOpt, accountOpt, transactionOpt, customerOpt)
-      }
-      
-      // Check if any rule passed
-      results.find(_.exists(_ == true)) match {
-        case Some(_) => Full(true) // At least one rule allowed access
-        case None =>
-          // All rules either failed or had errors
-          if (results.exists(_.isDefined)) {
-            Full(false) // All rules that executed denied access
-          } else {
-            // All rules had errors
-            val errors = results.collect { case Failure(msg, _, _) => msg }
-            Failure(s"All ABAC rules failed: ${errors.mkString("; ")}")
-          }
-      }
-    }
-  }
 
   /**
    * Validate ABAC rule code by attempting to compile it

@@ -4152,20 +4152,23 @@ trait APIMethods600 {
          |
          |ABAC rules are Scala functions that return a Boolean value indicating whether access should be granted.
          |
-         |The rule function has the following signature:
-         |```scala
-         |(user: User, bankOpt: Option[Bank], accountOpt: Option[BankAccount], transactionOpt: Option[Transaction], customerOpt: Option[Customer]) => Boolean
-         |```
+         |**Documentation:**
+         |- [ABAC Simple Guide](glossary#ABAC_Simple_Guide.md) - Getting started with ABAC rules
+         |- [ABAC Parameters Summary](glossary#ABAC_Parameters_Summary.md) - Complete list of all 18 parameters
+         |- [ABAC Object Properties Reference](glossary#ABAC_Object_Properties_Reference.md) - Detailed property reference
+         |- [ABAC Testing Examples](glossary#ABAC_Testing_Examples.md) - Testing examples and patterns
+         |
+         |The rule function receives 18 parameters including authenticatedUser, attributes, auth context, and optional objects (bank, account, transaction, etc.).
          |
          |Example rule code:
          |```scala
-         |// Allow access only if user email contains "admin"
-         |user.emailAddress.contains("admin")
+         |// Allow access only if authenticated user is admin
+         |authenticatedUser.emailAddress.contains("admin")
          |```
          |
          |```scala
          |// Allow access only to accounts with balance > 1000
-         |accountOpt.exists(_.balance.toString.toDouble > 1000.0)
+         |accountOpt.exists(_.balance.toDouble > 1000.0)
          |```
          |
          |${userAuthenticationMessage(true)}
@@ -4243,6 +4246,11 @@ trait APIMethods600 {
       "Get ABAC Rule",
       s"""Get an ABAC rule by its ID.
          |
+         |**Documentation:**
+         |- [ABAC Simple Guide](glossary#ABAC_Simple_Guide.md) - Getting started with ABAC rules
+         |- [ABAC Parameters Summary](glossary#ABAC_Parameters_Summary.md) - Complete list of all 18 parameters
+         |- [ABAC Object Properties Reference](glossary#ABAC_Object_Properties_Reference.md) - Detailed property reference
+         |
          |${userAuthenticationMessage(true)}
          |
          |""".stripMargin,
@@ -4290,6 +4298,11 @@ trait APIMethods600 {
       "/management/abac-rules",
       "Get ABAC Rules",
       s"""Get all ABAC rules.
+         |
+         |**Documentation:**
+         |- [ABAC Simple Guide](glossary#ABAC_Simple_Guide.md) - Getting started with ABAC rules
+         |- [ABAC Parameters Summary](glossary#ABAC_Parameters_Summary.md) - Complete list of all 18 parameters
+         |- [ABAC Object Properties Reference](glossary#ABAC_Object_Properties_Reference.md) - Detailed property reference
          |
          |${userAuthenticationMessage(true)}
          |
@@ -4340,6 +4353,11 @@ trait APIMethods600 {
       "/management/abac-rules/ABAC_RULE_ID",
       "Update ABAC Rule",
       s"""Update an existing ABAC rule.
+         |
+         |**Documentation:**
+         |- [ABAC Simple Guide](glossary#ABAC_Simple_Guide.md) - Getting started with ABAC rules
+         |- [ABAC Parameters Summary](glossary#ABAC_Parameters_Summary.md) - Complete list of all 18 parameters
+         |- [ABAC Object Properties Reference](glossary#ABAC_Object_Properties_Reference.md) - Detailed property reference
          |
          |${userAuthenticationMessage(true)}
          |
@@ -4413,7 +4431,11 @@ trait APIMethods600 {
       "DELETE",
       "/management/abac-rules/ABAC_RULE_ID",
       "Delete ABAC Rule",
-      s"""Delete an ABAC rule.
+      s"""Delete an ABAC rule by its ID.
+         |
+         |**Documentation:**
+         |- [ABAC Simple Guide](glossary#ABAC_Simple_Guide.md) - Getting started with ABAC rules
+         |- [ABAC Parameters Summary](glossary#ABAC_Parameters_Summary.md) - Complete list of all 18 parameters
          |
          |${userAuthenticationMessage(true)}
          |
@@ -4459,22 +4481,32 @@ trait APIMethods600 {
       "Execute ABAC Rule",
       s"""Execute an ABAC rule to test access control.
          |
-         |This endpoint allows you to test an ABAC rule with specific context (bank, account, transaction, customer).
+         |This endpoint allows you to test an ABAC rule with specific context (authenticated user, bank, account, transaction, customer, etc.).
+         |
+         |**Documentation:**
+         |- [ABAC Simple Guide](glossary#ABAC_Simple_Guide.md) - Getting started with ABAC rules
+         |- [ABAC Parameters Summary](glossary#ABAC_Parameters_Summary.md) - Complete list of all 18 parameters
+         |- [ABAC Object Properties Reference](glossary#ABAC_Object_Properties_Reference.md) - Detailed property reference
+         |- [ABAC Testing Examples](glossary#ABAC_Testing_Examples.md) - Testing examples and patterns
+         |
+         |You can provide optional IDs in the request body to test the rule with specific context.
          |
          |${userAuthenticationMessage(true)}
          |
          |""".stripMargin,
       ExecuteAbacRuleJsonV600(
+        authenticated_user_id = None,
+        on_behalf_of_user_id = None,
+        user_id = None,
         bank_id = Some("gh.29.uk"),
         account_id = Some("8ca8a7e4-6d02-48e3-a029-0b2bf89de9f0"),
+        view_id = None,
         transaction_id = None,
+        transaction_request_id = None,
         customer_id = None
       ),
       AbacRuleResultJsonV600(
-        rule_id = "abc123",
-        rule_name = "admin_only",
-        result = true,
-        message = "Access granted"
+        result = true
       ),
       List(
         UserNotLoggedIn,
@@ -4501,69 +4533,33 @@ trait APIMethods600 {
               unboxFullOrFail(_, callContext, s"ABAC Rule not found with ID: $ruleId", 404)
             }
             
-            // Fetch context objects if IDs are provided
-            bankOpt <- execJson.bank_id match {
-              case Some(bankId) => NewStyle.function.getBank(BankId(bankId), callContext).map { case (bank, _) => Some(bank) }
-              case None => Future.successful(None)
-            }
+            // Execute the rule with IDs - object fetching happens internally
+            // authenticatedUserId: can be provided in request (for testing) or defaults to actual authenticated user
+            // onBehalfOfUserId: optional delegation - acting on behalf of another user
+            // userId: the target user being evaluated (defaults to authenticated user)
+            effectiveAuthenticatedUserId = execJson.authenticated_user_id.getOrElse(user.userId)
             
-            accountOpt <- execJson.account_id match {
-              case Some(accountId) if execJson.bank_id.isDefined =>
-                NewStyle.function.getBankAccount(BankId(execJson.bank_id.get), AccountId(accountId), callContext)
-                  .map { case (account, _) => Some(account) }
-              case _ => Future.successful(None)
-            }
-            
-            transactionOpt <- execJson.transaction_id match {
-              case Some(transId) if execJson.bank_id.isDefined && execJson.account_id.isDefined =>
-                NewStyle.function.getTransaction(
-                  BankId(execJson.bank_id.get),
-                  AccountId(execJson.account_id.get),
-                  TransactionId(transId),
-                  callContext
-                ).map { case (transaction, _) => Some(transaction) }.recover { case _ => None }
-              case _ => Future.successful(None)
-            }
-            
-            customerOpt <- execJson.customer_id match {
-              case Some(custId) if execJson.bank_id.isDefined =>
-                NewStyle.function.getCustomerByCustomerId(custId, callContext)
-                  .map { case (customer, _) => Some(customer) }.recover { case _ => None }
-              case _ => Future.successful(None)
-            }
-            
-            // Execute the rule
             result <- Future {
               AbacRuleEngine.executeRule(
                 ruleId = ruleId,
-                user = user,
-                bankOpt = bankOpt,
-                accountOpt = accountOpt,
-                transactionOpt = transactionOpt,
-                customerOpt = customerOpt
+                authenticatedUserId = effectiveAuthenticatedUserId,
+                onBehalfOfUserId = execJson.on_behalf_of_user_id,
+                userId = execJson.user_id,
+                callContext = Some(callContext),
+                bankId = execJson.bank_id,
+                accountId = execJson.account_id,
+                viewId = execJson.view_id,
+                transactionId = execJson.transaction_id,
+                transactionRequestId = execJson.transaction_request_id,
+                customerId = execJson.customer_id
               )
             } map {
               case Full(allowed) => 
-                AbacRuleResultJsonV600(
-                  rule_id = ruleId,
-                  rule_name = rule.ruleName,
-                  result = allowed,
-                  message = if (allowed) "Access granted" else "Access denied"
-                )
+                AbacRuleResultJsonV600(result = allowed)
               case Failure(msg, _, _) =>
-                AbacRuleResultJsonV600(
-                  rule_id = ruleId,
-                  rule_name = rule.ruleName,
-                  result = false,
-                  message = s"Execution error: $msg"
-                )
+                AbacRuleResultJsonV600(result = false)
               case Empty =>
-                AbacRuleResultJsonV600(
-                  rule_id = ruleId,
-                  rule_name = rule.ruleName,
-                  result = false,
-                  message = "Execution failed"
-                )
+                AbacRuleResultJsonV600(result = false)
             }
           } yield {
             (result, HttpCode.`200`(callContext))
