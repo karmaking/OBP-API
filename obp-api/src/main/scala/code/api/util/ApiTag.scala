@@ -45,7 +45,9 @@ object ApiTag {
   val apiTagCustomer = ResourceDocTag("Customer")
   val apiTagOnboarding = ResourceDocTag("Onboarding")
   val apiTagUser = ResourceDocTag("User") // Use for User Management / Info APIs
-  val apiTagUserInvitation = ResourceDocTag("User-Invitation") 
+  val apiTagUserInvitation = ResourceDocTag("User-Invitation")
+  val apiTagAttribute = ResourceDocTag("Attribute")
+  val apiTagUserAttribute = ResourceDocTag("User-Attribute")
   val apiTagMeeting = ResourceDocTag("Customer-Meeting")
   val apiTagExperimental = ResourceDocTag("Experimental")
   val apiTagPerson = ResourceDocTag("Person")

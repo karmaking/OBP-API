@@ -4608,7 +4608,7 @@ trait APIMethods600 {
         InvalidJsonFormat,
         UnknownError
       ),
-      List(apiTagUser),
+      List(apiTagUser, apiTagUserAttribute, apiTagAttribute),
       Some(List(canCreateUserAttribute))
     )
 
@@ -4665,7 +4665,7 @@ trait APIMethods600 {
         UserNotFoundByUserId,
         UnknownError
       ),
-      List(apiTagUser),
+      List(apiTagUser, apiTagUserAttribute, apiTagAttribute),
       Some(List(canGetUserAttributes))
     )
 
@@ -4703,7 +4703,7 @@ trait APIMethods600 {
         UserAttributeNotFound,
         UnknownError
       ),
-      List(apiTagUser),
+      List(apiTagUser, apiTagUserAttribute, apiTagAttribute),
       Some(List(canGetUserAttributes))
     )
 
@@ -4751,7 +4751,7 @@ trait APIMethods600 {
         InvalidJsonFormat,
         UnknownError
       ),
-      List(apiTagUser),
+      List(apiTagUser, apiTagUserAttribute, apiTagAttribute),
       Some(List(canUpdateUserAttribute))
     )
 
@@ -4811,7 +4811,7 @@ trait APIMethods600 {
         UserAttributeNotFound,
         UnknownError
       ),
-      List(apiTagUser),
+      List(apiTagUser, apiTagUserAttribute, apiTagAttribute),
       Some(List(canDeleteUserAttribute))
     )
 
@@ -4873,7 +4873,7 @@ trait APIMethods600 {
         InvalidJsonFormat,
         UnknownError
       ),
-      List(apiTagUser),
+      List(apiTagUser, apiTagUserAttribute, apiTagAttribute),
       Some(List())
     )
 
@@ -4926,7 +4926,7 @@ trait APIMethods600 {
         $UserNotLoggedIn,
         UnknownError
       ),
-      List(apiTagUser),
+      List(apiTagUser, apiTagUserAttribute, apiTagAttribute),
       Some(List())
     )
 
@@ -4960,7 +4960,7 @@ trait APIMethods600 {
         UserAttributeNotFound,
         UnknownError
       ),
-      List(apiTagUser),
+      List(apiTagUser, apiTagUserAttribute, apiTagAttribute),
       Some(List())
     )
 
@@ -5004,7 +5004,7 @@ trait APIMethods600 {
         InvalidJsonFormat,
         UnknownError
       ),
-      List(apiTagUser),
+      List(apiTagUser, apiTagUserAttribute, apiTagAttribute),
       Some(List())
     )
 
@@ -5060,7 +5060,7 @@ trait APIMethods600 {
         UserAttributeNotFound,
         UnknownError
       ),
-      List(apiTagUser),
+      List(apiTagUser, apiTagUserAttribute, apiTagAttribute),
       Some(List())
     )
 
