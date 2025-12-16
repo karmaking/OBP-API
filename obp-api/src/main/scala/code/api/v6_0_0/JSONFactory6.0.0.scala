@@ -777,7 +777,7 @@ case class UpdateViewJsonV600(
     ViewsJsonV600(views.map(createViewJsonV600))
   }
   
-  def createAbacRuleJsonV600(rule: code.abacrule.AbacRule): AbacRuleJsonV600 = {
+  def createAbacRuleJsonV600(rule: code.abacrule.AbacRuleTrait): AbacRuleJsonV600 = {
     AbacRuleJsonV600(
       abac_rule_id = rule.abacRuleId,
       rule_name = rule.ruleName,
@@ -789,7 +789,7 @@ case class UpdateViewJsonV600(
     )
   }
   
-  def createAbacRulesJsonV600(rules: List[code.abacrule.AbacRule]): AbacRulesJsonV600 = {
+  def createAbacRulesJsonV600(rules: List[code.abacrule.AbacRuleTrait]): AbacRulesJsonV600 = {
     AbacRulesJsonV600(rules.map(createAbacRuleJsonV600))
   }
 }
