@@ -318,17 +318,19 @@ case class AbacRuleJsonV600(
 case class AbacRulesJsonV600(abac_rules: List[AbacRuleJsonV600])
 
 case class ExecuteAbacRuleJsonV600(
+  authenticated_user_id: Option[String],
+  on_behalf_of_user_id: Option[String],
+  user_id: Option[String],
   bank_id: Option[String],
   account_id: Option[String],
+  view_id: Option[String],
   transaction_id: Option[String],
+  transaction_request_id: Option[String],
   customer_id: Option[String]
 )
 
 case class AbacRuleResultJsonV600(
-  rule_id: String,
-  rule_name: String,
-  result: Boolean,
-  message: String
+  result: Boolean
 )
 
 object JSONFactory600 extends CustomJsonFormats with MdcLoggable{
