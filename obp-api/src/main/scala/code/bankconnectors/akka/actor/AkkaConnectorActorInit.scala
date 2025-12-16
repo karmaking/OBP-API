@@ -1,6 +1,6 @@
 package code.bankconnectors.akka.actor
 
-import akka.util.Timeout
+import org.apache.pekko.util.Timeout
 import code.api.util.APIUtil
 import code.util.Helper.MdcLoggable
 

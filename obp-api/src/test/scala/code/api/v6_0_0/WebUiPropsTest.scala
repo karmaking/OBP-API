@@ -34,6 +34,7 @@ import code.webuiprops.WebUiPropsCommons
 import com.github.dwickern.macros.NameOf.nameOf
 import com.openbankproject.commons.model.ErrorMessage
 import com.openbankproject.commons.util.ApiVersion
+import net.liftweb.json.JsonAST.JNothing
 import net.liftweb.json.Serialization.write
 import org.scalatest.Tag
 
@@ -335,7 +336,8 @@ class WebUiPropsTest extends V600ServerSetup {
       val responseDelete = makeDeleteRequest(requestDelete)
       Then("We should get a 204 No Content")
       responseDelete.code should equal(204)
-      responseDelete.body.toString should equal("{}")
+      // HTTP 204 No Content should have empty body
+      responseDelete.body shouldBe(JNothing)
     }
 
     scenario("DELETE WebUiProp - idempotent delete (delete twice)", VersionOfApi, ApiEndpoint3) {

@@ -1683,3 +1683,13 @@ securelogging_mask_credit_card=true
 
 # Email addresses
 securelogging_mask_email=true
+
+
+############################################
+# http4s server configuration
+############################################
+
+# Host and port for http4s server (used by bootstrap.http4s.Http4sServer)
+# Defaults (if not set) are 127.0.0.1 and 8181
+http4s.host=127.0.0.1
+http4s.port=8086
