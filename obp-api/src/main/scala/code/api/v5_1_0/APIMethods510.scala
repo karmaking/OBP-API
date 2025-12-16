@@ -1181,7 +1181,7 @@ trait APIMethods510 {
         InvalidJsonFormat,
         UnknownError
       ),
-      List(apiTagATM),
+      List(apiTagATM, apiTagAtmAttribute, apiTagAttribute),
       Some(List(canCreateAtmAttribute, canCreateAtmAttributeAtAnyBank))
     )
 
@@ -1269,7 +1269,7 @@ trait APIMethods510 {
         InvalidJsonFormat,
         UnknownError
       ),
-      List(apiTagATM),
+      List(apiTagATM, apiTagAtmAttribute, apiTagAttribute),
       Some(List(canGetAtmAttribute, canGetAtmAttributeAtAnyBank))
     )
 
@@ -1305,7 +1305,7 @@ trait APIMethods510 {
         InvalidJsonFormat,
         UnknownError
       ),
-      List(apiTagATM),
+      List(apiTagATM, apiTagAtmAttribute, apiTagAttribute),
       Some(List(canGetAtmAttribute, canGetAtmAttributeAtAnyBank))
     )
 
@@ -1344,7 +1344,7 @@ trait APIMethods510 {
         UserHasMissingRoles,
         UnknownError
       ),
-      List(apiTagATM),
+      List(apiTagATM, apiTagAtmAttribute, apiTagAttribute),
       Some(List(canUpdateAtmAttribute, canUpdateAtmAttributeAtAnyBank))
     )
 
@@ -1402,7 +1402,7 @@ trait APIMethods510 {
         UserHasMissingRoles,
         UnknownError
       ),
-      List(apiTagATM),
+      List(apiTagATM, apiTagAtmAttribute, apiTagAttribute),
       Some(List(canDeleteAtmAttribute, canDeleteAtmAttributeAtAnyBank))
     )
 
