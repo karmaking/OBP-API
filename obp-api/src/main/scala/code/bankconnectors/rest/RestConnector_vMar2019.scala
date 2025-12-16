@@ -23,10 +23,10 @@ Osloerstrasse 16/17
 Berlin 13359, Germany
 */
 
-import _root_.akka.stream.StreamTcpException
-import akka.http.scaladsl.model._
-import akka.http.scaladsl.model.headers.RawHeader
-import akka.util.ByteString
+import _root_.org.apache.pekko.stream.StreamTcpException
+import org.apache.pekko.http.scaladsl.model._
+import org.apache.pekko.http.scaladsl.model.headers.RawHeader
+import org.apache.pekko.util.ByteString
 import code.api.APIFailureNewStyle
 import code.api.ResourceDocs1_4_0.MessageDocsSwaggerDefinitions
 import code.api.dynamic.endpoint.helper.MockResponseHolder
