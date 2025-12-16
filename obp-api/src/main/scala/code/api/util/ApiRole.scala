@@ -480,6 +480,19 @@ object ApiRole extends MdcLoggable{
   case class CanDeleteNonPersonalUserAttribute (requiresBankId: Boolean = false) extends ApiRole
   lazy val canDeleteNonPersonalUserAttribute = CanDeleteNonPersonalUserAttribute()
 
+  // v6.0.0 User Attribute roles (consistent naming - "user attributes" means non-personal)
+  case class CanCreateUserAttribute (requiresBankId: Boolean = false) extends ApiRole
+  lazy val canCreateUserAttribute = CanCreateUserAttribute()
+  
+  case class CanGetUserAttributes (requiresBankId: Boolean = false) extends ApiRole
+  lazy val canGetUserAttributes = CanGetUserAttributes()
+  
+  case class CanUpdateUserAttribute (requiresBankId: Boolean = false) extends ApiRole
+  lazy val canUpdateUserAttribute = CanUpdateUserAttribute()
+  
+  case class CanDeleteUserAttribute (requiresBankId: Boolean = false) extends ApiRole
+  lazy val canDeleteUserAttribute = CanDeleteUserAttribute()
+
   case class CanReadUserLockedStatus(requiresBankId: Boolean = false) extends ApiRole
   lazy val canReadUserLockedStatus = CanReadUserLockedStatus()
 

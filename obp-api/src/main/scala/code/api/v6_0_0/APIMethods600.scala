@@ -4569,6 +4569,573 @@ trait APIMethods600 {
       }
     }
 
+    // ============================================================================================================
+    // USER ATTRIBUTES v6.0.0 - Consistent with other entity attributes
+    // ============================================================================================================
+    // "user attributes" = IsPersonal=false (requires roles) - consistent with other entity attributes
+    // "personal user attributes" = IsPersonal=true (no roles, user manages their own)
+    // ============================================================================================================
+
+    staticResourceDocs += ResourceDoc(
+      createUserAttribute,
+      implementedInApiVersion,
+      nameOf(createUserAttribute),
+      "POST",
+      "/users/USER_ID/attributes",
+      "Create User Attribute",
+      s"""Create a User Attribute for the user specified by USER_ID.
+         |
+         |User Attributes are non-personal attributes (IsPersonal=false) that can be used in ABAC rules.
+         |They require a role to set, similar to Customer Attributes, Account Attributes, etc.
+         |
+         |For personal attributes that users manage themselves, see the /my/personal-user-attributes endpoints.
+         |
+         |The type field must be one of "STRING", "INTEGER", "DOUBLE" or "DATE_WITH_DAY"
+         |
+         |${authenticationRequiredMessage(true)}
+         |""".stripMargin,
+      code.api.v5_1_0.UserAttributeJsonV510(
+        name = "account_type",
+        `type` = "STRING",
+        value = "premium"
+      ),
+      code.api.v5_1_0.UserAttributeResponseJsonV510(
+        user_attribute_id = "613c83ea-80f9-4560-8404-b9cd4ec42a7f",
+        name = "account_type",
+        `type` = "STRING",
+        value = "premium",
+        is_personal = false,
+        insert_date = exampleDate
+      ),
+      List(
+        $UserNotLoggedIn,
+        UserHasMissingRoles,
+        UserNotFoundByUserId,
+        InvalidJsonFormat,
+        UnknownError
+      ),
+      List(apiTagUser),
+      Some(List(canCreateUserAttribute))
+    )
+
+    lazy val createUserAttribute: OBPEndpoint = {
+      case "users" :: userId :: "attributes" :: Nil JsonPost json -> _ => {
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(u), callContext) <- authenticatedAccess(cc)
+            _ <- NewStyle.function.hasEntitlement("", u.userId, canCreateUserAttribute, callContext)
+            (user, callContext) <- NewStyle.function.getUserByUserId(userId, callContext)
+            failMsg = s"$InvalidJsonFormat The Json body should be the UserAttributeJsonV510"
+            postedData <- NewStyle.function.tryons(failMsg, 400, callContext) {
+              json.extract[code.api.v5_1_0.UserAttributeJsonV510]
+            }
+            failMsg = s"$InvalidJsonFormat The `type` field can only accept: ${UserAttributeType.DOUBLE}, ${UserAttributeType.STRING}, ${UserAttributeType.INTEGER}, ${UserAttributeType.DATE_WITH_DAY}"
+            userAttributeType <- NewStyle.function.tryons(failMsg, 400, callContext) {
+              UserAttributeType.withName(postedData.`type`)
+            }
+            (userAttribute, callContext) <- NewStyle.function.createOrUpdateUserAttribute(
+              user.userId,
+              None,
+              postedData.name,
+              userAttributeType,
+              postedData.value,
+              false, // IsPersonal = false for user attributes
+              callContext
+            )
+          } yield {
+            (JSONFactory510.createUserAttributeJson(userAttribute), HttpCode.`201`(callContext))
+          }
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
+      getUserAttributes,
+      implementedInApiVersion,
+      nameOf(getUserAttributes),
+      "GET",
+      "/users/USER_ID/attributes",
+      "Get User Attributes",
+      s"""Get User Attributes for the user specified by USER_ID.
+         |
+         |Returns non-personal user attributes (IsPersonal=false) that can be used in ABAC rules.
+         |
+         |${authenticationRequiredMessage(true)}
+         |""".stripMargin,
+      EmptyBody,
+      code.api.v5_1_0.UserAttributesResponseJsonV510(
+        user_attributes = List(
+          code.api.v5_1_0.UserAttributeResponseJsonV510(
+            user_attribute_id = "613c83ea-80f9-4560-8404-b9cd4ec42a7f",
+            name = "account_type",
+            `type` = "STRING",
+            value = "premium",
+            is_personal = false,
+            insert_date = exampleDate
+          )
+        )
+      ),
+      List(
+        $UserNotLoggedIn,
+        UserHasMissingRoles,
+        UserNotFoundByUserId,
+        UnknownError
+      ),
+      List(apiTagUser),
+      Some(List(canGetUserAttributes))
+    )
+
+    lazy val getUserAttributes: OBPEndpoint = {
+      case "users" :: userId :: "attributes" :: Nil JsonGet _ => {
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(u), callContext) <- authenticatedAccess(cc)
+            _ <- NewStyle.function.hasEntitlement("", u.userId, canGetUserAttributes, callContext)
+            (user, callContext) <- NewStyle.function.getUserByUserId(userId, callContext)
+            (attributes, callContext) <- NewStyle.function.getNonPersonalUserAttributes(user.userId, callContext)
+          } yield {
+            (code.api.v5_1_0.UserAttributesResponseJsonV510(attributes.map(JSONFactory510.createUserAttributeJson)), HttpCode.`200`(callContext))
+          }
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
+      getUserAttributeById,
+      implementedInApiVersion,
+      nameOf(getUserAttributeById),
+      "GET",
+      "/users/USER_ID/attributes/USER_ATTRIBUTE_ID",
+      "Get User Attribute By Id",
+      s"""Get a User Attribute by USER_ATTRIBUTE_ID for the user specified by USER_ID.
+         |
+         |${authenticationRequiredMessage(true)}
+         |""".stripMargin,
+      EmptyBody,
+      code.api.v5_1_0.UserAttributeResponseJsonV510(
+        user_attribute_id = "613c83ea-80f9-4560-8404-b9cd4ec42a7f",
+        name = "account_type",
+        `type` = "STRING",
+        value = "premium",
+        is_personal = false,
+        insert_date = exampleDate
+      ),
+      List(
+        $UserNotLoggedIn,
+        UserHasMissingRoles,
+        UserNotFoundByUserId,
+        UserAttributeNotFound,
+        UnknownError
+      ),
+      List(apiTagUser),
+      Some(List(canGetUserAttributes))
+    )
+
+    lazy val getUserAttributeById: OBPEndpoint = {
+      case "users" :: userId :: "attributes" :: userAttributeId :: Nil JsonGet _ => {
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(u), callContext) <- authenticatedAccess(cc)
+            _ <- NewStyle.function.hasEntitlement("", u.userId, canGetUserAttributes, callContext)
+            (user, callContext) <- NewStyle.function.getUserByUserId(userId, callContext)
+            (attributes, callContext) <- NewStyle.function.getNonPersonalUserAttributes(user.userId, callContext)
+            attribute <- Future {
+              attributes.find(_.userAttributeId == userAttributeId)
+            } map {
+              unboxFullOrFail(_, callContext, UserAttributeNotFound, 404)
+            }
+          } yield {
+            (JSONFactory510.createUserAttributeJson(attribute), HttpCode.`200`(callContext))
+          }
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
+      updateUserAttribute,
+      implementedInApiVersion,
+      nameOf(updateUserAttribute),
+      "PUT",
+      "/users/USER_ID/attributes/USER_ATTRIBUTE_ID",
+      "Update User Attribute",
+      s"""Update a User Attribute by USER_ATTRIBUTE_ID for the user specified by USER_ID.
+         |
+         |${authenticationRequiredMessage(true)}
+         |""".stripMargin,
+      code.api.v5_1_0.UserAttributeJsonV510(
+        name = "account_type",
+        `type` = "STRING",
+        value = "enterprise"
+      ),
+      code.api.v5_1_0.UserAttributeResponseJsonV510(
+        user_attribute_id = "613c83ea-80f9-4560-8404-b9cd4ec42a7f",
+        name = "account_type",
+        `type` = "STRING",
+        value = "enterprise",
+        is_personal = false,
+        insert_date = exampleDate
+      ),
+      List(
+        $UserNotLoggedIn,
+        UserHasMissingRoles,
+        UserNotFoundByUserId,
+        UserAttributeNotFound,
+        InvalidJsonFormat,
+        UnknownError
+      ),
+      List(apiTagUser),
+      Some(List(canUpdateUserAttribute))
+    )
+
+    lazy val updateUserAttribute: OBPEndpoint = {
+      case "users" :: userId :: "attributes" :: userAttributeId :: Nil JsonPut json -> _ => {
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(u), callContext) <- authenticatedAccess(cc)
+            _ <- NewStyle.function.hasEntitlement("", u.userId, canUpdateUserAttribute, callContext)
+            (user, callContext) <- NewStyle.function.getUserByUserId(userId, callContext)
+            failMsg = s"$InvalidJsonFormat The Json body should be the UserAttributeJsonV510"
+            postedData <- NewStyle.function.tryons(failMsg, 400, callContext) {
+              json.extract[code.api.v5_1_0.UserAttributeJsonV510]
+            }
+            failMsg = s"$InvalidJsonFormat The `type` field can only accept: ${UserAttributeType.DOUBLE}, ${UserAttributeType.STRING}, ${UserAttributeType.INTEGER}, ${UserAttributeType.DATE_WITH_DAY}"
+            userAttributeType <- NewStyle.function.tryons(failMsg, 400, callContext) {
+              UserAttributeType.withName(postedData.`type`)
+            }
+            (attributes, callContext) <- NewStyle.function.getNonPersonalUserAttributes(user.userId, callContext)
+            _ <- Future {
+              attributes.find(_.userAttributeId == userAttributeId)
+            } map {
+              unboxFullOrFail(_, callContext, UserAttributeNotFound, 404)
+            }
+            (userAttribute, callContext) <- NewStyle.function.createOrUpdateUserAttribute(
+              user.userId,
+              Some(userAttributeId),
+              postedData.name,
+              userAttributeType,
+              postedData.value,
+              false, // IsPersonal = false for user attributes
+              callContext
+            )
+          } yield {
+            (JSONFactory510.createUserAttributeJson(userAttribute), HttpCode.`200`(callContext))
+          }
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
+      deleteUserAttribute,
+      implementedInApiVersion,
+      nameOf(deleteUserAttribute),
+      "DELETE",
+      "/users/USER_ID/attributes/USER_ATTRIBUTE_ID",
+      "Delete User Attribute",
+      s"""Delete a User Attribute by USER_ATTRIBUTE_ID for the user specified by USER_ID.
+         |
+         |${authenticationRequiredMessage(true)}
+         |""".stripMargin,
+      EmptyBody,
+      EmptyBody,
+      List(
+        $UserNotLoggedIn,
+        UserHasMissingRoles,
+        UserNotFoundByUserId,
+        UserAttributeNotFound,
+        UnknownError
+      ),
+      List(apiTagUser),
+      Some(List(canDeleteUserAttribute))
+    )
+
+    lazy val deleteUserAttribute: OBPEndpoint = {
+      case "users" :: userId :: "attributes" :: userAttributeId :: Nil JsonDelete _ => {
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(u), callContext) <- authenticatedAccess(cc)
+            _ <- NewStyle.function.hasEntitlement("", u.userId, canDeleteUserAttribute, callContext)
+            (user, callContext) <- NewStyle.function.getUserByUserId(userId, callContext)
+            (attributes, callContext) <- NewStyle.function.getNonPersonalUserAttributes(user.userId, callContext)
+            _ <- Future {
+              attributes.find(_.userAttributeId == userAttributeId)
+            } map {
+              unboxFullOrFail(_, callContext, UserAttributeNotFound, 404)
+            }
+            (deleted, callContext) <- NewStyle.function.deleteUserAttribute(userAttributeId, callContext)
+          } yield {
+            (Full(deleted), HttpCode.`204`(callContext))
+          }
+      }
+    }
+
+    // ============================================================================================================
+    // PERSONAL DATA - User manages their own personal data
+    // ============================================================================================================
+
+    staticResourceDocs += ResourceDoc(
+      createMyPersonalUserAttribute,
+      implementedInApiVersion,
+      nameOf(createMyPersonalUserAttribute),
+      "POST",
+      "/my/personal-data",
+      "Create My Personal Data",
+      s"""Create Personal Data for the currently authenticated user.
+         |
+         |Personal Data (IsPersonal=true) is managed by the user themselves and does not require special roles.
+         |This data is not available in ABAC rules for privacy reasons.
+         |
+         |For non-personal attributes that can be used in ABAC rules, see the /users/USER_ID/attributes endpoints.
+         |
+         |The type field must be one of "STRING", "INTEGER", "DOUBLE" or "DATE_WITH_DAY"
+         |
+         |${authenticationRequiredMessage(true)}
+         |""".stripMargin,
+      code.api.v5_1_0.UserAttributeJsonV510(
+        name = "favorite_color",
+        `type` = "STRING",
+        value = "blue"
+      ),
+      code.api.v5_1_0.UserAttributeResponseJsonV510(
+        user_attribute_id = "613c83ea-80f9-4560-8404-b9cd4ec42a7f",
+        name = "favorite_color",
+        `type` = "STRING",
+        value = "blue",
+        is_personal = true,
+        insert_date = exampleDate
+      ),
+      List(
+        $UserNotLoggedIn,
+        InvalidJsonFormat,
+        UnknownError
+      ),
+      List(apiTagUser),
+      Some(List())
+    )
+
+    lazy val createMyPersonalUserAttribute: OBPEndpoint = {
+      case "my" :: "personal-data" :: Nil JsonPost json -> _ => {
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(u), callContext) <- authenticatedAccess(cc)
+            failMsg = s"$InvalidJsonFormat The Json body should be the UserAttributeJsonV510"
+            postedData <- NewStyle.function.tryons(failMsg, 400, callContext) {
+              json.extract[code.api.v5_1_0.UserAttributeJsonV510]
+            }
+            failMsg = s"$InvalidJsonFormat The `type` field can only accept: ${UserAttributeType.DOUBLE}, ${UserAttributeType.STRING}, ${UserAttributeType.INTEGER}, ${UserAttributeType.DATE_WITH_DAY}"
+            userAttributeType <- NewStyle.function.tryons(failMsg, 400, callContext) {
+              UserAttributeType.withName(postedData.`type`)
+            }
+            (userAttribute, callContext) <- NewStyle.function.createOrUpdateUserAttribute(
+              u.userId,
+              None,
+              postedData.name,
+              userAttributeType,
+              postedData.value,
+              true, // IsPersonal = true for personal user attributes
+              callContext
+            )
+          } yield {
+            (JSONFactory510.createUserAttributeJson(userAttribute), HttpCode.`201`(callContext))
+          }
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
+      getMyPersonalUserAttributes,
+      implementedInApiVersion,
+      nameOf(getMyPersonalUserAttributes),
+      "GET",
+      "/my/personal-data",
+      "Get My Personal Data",
+      s"""Get Personal Data for the currently authenticated user.
+         |
+         |Returns personal data (IsPersonal=true) that is managed by the user.
+         |
+         |${authenticationRequiredMessage(true)}
+         |""".stripMargin,
+      EmptyBody,
+      code.api.v5_1_0.UserAttributesResponseJsonV510(
+        user_attributes = List(
+          code.api.v5_1_0.UserAttributeResponseJsonV510(
+            user_attribute_id = "613c83ea-80f9-4560-8404-b9cd4ec42a7f",
+            name = "favorite_color",
+            `type` = "STRING",
+            value = "blue",
+            is_personal = true,
+            insert_date = exampleDate
+          )
+        )
+      ),
+      List(
+        $UserNotLoggedIn,
+        UnknownError
+      ),
+      List(apiTagUser),
+      Some(List())
+    )
+
+    lazy val getMyPersonalUserAttributes: OBPEndpoint = {
+      case "my" :: "personal-data" :: Nil JsonGet _ => {
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(u), callContext) <- authenticatedAccess(cc)
+            (attributes, callContext) <- NewStyle.function.getPersonalUserAttributes(u.userId, callContext)
+          } yield {
+            (code.api.v5_1_0.UserAttributesResponseJsonV510(attributes.map(JSONFactory510.createUserAttributeJson)), HttpCode.`200`(callContext))
+          }
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
+      getMyPersonalUserAttributeById,
+      implementedInApiVersion,
+      nameOf(getMyPersonalUserAttributeById),
+      "GET",
+      "/my/personal-data/USER_ATTRIBUTE_ID",
+      "Get My Personal Data By Id",
+      s"""Get Personal Data by USER_ATTRIBUTE_ID for the currently authenticated user.
+         |
+         |${authenticationRequiredMessage(true)}
+         |""".stripMargin,
+      EmptyBody,
+      code.api.v5_1_0.UserAttributeResponseJsonV510(
+        user_attribute_id = "613c83ea-80f9-4560-8404-b9cd4ec42a7f",
+        name = "favorite_color",
+        `type` = "STRING",
+        value = "blue",
+        is_personal = true,
+        insert_date = exampleDate
+      ),
+      List(
+        $UserNotLoggedIn,
+        UserAttributeNotFound,
+        UnknownError
+      ),
+      List(apiTagUser),
+      Some(List())
+    )
+
+    lazy val getMyPersonalUserAttributeById: OBPEndpoint = {
+      case "my" :: "personal-data" :: userAttributeId :: Nil JsonGet _ => {
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(u), callContext) <- authenticatedAccess(cc)
+            (attributes, callContext) <- NewStyle.function.getPersonalUserAttributes(u.userId, callContext)
+            attribute <- Future {
+              attributes.find(_.userAttributeId == userAttributeId)
+            } map {
+              unboxFullOrFail(_, callContext, UserAttributeNotFound, 404)
+            }
+          } yield {
+            (JSONFactory510.createUserAttributeJson(attribute), HttpCode.`200`(callContext))
+          }
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
+      updateMyPersonalUserAttribute,
+      implementedInApiVersion,
+      nameOf(updateMyPersonalUserAttribute),
+      "PUT",
+      "/my/personal-data/USER_ATTRIBUTE_ID",
+      "Update My Personal Data",
+      s"""Update Personal Data by USER_ATTRIBUTE_ID for the currently authenticated user.
+         |
+         |${authenticationRequiredMessage(true)}
+         |""".stripMargin,
+      code.api.v5_1_0.UserAttributeJsonV510(
+        name = "favorite_color",
+        `type` = "STRING",
+        value = "green"
+      ),
+      code.api.v5_1_0.UserAttributeResponseJsonV510(
+        user_attribute_id = "613c83ea-80f9-4560-8404-b9cd4ec42a7f",
+        name = "favorite_color",
+        `type` = "STRING",
+        value = "green",
+        is_personal = true,
+        insert_date = exampleDate
+      ),
+      List(
+        $UserNotLoggedIn,
+        UserAttributeNotFound,
+        InvalidJsonFormat,
+        UnknownError
+      ),
+      List(apiTagUser),
+      Some(List())
+    )
+
+    lazy val updateMyPersonalUserAttribute: OBPEndpoint = {
+      case "my" :: "personal-data" :: userAttributeId :: Nil JsonPut json -> _ => {
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(u), callContext) <- authenticatedAccess(cc)
+            failMsg = s"$InvalidJsonFormat The Json body should be the UserAttributeJsonV510"
+            postedData <- NewStyle.function.tryons(failMsg, 400, callContext) {
+              json.extract[code.api.v5_1_0.UserAttributeJsonV510]
+            }
+            failMsg = s"$InvalidJsonFormat The `type` field can only accept: ${UserAttributeType.DOUBLE}, ${UserAttributeType.STRING}, ${UserAttributeType.INTEGER}, ${UserAttributeType.DATE_WITH_DAY}"
+            userAttributeType <- NewStyle.function.tryons(failMsg, 400, callContext) {
+              UserAttributeType.withName(postedData.`type`)
+            }
+            (attributes, callContext) <- NewStyle.function.getPersonalUserAttributes(u.userId, callContext)
+            _ <- Future {
+              attributes.find(_.userAttributeId == userAttributeId)
+            } map {
+              unboxFullOrFail(_, callContext, UserAttributeNotFound, 404)
+            }
+            (userAttribute, callContext) <- NewStyle.function.createOrUpdateUserAttribute(
+              u.userId,
+              Some(userAttributeId),
+              postedData.name,
+              userAttributeType,
+              postedData.value,
+              true, // IsPersonal = true for personal user attributes
+              callContext
+            )
+          } yield {
+            (JSONFactory510.createUserAttributeJson(userAttribute), HttpCode.`200`(callContext))
+          }
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
+      deleteMyPersonalUserAttribute,
+      implementedInApiVersion,
+      nameOf(deleteMyPersonalUserAttribute),
+      "DELETE",
+      "/my/personal-data/USER_ATTRIBUTE_ID",
+      "Delete My Personal Data",
+      s"""Delete Personal Data by USER_ATTRIBUTE_ID for the currently authenticated user.
+         |
+         |${authenticationRequiredMessage(true)}
+         |""".stripMargin,
+      EmptyBody,
+      EmptyBody,
+      List(
+        $UserNotLoggedIn,
+        UserAttributeNotFound,
+        UnknownError
+      ),
+      List(apiTagUser),
+      Some(List())
+    )
+
+    lazy val deleteMyPersonalUserAttribute: OBPEndpoint = {
+      case "my" :: "personal-data" :: userAttributeId :: Nil JsonDelete _ => {
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(u), callContext) <- authenticatedAccess(cc)
+            (attributes, callContext) <- NewStyle.function.getPersonalUserAttributes(u.userId, callContext)
+            _ <- Future {
+              attributes.find(_.userAttributeId == userAttributeId)
+            } map {
+              unboxFullOrFail(_, callContext, UserAttributeNotFound, 404)
+            }
+            (deleted, callContext) <- NewStyle.function.deleteUserAttribute(userAttributeId, callContext)
+          } yield {
+            (Full(deleted), HttpCode.`204`(callContext))
+          }
+      }
+    }
+
   }
 }
 
