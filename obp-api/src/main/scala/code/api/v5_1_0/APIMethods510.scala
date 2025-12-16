@@ -3194,20 +3194,87 @@ trait APIMethods510 {
       "POST",
       "/dynamic-registration/consumers",
       "Create a Consumer(Dynamic Registration)",
-      s"""Create a Consumer (mTLS access).
+      s"""Create a Consumer with full certificate validation (mTLS access) - **Recommended for PSD2/Berlin Group compliance**.
          |
-         | JWT payload:
-         |  - minimal
-         |    { "description":"Description" }
-         |  - full
-         |    {
-         |     "description": "Description",
-         |     "app_name": "Tesobe GmbH",
-         |     "app_type": "Sofit",
-         |     "developer_email": "marko@tesobe.com",
-         |     "redirect_url": "http://localhost:8082"
-         |    }
-         | Please note that JWT must be signed with the counterpart private key of the public key used to establish mTLS
+         |This endpoint provides **secure, validated consumer registration** unlike the standard `/management/consumers` endpoint.
+         |
+         |**How it works (for comprehension flow):**
+         |
+         |1. **Extract JWT from request**: Parse the signed JWT from the request body
+         |2. **Extract certificate**: Get certificate from `PSD2-CERT` header in PEM format
+         |3. **Verify JWT signature**: Validate JWT is signed with the certificate's private key (proves possession)
+         |4. **Parse JWT payload**: Extract consumer details (description, app_name, app_type, developer_email, redirect_url)
+         |5. **Extract certificate info**: Parse certificate to get Common Name, Email, Organization
+         |6. **Validate against Regulated Entity**: Check certificate exists in Regulated Entity registry (PSD2 requirement)
+         |7. **Create consumer**: Generate credentials and create consumer record with validated certificate
+         |8. **Return consumer with certificate info**: Returns consumer details including parsed certificate information
+         |
+         |**Certificate Validation (CRITICAL SECURITY DIFFERENCE from regular creation):**
+         |
+         |[YES] **JWT Signature Verification**: JWT must be signed with certificate's private key - proves TPP owns the certificate
+         |[YES] **Regulated Entity Check**: Certificate must match a pre-registered Regulated Entity in the database
+         |[YES] **Certificate Binding**: Certificate is permanently bound to the consumer at creation time
+         |[YES] **CA Validation**: Certificate chain can be validated against trusted root CAs during API requests
+         |[YES] **PSD2 Compliance**: Meets EU regulatory requirements for TPP registration
+         |
+         |**Security benefits vs regular consumer creation:**
+         |
+         || Feature | Regular Creation | Dynamic Registration |
+         ||---------|-----------------|---------------------|
+         || Certificate validation | [NO] None | [YES] Full validation |
+         || Regulated Entity check | [NO] Not required | [YES] Required |
+         || JWT signature proof | [NO] Not required | [YES] Required (proves private key possession) |
+         || Self-signed certs | [YES] Accepted | [NO] Rejected |
+         || PSD2 compliant | [NO] No | [YES] Yes |
+         || Rogue TPP prevention | [NO] No | [YES] Yes |
+         |
+         |**Prerequisites:**
+         |1. TPP must be registered as a Regulated Entity with their certificate
+         |2. Certificate must be provided in `PSD2-CERT` request header (PEM format)
+         |3. JWT must be signed with the private key corresponding to the certificate
+         |4. Trust store must be configured with trusted root CAs
+         |
+         |**JWT Payload Structure:**
+         |
+         |Minimal:
+         |```json
+         |{ "description":"TPP Application Description" }
+         |```
+         |
+         |Full:
+         |```json
+         |{
+         |  "description": "Payment Initiation Service",
+         |  "app_name": "Tesobe GmbH",
+         |  "app_type": "Confidential",
+         |  "developer_email": "contact@tesobe.com",
+         |  "redirect_url": "https://tpp.example.com/callback"
+         |}
+         |```
+         |
+         |**Note:** JWT must be signed with the private key that corresponds to the public key in the certificate sent via `PSD2-CERT` header.
+         |
+         |**Certificate Information Extraction:**
+         |
+         |The endpoint automatically extracts information from the certificate:
+         |- Common Name (CN) → used as app_name if not provided in JWT
+         |- Email Address → used as developer_email if not provided
+         |- Organization (O) → used as company
+         |- Certificate validity period
+         |- Issuer information
+         |
+         |**Configuration Required:**
+         |- `truststore.path.tpp_signature` - Path to trust store for CA validation
+         |- `truststore.password.tpp_signature` - Trust store password
+         |- Regulated Entity must be pre-registered with certificate public key
+         |
+         |**Error Scenarios:**
+         |- JWT signature invalid → `PostJsonIsNotSigned` (400)
+         |- Certificate not in Regulated Entity registry → `RegulatedEntityNotFoundByCertificate` (400)
+         |- Invalid JWT format → `InvalidJsonFormat` (400)
+         |- Missing PSD2-CERT header → Signature verification fails
+         |
+         |**This is the SECURE way to register consumers for production PSD2/Berlin Group implementations.**
          |
          |""",
       ConsumerJwtPostJsonV510("eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJkZXNjcmlwdGlvbiI6IlRQUCBkZXNjcmlwdGlvbiJ9.c5gPPsyUmnVW774y7h2xyLXg0wdtu25nbU2AvOmyzcWa7JTdCKuuy3CblxueGwqYkQDDQIya1Qny4blyAvh_a1Q28LgzEKBcH7Em9FZXerhkvR9v4FWbCC5AgNLdQ7sR8-rUQdShmJcGDKdVmsZjuO4XhY2Zx0nFnkcvYfsU9bccoAvkKpVJATXzwBqdoEOuFlplnbxsMH1wWbAd3hbcPPWTdvO43xavNZTB5ybgrXVDEYjw8D-98_ZkqxS0vfvhJ4cGefHViaFzp6zXm7msdBpcE__O9rFbdl9Gvup_bsMbrHJioIrmc2d15Yc-tTNTF9J4qjD_lNxMRlx5o2TZEw"),
@@ -3283,6 +3350,85 @@ trait APIMethods510 {
       "/management/consumers",
       "Create a Consumer",
       s"""Create a Consumer (Authenticated access).
+         |
+         |A Consumer represents an application that uses the Open Bank Project API. Each Consumer has:
+         |- A unique **key** (40 character random string) - used as the client ID for authentication
+         |- A unique **secret** (40 character random string) - used for secure authentication
+         |- An **app_type** (Confidential or Public) - determines OAuth2 flow requirements
+         |- Metadata like app_name, description, developer_email, company, etc.
+         |
+         |**How it works (for comprehension flow):**
+         |
+         |1. **Extract authenticated user**: Retrieves the currently logged-in user who is creating the consumer
+         |2. **Parse and validate JSON request**: Extracts the CreateConsumerRequestJsonV510 from the request body
+         |3. **Determine app_type**: Converts the string "Confidential" or "Public" to the AppType enum
+         |4. **Generate credentials**: Creates random 40-character key and secret for the new consumer
+         |5. **Create consumer record**: Calls createConsumerNewStyle with all parameters:
+         |   - Auto-generated key and secret
+         |   - enabled flag (controls if consumer is active)
+         |   - app_name, description, developer_email, company
+         |   - redirect_url (for OAuth flows)
+         |   - client_certificate (optional, for certificate-based auth)
+         |   - logo_url (optional)
+         |   - createdByUserId (the authenticated user's ID)
+         |6. **Return response**: Returns the newly created consumer with HTTP 201 Created status
+         |
+         |**Client Certificate (Optional but Recommended for PSD2/Berlin Group):**
+         |
+         |The `client_certificate` field provides enhanced security through X.509 certificate validation.
+         |
+         |**IMPORTANT SECURITY NOTE:** 
+         |- **This endpoint does NOT validate the certificate at creation time** - any certificate can be provided
+         |- The certificate is simply stored with the consumer record without checking if it's from a trusted CA
+         |- For PSD2/Berlin Group compliance with certificate validation, use the **Dynamic Registration** endpoint instead
+         |- Dynamic Registration validates certificates against registered Regulated Entities and trusted CAs
+         |
+         |**How certificates are used (after creation):**
+         |- Certificate is stored in PEM format (Base64-encoded X.509) with the consumer record
+         |- On subsequent API requests, the certificate from the `PSD2-CERT` header is compared against the stored certificate
+         |- If certificates don't match, access is denied even with valid OAuth2 tokens
+         |- First request populates the certificate if not set; subsequent requests must match that certificate
+         |
+         |**Certificate validation process (during API requests, NOT at consumer creation):**
+         |1. Certificate from `PSD2-CERT` header is compared to stored certificate (simple string match)
+         |2. Certificate is parsed from PEM format to X.509Certificate object
+         |3. Validated against a configured trust store (PKCS12 format) containing trusted root CAs
+         |4. Certificate chain is verified using PKIX validation
+         |5. Optional CRL (Certificate Revocation List) checking if enabled via `use_tpp_signature_revocation_list`
+         |6. Public key from certificate can verify signed requests (Berlin Group requirement)
+         |
+         |**Note:** Steps 3-6 only apply during API request validation, NOT during consumer creation via this endpoint.
+         |
+         |**Security benefits (when properly configured):**
+         |- **Certificate binding**: Links consumer to a specific certificate (prevents token reuse with different certs)
+         |- **Request verification**: Certificate's public key can verify signed requests
+         |- **Non-repudiation**: Certificate-based signatures prove request origin
+         |
+         |**Security limitations of this endpoint:**
+         |- **No validation at creation**: Any certificate (even self-signed or expired) can be stored
+         |- **No CA verification**: Certificate is not checked against trusted root CAs during creation
+         |- **No Regulated Entity check**: Does not verify the TPP is registered
+         |- **Use Dynamic Registration instead** for proper PSD2/Berlin Group compliance with full certificate validation
+         |
+         |**For proper PSD2 compliance:**
+         |Use the **Dynamic Consumer Registration** endpoint (`POST /obp/v5.1.0/dynamic-registration/consumers`) which:
+         |- Requires JWT-signed request using the certificate's private key
+         |- Validates certificate against Regulated Entity registry
+         |- Checks certificate is from a trusted CA using the configured trust store
+         |- Ensures proper QWAC/eIDAS compliance for EU TPPs
+         |
+         |**Configuration properties (for runtime validation):**
+         |- `truststore.path.tpp_signature` - Path to trust store for certificate validation during API requests
+         |- `truststore.password.tpp_signature` - Trust store password
+         |- `use_tpp_signature_revocation_list` - Enable/disable CRL checking during requests (default: true)
+         |- `consumer_validation_method_for_consent` - Set to "CONSUMER_CERTIFICATE" for cert-based validation
+         |- `bypass_tpp_signature_validation` - Emergency bypass (default: false, use only for testing)
+         |
+         |**Important**: The key and secret are only shown once in the response. Save them securely as they cannot be retrieved later.
+         |
+         |${consumerDisabledText()}
+         |
+         |${authenticationRequiredMessage(true)}
          |
          |""",
       createConsumerRequestJsonV510,
