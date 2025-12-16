@@ -71,7 +71,7 @@ class SystemViewsTest extends V600ServerSetup with DefaultUsers {
       viewsArray.size should be > 0
       
       And("Views should include system views like owner, accountant, auditor")
-      val viewIds = viewsArray.map(view => (view \ "id").values.toString)
+      val viewIds = viewsArray.map(view => (view \ "view_id").values.toString)
       viewIds should contain("owner")
     }
   }
@@ -137,7 +137,7 @@ class SystemViewsTest extends V600ServerSetup with DefaultUsers {
       
       And("Response should contain the owner view details")
       val json = response.body
-      val viewId = (json \ "id").values.toString
+      val viewId = (json \ "view_id").values.toString
       viewId should equal("owner")
       
       And("View should be marked as system view")
@@ -159,7 +159,7 @@ class SystemViewsTest extends V600ServerSetup with DefaultUsers {
       
       Then("We should get a 200 - Success")
       responseAccountant.code should equal(200)
-      val accountantViewId = (responseAccountant.body \ "id").values.toString
+      val accountantViewId = (responseAccountant.body \ "view_id").values.toString
       accountantViewId should equal("accountant")
       
       And("We request the auditor view")
@@ -168,7 +168,7 @@ class SystemViewsTest extends V600ServerSetup with DefaultUsers {
       
       Then("We should get a 200 - Success")
       responseAuditor.code should equal(200)
-      val auditorViewId = (responseAuditor.body \ "id").values.toString
+      val auditorViewId = (responseAuditor.body \ "view_id").values.toString
       auditorViewId should equal("auditor")
     }
 

@@ -1,6 +1,6 @@
 package code.bankconnectors
 
-import _root_.akka.http.scaladsl.model.HttpMethod
+import _root_.org.apache.pekko.http.scaladsl.model.HttpMethod
 import code.DynamicData.DynamicDataProvider
 import code.accountapplication.AccountApplicationX
 import code.accountattribute.AccountAttributeX

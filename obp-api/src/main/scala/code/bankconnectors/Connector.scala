@@ -1,6 +1,6 @@
 package code.bankconnectors
 
-import _root_.akka.http.scaladsl.model.HttpMethod
+import org.apache.pekko.http.scaladsl.model.HttpMethod
 import code.api.attributedefinition.AttributeDefinition
 import code.api.util.APIUtil.{OBPReturnType, _}
 import code.api.util.ErrorMessages._

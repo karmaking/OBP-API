@@ -16,12 +16,12 @@ object AkkaConnectorActorConfig {
 
   val commonConf = 
   """
-  akka {
-    loggers = ["akka.event.slf4j.Slf4jLogger"]
+  pekko {
+    loggers = ["org.apache.pekko.event.slf4j.Slf4jLogger"]
     loglevel =  """ + akka_loglevel + """
     actor {
-      provider = "akka.remote.RemoteActorRefProvider"
-      allow-java-serialization = off
+      provider = "org.apache.pekko.remote.RemoteActorRefProvider"
+      allow-java-serialization = on
       kryo  {
       type = "graph"
       idstrategy = "default"
@@ -43,31 +43,31 @@ object AkkaConnectorActorConfig {
       resolve-subclasses = true
       }
       serializers {
-        kryo = "com.twitter.chill.akka.AkkaSerializer"
+        java = "org.apache.pekko.serialization.JavaSerializer"
       }
       serialization-bindings {
-        "net.liftweb.common.Full" = kryo,
-        "net.liftweb.common.Empty" = kryo,
-        "net.liftweb.common.Box" = kryo,
-        "net.liftweb.common.ParamFailure" = kryo,
-        "code.api.APIFailure" = kryo,
-        "com.openbankproject.commons.model.BankAccount" = kryo,
-        "com.openbankproject.commons.model.View" = kryo,
-        "com.openbankproject.commons.model.User" = kryo,
-        "com.openbankproject.commons.model.ViewId" = kryo,
-        "com.openbankproject.commons.model.BankIdAccountIdViewId" = kryo,
-        "com.openbankproject.commons.model.Permission" = kryo,
-        "scala.Unit" = kryo,
-        "scala.Boolean" = kryo,
-        "java.io.Serializable" = kryo,
-        "scala.collection.immutable.List" = kryo,
-        "akka.actor.ActorSelectionMessage" = kryo,
-        "code.model.Consumer" = kryo,
-        "code.model.AppType" = kryo
+        "net.liftweb.common.Full" = java,
+        "net.liftweb.common.Empty" = java,
+        "net.liftweb.common.Box" = java,
+        "net.liftweb.common.ParamFailure" = java,
+        "code.api.APIFailure" = java,
+        "com.openbankproject.commons.model.BankAccount" = java,
+        "com.openbankproject.commons.model.View" = java,
+        "com.openbankproject.commons.model.User" = java,
+        "com.openbankproject.commons.model.ViewId" = java,
+        "com.openbankproject.commons.model.BankIdAccountIdViewId" = java,
+        "com.openbankproject.commons.model.Permission" = java,
+        "scala.Unit" = java,
+        "scala.Boolean" = java,
+        "java.io.Serializable" = java,
+        "scala.collection.immutable.List" = java,
+        "org.apache.pekko.actor.ActorSelectionMessage" = java,
+        "code.model.Consumer" = java,
+        "code.model.AppType" = java
       }
     }
     remote {
-      enabled-transports = ["akka.remote.netty.tcp"]
+      enabled-transports = ["org.apache.pekko.remote.netty.tcp"]
       netty {
         tcp {
           send-buffer-size    = 50000000
@@ -82,7 +82,7 @@ object AkkaConnectorActorConfig {
   val lookupConf = 
   s"""
   ${commonConf} 
-  akka {
+  pekko {
     remote.netty.tcp.hostname = ${localHostname}
     remote.netty.tcp.port = 0
   }
@@ -91,7 +91,7 @@ object AkkaConnectorActorConfig {
   val localConf =
   s"""
   ${commonConf} 
-  akka {
+  pekko {
     remote.netty.tcp.hostname = ${localHostname}
     remote.netty.tcp.port = ${localPort}
   }
@@ -100,7 +100,7 @@ object AkkaConnectorActorConfig {
   val remoteConf = 
   s"""
   ${commonConf} 
-  akka {
+  pekko {
     remote.netty.tcp.hostname = ${remoteHostname}
     remote.netty.tcp.port = ${remotePort}
   }

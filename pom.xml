@@ -12,11 +12,11 @@
   <properties>
     <scala.version>2.12</scala.version>
     <scala.compiler>2.12.20</scala.compiler>
-    <akka.version>2.5.32</akka.version>
+    <pekko.version>1.1.2</pekko.version>
     <avro.version>1.8.2</avro.version>
     <lift.version>3.5.0</lift.version>
     <http4s.version>0.23.30</http4s.version>
-    <jetty.version>9.4.50.v20221201</jetty.version>
+    <jetty.version>9.4.58.v20250814</jetty.version>
     <obp-ri.version>2016.11-RC6-SNAPSHOT</obp-ri.version>
     <!-- Common plugin settings -->
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
