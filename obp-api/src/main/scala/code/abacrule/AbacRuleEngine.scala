@@ -5,6 +5,7 @@ import code.bankconnectors.Connector
 import code.model.dataAccess.ResourceUser
 import code.users.Users
 import com.openbankproject.commons.model._
+import com.openbankproject.commons.ExecutionContext.Implicits.global
 import net.liftweb.common.{Box, Empty, Failure, Full}
 import net.liftweb.util.Helpers.tryo
 
@@ -30,7 +31,7 @@ object AbacRuleEngine {
    *             user, userAttributes, bankOpt, bankAttributes, accountOpt, accountAttributes, transactionOpt, transactionAttributes, customerOpt, customerAttributes
    * Returns: Boolean (true = allow access, false = deny access)
    */
-  type AbacRuleFunction = (User, List[UserAttribute], List[UserAuthContext], Option[User], List[UserAttribute], List[UserAuthContext], Option[User], List[UserAttribute], Option[Bank], List[BankAttributeTrait], Option[BankAccount], List[AccountAttribute], Option[Transaction], List[TransactionAttribute], Option[TransactionRequest], List[TransactionRequestAttributeTrait], Option[Customer], List[CustomerAttribute]) => Boolean
+  type AbacRuleFunction = (User, List[UserAttributeTrait], List[UserAuthContext], Option[User], List[UserAttributeTrait], List[UserAuthContext], Option[User], List[UserAttributeTrait], Option[Bank], List[BankAttributeTrait], Option[BankAccount], List[AccountAttribute], Option[Transaction], List[TransactionAttribute], Option[TransactionRequest], List[TransactionRequestAttributeTrait], Option[Customer], List[CustomerAttribute]) => Boolean
 
   /**
    * Compile an ABAC rule from Scala code
@@ -74,7 +75,7 @@ object AbacRuleEngine {
        |import net.liftweb.common._
        |
        |// ABAC Rule Function
-       |(authenticatedUser: User, authenticatedUserAttributes: List[UserAttribute], authenticatedUserAuthContext: List[UserAuthContext], onBehalfOfUserOpt: Option[User], onBehalfOfUserAttributes: List[UserAttribute], onBehalfOfUserAuthContext: List[UserAuthContext], userOpt: Option[User], userAttributes: List[UserAttribute], bankOpt: Option[Bank], bankAttributes: List[BankAttributeTrait], accountOpt: Option[BankAccount], accountAttributes: List[AccountAttribute], transactionOpt: Option[Transaction], transactionAttributes: List[TransactionAttribute], transactionRequestOpt: Option[TransactionRequest], transactionRequestAttributes: List[TransactionRequestAttributeTrait], customerOpt: Option[Customer], customerAttributes: List[CustomerAttribute]) => {
+       |(authenticatedUser: User, authenticatedUserAttributes: List[UserAttributeTrait], authenticatedUserAuthContext: List[UserAuthContext], onBehalfOfUserOpt: Option[User], onBehalfOfUserAttributes: List[UserAttributeTrait], onBehalfOfUserAuthContext: List[UserAuthContext], userOpt: Option[User], userAttributes: List[UserAttributeTrait], bankOpt: Option[Bank], bankAttributes: List[BankAttributeTrait], accountOpt: Option[BankAccount], accountAttributes: List[AccountAttribute], transactionOpt: Option[Transaction], transactionAttributes: List[TransactionAttribute], transactionRequestOpt: Option[TransactionRequest], transactionRequestAttributes: List[TransactionRequestAttributeTrait], customerOpt: Option[Customer], customerAttributes: List[CustomerAttribute]) => {
        |  $ruleCode
        |}
        |""".stripMargin
@@ -117,18 +118,16 @@ object AbacRuleEngine {
       authenticatedUser <- Users.users.vend.getUserByUserId(authenticatedUserId)
       
       // Fetch non-personal attributes for authenticated user
-      authenticatedUserAttributesBox <- tryo(Await.result(
+      authenticatedUserAttributes = Await.result(
         code.api.util.NewStyle.function.getNonPersonalUserAttributes(authenticatedUserId, callContext).map(_._1),
         5.seconds
-      ))
-      authenticatedUserAttributes = authenticatedUserAttributesBox.toList.flatten
+      )
       
       // Fetch auth context for authenticated user
-      authenticatedUserAuthContextBox <- tryo(Await.result(
+      authenticatedUserAuthContext = Await.result(
         code.api.util.NewStyle.function.getUserAuthContexts(authenticatedUserId, callContext).map(_._1),
         5.seconds
-      ))
-      authenticatedUserAuthContext = authenticatedUserAuthContextBox.toList.flatten
+      )
       
       // Fetch onBehalfOf user if provided (delegation scenario)
       onBehalfOfUserOpt <- onBehalfOfUserId match {
@@ -137,23 +136,23 @@ object AbacRuleEngine {
       }
       
       // Fetch attributes for onBehalfOf user if provided
-      onBehalfOfUserAttributes <- onBehalfOfUserId match {
+      onBehalfOfUserAttributes = onBehalfOfUserId match {
         case Some(obUserId) =>
-          tryo(Await.result(
+          Await.result(
             code.api.util.NewStyle.function.getNonPersonalUserAttributes(obUserId, callContext).map(_._1),
             5.seconds
-          )).map(_.toList.flatten).map(attrs => attrs)
-        case None => Full(List.empty[UserAttribute])
+          )
+        case None => List.empty[UserAttributeTrait]
       }
       
       // Fetch auth context for onBehalfOf user if provided
-      onBehalfOfUserAuthContext <- onBehalfOfUserId match {
+      onBehalfOfUserAuthContext = onBehalfOfUserId match {
         case Some(obUserId) =>
-          tryo(Await.result(
+          Await.result(
             code.api.util.NewStyle.function.getUserAuthContexts(obUserId, callContext).map(_._1),
             5.seconds
-          )).map(_.toList.flatten).map(ctx => ctx)
-        case None => Full(List.empty[UserAuthContext])
+          )
+        case None => List.empty[UserAuthContext]
       }
       
       // Fetch target user if userId is provided
@@ -163,13 +162,13 @@ object AbacRuleEngine {
       }
       
       // Fetch attributes for target user if provided
-      userAttributes <- userId match {
+      userAttributes = userId match {
         case Some(uId) =>
-          tryo(Await.result(
+          Await.result(
             code.api.util.NewStyle.function.getNonPersonalUserAttributes(uId, callContext).map(_._1),
             5.seconds
-          )).map(_.toList.flatten)
-        case None => Full(List.empty[UserAttribute])
+          )
+        case None => List.empty[UserAttributeTrait]
       }
       
       // Fetch bank if bankId is provided
@@ -183,13 +182,13 @@ object AbacRuleEngine {
       }
       
       // Fetch bank attributes if bank is provided
-      bankAttributes <- bankId match {
+      bankAttributes = bankId match {
         case Some(bId) =>
-          tryo(Await.result(
+          Await.result(
             code.api.util.NewStyle.function.getBankAttributesByBank(BankId(bId), callContext).map(_._1),
             5.seconds
-          )).map(_.toList.flatten)
-        case None => Full(List.empty[BankAttributeTrait])
+          )
+        case None => List.empty[BankAttributeTrait]
       }
       
       // Fetch account if accountId and bankId are provided
@@ -203,13 +202,13 @@ object AbacRuleEngine {
       }
       
       // Fetch account attributes if account is provided
-      accountAttributes <- (bankId, accountId) match {
+      accountAttributes = (bankId, accountId) match {
         case (Some(bId), Some(aId)) =>
-          tryo(Await.result(
+          Await.result(
             code.api.util.NewStyle.function.getAccountAttributesByAccount(BankId(bId), AccountId(aId), callContext).map(_._1),
             5.seconds
-          )).map(_.toList.flatten)
-        case _ => Full(List.empty[AccountAttribute])
+          )
+        case _ => List.empty[AccountAttribute]
       }
       
       // Fetch transaction if transactionId, accountId, and bankId are provided
@@ -218,18 +217,18 @@ object AbacRuleEngine {
           tryo(Await.result(
             code.api.util.NewStyle.function.getTransaction(BankId(bId), AccountId(aId), TransactionId(tId), callContext).map(_._1),
             5.seconds
-          )).map(Some(_)).orElse(Full(None))
+          )).map(trans => Some(trans))
         case _ => Full(None)
       }
       
       // Fetch transaction attributes if transaction is provided
-      transactionAttributes <- (bankId, transactionId) match {
+      transactionAttributes = (bankId, transactionId) match {
         case (Some(bId), Some(tId)) =>
-          tryo(Await.result(
+          Await.result(
             code.api.util.NewStyle.function.getTransactionAttributes(BankId(bId), TransactionId(tId), callContext).map(_._1),
             5.seconds
-          )).map(_.toList.flatten)
-        case _ => Full(List.empty[TransactionAttribute])
+          )
+        case _ => List.empty[TransactionAttribute]
       }
       
       // Fetch transaction request if transactionRequestId is provided
@@ -238,18 +237,18 @@ object AbacRuleEngine {
           tryo(Await.result(
             code.api.util.NewStyle.function.getTransactionRequestImpl(TransactionRequestId(trId), callContext).map(_._1),
             5.seconds
-          )).map(Some(_)).orElse(Full(None))
+          )).map(tr => Some(tr))
         case _ => Full(None)
       }
       
       // Fetch transaction request attributes if transaction request is provided
-      transactionRequestAttributes <- (bankId, transactionRequestId) match {
+      transactionRequestAttributes = (bankId, transactionRequestId) match {
         case (Some(bId), Some(trId)) =>
-          tryo(Await.result(
+          Await.result(
             code.api.util.NewStyle.function.getTransactionRequestAttributes(BankId(bId), TransactionRequestId(trId), callContext).map(_._1),
             5.seconds
-          )).map(_.toList.flatten)
-        case _ => Full(List.empty[TransactionRequestAttributeTrait])
+          )
+        case _ => List.empty[TransactionRequestAttributeTrait]
       }
       
       // Fetch customer if customerId and bankId are provided
@@ -258,18 +257,18 @@ object AbacRuleEngine {
           tryo(Await.result(
             code.api.util.NewStyle.function.getCustomerByCustomerId(cId, callContext).map(_._1),
             5.seconds
-          )).map(Some(_)).orElse(Full(None))
+          )).map(cust => Some(cust))
         case _ => Full(None)
       }
       
       // Fetch customer attributes if customer is provided
-      customerAttributes <- (bankId, customerId) match {
+      customerAttributes = (bankId, customerId) match {
         case (Some(bId), Some(cId)) =>
-          tryo(Await.result(
+          Await.result(
             code.api.util.NewStyle.function.getCustomerAttributes(BankId(bId), CustomerId(cId), callContext).map(_._1),
             5.seconds
-          )).map(_.toList.flatten)
-        case _ => Full(List.empty[CustomerAttribute])
+          )
+        case _ => List.empty[CustomerAttribute]
       }
       
       // Compile and execute the rule

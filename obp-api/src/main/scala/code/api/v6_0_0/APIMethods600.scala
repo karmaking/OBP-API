@@ -4540,12 +4540,12 @@ trait APIMethods600 {
             effectiveAuthenticatedUserId = execJson.authenticated_user_id.getOrElse(user.userId)
             
             result <- Future {
-              AbacRuleEngine.executeRule(
+              val resultBox = AbacRuleEngine.executeRule(
                 ruleId = ruleId,
                 authenticatedUserId = effectiveAuthenticatedUserId,
                 onBehalfOfUserId = execJson.on_behalf_of_user_id,
                 userId = execJson.user_id,
-                callContext = Some(callContext),
+                callContext = callContext,
                 bankId = execJson.bank_id,
                 accountId = execJson.account_id,
                 viewId = execJson.view_id,
@@ -4553,13 +4553,15 @@ trait APIMethods600 {
                 transactionRequestId = execJson.transaction_request_id,
                 customerId = execJson.customer_id
               )
-            } map {
-              case Full(allowed) => 
-                AbacRuleResultJsonV600(result = allowed)
-              case Failure(msg, _, _) =>
-                AbacRuleResultJsonV600(result = false)
-              case Empty =>
-                AbacRuleResultJsonV600(result = false)
+              
+              resultBox match {
+                case Full(allowed) => 
+                  AbacRuleResultJsonV600(result = allowed)
+                case Failure(msg, _, _) =>
+                  AbacRuleResultJsonV600(result = false)
+                case Empty =>
+                  AbacRuleResultJsonV600(result = false)
+              }
             }
           } yield {
             (result, HttpCode.`200`(callContext))

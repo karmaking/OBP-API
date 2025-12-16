@@ -3428,7 +3428,7 @@ trait APIMethods510 {
          |
          |${consumerDisabledText()}
          |
-         |${authenticationRequiredMessage(true)}
+         |${userAuthenticationMessage(true)}
          |
          |""",
       createConsumerRequestJsonV510,
