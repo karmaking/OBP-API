@@ -290,6 +290,47 @@ case class CustomerWithAttributesJsonV600(
   customer_attributes: List[CustomerAttributeResponseJsonV300]
 )
 
+// ABAC Rule JSON models
+case class CreateAbacRuleJsonV600(
+  rule_name: String,
+  rule_code: String,
+  description: String,
+  is_active: Boolean
+)
+
+case class UpdateAbacRuleJsonV600(
+  rule_name: String,
+  rule_code: String,
+  description: String,
+  is_active: Boolean
+)
+
+case class AbacRuleJsonV600(
+  abac_rule_id: String,
+  rule_name: String,
+  rule_code: String,
+  is_active: Boolean,
+  description: String,
+  created_by_user_id: String,
+  updated_by_user_id: String
+)
+
+case class AbacRulesJsonV600(abac_rules: List[AbacRuleJsonV600])
+
+case class ExecuteAbacRuleJsonV600(
+  bank_id: Option[String],
+  account_id: Option[String],
+  transaction_id: Option[String],
+  customer_id: Option[String]
+)
+
+case class AbacRuleResultJsonV600(
+  rule_id: String,
+  rule_name: String,
+  result: Boolean,
+  message: String
+)
+
 object JSONFactory600 extends CustomJsonFormats with MdcLoggable{
 
   def createCurrentUsageJson(rateLimits: List[((Option[Long], Option[Long]), LimitCallPeriod)]): Option[RedisCallLimitJson] = {
@@ -646,4 +687,109 @@ case class PostResetPasswordUrlJsonV600(username: String, email: String, user_id
 
 case class ResetPasswordUrlJsonV600(reset_password_url: String)
 
+case class ScannedApiVersionJsonV600(
+  url_prefix: String,
+  api_standard: String,
+  api_short_version: String,
+  fully_qualified_version: String,
+  is_active: Boolean
+)
+
+case class ViewPermissionJsonV600(
+  permission: String,
+  category: String
+)
+
+case class ViewPermissionsJsonV600(
+  permissions: List[ViewPermissionJsonV600]
+)
+
+case class ViewJsonV600(
+  view_id: String,
+  short_name: String,
+  description: String,
+  metadata_view: String,
+  is_public: Boolean,
+  is_system: Boolean,
+  is_firehose: Option[Boolean] = None,
+  alias: String,
+  hide_metadata_if_alias_used: Boolean,
+  can_grant_access_to_views: List[String],
+  can_revoke_access_to_views: List[String],
+  allowed_actions: List[String]
+)
+
+case class ViewsJsonV600(views: List[ViewJsonV600])
+
+case class UpdateViewJsonV600(
+  description: String,
+  metadata_view: String,
+  is_public: Boolean,
+  is_firehose: Option[Boolean] = None,
+  which_alias_to_use: String,
+  hide_metadata_if_alias_used: Boolean,
+  allowed_actions: List[String],
+  can_grant_access_to_views: Option[List[String]] = None,
+  can_revoke_access_to_views: Option[List[String]] = None
+) {
+  def toUpdateViewJson = UpdateViewJSON(
+    description = this.description,
+    metadata_view = this.metadata_view,
+    is_public = this.is_public,
+    is_firehose = this.is_firehose,
+    which_alias_to_use = this.which_alias_to_use,
+    hide_metadata_if_alias_used = this.hide_metadata_if_alias_used,
+    allowed_actions = this.allowed_actions,
+    can_grant_access_to_views = this.can_grant_access_to_views,
+    can_revoke_access_to_views = this.can_revoke_access_to_views
+  )
+}
+
+  
+  def createViewJsonV600(view: View): ViewJsonV600 = {
+    val allowed_actions = view.allowed_actions
+    
+    val alias =
+      if(view.usePublicAliasIfOneExists)
+        "public"
+      else if(view.usePrivateAliasIfOneExists)
+        "private"
+      else
+        ""
+    
+    ViewJsonV600(
+      view_id = view.viewId.value,
+      short_name = view.name,
+      description = view.description,
+      metadata_view = view.metadataView,
+      is_public = view.isPublic,
+      is_system = view.isSystem,
+      is_firehose = Some(view.isFirehose),
+      alias = alias,
+      hide_metadata_if_alias_used = view.hideOtherAccountMetadataIfAlias,
+      can_grant_access_to_views = view.canGrantAccessToViews.getOrElse(Nil),
+      can_revoke_access_to_views = view.canRevokeAccessToViews.getOrElse(Nil),
+      allowed_actions = allowed_actions
+    )
+  }
+  
+  def createViewsJsonV600(views: List[View]): ViewsJsonV600 = {
+    ViewsJsonV600(views.map(createViewJsonV600))
+  }
+  
+  def createAbacRuleJsonV600(rule: code.abacrule.AbacRule): AbacRuleJsonV600 = {
+    AbacRuleJsonV600(
+      abac_rule_id = rule.abacRuleId,
+      rule_name = rule.ruleName,
+      rule_code = rule.ruleCode,
+      is_active = rule.isActive,
+      description = rule.description,
+      created_by_user_id = rule.createdByUserId,
+      updated_by_user_id = rule.updatedByUserId
+    )
+  }
+  
+  def createAbacRulesJsonV600(rules: List[code.abacrule.AbacRule]): AbacRulesJsonV600 = {
+    AbacRulesJsonV600(rules.map(createAbacRuleJsonV600))
+  }
 }

@@ -50,7 +50,7 @@ import sh.ory.hydra.model.OAuth2TokenIntrospection
 
 import java.net.URI
 import scala.concurrent.Future
-import scala.jdk.CollectionConverters.mapAsJavaMapConverter
+import scala.collection.JavaConverters._
 
 /**
 * This object provides the API calls necessary to third party applications

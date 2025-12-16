@@ -43,7 +43,7 @@ import org.apache.commons.lang3.StringUtils
 import org.codehaus.jackson.map.ObjectMapper
 
 import scala.collection.immutable.{List, ListMap}
-import scala.jdk.CollectionConverters.seqAsJavaListConverter
+import scala.collection.JavaConverters._
 import scala.xml.{Text, Unparsed}
 
 class ConsumerRegistration extends MdcLoggable {

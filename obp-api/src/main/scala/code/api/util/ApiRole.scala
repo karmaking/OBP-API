@@ -675,6 +675,24 @@ object ApiRole extends MdcLoggable{
   case class CanDeleteWebUiProps(requiresBankId: Boolean = false) extends ApiRole
   lazy val canDeleteWebUiProps = CanDeleteWebUiProps()
 
+  case class CanGetViewPermissionsAtAllBanks(requiresBankId: Boolean = false) extends ApiRole
+  lazy val canGetViewPermissionsAtAllBanks = CanGetViewPermissionsAtAllBanks()
+
+  case class CanCreateAbacRule(requiresBankId: Boolean = false) extends ApiRole
+  lazy val canCreateAbacRule = CanCreateAbacRule()
+
+  case class CanGetAbacRule(requiresBankId: Boolean = false) extends ApiRole
+  lazy val canGetAbacRule = CanGetAbacRule()
+
+  case class CanUpdateAbacRule(requiresBankId: Boolean = false) extends ApiRole
+  lazy val canUpdateAbacRule = CanUpdateAbacRule()
+
+  case class CanDeleteAbacRule(requiresBankId: Boolean = false) extends ApiRole
+  lazy val canDeleteAbacRule = CanDeleteAbacRule()
+
+  case class CanExecuteAbacRule(requiresBankId: Boolean = false) extends ApiRole
+  lazy val canExecuteAbacRule = CanExecuteAbacRule()
+
   case class CanGetSystemLevelDynamicEntities(requiresBankId: Boolean = false) extends ApiRole
   lazy val canGetSystemLevelDynamicEntities = CanGetSystemLevelDynamicEntities()
 

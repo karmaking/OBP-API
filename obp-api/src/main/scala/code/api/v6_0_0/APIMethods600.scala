@@ -26,8 +26,10 @@ import code.api.v5_0_0.JSONFactory500
 import code.api.v5_0_0.{ViewJsonV500, ViewsJsonV500}
 import code.api.v5_1_0.{JSONFactory510, PostCustomerLegalNameJsonV510}
 import code.api.dynamic.entity.helper.{DynamicEntityHelper, DynamicEntityInfo}
-import code.api.v6_0_0.JSONFactory600.{DynamicEntityDiagnosticsJsonV600, DynamicEntityIssueJsonV600, GroupJsonV600, GroupMembershipJsonV600, GroupMembershipsJsonV600, GroupsJsonV600, PostGroupJsonV600, PostGroupMembershipJsonV600, PostResetPasswordUrlJsonV600, PutGroupJsonV600, ReferenceTypeJsonV600, ReferenceTypesJsonV600, ResetPasswordUrlJsonV600, RoleWithEntitlementCountJsonV600, RolesWithEntitlementCountsJsonV600, ValidateUserEmailJsonV600, ValidateUserEmailResponseJsonV600, createActiveCallLimitsJsonV600, createCallLimitJsonV600, createCurrentUsageJson}
+import code.api.v6_0_0.JSONFactory600.{DynamicEntityDiagnosticsJsonV600, DynamicEntityIssueJsonV600, GroupJsonV600, GroupMembershipJsonV600, GroupMembershipsJsonV600, GroupsJsonV600, PostGroupJsonV600, PostGroupMembershipJsonV600, PostResetPasswordUrlJsonV600, PutGroupJsonV600, ReferenceTypeJsonV600, ReferenceTypesJsonV600, ResetPasswordUrlJsonV600, RoleWithEntitlementCountJsonV600, RolesWithEntitlementCountsJsonV600, ScannedApiVersionJsonV600, UpdateViewJsonV600, ValidateUserEmailJsonV600, ValidateUserEmailResponseJsonV600, ViewJsonV600, ViewPermissionJsonV600, ViewPermissionsJsonV600, ViewsJsonV600, createAbacRuleJsonV600, createAbacRulesJsonV600, createActiveCallLimitsJsonV600, createCallLimitJsonV600, createCurrentUsageJson}
+import code.api.v6_0_0.{AbacRuleJsonV600, AbacRuleResultJsonV600, AbacRulesJsonV600, CreateAbacRuleJsonV600, ExecuteAbacRuleJsonV600, UpdateAbacRuleJsonV600}
 import code.api.v6_0_0.OBPAPI6_0_0
+import code.abacrule.{AbacRuleEngine, MappedAbacRuleProvider}
 import code.metrics.APIMetrics
 import code.bankconnectors.LocalMappedConnectorInternal
 import code.bankconnectors.LocalMappedConnectorInternal._
@@ -40,7 +42,7 @@ import code.util.Helper
 import code.util.Helper.{MdcLoggable, ObpS, SILENCE_IS_GOLDEN}
 import code.views.Views
 import code.views.system.ViewDefinition
-import code.webuiprops.{MappedWebUiPropsProvider, WebUiPropsCommons}
+import code.webuiprops.{MappedWebUiPropsProvider, WebUiPropsCommons, WebUiPropsPutJsonV600}
 import code.dynamicEntity.DynamicEntityCommons
 import code.DynamicData.{DynamicData, DynamicDataProvider}
 import com.github.dwickern.macros.NameOf.nameOf
@@ -65,6 +67,7 @@ import scala.collection.immutable.{List, Nil}
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
 import scala.concurrent.duration._
+import scala.collection.JavaConverters._
 import scala.util.Random
 
 
@@ -73,12 +76,12 @@ trait APIMethods600 {
 
   val Implementations6_0_0 = new Implementations600()
 
-  class Implementations600 extends MdcLoggable {
+  class Implementations600 extends RestHelper with MdcLoggable {
 
     val implementedInApiVersion: ScannedApiVersion = ApiVersion.v6_0_0
 
-    private val staticResourceDocs = ArrayBuffer[ResourceDoc]()
-    def resourceDocs = staticResourceDocs
+    val staticResourceDocs = ArrayBuffer[ResourceDoc]()
+    val resourceDocs = staticResourceDocs
 
     val apiRelations = ArrayBuffer[ApiRelation]()
     val codeContext = CodeContext(staticResourceDocs, apiRelations)
@@ -1243,6 +1246,90 @@ trait APIMethods600 {
           } yield {
             (JSONFactory600.createConnectorMethodNamesJson(methodNames), HttpCode.`200`(callContext))
           }
+    }
+
+    staticResourceDocs += ResourceDoc(
+      getScannedApiVersions,
+      implementedInApiVersion,
+      nameOf(getScannedApiVersions),
+      "GET",
+      "/api/versions",
+      "Get Scanned API Versions",
+      s"""Get all scanned API versions available in this codebase.
+         |
+         |This endpoint returns all API versions that have been discovered/scanned, along with their active status.
+         |
+         |**Response Fields:**
+         |
+         |* `url_prefix`: The URL prefix for the version (e.g., "obp", "berlin-group", "open-banking")
+         |* `api_standard`: The API standard name (e.g., "OBP", "BG", "UK", "STET")
+         |* `api_short_version`: The version number (e.g., "v4.0.0", "v1.3")
+         |* `fully_qualified_version`: The fully qualified version combining standard and version (e.g., "OBPv4.0.0", "BGv1.3")
+         |* `is_active`: Boolean indicating if the version is currently enabled and accessible
+         |
+         |**Active Status:**
+         |
+         |* `is_active=true`: Version is enabled and can be accessed via its URL prefix
+         |* `is_active=false`: Version is scanned but disabled (via `api_disabled_versions` props)
+         |
+         |**Use Cases:**
+         |
+         |* Discover what API versions are available in the codebase
+         |* Check which versions are currently enabled
+         |* Verify that disabled versions configuration is working correctly
+         |* API documentation and discovery
+         |
+         |**Note:** This differs from v4.0.0's `/api/versions` endpoint which shows all scanned versions without is_active status.
+         |
+         |""",
+      EmptyBody,
+      ListResult(
+        "scanned_api_versions",
+        List(
+          ScannedApiVersionJsonV600(url_prefix = "obp", api_standard = "OBP", api_short_version = "v1.2.1", fully_qualified_version = "OBPv1.2.1", is_active = true),
+          ScannedApiVersionJsonV600(url_prefix = "obp", api_standard = "OBP", api_short_version = "v1.3.0", fully_qualified_version = "OBPv1.3.0", is_active = true),
+          ScannedApiVersionJsonV600(url_prefix = "obp", api_standard = "OBP", api_short_version = "v1.4.0", fully_qualified_version = "OBPv1.4.0", is_active = true),
+          ScannedApiVersionJsonV600(url_prefix = "obp", api_standard = "OBP", api_short_version = "v2.0.0", fully_qualified_version = "OBPv2.0.0", is_active = true),
+          ScannedApiVersionJsonV600(url_prefix = "obp", api_standard = "OBP", api_short_version = "v2.1.0", fully_qualified_version = "OBPv2.1.0", is_active = true),
+          ScannedApiVersionJsonV600(url_prefix = "obp", api_standard = "OBP", api_short_version = "v2.2.0", fully_qualified_version = "OBPv2.2.0", is_active = true),
+          ScannedApiVersionJsonV600(url_prefix = "obp", api_standard = "OBP", api_short_version = "v3.0.0", fully_qualified_version = "OBPv3.0.0", is_active = true),
+          ScannedApiVersionJsonV600(url_prefix = "obp", api_standard = "OBP", api_short_version = "v3.1.0", fully_qualified_version = "OBPv3.1.0", is_active = true),
+          ScannedApiVersionJsonV600(url_prefix = "obp", api_standard = "OBP", api_short_version = "v4.0.0", fully_qualified_version = "OBPv4.0.0", is_active = true),
+          ScannedApiVersionJsonV600(url_prefix = "obp", api_standard = "OBP", api_short_version = "v5.0.0", fully_qualified_version = "OBPv5.0.0", is_active = true),
+          ScannedApiVersionJsonV600(url_prefix = "obp", api_standard = "OBP", api_short_version = "v5.1.0", fully_qualified_version = "OBPv5.1.0", is_active = true),
+          ScannedApiVersionJsonV600(url_prefix = "obp", api_standard = "OBP", api_short_version = "v6.0.0", fully_qualified_version = "OBPv6.0.0", is_active = true),
+          ScannedApiVersionJsonV600(url_prefix = "berlin-group", api_standard = "BG", api_short_version = "v1.3", fully_qualified_version = "BGv1.3", is_active = false)
+        )
+      ),
+      List(
+        UnknownError
+      ),
+      List(apiTagDocumentation, apiTagApi),
+      Some(Nil)
+    )
+
+    lazy val getScannedApiVersions: OBPEndpoint = {
+      case "api" :: "versions" :: Nil JsonGet _ => { cc =>
+        implicit val ec = EndpointContext(Some(cc))
+        Future {
+          val versions: List[ScannedApiVersionJsonV600] =
+            ApiVersion.allScannedApiVersion.asScala.toList
+              .filter(version => version.urlPrefix.trim.nonEmpty)
+              .map { version =>
+                ScannedApiVersionJsonV600(
+                  url_prefix = version.urlPrefix,
+                  api_standard = version.apiStandard,
+                  api_short_version = version.apiShortVersion,
+                  fully_qualified_version = version.fullyQualifiedVersion,
+                  is_active = versionIsAllowed(version)
+                )
+              }
+          (
+            ListResult("scanned_api_versions", versions),
+            HttpCode.`200`(cc.callContext)
+          )
+        }
+      }
     }
 
     staticResourceDocs += ResourceDoc(
@@ -2970,11 +3057,28 @@ trait APIMethods600 {
          |- auditor
          |- standard
          |
+         |Each view is returned with an `allowed_actions` array containing all permissions for that view.
+         |
          |${userAuthenticationMessage(true)}
          |
          |""".stripMargin,
       EmptyBody,
-      ViewsJsonV500(List()),
+      ViewsJsonV600(List(
+        ViewJsonV600(
+          view_id = "owner",
+          short_name = "Owner",
+          description = "The owner of the account",
+          metadata_view = "owner",
+          is_public = false,
+          is_system = true,
+          is_firehose = Some(false),
+          alias = "private",
+          hide_metadata_if_alias_used = false,
+          can_grant_access_to_views = List("owner"),
+          can_revoke_access_to_views = List("owner"),
+          allowed_actions = List("can_see_transaction_amount", "can_see_bank_account_balance")
+        )
+      )),
       List(
         UserNotLoggedIn,
         UserHasMissingRoles,
@@ -2991,7 +3095,7 @@ trait APIMethods600 {
             (Full(u), callContext) <- authenticatedAccess(cc)
             views <- Views.views.vend.getSystemViews()
           } yield {
-            (JSONFactory500.createViewsJsonV500(views), HttpCode.`200`(callContext))
+            (JSONFactory600.createViewsJsonV600(views), HttpCode.`200`(callContext))
           }
       }
     }
@@ -3011,12 +3115,14 @@ trait APIMethods600 {
          |- auditor
          |- standard
          |
+         |The view is returned with an `allowed_actions` array containing all permissions for that view.
+         |
          |${userAuthenticationMessage(true)}
          |
          |""".stripMargin,
       EmptyBody,
-      ViewJsonV500(
-        id = "owner",
+      ViewJsonV600(
+        view_id = "owner",
         short_name = "Owner",
         description = "The owner of the account. Has full privileges.",
         metadata_view = "owner",
@@ -3027,80 +3133,12 @@ trait APIMethods600 {
         hide_metadata_if_alias_used = false,
         can_grant_access_to_views = List("owner", "accountant"),
         can_revoke_access_to_views = List("owner", "accountant"),
-        can_add_comment = true,
-        can_add_corporate_location = true,
-        can_add_image = true,
-        can_add_image_url = true,
-        can_add_more_info = true,
-        can_add_open_corporates_url = true,
-        can_add_physical_location = true,
-        can_add_private_alias = true,
-        can_add_public_alias = true,
-        can_add_tag = true,
-        can_add_url = true,
-        can_add_where_tag = true,
-        can_delete_comment = true,
-        can_add_counterparty = true,
-        can_delete_corporate_location = true,
-        can_delete_image = true,
-        can_delete_physical_location = true,
-        can_delete_tag = true,
-        can_delete_where_tag = true,
-        can_edit_owner_comment = true,
-        can_see_bank_account_balance = true,
-        can_query_available_funds = true,
-        can_see_bank_account_bank_name = true,
-        can_see_bank_account_currency = true,
-        can_see_bank_account_iban = true,
-        can_see_bank_account_label = true,
-        can_see_bank_account_national_identifier = true,
-        can_see_bank_account_number = true,
-        can_see_bank_account_owners = true,
-        can_see_bank_account_swift_bic = true,
-        can_see_bank_account_type = true,
-        can_see_comments = true,
-        can_see_corporate_location = true,
-        can_see_image_url = true,
-        can_see_images = true,
-        can_see_more_info = true,
-        can_see_open_corporates_url = true,
-        can_see_other_account_bank_name = true,
-        can_see_other_account_iban = true,
-        can_see_other_account_kind = true,
-        can_see_other_account_metadata = true,
-        can_see_other_account_national_identifier = true,
-        can_see_other_account_number = true,
-        can_see_other_account_swift_bic = true,
-        can_see_owner_comment = true,
-        can_see_physical_location = true,
-        can_see_private_alias = true,
-        can_see_public_alias = true,
-        can_see_tags = true,
-        can_see_transaction_amount = true,
-        can_see_transaction_balance = true,
-        can_see_transaction_currency = true,
-        can_see_transaction_description = true,
-        can_see_transaction_finish_date = true,
-        can_see_transaction_metadata = true,
-        can_see_transaction_other_bank_account = true,
-        can_see_transaction_start_date = true,
-        can_see_transaction_this_bank_account = true,
-        can_see_transaction_type = true,
-        can_see_url = true,
-        can_see_where_tag = true,
-        can_see_bank_routing_scheme = true,
-        can_see_bank_routing_address = true,
-        can_see_bank_account_routing_scheme = true,
-        can_see_bank_account_routing_address = true,
-        can_see_other_bank_routing_scheme = true,
-        can_see_other_bank_routing_address = true,
-        can_see_other_account_routing_scheme = true,
-        can_see_other_account_routing_address = true,
-        can_add_transaction_request_to_own_account = true,
-        can_add_transaction_request_to_any_account = true,
-        can_see_bank_account_credit_limit = true,
-        can_create_direct_debit = true,
-        can_create_standing_order = true
+        allowed_actions = List(
+          "can_see_transaction_amount",
+          "can_see_bank_account_balance",
+          "can_add_comment",
+          "can_create_custom_view"
+        )
       ),
       List(
         UserNotLoggedIn,
@@ -3119,7 +3157,225 @@ trait APIMethods600 {
             (Full(u), callContext) <- authenticatedAccess(cc)
             view <- ViewNewStyle.systemView(ViewId(viewId), callContext)
           } yield {
-            (JSONFactory500.createViewJsonV500(view), HttpCode.`200`(callContext))
+            (JSONFactory600.createViewJsonV600(view), HttpCode.`200`(callContext))
+          }
+      }
+    }
+
+//    staticResourceDocs += ResourceDoc(
+//      getSystemView,
+//      implementedInApiVersion,
+//      nameOf(getSystemView),
+//      "GET",
+//      "/system-views/VIEW_ID",
+//      "Get System View",
+//      s"""Get a single system view by its ID.
+//         |
+//         |System views are predefined views that apply to all accounts, such as:
+//         |- owner
+//         |- accountant
+//         |- auditor
+//         |- standard
+//         |
+//         |This endpoint returns the view with an `allowed_actions` array containing all permissions.
+//         |
+//         |${userAuthenticationMessage(true)}
+//         |
+//         |""".stripMargin,
+//      EmptyBody,
+//      ViewJsonV600(
+//        view_id = "owner",
+//        short_name = "Owner",
+//        description = "The owner of the account. Has full privileges.",
+//        metadata_view = "owner",
+//        is_public = false,
+//        is_system = true,
+//        is_firehose = Some(false),
+//        alias = "private",
+//        hide_metadata_if_alias_used = false,
+//        can_grant_access_to_views = List("owner", "accountant"),
+//        can_revoke_access_to_views = List("owner", "accountant"),
+//        allowed_actions = List(
+//          "can_see_transaction_amount",
+//          "can_see_bank_account_balance",
+//          "can_add_comment",
+//          "can_create_custom_view"
+//        )
+//      ),
+//      List(
+//        UserNotLoggedIn,
+//        UserHasMissingRoles,
+//        SystemViewNotFound,
+//        UnknownError
+//      ),
+//      List(apiTagSystemView, apiTagView),
+//      Some(List(canGetSystemViews))
+//    )
+//
+//    lazy val getSystemView: OBPEndpoint = {
+//      case "system-views" :: viewId :: Nil JsonGet _ => {
+//        cc => implicit val ec = EndpointContext(Some(cc))
+//          for {
+//            (Full(u), callContext) <- authenticatedAccess(cc)
+//            view <- ViewNewStyle.systemView(ViewId(viewId), callContext)
+//          } yield {
+//            (JSONFactory600.createViewJsonV600(view), HttpCode.`200`(callContext))
+//          }
+//      }
+//    }
+
+    staticResourceDocs += ResourceDoc(
+      updateSystemView,
+      implementedInApiVersion,
+      nameOf(updateSystemView),
+      "PUT",
+      "/system-views/VIEW_ID",
+      "Update System View",
+      s"""Update an existing system view.
+         |
+         |${userAuthenticationMessage(true)}
+         |
+         |The JSON sent is the same as during view creation, with one difference: the 'name' field
+         |of a view is not editable (it is only set when a view is created).
+         |
+         |The response contains the updated view with an `allowed_actions` array.
+         |
+         |""".stripMargin,
+      UpdateViewJsonV600(
+        description = "This is the owner view",
+        metadata_view = "owner",
+        is_public = false,
+        is_firehose = Some(false),
+        which_alias_to_use = "private",
+        hide_metadata_if_alias_used = false,
+        allowed_actions = List(
+          "can_see_transaction_amount",
+          "can_see_bank_account_balance",
+          "can_add_comment"
+        ),
+        can_grant_access_to_views = Some(List("owner", "accountant")),
+        can_revoke_access_to_views = Some(List("owner", "accountant"))
+      ),
+      ViewJsonV600(
+        view_id = "owner",
+        short_name = "Owner",
+        description = "This is the owner view",
+        metadata_view = "owner",
+        is_public = false,
+        is_system = true,
+        is_firehose = Some(false),
+        alias = "private",
+        hide_metadata_if_alias_used = false,
+        can_grant_access_to_views = List("owner", "accountant"),
+        can_revoke_access_to_views = List("owner", "accountant"),
+        allowed_actions = List(
+          "can_see_transaction_amount",
+          "can_see_bank_account_balance",
+          "can_add_comment"
+        )
+      ),
+      List(
+        InvalidJsonFormat,
+        UserNotLoggedIn,
+        UserHasMissingRoles,
+        SystemViewNotFound,
+        SystemViewCannotBePublicError,
+        UnknownError
+      ),
+      List(apiTagSystemView, apiTagView),
+      Some(List(canUpdateSystemView))
+    )
+
+    lazy val updateSystemView: OBPEndpoint = {
+      case "system-views" :: viewId :: Nil JsonPut json -> _ => {
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(u), callContext) <- authenticatedAccess(cc)
+            _ <- NewStyle.function.hasEntitlement("", u.userId, ApiRole.canUpdateSystemView, callContext)
+            updateJson <- NewStyle.function.tryons(s"$InvalidJsonFormat The Json body should be the UpdateViewJsonV600", 400, callContext) {
+              json.extract[UpdateViewJsonV600]
+            }
+            _ <- Helper.booleanToFuture(SystemViewCannotBePublicError, failCode = 400, cc = callContext) {
+              updateJson.is_public == false
+            }
+            _ <- ViewNewStyle.systemView(ViewId(viewId), callContext)
+            updatedView <- ViewNewStyle.updateSystemView(ViewId(viewId), updateJson.toUpdateViewJson, callContext)
+          } yield {
+            (JSONFactory600.createViewJsonV600(updatedView), HttpCode.`200`(callContext))
+          }
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
+      getViewPermissions,
+      implementedInApiVersion,
+      nameOf(getViewPermissions),
+      "GET",
+      "/management/view-permissions",
+      "Get View Permissions",
+      s"""Get a list of all available view permissions.
+         |
+         |This endpoint returns all the available permissions that can be assigned to views, 
+         |organized by category. These permissions control what actions and data can be accessed
+         |through a view.
+         |
+         |${userAuthenticationMessage(true)}
+         |
+         |The response contains all available view permission names that can be used in the 
+         |`allowed_actions` field when creating or updating custom views.
+         |
+         |""".stripMargin,
+      EmptyBody,
+      ViewPermissionsJsonV600(
+        permissions = List(
+          ViewPermissionJsonV600("can_see_transaction_amount", "Transaction"),
+          ViewPermissionJsonV600("can_see_bank_account_balance", "Account"),
+          ViewPermissionJsonV600("can_create_custom_view", "View")
+        )
+      ),
+      List(
+        UserNotLoggedIn,
+        UserHasMissingRoles,
+        UnknownError
+      ),
+      List(apiTagSystemView, apiTagView),
+      Some(List(canGetViewPermissionsAtAllBanks))
+    )
+
+    lazy val getViewPermissions: OBPEndpoint = {
+      case "management" :: "view-permissions" :: Nil JsonGet _ => {
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(u), callContext) <- authenticatedAccess(cc)
+            _ <- NewStyle.function.hasEntitlement("", u.userId, ApiRole.canGetViewPermissionsAtAllBanks, callContext)
+          } yield {
+            import Constant._
+            
+            // Helper function to determine category from permission name
+            def categorizePermission(permission: String): String = {
+              permission match {
+                case p if p.contains("transaction") && !p.contains("request") => "Transaction"
+                case p if p.contains("bank_account") || p.contains("bank_routing") || p.contains("available_funds") => "Account"
+                case p if p.contains("other_account") || p.contains("other_bank") || 
+                         p.contains("counterparty") || p.contains("more_info") || 
+                         p.contains("url") || p.contains("corporates") || 
+                         p.contains("location") || p.contains("alias") => "Counterparty"
+                case p if p.contains("comment") || p.contains("tag") || 
+                         p.contains("image") || p.contains("where_tag") => "Metadata"
+                case p if p.contains("transaction_request") || p.contains("direct_debit") || 
+                         p.contains("standing_order") => "Transaction Request"
+                case p if p.contains("view") => "View"
+                case p if p.contains("grant") || p.contains("revoke") => "Access Control"
+                case _ => "Other"
+              }
+            }
+            
+            // Return all view permissions directly from the constants with generated categories
+            val permissions = ALL_VIEW_PERMISSION_NAMES.map { permission =>
+              ViewPermissionJsonV600(permission, categorizePermission(permission))
+            }.sortBy(p => (p.category, p.permission))
+            
+            (ViewPermissionsJsonV600(permissions), HttpCode.`200`(callContext))
           }
       }
     }
@@ -3378,12 +3634,18 @@ trait APIMethods600 {
          |
          |2. **Implicit WebUiProps (Configuration File)**: Default values defined in the `sample.props.template` configuration file.
          |
+         |**Response Fields:**
+         |
+         |* `name`: The property name
+         |* `value`: The property value
+         |* `webUiPropsId` (optional): UUID for database props, omitted for config props
+         |* `source`: Either "database" (editable via API) or "config" (read-only from config file)
+         |
          |**Query Parameter:**
          |
          |* `active` (optional, boolean string, default: "false")
-         |  - If `active=false` or omitted: Returns only explicit prop from the database
-         |  - If `active=true`: Returns explicit prop from database, or if not found, returns implicit (default) prop from configuration file
-         |    - Implicit props are marked with `webUiPropsId = "default"`
+         |  - If `active=false` or omitted: Returns only explicit prop from the database (source="database")
+         |  - If `active=true`: Returns explicit prop from database, or if not found, returns implicit (default) prop from configuration file (source="config")
          |
          |**Examples:**
          |
@@ -3395,7 +3657,7 @@ trait APIMethods600 {
          |
          |""",
       EmptyBody,
-      WebUiPropsCommons("webui_api_explorer_url", "https://apiexplorer.openbankproject.com", Some("web-ui-props-id")),
+      WebUiPropsCommons("webui_api_explorer_url", "https://apiexplorer.openbankproject.com", Some("web-ui-props-id"), Some("config")),
       List(
         WebUiPropsNotFoundByName,
         UnknownError
@@ -3418,11 +3680,11 @@ trait APIMethods600 {
               explicitProp match {
                 case Some(prop) =>
                   // Found in database
-                  Future.successful(prop)
+                  Future.successful(WebUiPropsCommons(prop.name, prop.value, prop.webUiPropsId, source = Some("database")))
                 case None if isActived =>
                   // Not in database, check implicit props if active=true
                   val implicitWebUiProps = getWebUIPropsPairs.map(webUIPropsPairs =>
-                    WebUiPropsCommons(webUIPropsPairs._1, webUIPropsPairs._2, webUiPropsId = Some("default"))
+                    WebUiPropsCommons(webUIPropsPairs._1, webUIPropsPairs._2, webUiPropsId = Some("default"), source = Some("config"))
                   )
                   val implicitProp = implicitWebUiProps.find(_.name == webUiPropName)
                   implicitProp match {
@@ -3459,15 +3721,21 @@ trait APIMethods600 {
          |
          |2. **Implicit WebUiProps (Configuration File)**: Default values defined in the `sample.props.template` configuration file.
          |
+         |**Response Fields:**
+         |
+         |* `name`: The property name
+         |* `value`: The property value
+         |* `webUiPropsId` (optional): UUID for database props, omitted for config props
+         |* `source`: Either "database" (editable via API) or "config" (read-only from config file)
+         |
          |**Query Parameter:**
          |
          |* `what` (optional, string, default: "active")
          |  - `active`: Returns one value per property name
-         |    - If property exists in database: returns database value
-         |    - If property only in config file: returns config default value
-         |    - Database values have UUID `webUiPropsId`, config values have `webUiPropsId = "default"`
-         |  - `database`: Returns ONLY properties explicitly stored in the database
-         |  - `config`: Returns ONLY default properties from configuration file
+         |    - If property exists in database: returns database value (source="database")
+         |    - If property only in config file: returns config default value (source="config")
+         |  - `database`: Returns ONLY properties explicitly stored in the database (source="database")
+         |  - `config`: Returns ONLY default properties from configuration file (source="config")
          |
          |**Examples:**
          |
@@ -3487,7 +3755,7 @@ trait APIMethods600 {
       EmptyBody,
       ListResult(
         "webui_props",
-        (List(WebUiPropsCommons("webui_api_explorer_url", "https://apiexplorer.openbankproject.com", Some("web-ui-props-id"))))
+        (List(WebUiPropsCommons("webui_api_explorer_url", "https://apiexplorer.openbankproject.com", Some("web-ui-props-id"), Some("database"))))
       )
       ,
       List(
@@ -3511,19 +3779,20 @@ trait APIMethods600 {
               }
             }
             explicitWebUiProps <- Future{ MappedWebUiPropsProvider.getAll() }
-            implicitWebUiProps = getWebUIPropsPairs.map(webUIPropsPairs=>WebUiPropsCommons(webUIPropsPairs._1, webUIPropsPairs._2, webUiPropsId= Some("default")))
+            explicitWebUiPropsWithSource = explicitWebUiProps.map(prop => WebUiPropsCommons(prop.name, prop.value, prop.webUiPropsId, source = Some("database")))
+            implicitWebUiProps = getWebUIPropsPairs.map(webUIPropsPairs=>WebUiPropsCommons(webUIPropsPairs._1, webUIPropsPairs._2, webUiPropsId = Some("default"), source = Some("config")))
             result = what match {
               case "database" => 
                 // Return only database props
-                explicitWebUiProps
+                explicitWebUiPropsWithSource
               case "config" =>
                 // Return only config file props
                 implicitWebUiProps.distinct
               case "active" =>
                 // Return one value per prop: database value if exists, otherwise config value
-                val databasePropNames = explicitWebUiProps.map(_.name).toSet
+                val databasePropNames = explicitWebUiPropsWithSource.map(_.name).toSet
                 val configPropsNotInDatabase = implicitWebUiProps.distinct.filterNot(prop => databasePropNames.contains(prop.name))
-                explicitWebUiProps ++ configPropsNotInDatabase
+                explicitWebUiPropsWithSource ++ configPropsNotInDatabase
             }
           } yield {
             logger.info(s"========== GET /obp/v6.0.0/webui-props returning ${result.size} records ==========")
@@ -3532,6 +3801,181 @@ trait APIMethods600 {
             }
             logger.info(s"========== END GET /obp/v6.0.0/webui-props ==========")
             (ListResult("webui_props", result), HttpCode.`200`(callContext))
+          }
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
+      createOrUpdateWebUiProps,
+      implementedInApiVersion,
+      nameOf(createOrUpdateWebUiProps),
+      "PUT",
+      "/management/webui_props/WEBUI_PROP_NAME",
+      "Create or Update WebUiProps",
+      s"""Create or Update a WebUiProps.
+         |
+         |${userAuthenticationMessage(true)}
+         |
+         |This endpoint is idempotent - it will create the property if it doesn't exist, or update it if it does.
+         |The property is identified by WEBUI_PROP_NAME in the URL path.
+         |
+         |Explanation of Fields:
+         |
+         |* WEBUI_PROP_NAME in URL path (must start with `webui_`, contain only alphanumeric characters, underscore, and dot, not exceed 255 characters, and will be converted to lowercase)
+         |* value is required String value in request body
+         |
+         |The line break and double quotations should be escaped, example:
+         |
+         |```
+         |
+         |{"name": "webui_some", "value": "this value
+         |have "line break" and double quotations."}
+         |
+         |```
+         |should be escaped like this:
+         |
+         |```
+         |
+         |{"name": "webui_some", "value": "this value\\nhave \\"line break\\" and double quotations."}
+         |
+         |```
+         |
+         |Insert image examples:
+         |
+         |```
+         |// set width=100 and height=50
+         |{"name": "webui_some_pic", "value": "here is a picture ![hello](http://somedomain.com/images/pic.png =100x50)"}
+         |
+         |// only set height=50
+         |{"name": "webui_some_pic", "value": "here is a picture ![hello](http://somedomain.com/images/pic.png =x50)"}
+         |
+         |// only width=20%
+         |{"name": "webui_some_pic", "value": "here is a picture ![hello](http://somedomain.com/images/pic.png =20%x)"}
+         |
+         |```
+         |
+         |""",
+      WebUiPropsPutJsonV600("https://apiexplorer.openbankproject.com"),
+      WebUiPropsCommons("webui_api_explorer_url", "https://apiexplorer.openbankproject.com", Some("some-web-ui-props-id")),
+      List(
+        UserNotLoggedIn,
+        UserHasMissingRoles,
+        InvalidJsonFormat,
+        InvalidWebUiProps,
+        UnknownError
+      ),
+      List(apiTagWebUiProps),
+      Some(List(canCreateWebUiProps))
+    )
+
+    lazy val createOrUpdateWebUiProps: OBPEndpoint = {
+      case "management" :: "webui_props" :: webUiPropName :: Nil JsonPut json -> _ => {
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(u), callContext) <- authenticatedAccess(cc)
+            _ <- NewStyle.function.hasEntitlement("", u.userId, canCreateWebUiProps, callContext)
+            // Convert name to lowercase
+            webUiPropNameLower = webUiPropName.toLowerCase
+            invalidMsg = s"""$InvalidWebUiProps name must start with webui_, but current name is: ${webUiPropNameLower} """
+            _ <- NewStyle.function.tryons(invalidMsg, 400, callContext) {
+              require(webUiPropNameLower.startsWith("webui_"))
+            }
+            invalidCharsMsg = s"""$InvalidWebUiProps name must contain only alphanumeric characters, underscore, and dot. Current name: ${webUiPropNameLower} """
+            _ <- NewStyle.function.tryons(invalidCharsMsg, 400, callContext) {
+              require(webUiPropNameLower.matches("^[a-zA-Z0-9_.]+$"))
+            }
+            invalidLengthMsg = s"""$InvalidWebUiProps name must not exceed 255 characters. Current length: ${webUiPropNameLower.length} """
+            _ <- NewStyle.function.tryons(invalidLengthMsg, 400, callContext) {
+              require(webUiPropNameLower.length <= 255)
+            }
+            // Check if resource already exists to determine status code
+            existingProp <- Future { MappedWebUiPropsProvider.getByName(webUiPropNameLower) }
+            resourceExists = existingProp.isDefined
+            failMsg = s"$InvalidJsonFormat The Json body should contain a value field"
+            valueJson <- NewStyle.function.tryons(failMsg, 400, callContext) {
+              json.extract[WebUiPropsPutJsonV600]
+            }
+            webUiPropsData = WebUiPropsCommons(webUiPropNameLower, valueJson.value)
+            Full(webUiProps) <- Future { MappedWebUiPropsProvider.createOrUpdate(webUiPropsData) }
+          } yield {
+            val commonsData: WebUiPropsCommons = webUiProps
+            val statusCode = if (resourceExists) HttpCode.`200`(callContext) else HttpCode.`201`(callContext)
+            (commonsData, statusCode)
+          }
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
+      deleteWebUiProps,
+      implementedInApiVersion,
+      nameOf(deleteWebUiProps),
+      "DELETE",
+      "/management/webui_props/WEBUI_PROP_NAME",
+      "Delete WebUiProps",
+      s"""Delete a WebUiProps specified by WEBUI_PROP_NAME.
+         |
+         |${userAuthenticationMessage(true)}
+         |
+         |The property name will be converted to lowercase before deletion.
+         |
+         |Returns 204 No Content on successful deletion.
+         |
+         |This endpoint is idempotent - if the property does not exist, it still returns 204 No Content.
+         |
+         |Requires the $canDeleteWebUiProps role.
+         |
+         |""",
+      EmptyBody,
+      EmptyBody,
+      List(
+        UserNotLoggedIn,
+        UserHasMissingRoles,
+        InvalidWebUiProps,
+        UnknownError
+      ),
+      List(apiTagWebUiProps),
+      Some(List(canDeleteWebUiProps))
+    )
+
+    lazy val deleteWebUiProps: OBPEndpoint = {
+      case "management" :: "webui_props" :: webUiPropName :: Nil JsonDelete _ => {
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(u), callContext) <- authenticatedAccess(cc)
+            _ <- NewStyle.function.hasEntitlement("", u.userId, canDeleteWebUiProps, callContext)
+            // Convert name to lowercase
+            webUiPropNameLower = webUiPropName.toLowerCase
+            invalidMsg = s"""$InvalidWebUiProps name must start with webui_, but current name is: ${webUiPropNameLower} """
+            _ <- NewStyle.function.tryons(invalidMsg, 400, callContext) {
+              require(webUiPropNameLower.startsWith("webui_"))
+            }
+            invalidCharsMsg = s"""$InvalidWebUiProps name must contain only alphanumeric characters, underscore, and dot. Current name: ${webUiPropNameLower} """
+            _ <- NewStyle.function.tryons(invalidCharsMsg, 400, callContext) {
+              require(webUiPropNameLower.matches("^[a-zA-Z0-9_.]+$"))
+            }
+            invalidLengthMsg = s"""$InvalidWebUiProps name must not exceed 255 characters. Current length: ${webUiPropNameLower.length} """
+            _ <- NewStyle.function.tryons(invalidLengthMsg, 400, callContext) {
+              require(webUiPropNameLower.length <= 255)
+            }
+            // Check if resource exists
+            existingProp <- Future { MappedWebUiPropsProvider.getByName(webUiPropNameLower) }
+            _ <- existingProp match {
+              case Full(prop) =>
+                // Property exists - delete it
+                Future { MappedWebUiPropsProvider.delete(prop.webUiPropsId.getOrElse("")) } map {
+                  case Full(true) => Full(())
+                  case Full(false) => ObpApiFailure(s"$UnknownError Cannot delete WebUI prop", 500, callContext)
+                  case Empty => ObpApiFailure(s"$UnknownError Cannot delete WebUI prop", 500, callContext)
+                  case Failure(msg, _, _) => ObpApiFailure(msg, 500, callContext)
+                }
+              case Empty =>
+                // Property not found - idempotent delete returns success
+                Future.successful(Full(()))
+              case Failure(msg, _, _) =>
+                Future.failed(new Exception(msg))
+            }
+          } yield {
+            (EmptyBody, HttpCode.`204`(callContext))
           }
       }
     }
@@ -3693,6 +4137,437 @@ trait APIMethods600 {
         )
       } yield {
         (deleted, HttpCode.`200`(cc.callContext))
+      }
+    }
+
+    // ABAC Rule Endpoints
+    staticResourceDocs += ResourceDoc(
+      createAbacRule,
+      implementedInApiVersion,
+      nameOf(createAbacRule),
+      "POST",
+      "/management/abac-rules",
+      "Create ABAC Rule",
+      s"""Create a new ABAC (Attribute-Based Access Control) rule.
+         |
+         |ABAC rules are Scala functions that return a Boolean value indicating whether access should be granted.
+         |
+         |The rule function has the following signature:
+         |```scala
+         |(user: User, bankOpt: Option[Bank], accountOpt: Option[BankAccount], transactionOpt: Option[Transaction], customerOpt: Option[Customer]) => Boolean
+         |```
+         |
+         |Example rule code:
+         |```scala
+         |// Allow access only if user email contains "admin"
+         |user.emailAddress.contains("admin")
+         |```
+         |
+         |```scala
+         |// Allow access only to accounts with balance > 1000
+         |accountOpt.exists(_.balance.toString.toDouble > 1000.0)
+         |```
+         |
+         |${userAuthenticationMessage(true)}
+         |
+         |""".stripMargin,
+      CreateAbacRuleJsonV600(
+        rule_name = "admin_only",
+        rule_code = """user.emailAddress.contains("admin")""",
+        description = "Only allow access to users with admin email",
+        is_active = true
+      ),
+      AbacRuleJsonV600(
+        abac_rule_id = "abc123",
+        rule_name = "admin_only",
+        rule_code = """user.emailAddress.contains("admin")""",
+        is_active = true,
+        description = "Only allow access to users with admin email",
+        created_by_user_id = "user123",
+        updated_by_user_id = "user123"
+      ),
+      List(
+        UserNotLoggedIn,
+        UserHasMissingRoles,
+        InvalidJsonFormat,
+        UnknownError
+      ),
+      List(apiTagABAC),
+      Some(List(canCreateAbacRule))
+    )
+
+    lazy val createAbacRule: OBPEndpoint = {
+      case "management" :: "abac-rules" :: Nil JsonPost json -> _ => {
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(user), callContext) <- authenticatedAccess(cc)
+            _ <- NewStyle.function.hasEntitlement("", user.userId, canCreateAbacRule, callContext)
+            createJson <- NewStyle.function.tryons(s"$InvalidJsonFormat", 400, callContext) {
+              json.extract[CreateAbacRuleJsonV600]
+            }
+            _ <- NewStyle.function.tryons(s"Rule name must not be empty", 400, callContext) {
+              createJson.rule_name.nonEmpty
+            }
+            _ <- NewStyle.function.tryons(s"Rule code must not be empty", 400, callContext) {
+              createJson.rule_code.nonEmpty
+            }
+            // Validate rule code by attempting to compile it
+            _ <- Future {
+              AbacRuleEngine.validateRuleCode(createJson.rule_code)
+            } map {
+              unboxFullOrFail(_, callContext, s"Invalid ABAC rule code", 400)
+            }
+            rule <- Future {
+              MappedAbacRuleProvider.createAbacRule(
+                ruleName = createJson.rule_name,
+                ruleCode = createJson.rule_code,
+                description = createJson.description,
+                isActive = createJson.is_active,
+                createdBy = user.userId
+              )
+            } map {
+              unboxFullOrFail(_, callContext, s"Could not create ABAC rule", 400)
+            }
+          } yield {
+            (createAbacRuleJsonV600(rule), HttpCode.`201`(callContext))
+          }
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
+      getAbacRule,
+      implementedInApiVersion,
+      nameOf(getAbacRule),
+      "GET",
+      "/management/abac-rules/ABAC_RULE_ID",
+      "Get ABAC Rule",
+      s"""Get an ABAC rule by its ID.
+         |
+         |${userAuthenticationMessage(true)}
+         |
+         |""".stripMargin,
+      EmptyBody,
+      AbacRuleJsonV600(
+        abac_rule_id = "abc123",
+        rule_name = "admin_only",
+        rule_code = """user.emailAddress.contains("admin")""",
+        is_active = true,
+        description = "Only allow access to users with admin email",
+        created_by_user_id = "user123",
+        updated_by_user_id = "user123"
+      ),
+      List(
+        UserNotLoggedIn,
+        UserHasMissingRoles,
+        UnknownError
+      ),
+      List(apiTagABAC),
+      Some(List(canGetAbacRule))
+    )
+
+    lazy val getAbacRule: OBPEndpoint = {
+      case "management" :: "abac-rules" :: ruleId :: Nil JsonGet _ => {
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(user), callContext) <- authenticatedAccess(cc)
+            _ <- NewStyle.function.hasEntitlement("", user.userId, canGetAbacRule, callContext)
+            rule <- Future {
+              MappedAbacRuleProvider.getAbacRuleById(ruleId)
+            } map {
+              unboxFullOrFail(_, callContext, s"ABAC Rule not found with ID: $ruleId", 404)
+            }
+          } yield {
+            (createAbacRuleJsonV600(rule), HttpCode.`200`(callContext))
+          }
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
+      getAbacRules,
+      implementedInApiVersion,
+      nameOf(getAbacRules),
+      "GET",
+      "/management/abac-rules",
+      "Get ABAC Rules",
+      s"""Get all ABAC rules.
+         |
+         |${userAuthenticationMessage(true)}
+         |
+         |""".stripMargin,
+      EmptyBody,
+      AbacRulesJsonV600(
+        abac_rules = List(
+          AbacRuleJsonV600(
+            abac_rule_id = "abc123",
+            rule_name = "admin_only",
+            rule_code = """user.emailAddress.contains("admin")""",
+            is_active = true,
+            description = "Only allow access to users with admin email",
+            created_by_user_id = "user123",
+            updated_by_user_id = "user123"
+          )
+        )
+      ),
+      List(
+        UserNotLoggedIn,
+        UserHasMissingRoles,
+        UnknownError
+      ),
+      List(apiTagABAC),
+      Some(List(canGetAbacRule))
+    )
+
+    lazy val getAbacRules: OBPEndpoint = {
+      case "management" :: "abac-rules" :: Nil JsonGet _ => {
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(user), callContext) <- authenticatedAccess(cc)
+            _ <- NewStyle.function.hasEntitlement("", user.userId, canGetAbacRule, callContext)
+            rules <- Future {
+              MappedAbacRuleProvider.getAllAbacRules()
+            }
+          } yield {
+            (createAbacRulesJsonV600(rules), HttpCode.`200`(callContext))
+          }
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
+      updateAbacRule,
+      implementedInApiVersion,
+      nameOf(updateAbacRule),
+      "PUT",
+      "/management/abac-rules/ABAC_RULE_ID",
+      "Update ABAC Rule",
+      s"""Update an existing ABAC rule.
+         |
+         |${userAuthenticationMessage(true)}
+         |
+         |""".stripMargin,
+      UpdateAbacRuleJsonV600(
+        rule_name = "admin_only_updated",
+        rule_code = """user.emailAddress.contains("admin") && user.provider == "obp"""",
+        description = "Only allow access to OBP admin users",
+        is_active = true
+      ),
+      AbacRuleJsonV600(
+        abac_rule_id = "abc123",
+        rule_name = "admin_only_updated",
+        rule_code = """user.emailAddress.contains("admin") && user.provider == "obp"""",
+        is_active = true,
+        description = "Only allow access to OBP admin users",
+        created_by_user_id = "user123",
+        updated_by_user_id = "user456"
+      ),
+      List(
+        UserNotLoggedIn,
+        UserHasMissingRoles,
+        InvalidJsonFormat,
+        UnknownError
+      ),
+      List(apiTagABAC),
+      Some(List(canUpdateAbacRule))
+    )
+
+    lazy val updateAbacRule: OBPEndpoint = {
+      case "management" :: "abac-rules" :: ruleId :: Nil JsonPut json -> _ => {
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(user), callContext) <- authenticatedAccess(cc)
+            _ <- NewStyle.function.hasEntitlement("", user.userId, canUpdateAbacRule, callContext)
+            updateJson <- NewStyle.function.tryons(s"$InvalidJsonFormat", 400, callContext) {
+              json.extract[UpdateAbacRuleJsonV600]
+            }
+            // Validate rule code by attempting to compile it
+            _ <- Future {
+              AbacRuleEngine.validateRuleCode(updateJson.rule_code)
+            } map {
+              unboxFullOrFail(_, callContext, s"Invalid ABAC rule code", 400)
+            }
+            rule <- Future {
+              MappedAbacRuleProvider.updateAbacRule(
+                ruleId = ruleId,
+                ruleName = updateJson.rule_name,
+                ruleCode = updateJson.rule_code,
+                description = updateJson.description,
+                isActive = updateJson.is_active,
+                updatedBy = user.userId
+              )
+            } map {
+              unboxFullOrFail(_, callContext, s"Could not update ABAC rule with ID: $ruleId", 400)
+            }
+            // Clear rule from cache after update
+            _ <- Future {
+              AbacRuleEngine.clearRuleFromCache(ruleId)
+            }
+          } yield {
+            (createAbacRuleJsonV600(rule), HttpCode.`200`(callContext))
+          }
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
+      deleteAbacRule,
+      implementedInApiVersion,
+      nameOf(deleteAbacRule),
+      "DELETE",
+      "/management/abac-rules/ABAC_RULE_ID",
+      "Delete ABAC Rule",
+      s"""Delete an ABAC rule.
+         |
+         |${userAuthenticationMessage(true)}
+         |
+         |""".stripMargin,
+      EmptyBody,
+      EmptyBody,
+      List(
+        UserNotLoggedIn,
+        UserHasMissingRoles,
+        UnknownError
+      ),
+      List(apiTagABAC),
+      Some(List(canDeleteAbacRule))
+    )
+
+    lazy val deleteAbacRule: OBPEndpoint = {
+      case "management" :: "abac-rules" :: ruleId :: Nil JsonDelete _ => {
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(user), callContext) <- authenticatedAccess(cc)
+            _ <- NewStyle.function.hasEntitlement("", user.userId, canDeleteAbacRule, callContext)
+            deleted <- Future {
+              MappedAbacRuleProvider.deleteAbacRule(ruleId)
+            } map {
+              unboxFullOrFail(_, callContext, s"Could not delete ABAC rule with ID: $ruleId", 400)
+            }
+            // Clear rule from cache after deletion
+            _ <- Future {
+              AbacRuleEngine.clearRuleFromCache(ruleId)
+            }
+          } yield {
+            (Full(deleted), HttpCode.`204`(callContext))
+          }
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
+      executeAbacRule,
+      implementedInApiVersion,
+      nameOf(executeAbacRule),
+      "POST",
+      "/management/abac-rules/ABAC_RULE_ID/execute",
+      "Execute ABAC Rule",
+      s"""Execute an ABAC rule to test access control.
+         |
+         |This endpoint allows you to test an ABAC rule with specific context (bank, account, transaction, customer).
+         |
+         |${userAuthenticationMessage(true)}
+         |
+         |""".stripMargin,
+      ExecuteAbacRuleJsonV600(
+        bank_id = Some("gh.29.uk"),
+        account_id = Some("8ca8a7e4-6d02-48e3-a029-0b2bf89de9f0"),
+        transaction_id = None,
+        customer_id = None
+      ),
+      AbacRuleResultJsonV600(
+        rule_id = "abc123",
+        rule_name = "admin_only",
+        result = true,
+        message = "Access granted"
+      ),
+      List(
+        UserNotLoggedIn,
+        UserHasMissingRoles,
+        InvalidJsonFormat,
+        UnknownError
+      ),
+      List(apiTagABAC),
+      Some(List(canExecuteAbacRule))
+    )
+
+    lazy val executeAbacRule: OBPEndpoint = {
+      case "management" :: "abac-rules" :: ruleId :: "execute" :: Nil JsonPost json -> _ => {
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(user), callContext) <- authenticatedAccess(cc)
+            _ <- NewStyle.function.hasEntitlement("", user.userId, canExecuteAbacRule, callContext)
+            execJson <- NewStyle.function.tryons(s"$InvalidJsonFormat", 400, callContext) {
+              json.extract[ExecuteAbacRuleJsonV600]
+            }
+            rule <- Future {
+              MappedAbacRuleProvider.getAbacRuleById(ruleId)
+            } map {
+              unboxFullOrFail(_, callContext, s"ABAC Rule not found with ID: $ruleId", 404)
+            }
+            
+            // Fetch context objects if IDs are provided
+            bankOpt <- execJson.bank_id match {
+              case Some(bankId) => NewStyle.function.getBank(BankId(bankId), callContext).map { case (bank, _) => Some(bank) }
+              case None => Future.successful(None)
+            }
+            
+            accountOpt <- execJson.account_id match {
+              case Some(accountId) if execJson.bank_id.isDefined =>
+                NewStyle.function.getBankAccount(BankId(execJson.bank_id.get), AccountId(accountId), callContext)
+                  .map { case (account, _) => Some(account) }
+              case _ => Future.successful(None)
+            }
+            
+            transactionOpt <- execJson.transaction_id match {
+              case Some(transId) if execJson.bank_id.isDefined && execJson.account_id.isDefined =>
+                NewStyle.function.getTransaction(
+                  BankId(execJson.bank_id.get),
+                  AccountId(execJson.account_id.get),
+                  TransactionId(transId),
+                  callContext
+                ).map { case (transaction, _) => Some(transaction) }.recover { case _ => None }
+              case _ => Future.successful(None)
+            }
+            
+            customerOpt <- execJson.customer_id match {
+              case Some(custId) if execJson.bank_id.isDefined =>
+                NewStyle.function.getCustomerByCustomerId(custId, callContext)
+                  .map { case (customer, _) => Some(customer) }.recover { case _ => None }
+              case _ => Future.successful(None)
+            }
+            
+            // Execute the rule
+            result <- Future {
+              AbacRuleEngine.executeRule(
+                ruleId = ruleId,
+                user = user,
+                bankOpt = bankOpt,
+                accountOpt = accountOpt,
+                transactionOpt = transactionOpt,
+                customerOpt = customerOpt
+              )
+            } map {
+              case Full(allowed) => 
+                AbacRuleResultJsonV600(
+                  rule_id = ruleId,
+                  rule_name = rule.ruleName,
+                  result = allowed,
+                  message = if (allowed) "Access granted" else "Access denied"
+                )
+              case Failure(msg, _, _) =>
+                AbacRuleResultJsonV600(
+                  rule_id = ruleId,
+                  rule_name = rule.ruleName,
+                  result = false,
+                  message = s"Execution error: $msg"
+                )
+              case Empty =>
+                AbacRuleResultJsonV600(
+                  rule_id = ruleId,
+                  rule_name = rule.ruleName,
+                  result = false,
+                  message = "Execution failed"
+                )
+            }
+          } yield {
+            (result, HttpCode.`200`(callContext))
+          }
       }
     }
 

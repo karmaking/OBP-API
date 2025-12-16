@@ -19,6 +19,7 @@ object MappedWebUiPropsProvider extends WebUiPropsProvider {
 
   override def getAll(): List[WebUiPropsT] =  WebUiProps.findAll()
 
+  override def getByName(name: String): Box[WebUiPropsT] = WebUiProps.find(By(WebUiProps.Name, name))
 
   override def createOrUpdate(webUiProps: WebUiPropsT): Box[WebUiPropsT] = {
       WebUiProps.find(By(WebUiProps.Name, webUiProps.name))
@@ -77,6 +78,7 @@ class WebUiProps extends WebUiPropsT with LongKeyedMapper[WebUiProps] with IdPK 
   override def webUiPropsId: Option[String] = Option(WebUiPropsId.get)
   override def name: String = Name.get
   override def value: String = Value.get
+  override def source: Option[String] = Some("database")
 }
 
 object WebUiProps extends WebUiProps with LongKeyedMetaMapper[WebUiProps] {

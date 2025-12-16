@@ -30,6 +30,7 @@ import code.CustomerDependants.MappedCustomerDependant
 import code.DynamicData.DynamicData
 import code.DynamicEndpoint.DynamicEndpoint
 import code.UserRefreshes.MappedUserRefreshes
+import code.abacrule.MappedAbacRule
 import code.accountapplication.MappedAccountApplication
 import code.accountattribute.MappedAccountAttribute
 import code.accountholders.MapperAccountHolders
@@ -1040,6 +1041,7 @@ object ToSchemify {
     MappedRegulatedEntity,
     AtmAttribute,
     Admin,
+    MappedAbacRule,
     MappedBank,
     MappedBankAccount,
     BankAccountRouting,

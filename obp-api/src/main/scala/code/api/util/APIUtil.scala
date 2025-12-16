@@ -2678,7 +2678,13 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
     case JField("ccy", x) => JField("currency", x)
   }
 
-  def getDisabledVersions() : List[String] = APIUtil.getPropsValue("api_disabled_versions").getOrElse("").replace("[", "").replace("]", "").split(",").toList.filter(_.nonEmpty)
+  def getDisabledVersions() : List[String] = {
+    val disabledVersions = APIUtil.getPropsValue("api_disabled_versions").getOrElse("").replace("[", "").replace("]", "").split(",").toList.filter(_.nonEmpty)
+    if (disabledVersions.nonEmpty) {
+      logger.info(s"Disabled API versions: ${disabledVersions.mkString(", ")}")
+    }
+    disabledVersions
+  }
 
   def getDisabledEndpointOperationIds() : List[String] = APIUtil.getPropsValue("api_disabled_endpoints").getOrElse("").replace("[", "").replace("]", "").split(",").toList.filter(_.nonEmpty)
 
@@ -2770,11 +2776,11 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
         case _ => logger.info(s"There is no ${version.toString}")
       }
 
-      logger.info(s"${version.toString} was ENABLED")
+      logger.info(s"${version.fullyQualifiedVersion} was ENABLED")
 
       true
     } else {
-      logger.info(s"${version.toString} was NOT enabled")
+      logger.info(s"${version.fullyQualifiedVersion} was NOT enabled")
       false
     }
     allowed
