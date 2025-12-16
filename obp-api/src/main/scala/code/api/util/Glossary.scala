@@ -3937,9 +3937,8 @@ object Glossary extends MdcLoggable  {
 				 |### 1. `authenticatedUserId` (Required)
 				 |**The person actually logged in and making the API call**
 				 |
-				 |- This is ALWAYS the real user who authenticated
+				 |- The real user who authenticated
 				 |- Retrieved from the authentication token
-				 |- Cannot be faked or changed
 				 |
 				 |### 2. `onBehalfOfUserId` (Optional)
 				 |**When someone acts on behalf of another user (delegation)**
@@ -3984,13 +3983,13 @@ object Glossary extends MdcLoggable  {
 				 |## Available Objects in Rules
 				 |
 				 |```scala
-				 |authenticatedUser: User                    // Always present - the logged in user
-				 |onBehalfOfUserOpt: Option[User]           // Present if delegation
-				 |user: User                                 // Always present - the target user
-				 |bankOpt: Option[Bank]                      // Present if bank_id provided
-				 |accountOpt: Option[BankAccount]            // Present if account_id provided
-				 |transactionOpt: Option[Transaction]        // Present if transaction_id provided
-				 |customerOpt: Option[Customer]              // Present if customer_id provided
+				 |authenticatedUser: User                    // The logged in user
+				 |onBehalfOfUserOpt: Option[User]           // User being acted on behalf of (if provided)
+				 |user: User                                 // The target user being evaluated
+				 |bankOpt: Option[Bank]                      // Bank context (if bank_id provided)
+				 |accountOpt: Option[BankAccount]            // Account context (if account_id provided)
+				 |transactionOpt: Option[Transaction]        // Transaction context (if transaction_id provided)
+				 |customerOpt: Option[Customer]              // Customer context (if customer_id provided)
 				 |```
 				 |
 				 |**Related Documentation:**
@@ -4009,17 +4008,17 @@ object Glossary extends MdcLoggable  {
 				 |
 				 |## User Parameters (6 parameters)
 				 |
-				 |1. **authenticatedUser: User** - The logged-in user (always present)
-				 |2. **authenticatedUserAttributes: List[UserAttributeTrait]** - Non-personal attributes of authenticated user
+				 |1. **authenticatedUser: User** - The logged-in user
+				 |2. **authenticatedUserAttributes: List[UserAttributeTrait]** - Non-personal attributes of authenticated user (IsPersonal=false)
 				 |3. **authenticatedUserAuthContext: List[UserAuthContext]** - Auth context of authenticated user
-				 |4. **onBehalfOfUserOpt: Option[User]** - User being acted on behalf of (delegation)
-				 |5. **onBehalfOfUserAttributes: List[UserAttributeTrait]** - Attributes of delegated user
-				 |6. **onBehalfOfUserAuthContext: List[UserAuthContext]** - Auth context of delegated user
+				 |4. **onBehalfOfUserOpt: Option[User]** - User being acted on behalf of (if provided)
+				 |5. **onBehalfOfUserAttributes: List[UserAttributeTrait]** - Non-personal attributes of on-behalf-of user (IsPersonal=false)
+				 |6. **onBehalfOfUserAuthContext: List[UserAuthContext]** - Auth context of on-behalf-of user
 				 |
 				 |## Target User Parameters (3 parameters)
 				 |
 				 |7. **userOpt: Option[User]** - Target user being evaluated
-				 |8. **userAttributes: List[UserAttributeTrait]** - Attributes of target user
+				 |8. **userAttributes: List[UserAttributeTrait]** - Non-personal attributes of target user (IsPersonal=false)
 				 |9. **user: User** - Resolved target user (defaults to authenticatedUser)
 				 |
 				 |## Resource Context Parameters (9 parameters)
@@ -4044,10 +4043,12 @@ object Glossary extends MdcLoggable  {
 				 |// Check if account exists and has sufficient balance
 				 |accountOpt.exists(account => account.balance.toDouble >= 1000.0)
 				 |
-				 |// Check user attributes
+				 |// Check user attributes (non-personal only)
 				 |authenticatedUserAttributes.exists(attr => 
 				 |  attr.name == "role" && attr.value == "admin"
 				 |)
+				 |
+				 |// Note: Only non-personal attributes (IsPersonal=false) are included
 				 |
 				 |// Check delegation
 				 |onBehalfOfUserOpt.isDefined
@@ -4209,10 +4210,14 @@ object Glossary extends MdcLoggable  {
 				 |### Usage Example
 				 |
 				 |```scala
-				 |// Check for specific attribute
+				 |// Check for specific non-personal attribute
 				 |authenticatedUserAttributes.exists(attr =>
 				 |  attr.name == "department" && attr.value == "finance"
 				 |)
+				 |
+				 |// Note: User attributes in ABAC rules only include non-personal attributes
+				 |// (where IsPersonal=false). Personal attributes are not available for
+				 |// privacy and GDPR compliance reasons.
 				 |```
 				 |
 				 |**Related Documentation:**
