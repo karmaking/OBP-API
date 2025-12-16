@@ -1672,7 +1672,7 @@ trait APIMethods400 extends MdcLoggable {
         InvalidJsonFormat,
         UnknownError
       ),
-      List(apiTagTransactionRequest),
+      List(apiTagTransactionRequest, apiTagTransactionRequestAttribute, apiTagAttribute),
       Some(List(canCreateTransactionRequestAttributeAtOneBank))
     )
 
@@ -1744,7 +1744,7 @@ trait APIMethods400 extends MdcLoggable {
         InvalidJsonFormat,
         UnknownError
       ),
-      List(apiTagTransactionRequest),
+      List(apiTagTransactionRequest, apiTagTransactionRequestAttribute, apiTagAttribute),
       Some(List(canGetTransactionRequestAttributeAtOneBank))
     )
 
@@ -1798,7 +1798,7 @@ trait APIMethods400 extends MdcLoggable {
         InvalidJsonFormat,
         UnknownError
       ),
-      List(apiTagTransactionRequest),
+      List(apiTagTransactionRequest, apiTagTransactionRequestAttribute, apiTagAttribute),
       Some(List(canGetTransactionRequestAttributesAtOneBank))
     )
 
@@ -1852,7 +1852,7 @@ trait APIMethods400 extends MdcLoggable {
         InvalidJsonFormat,
         UnknownError
       ),
-      List(apiTagTransactionRequest),
+      List(apiTagTransactionRequest, apiTagTransactionRequestAttribute, apiTagAttribute),
       Some(List(canUpdateTransactionRequestAttributeAtOneBank))
     )
 
@@ -1935,7 +1935,7 @@ trait APIMethods400 extends MdcLoggable {
         InvalidJsonFormat,
         UnknownError
       ),
-      List(apiTagTransactionRequest),
+      List(apiTagTransactionRequest, apiTagTransactionRequestAttribute, apiTagAttribute),
       Some(List(canCreateTransactionRequestAttributeDefinitionAtOneBank))
     )
 
@@ -2011,7 +2011,7 @@ trait APIMethods400 extends MdcLoggable {
         $BankNotFound,
         UnknownError
       ),
-      List(apiTagTransactionRequest),
+      List(apiTagTransactionRequest, apiTagTransactionRequestAttribute, apiTagAttribute),
       Some(List(canGetTransactionRequestAttributeDefinitionAtOneBank))
     )
 
@@ -2058,7 +2058,7 @@ trait APIMethods400 extends MdcLoggable {
         $BankNotFound,
         UnknownError
       ),
-      List(apiTagTransactionRequest),
+      List(apiTagTransactionRequest, apiTagTransactionRequestAttribute, apiTagAttribute),
       Some(List(canDeleteTransactionRequestAttributeDefinitionAtOneBank))
     )
 
