@@ -62,6 +62,7 @@ object ApiTag {
   val apiTagATM = ResourceDocTag("ATM")
   val apiTagAtmAttribute = ResourceDocTag("ATM-Attribute")
   val apiTagProduct = ResourceDocTag("Product")
+  val apiTagProductAttribute = ResourceDocTag("Product-Attribute")
   val apiTagProductCollection = ResourceDocTag("Product-Collection")
   val apiTagOpenData = ResourceDocTag("Open-Data")
   val apiTagConsumer = ResourceDocTag("Consumer")

@@ -8068,7 +8068,7 @@ trait APIMethods400 extends MdcLoggable {
         InvalidJsonFormat,
         UnknownError
       ),
-      List(apiTagProduct),
+      List(apiTagProduct, apiTagProductAttribute, apiTagAttribute),
       Some(List(canCreateProductAttributeDefinitionAtOneBank))
     )
 
@@ -8171,7 +8171,7 @@ trait APIMethods400 extends MdcLoggable {
         InvalidJsonFormat,
         UnknownError
       ),
-      List(apiTagProduct),
+      List(apiTagProduct, apiTagProductAttribute, apiTagAttribute),
       Some(List(canCreateProductAttribute))
     )
 
@@ -8253,7 +8253,7 @@ trait APIMethods400 extends MdcLoggable {
         UserHasMissingRoles,
         UnknownError
       ),
-      List(apiTagProduct),
+      List(apiTagProduct, apiTagProductAttribute, apiTagAttribute),
       Some(List(canUpdateProductAttribute))
     )
 
@@ -8333,7 +8333,7 @@ trait APIMethods400 extends MdcLoggable {
         UserHasMissingRoles,
         UnknownError
       ),
-      List(apiTagProduct),
+      List(apiTagProduct, apiTagProductAttribute, apiTagAttribute),
       Some(List(canUpdateProductAttribute))
     )
 
@@ -9284,7 +9284,7 @@ trait APIMethods400 extends MdcLoggable {
         $BankNotFound,
         UnknownError
       ),
-      List(apiTagProduct),
+      List(apiTagProduct, apiTagProductAttribute, apiTagAttribute),
       Some(List(canDeleteProductAttributeDefinitionAtOneBank))
     )
 
@@ -9366,7 +9366,7 @@ trait APIMethods400 extends MdcLoggable {
         $BankNotFound,
         UnknownError
       ),
-      List(apiTagProduct),
+      List(apiTagProduct, apiTagProductAttribute, apiTagAttribute),
       Some(List(canGetProductAttributeDefinitionAtOneBank))
     )
 

@@ -1974,7 +1974,7 @@ trait APIMethods310 {
         InvalidJsonFormat,
         UnknownError
       ),
-      List(apiTagProduct),
+      List(apiTagProduct, apiTagProductAttribute, apiTagAttribute),
       Some(List(canCreateProductAttribute))
     )
 
@@ -2033,7 +2033,7 @@ trait APIMethods310 {
         UserHasMissingRoles,
         UnknownError
       ),
-      List(apiTagProduct),
+      List(apiTagProduct, apiTagProductAttribute, apiTagAttribute),
       Some(List(canGetProductAttribute))
     )
 
@@ -2075,7 +2075,7 @@ trait APIMethods310 {
         UserHasMissingRoles,
         UnknownError
       ),
-      List(apiTagProduct),
+      List(apiTagProduct, apiTagProductAttribute, apiTagAttribute),
       Some(List(canUpdateProductAttribute))
     )
 
@@ -2135,7 +2135,7 @@ trait APIMethods310 {
         BankNotFound,
         UnknownError
       ),
-      List(apiTagProduct),
+      List(apiTagProduct, apiTagProductAttribute, apiTagAttribute),
       Some(List(canUpdateProductAttribute)))
 
     lazy val deleteProductAttribute : OBPEndpoint = {
