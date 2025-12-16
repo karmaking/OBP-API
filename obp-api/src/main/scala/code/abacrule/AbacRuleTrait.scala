@@ -23,27 +23,15 @@ class AbacRule extends AbacRuleTrait with LongKeyedMapper[AbacRule] with IdPK wi
 
   object AbacRuleId extends MappedString(this, 255) {
     override def defaultValue = APIUtil.generateUUID()
-    override def dbColumnName = "abac_rule_id"
   }
-  object RuleName extends MappedString(this, 255) {
-    override def dbColumnName = "rule_name"
-  }
-  object RuleCode extends MappedText(this) {
-    override def dbColumnName = "rule_code"
-  }
+  object RuleName extends MappedString(this, 255) 
+  object RuleCode extends MappedText(this) 
   object IsActive extends MappedBoolean(this) {
     override def defaultValue = true
-    override def dbColumnName = "is_active"
   }
-  object Description extends MappedText(this) {
-    override def dbColumnName = "description"
-  }
-  object CreatedByUserId extends MappedString(this, 255) {
-    override def dbColumnName = "created_by_user_id"
-  }
-  object UpdatedByUserId extends MappedString(this, 255) {
-    override def dbColumnName = "updated_by_user_id"
-  }
+  object Description extends MappedText(this) 
+  object CreatedByUserId extends MappedString(this, 255) 
+  object UpdatedByUserId extends MappedString(this, 255)
 
   override def abacRuleId: String = AbacRuleId.get
   override def ruleName: String = RuleName.get
@@ -55,7 +43,6 @@ class AbacRule extends AbacRuleTrait with LongKeyedMapper[AbacRule] with IdPK wi
 }
 
 object AbacRule extends AbacRule with LongKeyedMetaMapper[AbacRule] {
-  override def dbTableName = "abac_rule"
   override def dbIndexes: List[BaseIndex[AbacRule]] = Index(AbacRuleId) :: Index(RuleName) :: Index(CreatedByUserId) :: super.dbIndexes
 }
 
