@@ -144,9 +144,9 @@ class SystemViewsTest extends V600ServerSetup with DefaultUsers {
       val isSystem = (json \ "is_system").values.asInstanceOf[Boolean]
       isSystem should equal(true)
       
-      And("View should have permissions defined")
-      val canSeeBalance = (json \ "can_see_bank_account_balance").values.asInstanceOf[Boolean]
-      canSeeBalance should be(true)
+      And("View should have permissions defined in allowed_actions")
+      val allowedActions = (json \ "allowed_actions").values.asInstanceOf[List[String]]
+      allowedActions should contain("can_see_bank_account_balance")
     }
 
     scenario("We try to get different system views by ID - Authorized access", ApiEndpoint2, VersionOfApi) {
