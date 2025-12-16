@@ -8645,7 +8645,7 @@ trait APIMethods400 extends MdcLoggable {
         InvalidJsonFormat,
         UnknownError
       ),
-      List(apiTagBank),
+      List(apiTagBank, apiTagBankAttribute, apiTagAttribute),
       Some(List(canCreateBankAttributeDefinitionAtOneBank))
     )
 
@@ -8737,7 +8737,7 @@ trait APIMethods400 extends MdcLoggable {
         InvalidJsonFormat,
         UnknownError
       ),
-      List(apiTagBank),
+      List(apiTagBank, apiTagBankAttribute, apiTagAttribute),
       Some(List(canCreateBankAttribute))
     )
 
@@ -8800,7 +8800,7 @@ trait APIMethods400 extends MdcLoggable {
         InvalidJsonFormat,
         UnknownError
       ),
-      List(apiTagBank),
+      List(apiTagBank, apiTagBankAttribute, apiTagAttribute),
       Some(List(canGetBankAttribute))
     )
 
@@ -8836,7 +8836,7 @@ trait APIMethods400 extends MdcLoggable {
         InvalidJsonFormat,
         UnknownError
       ),
-      List(apiTagBank),
+      List(apiTagBank, apiTagBankAttribute, apiTagAttribute),
       Some(List(canGetBankAttribute))
     )
 
@@ -8876,7 +8876,7 @@ trait APIMethods400 extends MdcLoggable {
         UserHasMissingRoles,
         UnknownError
       ),
-      List(apiTagBank)
+      List(apiTagBank, apiTagBankAttribute, apiTagAttribute)
     )
 
     lazy val updateBankAttribute: OBPEndpoint = {
@@ -8953,7 +8953,7 @@ trait APIMethods400 extends MdcLoggable {
         BankNotFound,
         UnknownError
       ),
-      List(apiTagBank)
+      List(apiTagBank, apiTagBankAttribute, apiTagAttribute)
     )
 
     lazy val deleteBankAttribute: OBPEndpoint = {
