@@ -324,8 +324,8 @@ case class ExecuteAbacRuleJsonV600(
   bank_id: Option[String],
   account_id: Option[String],
   view_id: Option[String],
-  transaction_id: Option[String],
   transaction_request_id: Option[String],
+  transaction_id: Option[String],
   customer_id: Option[String]
 )
 

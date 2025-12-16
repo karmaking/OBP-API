@@ -4496,15 +4496,15 @@ trait APIMethods600 {
          |
          |""".stripMargin,
       ExecuteAbacRuleJsonV600(
-        authenticated_user_id = None,
-        on_behalf_of_user_id = None,
-        user_id = None,
+        authenticated_user_id = Some("c7b6cb47-cb96-4441-8801-35b57456753a"),
+        on_behalf_of_user_id = Some("a3b5c123-1234-5678-9012-fedcba987654"),
+        user_id = Some("c7b6cb47-cb96-4441-8801-35b57456753a"),
         bank_id = Some("gh.29.uk"),
         account_id = Some("8ca8a7e4-6d02-48e3-a029-0b2bf89de9f0"),
-        view_id = None,
-        transaction_id = None,
-        transaction_request_id = None,
-        customer_id = None
+        view_id = Some("owner"),
+        transaction_request_id = Some("123456"),
+        transaction_id = Some("abc123"),
+        customer_id = Some("customer-id-123")
       ),
       AbacRuleResultJsonV600(
         result = true
