@@ -8,7 +8,7 @@ import code.api.ResourceDocs1_4_0.SwaggerDefinitionsJSON._
 import code.api.util.APIUtil.{EmptyBody, _}
 import code.api.util.ApiTag._
 import code.api.util.ErrorMessages._
-import code.api.util.{ApiVersionUtils, CustomJsonFormats, NewStyle, ScannedApis}
+import code.api.util.{ApiVersionUtils, CustomJsonFormats, NewStyle}
 import code.api.v1_4_0.JSONFactory1_4_0
 import code.api.v4_0_0.JSONFactory400
 import com.github.dwickern.macros.NameOf.nameOf
@@ -58,7 +58,7 @@ object Http4s700 {
     private def getResourceDocsList(requestedApiVersion: ApiVersion): List[ResourceDoc] = {
       requestedApiVersion match {
         case version: ScannedApiVersion =>
-          ScannedApis.versionMapScannedApis.get(version).map(_.allResourceDocs.toList).getOrElse(Nil)
+          resourceDocs.toList
         case _ => Nil
       }
     }
