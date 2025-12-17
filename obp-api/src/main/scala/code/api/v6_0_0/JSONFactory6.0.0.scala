@@ -353,6 +353,34 @@ case class ValidateAbacRuleFailureJsonV600(
   details: ValidateAbacRuleErrorDetailsJsonV600
 )
 
+case class AbacParameterJsonV600(
+  name: String,
+  `type`: String,
+  description: String,
+  required: Boolean,
+  category: String
+)
+
+case class AbacObjectPropertyJsonV600(
+  name: String,
+  `type`: String,
+  description: String
+)
+
+case class AbacObjectTypeJsonV600(
+  name: String,
+  description: String,
+  properties: List[AbacObjectPropertyJsonV600]
+)
+
+case class AbacRuleSchemaJsonV600(
+  parameters: List[AbacParameterJsonV600],
+  object_types: List[AbacObjectTypeJsonV600],
+  examples: List[String],
+  available_operators: List[String],
+  notes: List[String]
+)
+
 object JSONFactory600 extends CustomJsonFormats with MdcLoggable{
 
   def createCurrentUsageJson(rateLimits: List[((Option[Long], Option[Long]), LimitCallPeriod)]): Option[RedisCallLimitJson] = {

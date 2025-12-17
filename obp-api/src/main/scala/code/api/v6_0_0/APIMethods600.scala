@@ -4474,6 +4474,233 @@ trait APIMethods600 {
     }
 
     staticResourceDocs += ResourceDoc(
+      getAbacRuleSchema,
+      implementedInApiVersion,
+      nameOf(getAbacRuleSchema),
+      "GET",
+      "/management/abac-rules/schema",
+      "Get ABAC Rule Schema",
+      s"""Get schema information about ABAC rule structure for building rule code.
+         |
+         |This endpoint returns schema information including:
+         |- All 18 parameters available in ABAC rules
+         |- Object types (User, Bank, Account, etc.) and their properties
+         |- Available operators and syntax
+         |- Example rules
+         |
+         |This schema information is useful for:
+         |- Building rule editors with auto-completion
+         |- Validating rule syntax in frontends
+         |- AI agents that help construct rules
+         |- Dynamic form builders
+         |
+         |${userAuthenticationMessage(true)}
+         |
+         |""".stripMargin,
+      EmptyBody,
+      AbacRuleSchemaJsonV600(
+        parameters = List(
+          AbacParameterJsonV600(
+            name = "authenticatedUser",
+            `type` = "User",
+            description = "The logged-in user (always present)",
+            required = true,
+            category = "User"
+          )
+        ),
+        object_types = List(
+          AbacObjectTypeJsonV600(
+            name = "User",
+            description = "User object with profile information",
+            properties = List(
+              AbacObjectPropertyJsonV600(
+                name = "userId",
+                `type` = "String",
+                description = "Unique user ID"
+              )
+            )
+          )
+        ),
+        examples = List(
+          "authenticatedUser.userId == user.userId",
+          "bankOpt.isDefined && bankOpt.get.bankId.value == \"gh.29.uk\""
+        ),
+        available_operators = List("==", "!=", "&&", "||", "!", ">", "<", ">=", "<=", "contains", "isDefined"),
+        notes = List(
+          "Only authenticatedUser is guaranteed to exist (not wrapped in Option)",
+          "All other objects are Option types - use isDefined or pattern matching",
+          "Attributes are Lists - use .find(), .exists(), .forall() etc."
+        )
+      ),
+      List(
+        UserNotLoggedIn,
+        UserHasMissingRoles,
+        UnknownError
+      ),
+      List(apiTagABAC),
+      Some(List(canGetAbacRule))
+    )
+
+    lazy val getAbacRuleSchema: OBPEndpoint = {
+      case "management" :: "abac-rules" :: "schema" :: Nil JsonGet _ => {
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(user), callContext) <- authenticatedAccess(cc)
+            _ <- NewStyle.function.hasEntitlement("", user.userId, canGetAbacRule, callContext)
+          } yield {
+            val metadata = AbacRuleSchemaJsonV600(
+              parameters = List(
+                AbacParameterJsonV600("authenticatedUser", "User", "The logged-in user (always present)", required = true, "User"),
+                AbacParameterJsonV600("authenticatedUserAttributes", "List[UserAttributeTrait]", "Non-personal attributes of authenticated user", required = true, "User"),
+                AbacParameterJsonV600("authenticatedUserAuthContext", "List[UserAuthContext]", "Auth context of authenticated user", required = true, "User"),
+                AbacParameterJsonV600("onBehalfOfUserOpt", "Option[User]", "User being acted on behalf of (delegation)", required = false, "User"),
+                AbacParameterJsonV600("onBehalfOfUserAttributes", "List[UserAttributeTrait]", "Attributes of delegation user", required = false, "User"),
+                AbacParameterJsonV600("onBehalfOfUserAuthContext", "List[UserAuthContext]", "Auth context of delegation user", required = false, "User"),
+                AbacParameterJsonV600("userOpt", "Option[User]", "Target user being evaluated", required = false, "User"),
+                AbacParameterJsonV600("userAttributes", "List[UserAttributeTrait]", "Attributes of target user", required = false, "User"),
+                AbacParameterJsonV600("bankOpt", "Option[Bank]", "Bank context", required = false, "Bank"),
+                AbacParameterJsonV600("bankAttributes", "List[BankAttributeTrait]", "Bank attributes", required = false, "Bank"),
+                AbacParameterJsonV600("accountOpt", "Option[BankAccount]", "Account context", required = false, "Account"),
+                AbacParameterJsonV600("accountAttributes", "List[AccountAttribute]", "Account attributes", required = false, "Account"),
+                AbacParameterJsonV600("transactionOpt", "Option[Transaction]", "Transaction context", required = false, "Transaction"),
+                AbacParameterJsonV600("transactionAttributes", "List[TransactionAttribute]", "Transaction attributes", required = false, "Transaction"),
+                AbacParameterJsonV600("transactionRequestOpt", "Option[TransactionRequest]", "Transaction request context", required = false, "TransactionRequest"),
+                AbacParameterJsonV600("transactionRequestAttributes", "List[TransactionRequestAttributeTrait]", "Transaction request attributes", required = false, "TransactionRequest"),
+                AbacParameterJsonV600("customerOpt", "Option[Customer]", "Customer context", required = false, "Customer"),
+                AbacParameterJsonV600("customerAttributes", "List[CustomerAttribute]", "Customer attributes", required = false, "Customer")
+              ),
+              object_types = List(
+                AbacObjectTypeJsonV600("User", "User object with profile and authentication information", List(
+                  AbacObjectPropertyJsonV600("userId", "String", "Unique user ID"),
+                  AbacObjectPropertyJsonV600("emailAddress", "String", "User email address"),
+                  AbacObjectPropertyJsonV600("provider", "String", "Authentication provider (e.g., 'obp')"),
+                  AbacObjectPropertyJsonV600("name", "String", "User display name"),
+                  AbacObjectPropertyJsonV600("idGivenByProvider", "String", "ID given by provider (same as username)"),
+                  AbacObjectPropertyJsonV600("createdByConsentId", "Option[String]", "Consent ID that created the user (if any)"),
+                  AbacObjectPropertyJsonV600("isDeleted", "Option[Boolean]", "Whether user is deleted")
+                )),
+                AbacObjectTypeJsonV600("Bank", "Bank object", List(
+                  AbacObjectPropertyJsonV600("bankId", "BankId", "Bank ID"),
+                  AbacObjectPropertyJsonV600("fullName", "String", "Bank full name"),
+                  AbacObjectPropertyJsonV600("shortName", "String", "Bank short name"),
+                  AbacObjectPropertyJsonV600("logoUrl", "String", "Bank logo URL"),
+                  AbacObjectPropertyJsonV600("websiteUrl", "String", "Bank website URL"),
+                  AbacObjectPropertyJsonV600("bankRoutingScheme", "String", "Bank routing scheme"),
+                  AbacObjectPropertyJsonV600("bankRoutingAddress", "String", "Bank routing address")
+                )),
+                AbacObjectTypeJsonV600("BankAccount", "Bank account object", List(
+                  AbacObjectPropertyJsonV600("accountId", "AccountId", "Account ID"),
+                  AbacObjectPropertyJsonV600("bankId", "BankId", "Bank ID"),
+                  AbacObjectPropertyJsonV600("accountType", "String", "Account type"),
+                  AbacObjectPropertyJsonV600("balance", "BigDecimal", "Account balance"),
+                  AbacObjectPropertyJsonV600("currency", "String", "Account currency"),
+                  AbacObjectPropertyJsonV600("name", "String", "Account name"),
+                  AbacObjectPropertyJsonV600("label", "String", "Account label"),
+                  AbacObjectPropertyJsonV600("number", "String", "Account number"),
+                  AbacObjectPropertyJsonV600("lastUpdate", "Date", "Last update date"),
+                  AbacObjectPropertyJsonV600("branchId", "String", "Branch ID"),
+                  AbacObjectPropertyJsonV600("accountRoutings", "List[AccountRouting]", "Account routings")
+                )),
+                AbacObjectTypeJsonV600("Transaction", "Transaction object", List(
+                  AbacObjectPropertyJsonV600("id", "TransactionId", "Transaction ID"),
+                  AbacObjectPropertyJsonV600("uuid", "String", "Universally unique ID"),
+                  AbacObjectPropertyJsonV600("thisAccount", "BankAccount", "This account"),
+                  AbacObjectPropertyJsonV600("otherAccount", "Counterparty", "Other account/counterparty"),
+                  AbacObjectPropertyJsonV600("transactionType", "String", "Transaction type (e.g., cash withdrawal)"),
+                  AbacObjectPropertyJsonV600("amount", "BigDecimal", "Transaction amount"),
+                  AbacObjectPropertyJsonV600("currency", "String", "Transaction currency (ISO 4217)"),
+                  AbacObjectPropertyJsonV600("description", "Option[String]", "Bank provided label"),
+                  AbacObjectPropertyJsonV600("startDate", "Date", "Date transaction was initiated"),
+                  AbacObjectPropertyJsonV600("finishDate", "Option[Date]", "Date money finished changing hands"),
+                  AbacObjectPropertyJsonV600("balance", "BigDecimal", "New balance after transaction"),
+                  AbacObjectPropertyJsonV600("status", "Option[String]", "Transaction status")
+                )),
+                AbacObjectTypeJsonV600("TransactionRequest", "Transaction request object", List(
+                  AbacObjectPropertyJsonV600("id", "TransactionRequestId", "Transaction request ID"),
+                  AbacObjectPropertyJsonV600("type", "String", "Transaction request type"),
+                  AbacObjectPropertyJsonV600("from", "TransactionRequestAccount", "From account"),
+                  AbacObjectPropertyJsonV600("status", "String", "Transaction request status"),
+                  AbacObjectPropertyJsonV600("start_date", "Date", "Start date"),
+                  AbacObjectPropertyJsonV600("end_date", "Date", "End date"),
+                  AbacObjectPropertyJsonV600("transaction_ids", "String", "Associated transaction IDs"),
+                  AbacObjectPropertyJsonV600("charge", "TransactionRequestCharge", "Charge information"),
+                  AbacObjectPropertyJsonV600("this_bank_id", "BankId", "This bank ID"),
+                  AbacObjectPropertyJsonV600("this_account_id", "AccountId", "This account ID"),
+                  AbacObjectPropertyJsonV600("counterparty_id", "CounterpartyId", "Counterparty ID")
+                )),
+                AbacObjectTypeJsonV600("Customer", "Customer object", List(
+                  AbacObjectPropertyJsonV600("customerId", "String", "Customer ID (UUID)"),
+                  AbacObjectPropertyJsonV600("bankId", "String", "Bank ID"),
+                  AbacObjectPropertyJsonV600("number", "String", "Customer number (bank identifier)"),
+                  AbacObjectPropertyJsonV600("legalName", "String", "Customer legal name"),
+                  AbacObjectPropertyJsonV600("mobileNumber", "String", "Customer mobile number"),
+                  AbacObjectPropertyJsonV600("email", "String", "Customer email"),
+                  AbacObjectPropertyJsonV600("dateOfBirth", "Date", "Date of birth"),
+                  AbacObjectPropertyJsonV600("relationshipStatus", "String", "Relationship status"),
+                  AbacObjectPropertyJsonV600("dependents", "Integer", "Number of dependents")
+                )),
+                AbacObjectTypeJsonV600("UserAttributeTrait", "User attribute", List(
+                  AbacObjectPropertyJsonV600("name", "String", "Attribute name"),
+                  AbacObjectPropertyJsonV600("value", "String", "Attribute value"),
+                  AbacObjectPropertyJsonV600("attributeType", "AttributeType", "Attribute type (STRING, INTEGER, DOUBLE, DATE_WITH_DAY)")
+                )),
+                AbacObjectTypeJsonV600("AccountAttribute", "Account attribute", List(
+                  AbacObjectPropertyJsonV600("name", "String", "Attribute name"),
+                  AbacObjectPropertyJsonV600("value", "String", "Attribute value"),
+                  AbacObjectPropertyJsonV600("attributeType", "AttributeType", "Attribute type")
+                )),
+                AbacObjectTypeJsonV600("TransactionAttribute", "Transaction attribute", List(
+                  AbacObjectPropertyJsonV600("name", "String", "Attribute name"),
+                  AbacObjectPropertyJsonV600("value", "String", "Attribute value"),
+                  AbacObjectPropertyJsonV600("attributeType", "AttributeType", "Attribute type")
+                )),
+                AbacObjectTypeJsonV600("CustomerAttribute", "Customer attribute", List(
+                  AbacObjectPropertyJsonV600("name", "String", "Attribute name"),
+                  AbacObjectPropertyJsonV600("value", "String", "Attribute value"),
+                  AbacObjectPropertyJsonV600("attributeType", "AttributeType", "Attribute type")
+                ))
+              ),
+              examples = List(
+                "// Check if authenticated user matches target user",
+                "authenticatedUser.userId == userOpt.get.userId",
+                "// Check user email contains admin",
+                "authenticatedUser.emailAddress.contains(\"admin\")",
+                "// Check specific bank",
+                "bankOpt.isDefined && bankOpt.get.bankId.value == \"gh.29.uk\"",
+                "// Check account balance",
+                "accountOpt.isDefined && accountOpt.get.balance > 1000",
+                "// Check user attributes",
+                "userAttributes.exists(attr => attr.name == \"account_type\" && attr.value == \"premium\")",
+                "// Check authenticated user has role attribute",
+                "authenticatedUserAttributes.find(_.name == \"role\").exists(_.value == \"admin\")",
+                "// IMPORTANT: Use camelCase (userId NOT user_id)",
+                "// IMPORTANT: Parameters are: authenticatedUser, userOpt, accountOpt (with Opt suffix for Optional)",
+                "// IMPORTANT: Check isDefined before using .get on Option types"
+              ),
+              available_operators = List(
+                "==", "!=", "&&", "||", "!", ">", "<", ">=", "<=",
+                "contains", "startsWith", "endsWith",
+                "isDefined", "isEmpty", "nonEmpty",
+                "exists", "forall", "find", "filter",
+                "get", "getOrElse"
+              ),
+              notes = List(
+                "PARAMETER NAMES: Use authenticatedUser, userOpt, accountOpt, bankOpt, transactionOpt, etc. (NOT user, account, bank)",
+                "PROPERTY NAMES: Use camelCase - userId (NOT user_id), accountId (NOT account_id), emailAddress (NOT email_address)",
+                "OPTION TYPES: Only authenticatedUser is guaranteed to exist. All others are Option types - check isDefined before using .get",
+                "ATTRIBUTES: All attributes are Lists - use Scala collection methods like exists(), find(), filter()",
+                "SAFE OPTION HANDLING: Use pattern matching: userOpt match { case Some(u) => u.userId == ... case None => false }",
+                "RETURN TYPE: Rule must return Boolean - true = access granted, false = access denied",
+                "AUTO-FETCHING: Objects are automatically fetched based on IDs passed to execute endpoint",
+                "COMMON MISTAKE: Writing 'user.user_id' instead of 'userOpt.get.userId' or 'authenticatedUser.userId'"
+              )
+            )
+            (metadata, HttpCode.`200`(callContext))
+          }
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
       validateAbacRule,
       implementedInApiVersion,
       nameOf(validateAbacRule),
