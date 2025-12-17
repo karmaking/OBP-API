@@ -2,18 +2,23 @@ package code.api.v7_0_0
 
 import cats.data.{Kleisli, OptionT}
 import cats.effect._
-import cats.implicits._
-import code.api.util.{APIUtil, CustomJsonFormats}
+import code.api.Constant._
+import code.api.ResourceDocs1_4_0.SwaggerDefinitionsJSON._
+import code.api.util.APIUtil.{EmptyBody, _}
+import code.api.util.ApiTag._
+import code.api.util.ErrorMessages._
+import code.api.util.{CustomJsonFormats, NewStyle}
 import code.api.v4_0_0.JSONFactory400
-import code.bankconnectors.Connector
-import com.openbankproject.commons.util.{ApiVersion, ScannedApiVersion}
-import net.liftweb.json.Formats
+import com.github.dwickern.macros.NameOf.nameOf
+import com.openbankproject.commons.ExecutionContext.Implicits.global
+import com.openbankproject.commons.util.{ApiVersion, ApiVersionStatus, ScannedApiVersion}
+import net.liftweb.json.{Extraction, Formats}
 import net.liftweb.json.JsonAST.prettyRender
-import net.liftweb.json.Extraction
 import org.http4s._
 import org.http4s.dsl.io._
 import org.typelevel.vault.Key
 
+import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
 import scala.language.{higherKinds, implicitConversions}
 
@@ -24,12 +29,13 @@ object Http4s700 {
   implicit val formats: Formats = CustomJsonFormats.formats
   implicit def convertAnyToJsonString(any: Any): String = prettyRender(Extraction.decompose(any))
 
-  val apiVersion: ScannedApiVersion = ApiVersion.v7_0_0
-  val apiVersionString: String = apiVersion.toString
+  val implementedInApiVersion: ScannedApiVersion = ApiVersion.v7_0_0
+  val versionStatus = ApiVersionStatus.STABLE.toString
+  val resourceDocs = ArrayBuffer[ResourceDoc]()
 
   case class CallContext(userId: String, requestId: String)
-  import cats.effect.unsafe.implicits.global
-  val callContextKey: Key[CallContext] = Key.newKey[IO, CallContext].unsafeRunSync()
+  val callContextKey: Key[CallContext] =
+    Key.newKey[IO, CallContext].unsafeRunSync()(cats.effect.unsafe.IORuntime.global)
 
   object CallContextMiddleware {
 
@@ -42,31 +48,87 @@ object Http4s700 {
       }
   }
 
-  val v700Services: HttpRoutes[IO] = HttpRoutes.of[IO] {
-    case req @ GET -> Root / "obp" / `apiVersionString` / "root" =>
-      import com.openbankproject.commons.ExecutionContext.Implicits.global
-      val callContext = req.attributes.lookup(callContextKey).get.asInstanceOf[CallContext]
-      Ok(IO.fromFuture(IO(
-        for {
-          _ <- Future() // Just start async call
-        } yield {
-          convertAnyToJsonString(
-            JSONFactory700.getApiInfoJSON(apiVersion, s"Hello, ${callContext.userId}! Your request ID is ${callContext.requestId}.")
-          )
-        }
-      )))
+  object Implementations7_0_0 {
 
-    case req @ GET -> Root / "obp" / `apiVersionString` / "banks" =>
-      import com.openbankproject.commons.ExecutionContext.Implicits.global
-      Ok(IO.fromFuture(IO(
-        for {
-          (banks, callContext) <- code.api.util.NewStyle.function.getBanks(None)
-        } yield {
-          convertAnyToJsonString(JSONFactory400.createBanksJson(banks))
-        }
-      )))
+    // Common prefix: /obp/v7.0.0
+    val prefixPath = Root / ApiPathZero.toString / implementedInApiVersion.toString
+
+    resourceDocs += ResourceDoc(
+      null,
+      implementedInApiVersion,
+      nameOf(root),
+      "GET",
+      "/root",
+      "Get API Info (root)",
+      s"""Returns information about:
+        |
+        |* API version
+        |* Hosted by information
+        |* Git Commit
+        |${userAuthenticationMessage(false)}""",
+      EmptyBody,
+      apiInfoJSON,
+      List(UnknownError, "no connector set"),
+      apiTagApi :: Nil,
+      http4sPartialFunction = Some(root)
+    )
+
+    // Route: GET /obp/v7.0.0/root
+    val root: HttpRoutes[IO] = HttpRoutes.of[IO] {
+      case req @ GET -> `prefixPath` / "root" =>
+        val callContext = req.attributes.lookup(callContextKey).get.asInstanceOf[CallContext]
+        Ok(IO.fromFuture(IO(
+          for {
+            _ <- Future() // Just start async call
+          } yield {
+            convertAnyToJsonString(
+              JSONFactory700.getApiInfoJSON(implementedInApiVersion, s"Hello, ${callContext.userId}! Your request ID is ${callContext.requestId}.")
+            )
+          }
+        )))
+    }
+
+    resourceDocs += ResourceDoc(
+      null,
+      implementedInApiVersion,
+      nameOf(getBanks),
+      "GET",
+      "/banks",
+      "Get Banks",
+      s"""Get banks on this API instance
+        |Returns a list of banks supported on this server:
+        |
+        |* ID used as parameter in URLs
+        |* Short and full name of bank
+        |* Logo URL
+        |* Website
+        |${userAuthenticationMessage(false)}""",
+      EmptyBody,
+      banksJSON,
+      List(UnknownError),
+      apiTagBank :: Nil,
+      http4sPartialFunction = Some(getBanks)
+    )
+
+    // Route: GET /obp/v7.0.0/banks
+    val getBanks: HttpRoutes[IO] = HttpRoutes.of[IO] {
+      case req @ GET -> `prefixPath` / "banks" =>
+        import com.openbankproject.commons.ExecutionContext.Implicits.global
+        Ok(IO.fromFuture(IO(
+          for {
+            (banks, callContext) <- NewStyle.function.getBanks(None)
+          } yield {
+            convertAnyToJsonString(JSONFactory400.createBanksJson(banks))
+          }
+        )))
+    }
+
+    // All routes combined
+    val allRoutes: HttpRoutes[IO] =
+      Kleisli[HttpF, Request[IO], Response[IO]] { req: Request[IO] =>
+        root(req).orElse(getBanks(req))
+      }
   }
 
-  val wrappedRoutesV700Services: HttpRoutes[IO] = CallContextMiddleware.withCallContext(v700Services)
+  val wrappedRoutesV700Services: HttpRoutes[IO] = CallContextMiddleware.withCallContext(Implementations7_0_0.allRoutes)
 }
-
