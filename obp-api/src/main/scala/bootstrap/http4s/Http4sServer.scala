@@ -11,17 +11,16 @@ import org.http4s.implicits._
 import scala.language.higherKinds
 object Http4sServer extends IOApp {
 
-  val services: Kleisli[({type λ[β$0$] = OptionT[IO, β$0$]})#λ, Request[IO], Response[IO]] = 
-      code.api.v7_0_0.Http4s700.wrappedRoutesV700Services
-      
-  val httpApp: Kleisli[IO, Request[IO], Response[IO]] = (services).orNotFound
-
-  //Start OBP relevant objects, and settings
+  //Start OBP relevant objects and settings; this step MUST be executed first 
   new bootstrap.http4s.Http4sBoot().boot
 
   val port = APIUtil.getPropsAsIntValue("http4s.port",8181)
   val host = APIUtil.getPropsValue("http4s.host","127.0.0.1")
   
+  val services: Kleisli[({type λ[β$0$] = OptionT[IO, β$0$]})#λ, Request[IO], Response[IO]] =
+    code.api.v7_0_0.Http4s700.wrappedRoutesV700Services
+
+  val httpApp: Kleisli[IO, Request[IO], Response[IO]] = (services).orNotFound
   
   override def run(args: List[String]): IO[ExitCode] = EmberServerBuilder
     .default[IO]
