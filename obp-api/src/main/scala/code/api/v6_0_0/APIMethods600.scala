@@ -4884,7 +4884,7 @@ trait APIMethods600 {
                 authenticatedUserId = effectiveAuthenticatedUserId,
                 onBehalfOfUserId = execJson.on_behalf_of_user_id,
                 userId = execJson.user_id,
-                callContext = callContext,
+                callContext = callContext.getOrElse(cc),
                 bankId = execJson.bank_id,
                 accountId = execJson.account_id,
                 viewId = execJson.view_id,

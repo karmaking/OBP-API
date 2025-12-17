@@ -274,7 +274,7 @@ object AbacRuleEngine {
       // Compile and execute the rule
       compiledFunc <- compileRule(ruleId, rule.ruleCode)
       result <- tryo {
-        compiledFunc(authenticatedUser, authenticatedUserAttributes, authenticatedUserAuthContext, onBehalfOfUserOpt, onBehalfOfUserAttributes, onBehalfOfUserAuthContext, userOpt, userAttributes, bankOpt, bankAttributes, accountOpt, accountAttributes, transactionOpt, transactionAttributes, transactionRequestOpt, transactionRequestAttributes, customerOpt, customerAttributes, callContext)
+        compiledFunc(authenticatedUser, authenticatedUserAttributes, authenticatedUserAuthContext, onBehalfOfUserOpt, onBehalfOfUserAttributes, onBehalfOfUserAuthContext, userOpt, userAttributes, bankOpt, bankAttributes, accountOpt, accountAttributes, transactionOpt, transactionAttributes, transactionRequestOpt, transactionRequestAttributes, customerOpt, customerAttributes, Some(callContext))
       }
     } yield result
   }
