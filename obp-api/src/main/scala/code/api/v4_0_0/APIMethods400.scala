@@ -1672,7 +1672,7 @@ trait APIMethods400 extends MdcLoggable {
         InvalidJsonFormat,
         UnknownError
       ),
-      List(apiTagTransactionRequest),
+      List(apiTagTransactionRequest, apiTagTransactionRequestAttribute, apiTagAttribute),
       Some(List(canCreateTransactionRequestAttributeAtOneBank))
     )
 
@@ -1744,7 +1744,7 @@ trait APIMethods400 extends MdcLoggable {
         InvalidJsonFormat,
         UnknownError
       ),
-      List(apiTagTransactionRequest),
+      List(apiTagTransactionRequest, apiTagTransactionRequestAttribute, apiTagAttribute),
       Some(List(canGetTransactionRequestAttributeAtOneBank))
     )
 
@@ -1798,7 +1798,7 @@ trait APIMethods400 extends MdcLoggable {
         InvalidJsonFormat,
         UnknownError
       ),
-      List(apiTagTransactionRequest),
+      List(apiTagTransactionRequest, apiTagTransactionRequestAttribute, apiTagAttribute),
       Some(List(canGetTransactionRequestAttributesAtOneBank))
     )
 
@@ -1852,7 +1852,7 @@ trait APIMethods400 extends MdcLoggable {
         InvalidJsonFormat,
         UnknownError
       ),
-      List(apiTagTransactionRequest),
+      List(apiTagTransactionRequest, apiTagTransactionRequestAttribute, apiTagAttribute),
       Some(List(canUpdateTransactionRequestAttributeAtOneBank))
     )
 
@@ -1935,7 +1935,7 @@ trait APIMethods400 extends MdcLoggable {
         InvalidJsonFormat,
         UnknownError
       ),
-      List(apiTagTransactionRequest),
+      List(apiTagTransactionRequest, apiTagTransactionRequestAttribute, apiTagAttribute),
       Some(List(canCreateTransactionRequestAttributeDefinitionAtOneBank))
     )
 
@@ -2011,7 +2011,7 @@ trait APIMethods400 extends MdcLoggable {
         $BankNotFound,
         UnknownError
       ),
-      List(apiTagTransactionRequest),
+      List(apiTagTransactionRequest, apiTagTransactionRequestAttribute, apiTagAttribute),
       Some(List(canGetTransactionRequestAttributeDefinitionAtOneBank))
     )
 
@@ -2058,7 +2058,7 @@ trait APIMethods400 extends MdcLoggable {
         $BankNotFound,
         UnknownError
       ),
-      List(apiTagTransactionRequest),
+      List(apiTagTransactionRequest, apiTagTransactionRequestAttribute, apiTagAttribute),
       Some(List(canDeleteTransactionRequestAttributeDefinitionAtOneBank))
     )
 
@@ -6106,7 +6106,7 @@ trait APIMethods400 extends MdcLoggable {
         InvalidJsonFormat,
         UnknownError
       ),
-      List(apiTagCustomer),
+      List(apiTagCustomer, apiTagCustomerAttribute, apiTagAttribute),
       Some(
         List(
           canCreateCustomerAttributeAtOneBank,
@@ -6186,7 +6186,7 @@ trait APIMethods400 extends MdcLoggable {
         InvalidJsonFormat,
         UnknownError
       ),
-      List(apiTagCustomer),
+      List(apiTagCustomer, apiTagCustomerAttribute, apiTagAttribute),
       Some(
         List(
           canUpdateCustomerAttributeAtOneBank,
@@ -6270,7 +6270,7 @@ trait APIMethods400 extends MdcLoggable {
         InvalidJsonFormat,
         UnknownError
       ),
-      List(apiTagCustomer),
+      List(apiTagCustomer, apiTagCustomerAttribute, apiTagAttribute),
       Some(
         List(
           canGetCustomerAttributesAtOneBank,
@@ -6327,7 +6327,7 @@ trait APIMethods400 extends MdcLoggable {
         InvalidJsonFormat,
         UnknownError
       ),
-      List(apiTagCustomer),
+      List(apiTagCustomer, apiTagCustomerAttribute, apiTagAttribute),
       Some(
         List(canGetCustomerAttributeAtOneBank, canGetCustomerAttributeAtAnyBank)
       )
@@ -6446,7 +6446,7 @@ trait APIMethods400 extends MdcLoggable {
         InvalidJsonFormat,
         UnknownError
       ),
-      List(apiTagTransaction),
+      List(apiTagTransaction, apiTagTransactionAttribute, apiTagAttribute),
       Some(List(canCreateTransactionAttributeAtOneBank))
     )
 
@@ -6519,7 +6519,7 @@ trait APIMethods400 extends MdcLoggable {
         InvalidJsonFormat,
         UnknownError
       ),
-      List(apiTagTransaction),
+      List(apiTagTransaction, apiTagTransactionAttribute, apiTagAttribute),
       Some(List(canUpdateTransactionAttributeAtOneBank))
     )
 
@@ -6598,7 +6598,7 @@ trait APIMethods400 extends MdcLoggable {
         InvalidJsonFormat,
         UnknownError
       ),
-      List(apiTagTransaction),
+      List(apiTagTransaction, apiTagTransactionAttribute, apiTagAttribute),
       Some(List(canGetTransactionAttributesAtOneBank))
     )
 
@@ -6652,7 +6652,7 @@ trait APIMethods400 extends MdcLoggable {
         InvalidJsonFormat,
         UnknownError
       ),
-      List(apiTagTransaction),
+      List(apiTagTransaction, apiTagTransactionAttribute, apiTagAttribute),
       Some(List(canGetTransactionAttributeAtOneBank))
     )
 
@@ -7346,7 +7346,7 @@ trait APIMethods400 extends MdcLoggable {
         UserHasMissingRoles,
         UnknownError
       ),
-      List(apiTagCustomer),
+      List(apiTagCustomer, apiTagCustomerAttribute, apiTagAttribute),
       Some(
         List(
           canDeleteCustomerAttributeAtOneBank,
@@ -7908,7 +7908,7 @@ trait APIMethods400 extends MdcLoggable {
         InvalidJsonFormat,
         UnknownError
       ),
-      List(apiTagCustomer),
+      List(apiTagCustomer, apiTagCustomerAttribute, apiTagAttribute),
       Some(List(canCreateCustomerAttributeDefinitionAtOneBank))
     )
 
@@ -7988,7 +7988,7 @@ trait APIMethods400 extends MdcLoggable {
         InvalidJsonFormat,
         UnknownError
       ),
-      List(apiTagAccount),
+      List(apiTagAccount, apiTagAccountAttribute, apiTagAttribute),
       Some(List(canCreateAccountAttributeDefinitionAtOneBank))
     )
 
@@ -8068,7 +8068,7 @@ trait APIMethods400 extends MdcLoggable {
         InvalidJsonFormat,
         UnknownError
       ),
-      List(apiTagProduct),
+      List(apiTagProduct, apiTagProductAttribute, apiTagAttribute),
       Some(List(canCreateProductAttributeDefinitionAtOneBank))
     )
 
@@ -8171,7 +8171,7 @@ trait APIMethods400 extends MdcLoggable {
         InvalidJsonFormat,
         UnknownError
       ),
-      List(apiTagProduct),
+      List(apiTagProduct, apiTagProductAttribute, apiTagAttribute),
       Some(List(canCreateProductAttribute))
     )
 
@@ -8253,7 +8253,7 @@ trait APIMethods400 extends MdcLoggable {
         UserHasMissingRoles,
         UnknownError
       ),
-      List(apiTagProduct),
+      List(apiTagProduct, apiTagProductAttribute, apiTagAttribute),
       Some(List(canUpdateProductAttribute))
     )
 
@@ -8333,7 +8333,7 @@ trait APIMethods400 extends MdcLoggable {
         UserHasMissingRoles,
         UnknownError
       ),
-      List(apiTagProduct),
+      List(apiTagProduct, apiTagProductAttribute, apiTagAttribute),
       Some(List(canUpdateProductAttribute))
     )
 
@@ -8645,7 +8645,7 @@ trait APIMethods400 extends MdcLoggable {
         InvalidJsonFormat,
         UnknownError
       ),
-      List(apiTagBank),
+      List(apiTagBank, apiTagBankAttribute, apiTagAttribute),
       Some(List(canCreateBankAttributeDefinitionAtOneBank))
     )
 
@@ -8737,7 +8737,7 @@ trait APIMethods400 extends MdcLoggable {
         InvalidJsonFormat,
         UnknownError
       ),
-      List(apiTagBank),
+      List(apiTagBank, apiTagBankAttribute, apiTagAttribute),
       Some(List(canCreateBankAttribute))
     )
 
@@ -8800,7 +8800,7 @@ trait APIMethods400 extends MdcLoggable {
         InvalidJsonFormat,
         UnknownError
       ),
-      List(apiTagBank),
+      List(apiTagBank, apiTagBankAttribute, apiTagAttribute),
       Some(List(canGetBankAttribute))
     )
 
@@ -8836,7 +8836,7 @@ trait APIMethods400 extends MdcLoggable {
         InvalidJsonFormat,
         UnknownError
       ),
-      List(apiTagBank),
+      List(apiTagBank, apiTagBankAttribute, apiTagAttribute),
       Some(List(canGetBankAttribute))
     )
 
@@ -8876,7 +8876,7 @@ trait APIMethods400 extends MdcLoggable {
         UserHasMissingRoles,
         UnknownError
       ),
-      List(apiTagBank)
+      List(apiTagBank, apiTagBankAttribute, apiTagAttribute)
     )
 
     lazy val updateBankAttribute: OBPEndpoint = {
@@ -8953,7 +8953,7 @@ trait APIMethods400 extends MdcLoggable {
         BankNotFound,
         UnknownError
       ),
-      List(apiTagBank)
+      List(apiTagBank, apiTagBankAttribute, apiTagAttribute)
     )
 
     lazy val deleteBankAttribute: OBPEndpoint = {
@@ -9004,7 +9004,7 @@ trait APIMethods400 extends MdcLoggable {
         InvalidJsonFormat,
         UnknownError
       ),
-      List(apiTagTransaction),
+      List(apiTagTransaction, apiTagTransactionAttribute, apiTagAttribute),
       Some(List(canCreateTransactionAttributeDefinitionAtOneBank))
     )
 
@@ -9084,7 +9084,7 @@ trait APIMethods400 extends MdcLoggable {
         InvalidJsonFormat,
         UnknownError
       ),
-      List(apiTagCard),
+      List(apiTagCard, apiTagCardAttribute, apiTagAttribute),
       Some(List(canCreateCardAttributeDefinitionAtOneBank))
     )
 
@@ -9159,7 +9159,7 @@ trait APIMethods400 extends MdcLoggable {
         $BankNotFound,
         UnknownError
       ),
-      List(apiTagTransaction),
+      List(apiTagTransaction, apiTagTransactionAttribute, apiTagAttribute),
       Some(List(canDeleteTransactionAttributeDefinitionAtOneBank))
     )
 
@@ -9202,7 +9202,7 @@ trait APIMethods400 extends MdcLoggable {
         $BankNotFound,
         UnknownError
       ),
-      List(apiTagCustomer),
+      List(apiTagCustomer, apiTagCustomerAttribute, apiTagAttribute),
       Some(List(canDeleteCustomerAttributeDefinitionAtOneBank))
     )
 
@@ -9243,7 +9243,7 @@ trait APIMethods400 extends MdcLoggable {
         $BankNotFound,
         UnknownError
       ),
-      List(apiTagAccount),
+      List(apiTagAccount, apiTagAccountAttribute, apiTagAttribute),
       Some(List(canDeleteAccountAttributeDefinitionAtOneBank))
     )
 
@@ -9284,7 +9284,7 @@ trait APIMethods400 extends MdcLoggable {
         $BankNotFound,
         UnknownError
       ),
-      List(apiTagProduct),
+      List(apiTagProduct, apiTagProductAttribute, apiTagAttribute),
       Some(List(canDeleteProductAttributeDefinitionAtOneBank))
     )
 
@@ -9325,7 +9325,7 @@ trait APIMethods400 extends MdcLoggable {
         $BankNotFound,
         UnknownError
       ),
-      List(apiTagCard),
+      List(apiTagCard, apiTagCardAttribute, apiTagAttribute),
       Some(List(canDeleteCardAttributeDefinitionAtOneBank))
     )
 
@@ -9366,7 +9366,7 @@ trait APIMethods400 extends MdcLoggable {
         $BankNotFound,
         UnknownError
       ),
-      List(apiTagProduct),
+      List(apiTagProduct, apiTagProductAttribute, apiTagAttribute),
       Some(List(canGetProductAttributeDefinitionAtOneBank))
     )
 
@@ -9408,7 +9408,7 @@ trait APIMethods400 extends MdcLoggable {
         $BankNotFound,
         UnknownError
       ),
-      List(apiTagCustomer),
+      List(apiTagCustomer, apiTagCustomerAttribute, apiTagAttribute),
       Some(List(canGetCustomerAttributeDefinitionAtOneBank))
     )
 
@@ -9450,7 +9450,7 @@ trait APIMethods400 extends MdcLoggable {
         $BankNotFound,
         UnknownError
       ),
-      List(apiTagAccount),
+      List(apiTagAccount, apiTagAccountAttribute, apiTagAttribute),
       Some(List(canGetAccountAttributeDefinitionAtOneBank))
     )
 
@@ -9492,7 +9492,7 @@ trait APIMethods400 extends MdcLoggable {
         $BankNotFound,
         UnknownError
       ),
-      List(apiTagTransaction),
+      List(apiTagTransaction, apiTagTransactionAttribute, apiTagAttribute),
       Some(List(canGetTransactionAttributeDefinitionAtOneBank))
     )
 
@@ -9539,7 +9539,7 @@ trait APIMethods400 extends MdcLoggable {
         $BankNotFound,
         UnknownError
       ),
-      List(apiTagCard),
+      List(apiTagCard, apiTagCardAttribute, apiTagAttribute),
       Some(List(canGetCardAttributeDefinitionAtOneBank))
     )
 
