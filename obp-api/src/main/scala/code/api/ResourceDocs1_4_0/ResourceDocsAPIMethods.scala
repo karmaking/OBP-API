@@ -10,6 +10,7 @@ import code.api.util.ExampleValue.endpointMappingRequestBodyExample
 import code.api.util.FutureUtil.EndpointContext
 import code.api.util.NewStyle.HttpCode
 import code.api.util._
+import code.api.util.YAMLUtils
 import code.api.v1_4_0.JSONFactory1_4_0.ResourceDocsJson
 import code.api.v1_4_0.{APIMethods140, JSONFactory1_4_0, OBPAPI1_4_0}
 import code.api.v2_2_0.{APIMethods220, OBPAPI2_2_0}
@@ -32,7 +33,7 @@ import com.openbankproject.commons.model.{BankId, ListResult, User}
 import com.openbankproject.commons.util.ApiStandards._
 import com.openbankproject.commons.util.{ApiVersion, ScannedApiVersion}
 import net.liftweb.common.{Box, Empty, Full}
-import net.liftweb.http.LiftRules
+import net.liftweb.http.{InMemoryResponse, LiftRules, PlainTextResponse}
 import net.liftweb.json
 import net.liftweb.json.JsonAST.{JField, JString, JValue}
 import net.liftweb.json._
@@ -769,6 +770,8 @@ trait ResourceDocsAPIMethods extends MdcLoggable with APIMethods220 with APIMeth
          |
          |This endpoint generates OpenAPI 3.1 compliant documentation with modern JSON Schema support.
          |
+         |For YAML format, use the corresponding endpoint: /resource-docs/API_VERSION/openapi.yaml
+         |
          |See the Resource Doc endpoint for more information.
          |
          |Note: Resource Docs are cached, TTL is ${GET_DYNAMIC_RESOURCE_DOCS_TTL} seconds
@@ -810,6 +813,11 @@ trait ResourceDocsAPIMethods extends MdcLoggable with APIMethods220 with APIMeth
       UnknownError :: Nil,
       List(apiTagDocumentation, apiTagApi)
     )
+
+    // Note: OpenAPI 3.1 YAML endpoint (/resource-docs/API_VERSION/openapi.yaml) 
+    // is implemented using Lift's serve mechanism in ResourceDocs140.scala to properly 
+    // handle YAML content type. It provides the same functionality as the JSON endpoint
+    // but returns OpenAPI documentation in YAML format instead of JSON.
 
     /**
      * OpenAPI 3.1 endpoint with comprehensive parameter validation.
@@ -911,6 +919,25 @@ trait ResourceDocsAPIMethods extends MdcLoggable with APIMethods220 with APIMeth
           }
         }
       }
+    }
+
+    // Note: The OpenAPI 3.1 YAML endpoint (/resource-docs/API_VERSION/openapi.yaml) 
+    // is implemented using Lift's serve mechanism in ResourceDocs140.scala to properly 
+    // handle YAML content type and response format, rather than as a standard OBPEndpoint.
+
+
+
+
+    def convertResourceDocsToOpenAPI31YAMLAndSetCache(cacheKey: String, requestedApiVersionString: String, resourceDocsJson: List[JSONFactory1_4_0.ResourceDocJson]) : String = {
+      logger.debug(s"Generating OpenAPI 3.1 YAML-convertResourceDocsToOpenAPI31YAMLAndSetCache requestedApiVersion is $requestedApiVersionString")
+      val hostname = HostName
+      val openApiDoc = code.api.ResourceDocs1_4_0.OpenAPI31JSONFactory.createOpenAPI31Json(resourceDocsJson, requestedApiVersionString, hostname)
+      val openApiJValue = code.api.ResourceDocs1_4_0.OpenAPI31JSONFactory.OpenAPI31JsonFormats.toJValue(openApiDoc)
+
+      val yamlString = YAMLUtils.jValueToYAMLSafe(openApiJValue, "# Error converting to YAML")
+      Caching.setStaticSwaggerDocCache(cacheKey, yamlString)
+
+      yamlString
     }
 
     private def convertResourceDocsToOpenAPI31JvalueAndSetCache(cacheKey: String, requestedApiVersionString: String, resourceDocsJson: List[JSONFactory1_4_0.ResourceDocJson]) : JValue = {
