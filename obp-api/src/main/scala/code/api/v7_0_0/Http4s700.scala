@@ -3,17 +3,19 @@ package code.api.v7_0_0
 import cats.data.{Kleisli, OptionT}
 import cats.effect._
 import code.api.Constant._
+import code.api.ResourceDocs1_4_0.ResourceDocsAPIMethodsUtil
 import code.api.ResourceDocs1_4_0.SwaggerDefinitionsJSON._
 import code.api.util.APIUtil.{EmptyBody, _}
 import code.api.util.ApiTag._
 import code.api.util.ErrorMessages._
-import code.api.util.{CustomJsonFormats, NewStyle}
+import code.api.util.{ApiVersionUtils, CustomJsonFormats, NewStyle, ScannedApis}
+import code.api.v1_4_0.JSONFactory1_4_0
 import code.api.v4_0_0.JSONFactory400
 import com.github.dwickern.macros.NameOf.nameOf
 import com.openbankproject.commons.ExecutionContext.Implicits.global
 import com.openbankproject.commons.util.{ApiVersion, ApiVersionStatus, ScannedApiVersion}
-import net.liftweb.json.{Extraction, Formats}
 import net.liftweb.json.JsonAST.prettyRender
+import net.liftweb.json.{Extraction, Formats}
 import org.http4s._
 import org.http4s.dsl.io._
 import org.typelevel.vault.Key
@@ -52,6 +54,14 @@ object Http4s700 {
 
     // Common prefix: /obp/v7.0.0
     val prefixPath = Root / ApiPathZero.toString / implementedInApiVersion.toString
+
+    private def getResourceDocsList(requestedApiVersion: ApiVersion): List[ResourceDoc] = {
+      requestedApiVersion match {
+        case version: ScannedApiVersion =>
+          ScannedApis.versionMapScannedApis.get(version).map(_.allResourceDocs.toList).getOrElse(Nil)
+        case _ => Nil
+      }
+    }
 
     resourceDocs += ResourceDoc(
       null,
@@ -123,10 +133,30 @@ object Http4s700 {
         )))
     }
 
+    val getResourceDocsObpV700: HttpRoutes[IO] = HttpRoutes.of[IO] {
+      case req @ GET -> `prefixPath` / "resource-docs" / requestedApiVersionString / "obp" =>
+        import com.openbankproject.commons.ExecutionContext.Implicits.global
+        val logic = for {
+          httpParams <- NewStyle.function.extractHttpParamsFromUrl(req.uri.renderString)
+          tagsParam = httpParams.filter(_.name == "tags").map(_.values).headOption
+          functionsParam = httpParams.filter(_.name == "functions").map(_.values).headOption
+          localeParam = httpParams.filter(param => param.name == "locale" || param.name == "language").map(_.values).flatten.headOption
+          contentParam = httpParams.filter(_.name == "content").map(_.values).flatten.flatMap(ResourceDocsAPIMethodsUtil.stringToContentParam).headOption
+          apiCollectionIdParam = httpParams.filter(_.name == "api-collection-id").map(_.values).flatten.headOption
+          tags = tagsParam.map(_.map(ResourceDocTag(_)))
+          functions = functionsParam.map(_.toList)
+          requestedApiVersion <- Future(ApiVersionUtils.valueOf(requestedApiVersionString))
+          resourceDocs = getResourceDocsList(requestedApiVersion)
+          filteredDocs = ResourceDocsAPIMethodsUtil.filterResourceDocs(resourceDocs, tags, functions)
+          resourceDocsJson = JSONFactory1_4_0.createResourceDocsJson(filteredDocs, isVersion4OrHigher = true, localeParam)
+        } yield convertAnyToJsonString(resourceDocsJson)
+        Ok(IO.fromFuture(IO(logic)))
+    }
+
     // All routes combined
     val allRoutes: HttpRoutes[IO] =
       Kleisli[HttpF, Request[IO], Response[IO]] { req: Request[IO] =>
-        root(req).orElse(getBanks(req))
+        root(req).orElse(getBanks(req)).orElse(getResourceDocsObpV700(req))
       }
   }
 
