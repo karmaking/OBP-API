@@ -31,7 +31,7 @@ object AbacRuleEngine {
    *             user, userAttributes, bankOpt, bankAttributes, accountOpt, accountAttributes, transactionOpt, transactionAttributes, customerOpt, customerAttributes
    * Returns: Boolean (true = allow access, false = deny access)
    */
-  type AbacRuleFunction = (User, List[UserAttributeTrait], List[UserAuthContext], Option[User], List[UserAttributeTrait], List[UserAuthContext], Option[User], List[UserAttributeTrait], Option[Bank], List[BankAttributeTrait], Option[BankAccount], List[AccountAttribute], Option[Transaction], List[TransactionAttribute], Option[TransactionRequest], List[TransactionRequestAttributeTrait], Option[Customer], List[CustomerAttribute]) => Boolean
+  type AbacRuleFunction = (User, List[UserAttributeTrait], List[UserAuthContext], Option[User], List[UserAttributeTrait], List[UserAuthContext], Option[User], List[UserAttributeTrait], Option[Bank], List[BankAttributeTrait], Option[BankAccount], List[AccountAttribute], Option[Transaction], List[TransactionAttribute], Option[TransactionRequest], List[TransactionRequestAttributeTrait], Option[Customer], List[CustomerAttribute], Option[CallContext]) => Boolean
 
   /**
    * Compile an ABAC rule from Scala code
@@ -75,7 +75,7 @@ object AbacRuleEngine {
        |import net.liftweb.common._
        |
        |// ABAC Rule Function
-       |(authenticatedUser: User, authenticatedUserAttributes: List[UserAttributeTrait], authenticatedUserAuthContext: List[UserAuthContext], onBehalfOfUserOpt: Option[User], onBehalfOfUserAttributes: List[UserAttributeTrait], onBehalfOfUserAuthContext: List[UserAuthContext], userOpt: Option[User], userAttributes: List[UserAttributeTrait], bankOpt: Option[Bank], bankAttributes: List[BankAttributeTrait], accountOpt: Option[BankAccount], accountAttributes: List[AccountAttribute], transactionOpt: Option[Transaction], transactionAttributes: List[TransactionAttribute], transactionRequestOpt: Option[TransactionRequest], transactionRequestAttributes: List[TransactionRequestAttributeTrait], customerOpt: Option[Customer], customerAttributes: List[CustomerAttribute]) => {
+       |(authenticatedUser: User, authenticatedUserAttributes: List[UserAttributeTrait], authenticatedUserAuthContext: List[UserAuthContext], onBehalfOfUserOpt: Option[User], onBehalfOfUserAttributes: List[UserAttributeTrait], onBehalfOfUserAuthContext: List[UserAuthContext], userOpt: Option[User], userAttributes: List[UserAttributeTrait], bankOpt: Option[Bank], bankAttributes: List[BankAttributeTrait], accountOpt: Option[BankAccount], accountAttributes: List[AccountAttribute], transactionOpt: Option[Transaction], transactionAttributes: List[TransactionAttribute], transactionRequestOpt: Option[TransactionRequest], transactionRequestAttributes: List[TransactionRequestAttributeTrait], customerOpt: Option[Customer], customerAttributes: List[CustomerAttribute], callContext: Option[code.api.util.CallContext]) => {
        |  $ruleCode
        |}
        |""".stripMargin
@@ -274,7 +274,7 @@ object AbacRuleEngine {
       // Compile and execute the rule
       compiledFunc <- compileRule(ruleId, rule.ruleCode)
       result <- tryo {
-        compiledFunc(authenticatedUser, authenticatedUserAttributes, authenticatedUserAuthContext, onBehalfOfUserOpt, onBehalfOfUserAttributes, onBehalfOfUserAuthContext, userOpt, userAttributes, bankOpt, bankAttributes, accountOpt, accountAttributes, transactionOpt, transactionAttributes, transactionRequestOpt, transactionRequestAttributes, customerOpt, customerAttributes)
+        compiledFunc(authenticatedUser, authenticatedUserAttributes, authenticatedUserAuthContext, onBehalfOfUserOpt, onBehalfOfUserAttributes, onBehalfOfUserAuthContext, userOpt, userAttributes, bankOpt, bankAttributes, accountOpt, accountAttributes, transactionOpt, transactionAttributes, transactionRequestOpt, transactionRequestAttributes, customerOpt, customerAttributes, callContext)
       }
     } yield result
   }

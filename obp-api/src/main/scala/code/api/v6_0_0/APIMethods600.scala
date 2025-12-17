@@ -2564,7 +2564,7 @@ trait APIMethods600 {
             if (!skipEmailValidation) {
               // Construct validation link based on validating_application and portal_external_url
               val portalExternalUrl = APIUtil.getPropsValue("portal_external_url")
-              
+
               val emailValidationLink = postedData.validating_application match {
                 case Some("LEGACY_PORTAL") =>
                   // Use API hostname with legacy path
@@ -2856,7 +2856,7 @@ trait APIMethods600 {
                   val alreadyHasRole = existingEntitlements.toOption.exists(_.exists { ent =>
                     ent.roleName == roleName && ent.bankId == group.bankId.getOrElse("")
                   })
-                  
+
                   if (!alreadyHasRole) {
                     Entitlement.entitlement.vend.addEntitlement(
                       group.bankId.getOrElse(""),
@@ -3026,7 +3026,7 @@ trait APIMethods600 {
             entitlements <- Future {
               Entitlement.entitlement.vend.getEntitlementsByUserId(userId)
             }
-            groupEntitlements = entitlements.toOption.getOrElse(List.empty).filter(e => 
+            groupEntitlements = entitlements.toOption.getOrElse(List.empty).filter(e =>
               e.groupId == Some(groupId) && e.process == Some("GROUP_MEMBERSHIP")
             )
             // Delete all entitlements from this group
@@ -3316,13 +3316,13 @@ trait APIMethods600 {
       "Get View Permissions",
       s"""Get a list of all available view permissions.
          |
-         |This endpoint returns all the available permissions that can be assigned to views, 
+         |This endpoint returns all the available permissions that can be assigned to views,
          |organized by category. These permissions control what actions and data can be accessed
          |through a view.
          |
          |${userAuthenticationMessage(true)}
          |
-         |The response contains all available view permission names that can be used in the 
+         |The response contains all available view permission names that can be used in the
          |`allowed_actions` field when creating or updating custom views.
          |
          |""".stripMargin,
@@ -3351,31 +3351,31 @@ trait APIMethods600 {
             _ <- NewStyle.function.hasEntitlement("", u.userId, ApiRole.canGetViewPermissionsAtAllBanks, callContext)
           } yield {
             import Constant._
-            
+
             // Helper function to determine category from permission name
             def categorizePermission(permission: String): String = {
               permission match {
                 case p if p.contains("transaction") && !p.contains("request") => "Transaction"
                 case p if p.contains("bank_account") || p.contains("bank_routing") || p.contains("available_funds") => "Account"
-                case p if p.contains("other_account") || p.contains("other_bank") || 
-                         p.contains("counterparty") || p.contains("more_info") || 
-                         p.contains("url") || p.contains("corporates") || 
+                case p if p.contains("other_account") || p.contains("other_bank") ||
+                         p.contains("counterparty") || p.contains("more_info") ||
+                         p.contains("url") || p.contains("corporates") ||
                          p.contains("location") || p.contains("alias") => "Counterparty"
-                case p if p.contains("comment") || p.contains("tag") || 
+                case p if p.contains("comment") || p.contains("tag") ||
                          p.contains("image") || p.contains("where_tag") => "Metadata"
-                case p if p.contains("transaction_request") || p.contains("direct_debit") || 
+                case p if p.contains("transaction_request") || p.contains("direct_debit") ||
                          p.contains("standing_order") => "Transaction Request"
                 case p if p.contains("view") => "View"
                 case p if p.contains("grant") || p.contains("revoke") => "Access Control"
                 case _ => "Other"
               }
             }
-            
+
             // Return all view permissions directly from the constants with generated categories
             val permissions = ALL_VIEW_PERMISSION_NAMES.map { permission =>
               ViewPermissionJsonV600(permission, categorizePermission(permission))
             }.sortBy(p => (p.category, p.permission))
-            
+
             (ViewPermissionsJsonV600(permissions), HttpCode.`200`(callContext))
           }
       }
@@ -3392,8 +3392,8 @@ trait APIMethods600 {
          |
          |This is a **management endpoint** that requires the `CanCreateCustomView` role (entitlement).
          |
-         |This endpoint provides a simpler, role-based authorization model compared to the original 
-         |v3.0.0 endpoint which requires view-level permissions. Use this endpoint when you want to 
+         |This endpoint provides a simpler, role-based authorization model compared to the original
+         |v3.0.0 endpoint which requires view-level permissions. Use this endpoint when you want to
          |grant view creation ability through direct role assignment rather than through view access.
          |
          |For the original endpoint that checks account-level view permissions, see:
@@ -3569,7 +3569,7 @@ trait APIMethods600 {
                 case Full(user) if user.validated.get && user.email.get == postedData.email =>
                   // Verify user_id matches
                   Users.users.vend.getUserByUserId(postedData.user_id) match {
-                    case Full(resourceUser) if resourceUser.name == postedData.username && 
+                    case Full(resourceUser) if resourceUser.name == postedData.username &&
                                                  resourceUser.emailAddress == postedData.email =>
                       user
                     case _ => throw new Exception("User ID does not match username and email")
@@ -3580,23 +3580,23 @@ trait APIMethods600 {
           } yield {
             // Explicitly type the user to ensure proper method resolution
             val user: code.model.dataAccess.AuthUser = authUser
-            
+
             // Generate new reset token
             // Reset the unique ID token by generating a new random value (32 chars, no hyphens)
             user.uniqueId.set(java.util.UUID.randomUUID().toString.replace("-", ""))
             user.save
-            
+
             // Construct reset URL using portal_hostname
             // Get the unique ID value for the reset token URL
-            val resetPasswordLink = APIUtil.getPropsValue("portal_external_url", Constant.HostName) + 
-              "/user_mgt/reset_password/" + 
+            val resetPasswordLink = APIUtil.getPropsValue("portal_external_url", Constant.HostName) +
+              "/user_mgt/reset_password/" +
               java.net.URLEncoder.encode(user.uniqueId.get, "UTF-8")
-            
+
             // Send email using CommonsEmailWrapper (like createUser does)
             val textContent = Some(s"Please use the following link to reset your password: $resetPasswordLink")
             val htmlContent = Some(s"<p>Please use the following link to reset your password:</p><p><a href='$resetPasswordLink'>$resetPasswordLink</a></p>")
             val subjectContent = "Reset your password - " + user.username.get
-            
+
             val emailContent = code.api.util.CommonsEmailWrapper.EmailContent(
               from = code.model.dataAccess.AuthUser.emailFrom,
               to = List(user.email.get),
@@ -3605,9 +3605,9 @@ trait APIMethods600 {
               textContent = textContent,
               htmlContent = htmlContent
             )
-            
+
             code.api.util.CommonsEmailWrapper.sendHtmlEmail(emailContent)
-            
+
             (
               ResetPasswordUrlJsonV600(resetPasswordLink),
               HttpCode.`201`(callContext)
@@ -3783,7 +3783,7 @@ trait APIMethods600 {
             explicitWebUiPropsWithSource = explicitWebUiProps.map(prop => WebUiPropsCommons(prop.name, prop.value, prop.webUiPropsId, source = Some("database")))
             implicitWebUiProps = getWebUIPropsPairs.map(webUIPropsPairs=>WebUiPropsCommons(webUIPropsPairs._1, webUIPropsPairs._2, webUiPropsId = Some("default"), source = Some("config")))
             result = what match {
-              case "database" => 
+              case "database" =>
                 // Return only database props
                 explicitWebUiPropsWithSource
               case "config" =>
@@ -4567,7 +4567,8 @@ trait APIMethods600 {
                 AbacParameterJsonV600("transactionRequestOpt", "Option[TransactionRequest]", "Transaction request context", required = false, "TransactionRequest"),
                 AbacParameterJsonV600("transactionRequestAttributes", "List[TransactionRequestAttributeTrait]", "Transaction request attributes", required = false, "TransactionRequest"),
                 AbacParameterJsonV600("customerOpt", "Option[Customer]", "Customer context", required = false, "Customer"),
-                AbacParameterJsonV600("customerAttributes", "List[CustomerAttribute]", "Customer attributes", required = false, "Customer")
+                AbacParameterJsonV600("customerAttributes", "List[CustomerAttribute]", "Customer attributes", required = false, "Customer"),
+                AbacParameterJsonV600("callContext", "Option[CallContext]", "Request call context with metadata (IP, user agent, etc.)", required = false, "Context")
               ),
               object_types = List(
                 AbacObjectTypeJsonV600("User", "User object with profile and authentication information", List(
@@ -4658,6 +4659,16 @@ trait APIMethods600 {
                   AbacObjectPropertyJsonV600("name", "String", "Attribute name"),
                   AbacObjectPropertyJsonV600("value", "String", "Attribute value"),
                   AbacObjectPropertyJsonV600("attributeType", "AttributeType", "Attribute type")
+                )),
+                AbacObjectTypeJsonV600("CallContext", "Request context with metadata", List(
+                  AbacObjectPropertyJsonV600("correlationId", "String", "Correlation ID for request tracking"),
+                  AbacObjectPropertyJsonV600("url", "Option[String]", "Request URL"),
+                  AbacObjectPropertyJsonV600("verb", "Option[String]", "HTTP verb (GET, POST, etc.)"),
+                  AbacObjectPropertyJsonV600("ipAddress", "Option[String]", "Client IP address"),
+                  AbacObjectPropertyJsonV600("userAgent", "Option[String]", "Client user agent"),
+                  AbacObjectPropertyJsonV600("implementedByPartialFunction", "Option[String]", "Endpoint implementation name"),
+                  AbacObjectPropertyJsonV600("startTime", "Option[Date]", "Request start time"),
+                  AbacObjectPropertyJsonV600("endTime", "Option[Date]", "Request end time")
                 ))
               ),
               examples = List(
@@ -4763,7 +4774,7 @@ trait APIMethods600 {
             }
             validationResult <- Future {
               AbacRuleEngine.validateRuleCode(validateJson.rule_code) match {
-                case Full(msg) => 
+                case Full(msg) =>
                   Full(ValidateAbacRuleSuccessJsonV600(
                     valid = true,
                     message = msg
@@ -4776,7 +4787,7 @@ trait APIMethods600 {
                     error = cleanError,
                     message = "Rule validation failed",
                     details = ValidateAbacRuleErrorDetailsJsonV600(
-                      error_type = if (cleanError.toLowerCase.contains("syntax")) "SyntaxError" 
+                      error_type = if (cleanError.toLowerCase.contains("syntax")) "SyntaxError"
                                    else if (cleanError.toLowerCase.contains("type")) "TypeError"
                                    else "CompilationError"
                     )
@@ -4860,13 +4871,13 @@ trait APIMethods600 {
             } map {
               unboxFullOrFail(_, callContext, s"ABAC Rule not found with ID: $ruleId", 404)
             }
-            
+
             // Execute the rule with IDs - object fetching happens internally
             // authenticatedUserId: can be provided in request (for testing) or defaults to actual authenticated user
             // onBehalfOfUserId: optional delegation - acting on behalf of another user
             // userId: the target user being evaluated (defaults to authenticated user)
             effectiveAuthenticatedUserId = execJson.authenticated_user_id.getOrElse(user.userId)
-            
+
             result <- Future {
               val resultBox = AbacRuleEngine.executeRule(
                 ruleId = ruleId,
@@ -4881,9 +4892,9 @@ trait APIMethods600 {
                 transactionRequestId = execJson.transaction_request_id,
                 customerId = execJson.customer_id
               )
-              
+
               resultBox match {
-                case Full(allowed) => 
+                case Full(allowed) =>
                   AbacRuleResultJsonV600(result = allowed)
                 case Failure(msg, _, _) =>
                   AbacRuleResultJsonV600(result = false)
