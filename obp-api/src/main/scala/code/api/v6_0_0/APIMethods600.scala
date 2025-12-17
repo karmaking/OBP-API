@@ -4478,7 +4478,7 @@ trait APIMethods600 {
       implementedInApiVersion,
       nameOf(getAbacRuleSchema),
       "GET",
-      "/management/abac-rules/schema",
+      "/management/abac-rules-schema",
       "Get ABAC Rule Schema",
       s"""Get schema information about ABAC rule structure for building rule code.
          |
@@ -4542,7 +4542,7 @@ trait APIMethods600 {
     )
 
     lazy val getAbacRuleSchema: OBPEndpoint = {
-      case "management" :: "abac-rules" :: "schema" :: Nil JsonGet _ => {
+      case "management" :: "abac-rules-schema" :: Nil JsonGet _ => {
         cc => implicit val ec = EndpointContext(Some(cc))
           for {
             (Full(user), callContext) <- authenticatedAccess(cc)
