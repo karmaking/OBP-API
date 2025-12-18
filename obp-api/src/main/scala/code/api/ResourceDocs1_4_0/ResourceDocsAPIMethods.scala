@@ -1,8 +1,10 @@
 package code.api.ResourceDocs1_4_0
 
-import code.api.Constant.{GET_DYNAMIC_RESOURCE_DOCS_TTL, GET_STATIC_RESOURCE_DOCS_TTL, PARAM_LOCALE, HostName}
+import code.api.Constant.{GET_DYNAMIC_RESOURCE_DOCS_TTL, GET_STATIC_RESOURCE_DOCS_TTL, HostName, PARAM_LOCALE}
 import code.api.OBPRestHelper
 import code.api.cache.Caching
+import code.api.dynamic.endpoint.OBPAPIDynamicEndpoint
+import code.api.dynamic.entity.OBPAPIDynamicEntity
 import code.api.util.APIUtil._
 import code.api.util.ApiRole.{canReadDynamicResourceDocsAtOneBank, canReadResourceDoc}
 import code.api.util.ApiTag._
@@ -20,12 +22,9 @@ import code.api.v4_0_0.{APIMethods400, OBPAPI4_0_0}
 import code.api.v5_0_0.OBPAPI5_0_0
 import code.api.v5_1_0.OBPAPI5_1_0
 import code.api.v6_0_0.OBPAPI6_0_0
-import code.api.dynamic.endpoint.OBPAPIDynamicEndpoint
-import code.api.dynamic.entity.OBPAPIDynamicEntity
 import code.apicollectionendpoint.MappedApiCollectionEndpointsProvider
 import code.util.Helper
 import code.util.Helper.{MdcLoggable, ObpS, SILENCE_IS_GOLDEN}
-import net.liftweb.http.S
 import com.github.dwickern.macros.NameOf.nameOf
 import com.openbankproject.commons.model.enums.ContentParam
 import com.openbankproject.commons.model.enums.ContentParam.{ALL, DYNAMIC, STATIC}
@@ -33,7 +32,7 @@ import com.openbankproject.commons.model.{BankId, ListResult, User}
 import com.openbankproject.commons.util.ApiStandards._
 import com.openbankproject.commons.util.{ApiVersion, ScannedApiVersion}
 import net.liftweb.common.{Box, Empty, Full}
-import net.liftweb.http.{InMemoryResponse, LiftRules, PlainTextResponse}
+import net.liftweb.http.{InMemoryResponse, LiftRules, PlainTextResponse, S}
 import net.liftweb.json
 import net.liftweb.json.JsonAST.{JField, JString, JValue}
 import net.liftweb.json._
@@ -118,6 +117,7 @@ trait ResourceDocsAPIMethods extends MdcLoggable with APIMethods220 with APIMeth
       logger.debug(s"getResourceDocsList says requestedApiVersion is $requestedApiVersion")
 
       val resourceDocs = requestedApiVersion match {
+        case ApiVersion.v7_0_0 =>  code.api.v7_0_0.Http4s700.resourceDocs
         case ApiVersion.v6_0_0 => OBPAPI6_0_0.allResourceDocs
         case ApiVersion.v5_1_0 => OBPAPI5_1_0.allResourceDocs
         case ApiVersion.v5_0_0 => OBPAPI5_0_0.allResourceDocs
@@ -139,6 +139,7 @@ trait ResourceDocsAPIMethods extends MdcLoggable with APIMethods220 with APIMeth
       logger.debug(s"There are ${resourceDocs.length} resource docs available to $requestedApiVersion")
 
       val versionRoutes = requestedApiVersion match {
+        case ApiVersion.v7_0_0 => Nil
         case ApiVersion.v6_0_0 => OBPAPI6_0_0.routes
         case ApiVersion.v5_1_0 => OBPAPI5_1_0.routes
         case ApiVersion.v5_0_0 => OBPAPI5_0_0.routes
@@ -165,7 +166,10 @@ trait ResourceDocsAPIMethods extends MdcLoggable with APIMethods220 with APIMeth
       val versionRoutesClasses = versionRoutes.map { vr => vr.getClass }
 
       // Only return the resource docs that have available routes
-      val activeResourceDocs = resourceDocs.filter(rd => versionRoutesClasses.contains(rd.partialFunction.getClass))
+      val activeResourceDocs = requestedApiVersion match {
+        case ApiVersion.v7_0_0 => resourceDocs
+        case _ => resourceDocs.filter(rd => versionRoutesClasses.contains(rd.partialFunction.getClass))
+      }
 
       logger.debug(s"There are ${activeResourceDocs.length} resource docs available to $requestedApiVersion")
 
@@ -176,8 +180,8 @@ trait ResourceDocsAPIMethods extends MdcLoggable with APIMethods220 with APIMeth
       requestedApiVersion match
       {
         // only `obp` standard show the `localResourceDocs`
-        case version: ScannedApiVersion 
-          if(version.apiStandard == obp.toString) => 
+        case version: ScannedApiVersion
+          if(version.apiStandard == obp.toString) =>
             activePlusLocalResourceDocs ++= localResourceDocs
         case _ => ; // all other standards only show their own apis.
       }
@@ -218,7 +222,7 @@ trait ResourceDocsAPIMethods extends MdcLoggable with APIMethods220 with APIMeth
 
 
     /**
-     * 
+     *
      * @param requestedApiVersion
      * @param resourceDocTags
      * @param partialFunctionNames
@@ -285,9 +289,9 @@ trait ResourceDocsAPIMethods extends MdcLoggable with APIMethods220 with APIMeth
       val allDocs = staticDocs.map(_ ++ filteredDocs)
 
       resourceDocsToResourceDocJson(allDocs, resourceDocTags, partialFunctionNames, isVersion4OrHigher, locale)
-  
+
     }
-    
+
     def getResourceDocsObpDynamicCached(
       resourceDocTags: Option[List[ResourceDocTag]],
       partialFunctionNames: Option[List[String]],
@@ -322,7 +326,7 @@ trait ResourceDocsAPIMethods extends MdcLoggable with APIMethods220 with APIMeth
       }
 
       resourceDocsToResourceDocJson(Some(filteredDocs), resourceDocTags, partialFunctionNames, isVersion4OrHigher, locale)
-      
+
     }
 
 
@@ -347,7 +351,7 @@ trait ResourceDocsAPIMethods extends MdcLoggable with APIMethods220 with APIMeth
     def getResourceDocsDescription(isBankLevelResourceDoc: Boolean) = {
 
       val endpointBankIdPath = if (isBankLevelResourceDoc) "/banks/BANK_ID" else ""
-    
+
       s"""Get documentation about the RESTful resources on this server including example bodies for POST and PUT requests.
          |
          |This is the native data format used to document OBP endpoints. Each endpoint has a Resource Doc (a Scala case class) defined in the source code.
@@ -368,8 +372,8 @@ trait ResourceDocsAPIMethods extends MdcLoggable with APIMethods220 with APIMeth
          | if set content=dynamic, only show dynamic endpoints, if content=static, only show the static endpoints. if omit this parameter, we will show all the endpoints.
          |
          | You may need some other language resource docs, now we support en_GB and es_ES at the moment.
-         | 
-         | You can filter with api-collection-id, but api-collection-id can not be used with others together. If api-collection-id is used in URL, it will ignore all other parameters. 
+         |
+         | You can filter with api-collection-id, but api-collection-id can not be used with others together. If api-collection-id is used in URL, it will ignore all other parameters.
          |
          |See the Resource Doc endpoint for more information.
          |
@@ -396,8 +400,8 @@ trait ResourceDocsAPIMethods extends MdcLoggable with APIMethods220 with APIMeth
          |</ul>
       """
     }
-    
-    
+
+
     localResourceDocs += ResourceDoc(
       getResourceDocsObp,
       implementedInApiVersion,
@@ -407,7 +411,7 @@ trait ResourceDocsAPIMethods extends MdcLoggable with APIMethods220 with APIMeth
       "Get Resource Docs.",
       getResourceDocsDescription(false),
       EmptyBody,
-      EmptyBody, 
+      EmptyBody,
       UnknownError :: Nil,
       List(apiTagDocumentation, apiTagApi),
       Some(List(canReadResourceDoc))
@@ -424,7 +428,7 @@ trait ResourceDocsAPIMethods extends MdcLoggable with APIMethods220 with APIMeth
           getApiLevelResourceDocs(cc,requestedApiVersionString, tags, partialFunctions, locale, contentParam, apiCollectionIdParam,false)
       }
     }
-    
+
     localResourceDocs += ResourceDoc(
       getResourceDocsObpV400,
       implementedInApiVersion,
@@ -439,7 +443,7 @@ trait ResourceDocsAPIMethods extends MdcLoggable with APIMethods220 with APIMeth
       List(apiTagDocumentation, apiTagApi),
       Some(List(canReadResourceDoc))
     )
-    
+
     lazy val getResourceDocsObpV400 : OBPEndpoint = {
       case "resource-docs" :: requestedApiVersionString :: "obp" :: Nil JsonGet _ => {
         val (tags, partialFunctions, locale, contentParam, apiCollectionIdParam) = ResourceDocsAPIMethodsUtil.getParams()
@@ -490,7 +494,7 @@ trait ResourceDocsAPIMethods extends MdcLoggable with APIMethods220 with APIMeth
             Some(isVersion4OrHigher)
           )
           json <- locale match {
-            case _ if (apiCollectionIdParam.isDefined) => 
+            case _ if (apiCollectionIdParam.isDefined) =>
               NewStyle.function.tryons(s"$UnknownError Can not prepare OBP resource docs.", 500, callContext) {
                 val operationIds = MappedApiCollectionEndpointsProvider.getApiCollectionEndpoints(apiCollectionIdParam.getOrElse("")).map(_.operationId).map(getObpFormatOperationId)
                 val resourceDocs = ResourceDoc.getResourceDocs(operationIds)
@@ -647,7 +651,7 @@ trait ResourceDocsAPIMethods extends MdcLoggable with APIMethods220 with APIMeth
          |See the Resource Doc endpoint for more information.
          |
          | Note: Resource Docs are cached, TTL is ${GET_DYNAMIC_RESOURCE_DOCS_TTL} seconds
-         | 
+         |
          |Following are more examples:
          |${getObpApiRoot}/v3.1.0/resource-docs/v3.1.0/swagger
          |${getObpApiRoot}/v3.1.0/resource-docs/v3.1.0/swagger?tags=Account,Bank
@@ -694,7 +698,7 @@ trait ResourceDocsAPIMethods extends MdcLoggable with APIMethods220 with APIMeth
               Some(isVersion4OrHigher)
             )
             cacheValueFromRedis = Caching.getStaticSwaggerDocCache(cacheKey)
-            
+
             swaggerJValue <- if (cacheValueFromRedis.isDefined) {
               NewStyle.function.tryons(s"$UnknownError Can not convert internal swagger file from cache.", 400, cc.callContext) {json.parse(cacheValueFromRedis.get)}
             } else {
@@ -747,7 +751,7 @@ trait ResourceDocsAPIMethods extends MdcLoggable with APIMethods220 with APIMeth
          |  • All endpoints are given one or more tags which are used for grouping
          |  • Empty values will return error OBP-10053
          |
-         |**functions** - Filter by function names (comma-separated list) 
+         |**functions** - Filter by function names (comma-separated list)
          |  • Example: ?functions=getBanks,bankById
          |  • Each endpoint is implemented in the OBP Scala code by a 'function'
          |  • Empty values will return error OBP-10054
@@ -815,26 +819,26 @@ trait ResourceDocsAPIMethods extends MdcLoggable with APIMethods220 with APIMeth
       List(apiTagDocumentation, apiTagApi)
     )
 
-    // Note: OpenAPI 3.1 YAML endpoint (/resource-docs/API_VERSION/openapi.yaml) 
-    // is implemented using Lift's serve mechanism in ResourceDocs140.scala to properly 
+    // Note: OpenAPI 3.1 YAML endpoint (/resource-docs/API_VERSION/openapi.yaml)
+    // is implemented using Lift's serve mechanism in ResourceDocs140.scala to properly
     // handle YAML content type. It provides the same functionality as the JSON endpoint
     // but returns OpenAPI documentation in YAML format instead of JSON.
 
     /**
      * OpenAPI 3.1 endpoint with comprehensive parameter validation.
-     * 
+     *
      * This endpoint generates OpenAPI 3.1 documentation with the following validated query parameters:
      * - tags: Comma-separated list of tags to filter endpoints (e.g., ?tags=Account,Bank)
      * - functions: Comma-separated list of function names to filter endpoints
-     * - content: Filter type - "static", "dynamic", or "all" 
+     * - content: Filter type - "static", "dynamic", or "all"
      * - locale: Language code for localization (e.g., "en_GB", "es_ES")
      * - api-collection-id: UUID to filter by specific API collection
-     * 
+     *
      * Parameter validation guards ensure:
      * - Empty parameters (e.g., ?tags=) return 400 error
      * - Invalid content values return 400 error with valid options
      * - All parameters are properly trimmed and sanitized
-     * 
+     *
      * Examples:
      * - ?content=static&tags=Account-Firehose
      * - ?tags=Account,Bank&functions=getBanks,bankById
@@ -844,7 +848,7 @@ trait ResourceDocsAPIMethods extends MdcLoggable with APIMethods220 with APIMeth
       case "resource-docs" :: requestedApiVersionString :: "openapi" :: Nil JsonGet _ => {
         cc => {
           implicit val ec = EndpointContext(Some(cc))
-          
+
           // Early validation for empty parameters using underlying S to bypass ObpS filtering
           if (S.param("tags").exists(_.trim.isEmpty)) {
             Full(errorJsonResponse(InvalidTagsParameter, 400))
@@ -888,7 +892,7 @@ trait ResourceDocsAPIMethods extends MdcLoggable with APIMethods220 with APIMeth
               Some(isVersion4OrHigher)
             )
             cacheValueFromRedis = Caching.getStaticSwaggerDocCache(cacheKey)
-            
+
             openApiJValue <- if (cacheValueFromRedis.isDefined) {
               NewStyle.function.tryons(s"$UnknownError Can not convert internal openapi file from cache.", 400, cc.callContext) {json.parse(cacheValueFromRedis.get)}
             } else {
@@ -922,8 +926,8 @@ trait ResourceDocsAPIMethods extends MdcLoggable with APIMethods220 with APIMeth
       }
     }
 
-    // Note: The OpenAPI 3.1 YAML endpoint (/resource-docs/API_VERSION/openapi.yaml) 
-    // is implemented using Lift's serve mechanism in ResourceDocs140.scala to properly 
+    // Note: The OpenAPI 3.1 YAML endpoint (/resource-docs/API_VERSION/openapi.yaml)
+    // is implemented using Lift's serve mechanism in ResourceDocs140.scala to properly
     // handle YAML content type and response format, rather than as a standard OBPEndpoint.
 
 
@@ -1022,7 +1026,7 @@ trait ResourceDocsAPIMethods extends MdcLoggable with APIMethods220 with APIMeth
                   example_request_body = endpointMappingRequestBodyExample,
                   success_response_body = endpointMappingRequestBodyExample
                 )
-                
+
               case doc if ( doc.operation_id == buildOperationId(APIMethods400.Implementations4_0_0.implementedInApiVersion, nameOf(APIMethods400.Implementations4_0_0.getDynamicEndpoint)) ||
                 doc.operation_id == buildOperationId(APIMethods400.Implementations4_0_0.implementedInApiVersion, nameOf(APIMethods400.Implementations4_0_0.getBankLevelDynamicEndpoint))) =>
                 doc.copy(success_response_body = ExampleValue.dynamicEndpointResponseBodyEmptyExample)
@@ -1158,7 +1162,7 @@ object ResourceDocsAPIMethodsUtil extends MdcLoggable{
       }
     logger.debug(s"partialFunctionNames is $partialFunctionNames")
 
-    val locale = ObpS.param(PARAM_LOCALE).or(ObpS.param("language")) // we used language before, so keep it there. 
+    val locale = ObpS.param(PARAM_LOCALE).or(ObpS.param("language")) // we used language before, so keep it there.
     logger.debug(s"locale is $locale")
 
     // So we can produce a reduced list of resource docs to prevent manual editing of swagger files.
@@ -1173,8 +1177,8 @@ object ResourceDocsAPIMethodsUtil extends MdcLoggable{
       if x.trim.nonEmpty
     } yield x.trim
     logger.debug(s"apiCollectionIdParam is $apiCollectionIdParam")
-    
-  
+
+
 
     (tags, partialFunctionNames, locale, contentParam, apiCollectionIdParam)
   }
@@ -1186,8 +1190,8 @@ We don't assume a default catalog (as API Explorer does)
 so the caller must specify any required filtering by catalog explicitly.
  */
   def filterResourceDocs(
-    allResources: List[ResourceDoc], 
-    resourceDocTags: Option[List[ResourceDocTag]], 
+    allResources: List[ResourceDoc],
+    resourceDocTags: Option[List[ResourceDocTag]],
     partialFunctionNames: Option[List[String]]
   ) : List[ResourceDoc] = {
 
@@ -1229,7 +1233,7 @@ so the caller must specify any required filtering by catalog explicitly.
       // tags param was not mentioned in url or was empty, so return all
       case None => filteredResources3
     }
-    
+
 
     val resourcesToUse = filteredResources4.toSet.toList
 
@@ -1251,4 +1255,3 @@ so the caller must specify any required filtering by catalog explicitly.
 
 
 }
-

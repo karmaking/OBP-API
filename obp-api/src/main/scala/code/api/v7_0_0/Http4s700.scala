@@ -3,8 +3,8 @@ package code.api.v7_0_0
 import cats.data.{Kleisli, OptionT}
 import cats.effect._
 import code.api.Constant._
-import code.api.ResourceDocs1_4_0.ResourceDocsAPIMethodsUtil
 import code.api.ResourceDocs1_4_0.SwaggerDefinitionsJSON._
+import code.api.ResourceDocs1_4_0.{ResourceDocs140, ResourceDocsAPIMethodsUtil}
 import code.api.util.APIUtil.{EmptyBody, _}
 import code.api.util.ApiTag._
 import code.api.util.ErrorMessages._
@@ -55,13 +55,6 @@ object Http4s700 {
     // Common prefix: /obp/v7.0.0
     val prefixPath = Root / ApiPathZero.toString / implementedInApiVersion.toString
 
-    private def getResourceDocsList(requestedApiVersion: ApiVersion): List[ResourceDoc] = {
-      requestedApiVersion match {
-        case version: ScannedApiVersion =>
-          resourceDocs.toList
-        case _ => Nil
-      }
-    }
 
     resourceDocs += ResourceDoc(
       null,
@@ -146,7 +139,7 @@ object Http4s700 {
           tags = tagsParam.map(_.map(ResourceDocTag(_)))
           functions = functionsParam.map(_.toList)
           requestedApiVersion <- Future(ApiVersionUtils.valueOf(requestedApiVersionString))
-          resourceDocs = getResourceDocsList(requestedApiVersion)
+          resourceDocs = ResourceDocs140.ImplementationsResourceDocs.getResourceDocsList(requestedApiVersion).getOrElse(Nil)
           filteredDocs = ResourceDocsAPIMethodsUtil.filterResourceDocs(resourceDocs, tags, functions)
           resourceDocsJson = JSONFactory1_4_0.createResourceDocsJson(filteredDocs, isVersion4OrHigher = true, localeParam)
         } yield convertAnyToJsonString(resourceDocsJson)
