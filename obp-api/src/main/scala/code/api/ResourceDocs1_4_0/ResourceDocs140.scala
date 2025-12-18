@@ -1,8 +1,16 @@
 package code.api.ResourceDocs1_4_0
 
+import code.api.Constant.HostName
 import code.api.OBPRestHelper
-import code.util.Helper.MdcLoggable
+import code.api.cache.Caching
+import code.api.util.APIUtil._
+import code.api.util.{APIUtil, ApiVersionUtils, YAMLUtils}
+import code.api.v1_4_0.JSONFactory1_4_0
+import code.apicollectionendpoint.MappedApiCollectionEndpointsProvider
+import code.util.Helper.{MdcLoggable, SILENCE_IS_GOLDEN}
+import com.openbankproject.commons.model.enums.ContentParam.{DYNAMIC, STATIC}
 import com.openbankproject.commons.util.{ApiVersion, ApiVersionStatus}
+import net.liftweb.http.{GetRequest, InMemoryResponse, PlainTextResponse, Req, S}
 
 
 object ResourceDocs140 extends OBPRestHelper with ResourceDocsAPIMethods with MdcLoggable {
@@ -152,6 +160,85 @@ object ResourceDocs300 extends OBPRestHelper with ResourceDocsAPIMethods with Md
         route
       })
     })
+    
+    // Register YAML endpoint using standard RestHelper approach
+    serve {
+      case Req("obp" :: versionStr :: "resource-docs" :: requestedApiVersionString :: "openapi.yaml" :: Nil, _, GetRequest) if versionStr == version.toString => 
+        val (resourceDocTags, partialFunctions, locale, contentParam, apiCollectionIdParam) = ResourceDocsAPIMethodsUtil.getParams()
+        
+        // Validate parameters
+        if (S.param("tags").exists(_.trim.isEmpty)) {
+          PlainTextResponse("Invalid tags parameter - empty values not allowed", 400)
+        } else if (S.param("functions").exists(_.trim.isEmpty)) {
+          PlainTextResponse("Invalid functions parameter - empty values not allowed", 400) 
+        } else if (S.param("api-collection-id").exists(_.trim.isEmpty)) {
+          PlainTextResponse("Invalid api-collection-id parameter - empty values not allowed", 400)
+        } else if (S.param("content").isDefined && contentParam.isEmpty) {
+          PlainTextResponse("Invalid content parameter. Valid values: static, dynamic, all", 400)
+        } else {
+          try {
+            val requestedApiVersion = ApiVersionUtils.valueOf(requestedApiVersionString)
+            if (!versionIsAllowed(requestedApiVersion)) {
+              PlainTextResponse(s"API Version not supported: $requestedApiVersionString", 400)
+            } else if (locale.isDefined && APIUtil.obpLocaleValidation(locale.get) != SILENCE_IS_GOLDEN) {
+              PlainTextResponse(s"Invalid locale: ${locale.get}", 400)
+            } else {
+              val isVersion4OrHigher = true
+              val cacheKey = APIUtil.createResourceDocCacheKey(
+                Some("openapi31yaml"),
+                requestedApiVersionString,
+                resourceDocTags,
+                partialFunctions,
+                locale,
+                contentParam,
+                apiCollectionIdParam,
+                Some(isVersion4OrHigher)
+              )
+              val cacheValueFromRedis = Caching.getStaticSwaggerDocCache(cacheKey)
+              
+              val yamlString = if (cacheValueFromRedis.isDefined) {
+                cacheValueFromRedis.get
+              } else {
+                // Generate OpenAPI JSON and convert to YAML
+                val openApiJValue = try {
+                  val resourceDocsJsonFiltered = locale match {
+                    case _ if (apiCollectionIdParam.isDefined) =>
+                      val operationIds = MappedApiCollectionEndpointsProvider.getApiCollectionEndpoints(apiCollectionIdParam.getOrElse("")).map(_.operationId).map(getObpFormatOperationId)
+                      val resourceDocs = ResourceDoc.getResourceDocs(operationIds)
+                      val resourceDocsJson = JSONFactory1_4_0.createResourceDocsJson(resourceDocs, isVersion4OrHigher, locale)
+                      resourceDocsJson.resource_docs
+                    case _ =>
+                      // Get all resource docs for the requested version
+                      val allResourceDocs = ImplementationsResourceDocs.getResourceDocsList(requestedApiVersion).getOrElse(List.empty)
+                      val filteredResourceDocs = ResourceDocsAPIMethodsUtil.filterResourceDocs(allResourceDocs, resourceDocTags, partialFunctions)
+                      val resourceDocJson = JSONFactory1_4_0.createResourceDocsJson(filteredResourceDocs, isVersion4OrHigher, locale)
+                      resourceDocJson.resource_docs
+                  }
+                  
+                  val hostname = HostName
+                  val openApiDoc = code.api.ResourceDocs1_4_0.OpenAPI31JSONFactory.createOpenAPI31Json(resourceDocsJsonFiltered, requestedApiVersionString, hostname)
+                  code.api.ResourceDocs1_4_0.OpenAPI31JSONFactory.OpenAPI31JsonFormats.toJValue(openApiDoc)
+                } catch {
+                  case e: Exception =>
+                    logger.error(s"Error generating OpenAPI JSON: ${e.getMessage}", e)
+                    throw e
+                }
+                
+                val yamlResult = YAMLUtils.jValueToYAMLSafe(openApiJValue, s"# Error converting OpenAPI to YAML: ${openApiJValue.toString}")
+                Caching.setStaticSwaggerDocCache(cacheKey, yamlResult)
+                yamlResult
+              }
+              
+              val headers = List("Content-Type" -> YAMLUtils.getYAMLContentType)
+              val bytes = yamlString.getBytes("UTF-8")
+              InMemoryResponse(bytes, headers, Nil, 200)
+            }
+          } catch {
+            case _: Exception =>
+              PlainTextResponse(s"Invalid API version: $requestedApiVersionString", 400)
+          }
+        }
+    }
   }
 
 }

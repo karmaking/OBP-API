@@ -216,7 +216,7 @@ object Helper extends Loggable {
   def isValidInternalRedirectUrl(url: String) : Boolean = {
     //set the default value is "/" and "/oauth/authorize"
     val internalRedirectUrlsWhiteList = List(
-      "/","/oauth/authorize","/consumer-registration",
+      "/","/oauth/authorize",
       "/dummy-user-tokens","/create-sandbox-account",
       "/add-user-auth-context-update-request","/otp",
       "/terms-and-conditions", "/privacy-policy",
