@@ -4108,7 +4108,7 @@ trait APIMethods600 {
           entity.bankId,
           None,
           None,
-          false,
+          entity.hasPersonalEntity,
           cc.callContext
         )
         resultList: JArray = unboxResult(
@@ -4126,7 +4126,7 @@ trait APIMethods600 {
                 entity.entityName,
                 recordId,
                 None,
-                false
+                entity.hasPersonalEntity
               )
             }
           }
