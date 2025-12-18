@@ -60,6 +60,11 @@ trait ServerSetup extends FeatureSpec with SendServerRequests
   setPropsValues("berlin_group_mandatory_headers" -> "")
   setPropsValues("berlin_group_mandatory_header_consent" -> "")
   
+  // Set system properties to force Pekko to use random available ports
+  // This prevents conflicts when both RunWebApp and tests are running
+  System.setProperty("pekko.remote.artery.canonical.port", "0")
+  System.setProperty("pekko.remote.artery.bind.port", "0")
+  
   val server = TestServer
   def baseRequest = host(server.host, server.port)
   val secured = APIUtil.getPropsAsBoolValue("external.https", false)
