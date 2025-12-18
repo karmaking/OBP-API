@@ -12,6 +12,7 @@
 *.code-workspace
 .zed
 .cursor
+.trae
 .classpath
 .project
 .cache
