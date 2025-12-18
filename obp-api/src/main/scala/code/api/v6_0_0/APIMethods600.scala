@@ -4062,11 +4062,16 @@ trait APIMethods600 {
          |1. Deletes all data records associated with the dynamic entity
          |2. Deletes the dynamic entity definition itself
          |
+         |This operation is only allowed for non-personal entities (hasPersonalEntity=false).
+         |For personal entities (hasPersonalEntity=true), you must delete the records and definition separately.
+         |
          |Use with caution - this operation cannot be undone.
          |
          |For more information see ${Glossary.getGlossaryItemLink(
           "Dynamic-Entities"
         )}/
+         |
+         |${userAuthenticationMessage(true)}
          |
          |""",
       EmptyBody,
@@ -4099,6 +4104,10 @@ trait APIMethods600 {
           dynamicEntityId,
           cc.callContext
         )
+        // Check if this is a personal entity - cascade delete not allowed for personal entities
+        _ <- Helper.booleanToFuture(failMsg = CannotDeleteCascadePersonalEntity, cc = cc.callContext) {
+          !entity.hasPersonalEntity
+        }
         // Get all data records for this entity
         (box, _) <- NewStyle.function.invokeDynamicConnector(
           GET_ALL,
@@ -4108,7 +4117,7 @@ trait APIMethods600 {
           entity.bankId,
           None,
           None,
-          entity.hasPersonalEntity,
+          false,
           cc.callContext
         )
         resultList: JArray = unboxResult(
@@ -4126,7 +4135,7 @@ trait APIMethods600 {
                 entity.entityName,
                 recordId,
                 None,
-                entity.hasPersonalEntity
+                false
               )
             }
           }
