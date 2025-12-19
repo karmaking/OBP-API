@@ -10,7 +10,7 @@ object AkkaConnectorActorConfig {
   val remotePort = APIUtil.getPropsValue("akka_connector.port").openOr("2662")
 
   val localHostname = "127.0.0.1"
-  val localPort = Helper.findAvailablePort()
+  def localPort = Helper.findAvailablePort()
 
   val akka_loglevel = APIUtil.getPropsValue("akka_connector.loglevel").openOr("INFO")
 
@@ -67,12 +67,16 @@ object AkkaConnectorActorConfig {
       }
     }
     remote {
-      enabled-transports = ["org.apache.pekko.remote.netty.tcp"]
-      netty {
-        tcp {
-          send-buffer-size    = 50000000
-          receive-buffer-size = 50000000
-          maximum-frame-size  = 52428800
+      artery {
+        transport = tcp
+        canonical.hostname = "127.0.0.1"
+        canonical.port = 0
+        bind.hostname = "127.0.0.1"
+        bind.port = 0
+        advanced {
+          maximum-frame-size = 52428800
+          buffer-pool-size = 128
+          maximum-large-frame-size = 52428800
         }
       }
     }
@@ -83,8 +87,12 @@ object AkkaConnectorActorConfig {
   s"""
   ${commonConf} 
   pekko {
-    remote.netty.tcp.hostname = ${localHostname}
-    remote.netty.tcp.port = 0
+    remote.artery {
+      canonical.hostname = ${localHostname}
+      canonical.port = 0
+      bind.hostname = ${localHostname}
+      bind.port = 0
+    }
   }
   """
 
@@ -92,8 +100,12 @@ object AkkaConnectorActorConfig {
   s"""
   ${commonConf} 
   pekko {
-    remote.netty.tcp.hostname = ${localHostname}
-    remote.netty.tcp.port = ${localPort}
+    remote.artery {
+      canonical.hostname = ${localHostname}
+      canonical.port = ${localPort}
+      bind.hostname = ${localHostname}
+      bind.port = ${localPort}
+    }
   }
   """
 
@@ -101,8 +113,12 @@ object AkkaConnectorActorConfig {
   s"""
   ${commonConf} 
   pekko {
-    remote.netty.tcp.hostname = ${remoteHostname}
-    remote.netty.tcp.port = ${remotePort}
+    remote.artery {
+      canonical.hostname = ${remoteHostname}
+      canonical.port = ${remotePort}
+      bind.hostname = ${remoteHostname}
+      bind.port = ${remotePort}
+    }
   }
   """
 }
