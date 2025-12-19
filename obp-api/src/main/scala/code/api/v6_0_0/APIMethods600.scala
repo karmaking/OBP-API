@@ -26,7 +26,7 @@ import code.api.v5_0_0.JSONFactory500
 import code.api.v5_0_0.{ViewJsonV500, ViewsJsonV500}
 import code.api.v5_1_0.{JSONFactory510, PostCustomerLegalNameJsonV510}
 import code.api.dynamic.entity.helper.{DynamicEntityHelper, DynamicEntityInfo}
-import code.api.v6_0_0.JSONFactory600.{AddUserToGroupResponseJsonV600, DynamicEntityDiagnosticsJsonV600, DynamicEntityIssueJsonV600, GroupJsonV600, GroupsJsonV600, PostGroupJsonV600, PostGroupMembershipJsonV600, PostResetPasswordUrlJsonV600, PutGroupJsonV600, ReferenceTypeJsonV600, ReferenceTypesJsonV600, ResetPasswordUrlJsonV600, RoleWithEntitlementCountJsonV600, RolesWithEntitlementCountsJsonV600, ScannedApiVersionJsonV600, UpdateViewJsonV600, UserGroupMembershipJsonV600, UserGroupMembershipsJsonV600, ValidateUserEmailJsonV600, ValidateUserEmailResponseJsonV600, ViewJsonV600, ViewPermissionJsonV600, ViewPermissionsJsonV600, ViewsJsonV600, createAbacRuleJsonV600, createAbacRulesJsonV600, createActiveCallLimitsJsonV600, createCallLimitJsonV600, createCurrentUsageJson}
+import code.api.v6_0_0.JSONFactory600.{AddUserToGroupResponseJsonV600, DynamicEntityDiagnosticsJsonV600, DynamicEntityIssueJsonV600, GroupEntitlementJsonV600, GroupEntitlementsJsonV600, GroupJsonV600, GroupsJsonV600, PostGroupJsonV600, PostGroupMembershipJsonV600, PostResetPasswordUrlJsonV600, PutGroupJsonV600, ReferenceTypeJsonV600, ReferenceTypesJsonV600, ResetPasswordUrlJsonV600, RoleWithEntitlementCountJsonV600, RolesWithEntitlementCountsJsonV600, ScannedApiVersionJsonV600, UpdateViewJsonV600, UserGroupMembershipJsonV600, UserGroupMembershipsJsonV600, ValidateUserEmailJsonV600, ValidateUserEmailResponseJsonV600, ViewJsonV600, ViewPermissionJsonV600, ViewPermissionsJsonV600, ViewsJsonV600, createAbacRuleJsonV600, createAbacRulesJsonV600, createActiveCallLimitsJsonV600, createCallLimitJsonV600, createCurrentUsageJson}
 import code.api.v6_0_0.{AbacRuleJsonV600, AbacRuleResultJsonV600, AbacRulesJsonV600, CreateAbacRuleJsonV600, ExecuteAbacRuleJsonV600, UpdateAbacRuleJsonV600}
 import code.api.v6_0_0.OBPAPI6_0_0
 import code.abacrule.{AbacRuleEngine, MappedAbacRuleProvider}
@@ -2998,6 +2998,84 @@ trait APIMethods600 {
               )
             }
             (UserGroupMembershipsJsonV600(group_entitlements = memberships), HttpCode.`200`(callContext))
+          }
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
+      getGroupEntitlements,
+      implementedInApiVersion,
+      nameOf(getGroupEntitlements),
+      "GET",
+      "/management/groups/GROUP_ID/entitlements",
+      "Get Group Entitlements",
+      s"""Get all entitlements that have been granted from a specific group.
+         |
+         |This returns all entitlements where the group_id matches the specified GROUP_ID.
+         |
+         |Requires:
+         |- CanGetEntitlementsForAnyBank
+         |
+         |${userAuthenticationMessage(true)}
+         |
+         |""".stripMargin,
+      EmptyBody,
+      GroupEntitlementsJsonV600(
+        entitlements = List(
+          GroupEntitlementJsonV600(
+            entitlement_id = "entitlement-id-123",
+            role_name = "CanGetCustomer",
+            bank_id = "gh.29.uk",
+            user_id = "user-id-123",
+            username = "susan.uk.29@example.com",
+            group_id = Some("group-id-123"),
+            process = Some("GROUP_MEMBERSHIP")
+          )
+        )
+      ),
+      List(
+        UserNotLoggedIn,
+        UserHasMissingRoles,
+        UnknownError
+      ),
+      List(apiTagGroup, apiTagEntitlement),
+      Some(List(canGetEntitlementsForAnyBank))
+    )
+
+    lazy val getGroupEntitlements: OBPEndpoint = {
+      case "management" :: "groups" :: groupId :: "entitlements" :: Nil JsonGet _ => {
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(u), callContext) <- authenticatedAccess(cc)
+            // Verify the group exists
+            group <- Future {
+              code.group.GroupTrait.group.vend.getGroup(groupId)
+            } map {
+              x => unboxFullOrFail(x, callContext, s"$UnknownError Group not found", 404)
+            }
+            // Get entitlements by group_id
+            groupEntitlements <- Entitlement.entitlement.vend.getEntitlementsByGroupId(groupId) map {
+              x => unboxFullOrFail(x, callContext, s"$UnknownError Cannot get entitlements", 400)
+            }
+            // Get usernames for each entitlement
+            entitlementsWithUsernames <- Future.sequence {
+              groupEntitlements.map { ent =>
+                Users.users.vend.getUserByUserIdFuture(ent.userId).map { userBox =>
+                  val username = userBox.map(_.name).getOrElse("")
+                  GroupEntitlementJsonV600(
+                    entitlement_id = ent.entitlementId,
+                    role_name = ent.roleName,
+                    bank_id = ent.bankId,
+                    user_id = ent.userId,
+                    username = username,
+                    group_id = ent.groupId,
+                    process = ent.process
+                  )
+                }
+              }
+            }
+          } yield {
+            (GroupEntitlementsJsonV600(entitlements = entitlementsWithUsernames), HttpCode.`200`(callContext))
           }
       }
     }

@@ -848,6 +848,20 @@ object JSONFactory600 extends CustomJsonFormats with MdcLoggable {
       group_entitlements: List[UserGroupMembershipJsonV600]
   )
 
+  case class GroupEntitlementJsonV600(
+      entitlement_id: String,
+      role_name: String,
+      bank_id: String,
+      user_id: String,
+      username: String,
+      group_id: Option[String],
+      process: Option[String]
+  )
+
+  case class GroupEntitlementsJsonV600(
+      entitlements: List[GroupEntitlementJsonV600]
+  )
+
   case class RoleWithEntitlementCountJsonV600(
       role: String,
       requires_bank_id: Boolean,
