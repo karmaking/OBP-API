@@ -7,7 +7,14 @@ import code.util.Helper
 object ObpActorConfig {
 
   val localHostname = "127.0.0.1"
-  def localPort = Helper.findAvailablePort()
+  def localPort = {
+    val systemPort = APIUtil.getPropsAsIntValue("pekko.remote.artery.canonical.port", 0)
+    if (systemPort == 0) {
+      Helper.findAvailablePort()
+    } else {
+      systemPort
+    }
+  }
 
   val akka_loglevel = APIUtil.getPropsValue("remotedata.loglevel").openOr("INFO")
 
@@ -64,12 +71,16 @@ object ObpActorConfig {
       }
     }
     remote {
-      enabled-transports = ["org.apache.pekko.remote.netty.tcp"]
-      netty {
-        tcp {
-          send-buffer-size    = 50000000
-          receive-buffer-size = 50000000
-          maximum-frame-size  = 52428800
+      artery {
+        transport = tcp
+        canonical.hostname = """ + localHostname + """
+        canonical.port = 0
+        bind.hostname = """ + localHostname + """
+        bind.port = 0
+        advanced {
+          maximum-frame-size = 52428800
+          buffer-pool-size = 128
+          maximum-large-frame-size = 52428800
         }
       }
     }
@@ -80,8 +91,12 @@ object ObpActorConfig {
   s"""
   ${commonConf} 
   pekko {
-    remote.netty.tcp.hostname = ${localHostname}
-    remote.netty.tcp.port = 0
+    remote.artery {
+      canonical.hostname = ${localHostname}
+      canonical.port = 0
+      bind.hostname = ${localHostname}
+      bind.port = 0
+    }
   }
   """
 
@@ -89,8 +104,12 @@ object ObpActorConfig {
   s"""
   ${commonConf} 
   pekko {
-    remote.netty.tcp.hostname = ${localHostname}
-    remote.netty.tcp.port = ${localPort}
+    remote.artery {
+      canonical.hostname = ${localHostname}
+      canonical.port = ${localPort}
+      bind.hostname = ${localHostname}
+      bind.port = ${localPort}
+    }
   }
   """
 }

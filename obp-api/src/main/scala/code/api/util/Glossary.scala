@@ -144,9 +144,15 @@ object Glossary extends MdcLoggable  {
 
 	// Note: this doesn't get / use an OBP version
 	def getApiExplorerLink(title: String, operationId: String) : String = {
-		val apiExplorerPrefix = APIUtil.getPropsValue("webui_api_explorer_url", "")
+		val apiExplorerPrefix = APIUtil.getPropsValue("webui_api_explorer_url", "http://localhost:5174")
 		// Note: This is hardcoded for API Explorer II
 		s"""<a href="$apiExplorerPrefix/operationid/$operationId">$title</a>"""
+	}
+
+	// Consumer registration URL helper
+	def getConsumerRegistrationUrl(): String = {
+		val apiExplorerUrl = APIUtil.getPropsValue("webui_api_explorer_url", "http://localhost:5174")
+		s"$apiExplorerUrl/consumers/register"
 	}
 
 	glossaryItems += GlossaryItem(
@@ -590,7 +596,7 @@ object Glossary extends MdcLoggable  {
 |
 |Both standard entities (e.g. financial products and bank accounts in the OBP standard) and dynamic entities and endpoints (created by you or your organisation) can exist at the Bank level.
 |
-|For example see [Bank/Space level Dynamic Entities](/?version=OBPv4.0.0&operation_id=OBPv4_0_0-createBankLevelDynamicEntity) and [Bank/Space level Dynamic Endpoints](http://localhost:8082/?version=OBPv4.0.0&operation_id=OBPv4_0_0-createBankLevelDynamicEndpoint)
+|For example see [Bank/Space level Dynamic Entities](/?version=OBPv4.0.0&operation_id=OBPv4_0_0-createBankLevelDynamicEntity) and [Bank/Space level Dynamic Endpoints](http://localhost:5174/?version=OBPv4.0.0&operation_id=OBPv4_0_0-createBankLevelDynamicEndpoint)
 |
 |The Bank is important because many Roles can be granted at the Bank level. In this way, it's possible to create segregated or partitioned sets of endpoints and data structures in a single OBP instance.
 |
@@ -1091,7 +1097,7 @@ object Glossary extends MdcLoggable  {
 			|
 			|[Sign up]($getServerUrl/user_mgt/sign_up) or [login]($getServerUrl/user_mgt/login) as a developer.
 			|
-			|Register your App key [HERE]($getServerUrl/consumer-registration)
+			|Register your App key [HERE](${getConsumerRegistrationUrl()})
 			|
 			|Copy and paste the consumer key for step two below.
 			|
@@ -1182,7 +1188,7 @@ object Glossary extends MdcLoggable  {
 			|
 			|       consumer_key
 			|         The application identifier. Generated on OBP side via
-			|         $getServerUrl/consumer-registration endpoint.
+			|         ${getConsumerRegistrationUrl()} endpoint.
 			|
 			|
 			|  Each parameter MUST NOT appear more than once per request.
@@ -2147,7 +2153,7 @@ object Glossary extends MdcLoggable  {
         |
         |[Sign up]($getServerUrl/user_mgt/sign_up) or [login]($getServerUrl/user_mgt/login) as a developer
         |
-        |Register your App key [HERE]($getServerUrl/consumer-registration)
+        |Register your App key [HERE](${getConsumerRegistrationUrl()})
         |
         |Copy and paste the CLIENT ID (AKA CONSUMER KEY), CLIENT SECRET (AKA CONSUMER SECRET) and REDIRECT_URL for the subsequent steps below.
         |
@@ -2796,9 +2802,9 @@ object Glossary extends MdcLoggable  {
 |
 |[Sign up]($getServerUrl/user_mgt/sign_up) or [login]($getServerUrl/user_mgt/login) as a developer.
 |
-|Register your App / Consumer [HERE]($getServerUrl/consumer-registration)
+|Register your App / Consumer [HERE](${getConsumerRegistrationUrl()})
 |
-|Be sure to enter your Client Certificate in the above form. To create the user.crt file see [HERE](https://fardog.io/blog/2017/12/30/client-side-certificate-authentication-with-nginx/)
+|Be sure to enter your Client Certificate in the registration form. To create the user.crt file see [HERE](https://fardog.io/blog/2017/12/30/client-side-certificate-authentication-with-nginx/)
 |
 |
 |## Authenticate
