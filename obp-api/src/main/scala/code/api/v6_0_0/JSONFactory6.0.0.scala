@@ -845,7 +845,7 @@ object JSONFactory600 extends CustomJsonFormats with MdcLoggable {
   )
 
   case class UserGroupMembershipsJsonV600(
-      group_memberships: List[UserGroupMembershipJsonV600]
+      group_entitlements: List[UserGroupMembershipJsonV600]
   )
 
   case class RoleWithEntitlementCountJsonV600(

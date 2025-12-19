@@ -2786,11 +2786,11 @@ trait APIMethods600 {
       implementedInApiVersion,
       nameOf(addUserToGroup),
       "POST",
-      "/users/USER_ID/group-memberships",
-      "Add User to Group",
-      s"""Add a user to a group by creating entitlements for all roles defined in the group.
+      "/users/USER_ID/group-entitlements",
+      "Grant User Group Entitlements",
+      s"""Grant the User Group Entitlements.
          |
-         |This endpoint will attempt to create one entitlement per role in the group. If the user
+         |This endpoint creates entitlements for every Role in the Group. If the user
          |already has a particular role at the same bank, that entitlement is skipped (not duplicated).
          |
          |Each entitlement created will have:
@@ -2834,7 +2834,7 @@ trait APIMethods600 {
     )
 
     lazy val addUserToGroup: OBPEndpoint = {
-      case "users" :: userId :: "group-memberships" :: Nil JsonPost json -> _ => {
+      case "users" :: userId :: "group-entitlements" :: Nil JsonPost json -> _ => {
         cc => implicit val ec = EndpointContext(Some(cc))
           for {
             (Full(u), callContext) <- authenticatedAccess(cc)
@@ -2908,7 +2908,7 @@ trait APIMethods600 {
       implementedInApiVersion,
       nameOf(getUserGroupMemberships),
       "GET",
-      "/users/USER_ID/group-memberships",
+      "/users/USER_ID/group-entitlements",
       "Get User's Group Memberships",
       s"""Get all groups a user is a member of.
          |
@@ -2926,7 +2926,7 @@ trait APIMethods600 {
          |""".stripMargin,
       EmptyBody,
       UserGroupMembershipsJsonV600(
-        group_memberships = List(
+        group_entitlements = List(
           UserGroupMembershipJsonV600(
             group_id = "group-id-123",
             user_id = "user-id-123",
@@ -2946,7 +2946,7 @@ trait APIMethods600 {
     )
 
     lazy val getUserGroupMemberships: OBPEndpoint = {
-      case "users" :: userId :: "group-memberships" :: Nil JsonGet _ => {
+      case "users" :: userId :: "group-entitlements" :: Nil JsonGet _ => {
         cc => implicit val ec = EndpointContext(Some(cc))
           for {
             (Full(u), callContext) <- authenticatedAccess(cc)
@@ -2997,7 +2997,7 @@ trait APIMethods600 {
                 list_of_entitlements = groupSpecificEntitlements
               )
             }
-            (UserGroupMembershipsJsonV600(memberships), HttpCode.`200`(callContext))
+            (UserGroupMembershipsJsonV600(group_entitlements = memberships), HttpCode.`200`(callContext))
           }
       }
     }
@@ -3007,7 +3007,7 @@ trait APIMethods600 {
       implementedInApiVersion,
       nameOf(removeUserFromGroup),
       "DELETE",
-      "/users/USER_ID/group-memberships/GROUP_ID",
+      "/users/USER_ID/group-entitlements/GROUP_ID",
       "Remove User from Group",
       s"""Remove a user from a group. This will delete all entitlements that were created by this group membership.
          |
@@ -3034,7 +3034,7 @@ trait APIMethods600 {
     )
 
     lazy val removeUserFromGroup: OBPEndpoint = {
-      case "users" :: userId :: "group-memberships" :: groupId :: Nil JsonDelete _ => {
+      case "users" :: userId :: "group-entitlements" :: groupId :: Nil JsonDelete _ => {
         cc => implicit val ec = EndpointContext(Some(cc))
           for {
             (Full(u), callContext) <- authenticatedAccess(cc)
