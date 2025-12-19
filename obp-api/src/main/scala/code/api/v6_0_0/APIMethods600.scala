@@ -26,7 +26,7 @@ import code.api.v5_0_0.JSONFactory500
 import code.api.v5_0_0.{ViewJsonV500, ViewsJsonV500}
 import code.api.v5_1_0.{JSONFactory510, PostCustomerLegalNameJsonV510}
 import code.api.dynamic.entity.helper.{DynamicEntityHelper, DynamicEntityInfo}
-import code.api.v6_0_0.JSONFactory600.{DynamicEntityDiagnosticsJsonV600, DynamicEntityIssueJsonV600, GroupJsonV600, GroupMembershipJsonV600, GroupMembershipsJsonV600, GroupsJsonV600, PostGroupJsonV600, PostGroupMembershipJsonV600, PostResetPasswordUrlJsonV600, PutGroupJsonV600, ReferenceTypeJsonV600, ReferenceTypesJsonV600, ResetPasswordUrlJsonV600, RoleWithEntitlementCountJsonV600, RolesWithEntitlementCountsJsonV600, ScannedApiVersionJsonV600, UpdateViewJsonV600, ValidateUserEmailJsonV600, ValidateUserEmailResponseJsonV600, ViewJsonV600, ViewPermissionJsonV600, ViewPermissionsJsonV600, ViewsJsonV600, createAbacRuleJsonV600, createAbacRulesJsonV600, createActiveCallLimitsJsonV600, createCallLimitJsonV600, createCurrentUsageJson}
+import code.api.v6_0_0.JSONFactory600.{AddUserToGroupResponseJsonV600, DynamicEntityDiagnosticsJsonV600, DynamicEntityIssueJsonV600, GroupJsonV600, GroupsJsonV600, PostGroupJsonV600, PostGroupMembershipJsonV600, PostResetPasswordUrlJsonV600, PutGroupJsonV600, ReferenceTypeJsonV600, ReferenceTypesJsonV600, ResetPasswordUrlJsonV600, RoleWithEntitlementCountJsonV600, RolesWithEntitlementCountsJsonV600, ScannedApiVersionJsonV600, UpdateViewJsonV600, UserGroupMembershipJsonV600, UserGroupMembershipsJsonV600, ValidateUserEmailJsonV600, ValidateUserEmailResponseJsonV600, ViewJsonV600, ViewPermissionJsonV600, ViewPermissionsJsonV600, ViewsJsonV600, createAbacRuleJsonV600, createAbacRulesJsonV600, createActiveCallLimitsJsonV600, createCallLimitJsonV600, createCurrentUsageJson}
 import code.api.v6_0_0.{AbacRuleJsonV600, AbacRuleResultJsonV600, AbacRulesJsonV600, CreateAbacRuleJsonV600, ExecuteAbacRuleJsonV600, UpdateAbacRuleJsonV600}
 import code.api.v6_0_0.OBPAPI6_0_0
 import code.abacrule.{AbacRuleEngine, MappedAbacRuleProvider}
@@ -2788,11 +2788,21 @@ trait APIMethods600 {
       "POST",
       "/users/USER_ID/group-memberships",
       "Add User to Group",
-      s"""Add a user to a group. This will create entitlements for all roles in the group.
+      s"""Add a user to a group by creating entitlements for all roles defined in the group.
          |
-         |Each entitlement will have:
+         |This endpoint will attempt to create one entitlement per role in the group. If the user
+         |already has a particular role at the same bank, that entitlement is skipped (not duplicated).
+         |
+         |Each entitlement created will have:
          |- group_id set to the group ID
          |- process set to "GROUP_MEMBERSHIP"
+         |
+         |**Response Fields:**
+         |- target_entitlements: All roles defined in the group (the complete list of entitlements that this group aims to grant)
+         |- entitlements_created: Roles that were newly created as entitlements during this operation
+         |- entitlements_skipped: Roles that the user already possessed, so no new entitlement was created
+         |
+         |Note: target_entitlements = entitlements_created + entitlements_skipped
          |
          |Requires either:
          |- CanAddUserToGroupAtAllBanks (for any group)
@@ -2804,12 +2814,14 @@ trait APIMethods600 {
       PostGroupMembershipJsonV600(
         group_id = "group-id-123"
       ),
-      GroupMembershipJsonV600(
+      AddUserToGroupResponseJsonV600(
         group_id = "group-id-123",
         user_id = "user-id-123",
         bank_id = Some("gh.29.uk"),
         group_name = "Teller Group",
-        list_of_roles = List("CanGetCustomer", "CanGetAccount", "CanCreateTransaction")
+        target_entitlements = List("CanGetCustomer", "CanGetAccount", "CanCreateTransaction"),
+        entitlements_created = List("CanGetCustomer", "CanGetAccount"),
+        entitlements_skipped = List("CanCreateTransaction")
       ),
       List(
         UserNotLoggedIn,
@@ -2848,8 +2860,8 @@ trait APIMethods600 {
             existingEntitlements <- Future {
               Entitlement.entitlement.vend.getEntitlementsByUserId(userId)
             }
-            // Create entitlements for all roles in the group, skipping duplicates
-            _ <- Future.sequence {
+            // Create entitlements for all roles in the group, tracking which were added vs already present
+            entitlementResults <- Future.sequence {
               group.listOfRoles.map { roleName =>
                 Future {
                   // Check if user already has this role at this bank
@@ -2867,17 +2879,24 @@ trait APIMethods600 {
                       Some(postJson.group_id),
                       Some("GROUP_MEMBERSHIP")
                     )
+                    (roleName, true) // true means it was added
+                  } else {
+                    (roleName, false) // false means it was already present
                   }
                 }
               }
             }
+            entitlementsAdded = entitlementResults.filter(_._2).map(_._1)
+            entitlementsAlreadyPresent = entitlementResults.filterNot(_._2).map(_._1)
           } yield {
-            val response = GroupMembershipJsonV600(
+            val response = AddUserToGroupResponseJsonV600(
               group_id = group.groupId,
               user_id = userId,
               bank_id = group.bankId,
               group_name = group.groupName,
-              list_of_roles = group.listOfRoles
+              target_entitlements = group.listOfRoles,
+              entitlements_created = entitlementsAdded,
+              entitlements_skipped = entitlementsAlreadyPresent
             )
             (response, HttpCode.`201`(callContext))
           }
@@ -2895,6 +2914,9 @@ trait APIMethods600 {
          |
          |Returns groups where the user has entitlements with process = "GROUP_MEMBERSHIP".
          |
+         |The response includes:
+         |- list_of_entitlements: entitlements the user currently has from this group membership
+         |
          |Requires either:
          |- CanGetUserGroupMembershipsAtAllBanks (for any user)
          |- CanGetUserGroupMembershipsAtOneBank (for users at specific bank)
@@ -2903,14 +2925,14 @@ trait APIMethods600 {
          |
          |""".stripMargin,
       EmptyBody,
-      GroupMembershipsJsonV600(
+      UserGroupMembershipsJsonV600(
         group_memberships = List(
-          GroupMembershipJsonV600(
+          UserGroupMembershipJsonV600(
             group_id = "group-id-123",
             user_id = "user-id-123",
             bank_id = Some("gh.29.uk"),
             group_name = "Teller Group",
-            list_of_roles = List("CanGetCustomer", "CanGetAccount", "CanCreateTransaction")
+            list_of_entitlements = List("CanGetCustomer", "CanGetAccount", "CanCreateTransaction")
           )
         )
       ),
@@ -2961,15 +2983,21 @@ trait APIMethods600 {
             validGroups = groups.flatten
           } yield {
             val memberships = validGroups.map { group =>
-              GroupMembershipJsonV600(
+              // Get entitlements for this user that came from this specific group
+              val groupSpecificEntitlements = groupEntitlements
+                .filter(_.groupId.contains(group.groupId))
+                .map(_.roleName)
+                .distinct
+
+              UserGroupMembershipJsonV600(
                 group_id = group.groupId,
                 user_id = userId,
                 bank_id = group.bankId,
                 group_name = group.groupName,
-                list_of_roles = group.listOfRoles
+                list_of_entitlements = groupSpecificEntitlements
               )
             }
-            (GroupMembershipsJsonV600(memberships), HttpCode.`200`(callContext))
+            (UserGroupMembershipsJsonV600(memberships), HttpCode.`200`(callContext))
           }
       }
     }
