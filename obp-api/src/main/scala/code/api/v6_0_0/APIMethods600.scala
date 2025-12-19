@@ -3075,6 +3075,8 @@ trait APIMethods600 {
               }
             }
           } yield {
+            val entitlementCount = entitlementsWithUsernames.length
+            logger.info(s"getGroupEntitlements called for group_id: $groupId, returned $entitlementCount records")
             (GroupEntitlementsJsonV600(entitlements = entitlementsWithUsernames), HttpCode.`200`(callContext))
           }
       }
