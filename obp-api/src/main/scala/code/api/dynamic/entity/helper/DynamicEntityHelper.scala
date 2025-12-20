@@ -98,7 +98,7 @@ object DynamicEntityHelper {
     //    Csem_case -> Csem Case
     //    _Csem_case -> _Csem Case
     //    csem-case -> Csem Case
-    def prettyTagName(s: String) = s.capitalize.split("(?<=[^-_])[-_]+").reduceLeft(_ + " " + _.capitalize)
+    def prettyTagName(s: String) = s
 
     def apiTag(entityName: String, singularName: String): ResourceDocTag = {
 
