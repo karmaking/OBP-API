@@ -26,7 +26,7 @@ import code.api.v5_0_0.JSONFactory500
 import code.api.v5_0_0.{ViewJsonV500, ViewsJsonV500}
 import code.api.v5_1_0.{JSONFactory510, PostCustomerLegalNameJsonV510}
 import code.api.dynamic.entity.helper.{DynamicEntityHelper, DynamicEntityInfo}
-import code.api.v6_0_0.JSONFactory600.{DynamicEntityDiagnosticsJsonV600, DynamicEntityIssueJsonV600, GroupJsonV600, GroupMembershipJsonV600, GroupMembershipsJsonV600, GroupsJsonV600, PostGroupJsonV600, PostGroupMembershipJsonV600, PostResetPasswordUrlJsonV600, PutGroupJsonV600, ReferenceTypeJsonV600, ReferenceTypesJsonV600, ResetPasswordUrlJsonV600, RoleWithEntitlementCountJsonV600, RolesWithEntitlementCountsJsonV600, ScannedApiVersionJsonV600, UpdateViewJsonV600, ValidateUserEmailJsonV600, ValidateUserEmailResponseJsonV600, ViewJsonV600, ViewPermissionJsonV600, ViewPermissionsJsonV600, ViewsJsonV600, createAbacRuleJsonV600, createAbacRulesJsonV600, createActiveCallLimitsJsonV600, createCallLimitJsonV600, createCurrentUsageJson}
+import code.api.v6_0_0.JSONFactory600.{AddUserToGroupResponseJsonV600, DynamicEntityDiagnosticsJsonV600, DynamicEntityIssueJsonV600, GroupEntitlementJsonV600, GroupEntitlementsJsonV600, GroupJsonV600, GroupsJsonV600, PostGroupJsonV600, PostGroupMembershipJsonV600, PostResetPasswordUrlJsonV600, PutGroupJsonV600, ReferenceTypeJsonV600, ReferenceTypesJsonV600, ResetPasswordUrlJsonV600, RoleWithEntitlementCountJsonV600, RolesWithEntitlementCountsJsonV600, ScannedApiVersionJsonV600, UpdateViewJsonV600, UserGroupMembershipJsonV600, UserGroupMembershipsJsonV600, ValidateUserEmailJsonV600, ValidateUserEmailResponseJsonV600, ViewJsonV600, ViewPermissionJsonV600, ViewPermissionsJsonV600, ViewsJsonV600, createAbacRuleJsonV600, createAbacRulesJsonV600, createActiveCallLimitsJsonV600, createCallLimitJsonV600, createCurrentUsageJson}
 import code.api.v6_0_0.{AbacRuleJsonV600, AbacRuleResultJsonV600, AbacRulesJsonV600, CreateAbacRuleJsonV600, ExecuteAbacRuleJsonV600, UpdateAbacRuleJsonV600}
 import code.api.v6_0_0.OBPAPI6_0_0
 import code.abacrule.{AbacRuleEngine, MappedAbacRuleProvider}
@@ -2564,7 +2564,7 @@ trait APIMethods600 {
             if (!skipEmailValidation) {
               // Construct validation link based on validating_application and portal_external_url
               val portalExternalUrl = APIUtil.getPropsValue("portal_external_url")
-              
+
               val emailValidationLink = postedData.validating_application match {
                 case Some("LEGACY_PORTAL") =>
                   // Use API hostname with legacy path
@@ -2786,13 +2786,23 @@ trait APIMethods600 {
       implementedInApiVersion,
       nameOf(addUserToGroup),
       "POST",
-      "/users/USER_ID/group-memberships",
-      "Add User to Group",
-      s"""Add a user to a group. This will create entitlements for all roles in the group.
+      "/users/USER_ID/group-entitlements",
+      "Grant User Group Entitlements",
+      s"""Grant the User Group Entitlements.
          |
-         |Each entitlement will have:
+         |This endpoint creates entitlements for every Role in the Group. If the user
+         |already has a particular role at the same bank, that entitlement is skipped (not duplicated).
+         |
+         |Each entitlement created will have:
          |- group_id set to the group ID
          |- process set to "GROUP_MEMBERSHIP"
+         |
+         |**Response Fields:**
+         |- target_entitlements: All roles defined in the group (the complete list of entitlements that this group aims to grant)
+         |- entitlements_created: Roles that were newly created as entitlements during this operation
+         |- entitlements_skipped: Roles that the user already possessed, so no new entitlement was created
+         |
+         |Note: target_entitlements = entitlements_created + entitlements_skipped
          |
          |Requires either:
          |- CanAddUserToGroupAtAllBanks (for any group)
@@ -2804,12 +2814,14 @@ trait APIMethods600 {
       PostGroupMembershipJsonV600(
         group_id = "group-id-123"
       ),
-      GroupMembershipJsonV600(
+      AddUserToGroupResponseJsonV600(
         group_id = "group-id-123",
         user_id = "user-id-123",
         bank_id = Some("gh.29.uk"),
         group_name = "Teller Group",
-        list_of_roles = List("CanGetCustomer", "CanGetAccount", "CanCreateTransaction")
+        target_entitlements = List("CanGetCustomer", "CanGetAccount", "CanCreateTransaction"),
+        entitlements_created = List("CanGetCustomer", "CanGetAccount"),
+        entitlements_skipped = List("CanCreateTransaction")
       ),
       List(
         UserNotLoggedIn,
@@ -2822,7 +2834,7 @@ trait APIMethods600 {
     )
 
     lazy val addUserToGroup: OBPEndpoint = {
-      case "users" :: userId :: "group-memberships" :: Nil JsonPost json -> _ => {
+      case "users" :: userId :: "group-entitlements" :: Nil JsonPost json -> _ => {
         cc => implicit val ec = EndpointContext(Some(cc))
           for {
             (Full(u), callContext) <- authenticatedAccess(cc)
@@ -2848,15 +2860,15 @@ trait APIMethods600 {
             existingEntitlements <- Future {
               Entitlement.entitlement.vend.getEntitlementsByUserId(userId)
             }
-            // Create entitlements for all roles in the group, skipping duplicates
-            _ <- Future.sequence {
+            // Create entitlements for all roles in the group, tracking which were added vs already present
+            entitlementResults <- Future.sequence {
               group.listOfRoles.map { roleName =>
                 Future {
                   // Check if user already has this role at this bank
                   val alreadyHasRole = existingEntitlements.toOption.exists(_.exists { ent =>
                     ent.roleName == roleName && ent.bankId == group.bankId.getOrElse("")
                   })
-                  
+
                   if (!alreadyHasRole) {
                     Entitlement.entitlement.vend.addEntitlement(
                       group.bankId.getOrElse(""),
@@ -2867,17 +2879,24 @@ trait APIMethods600 {
                       Some(postJson.group_id),
                       Some("GROUP_MEMBERSHIP")
                     )
+                    (roleName, true) // true means it was added
+                  } else {
+                    (roleName, false) // false means it was already present
                   }
                 }
               }
             }
+            entitlementsAdded = entitlementResults.filter(_._2).map(_._1)
+            entitlementsAlreadyPresent = entitlementResults.filterNot(_._2).map(_._1)
           } yield {
-            val response = GroupMembershipJsonV600(
+            val response = AddUserToGroupResponseJsonV600(
               group_id = group.groupId,
               user_id = userId,
               bank_id = group.bankId,
               group_name = group.groupName,
-              list_of_roles = group.listOfRoles
+              target_entitlements = group.listOfRoles,
+              entitlements_created = entitlementsAdded,
+              entitlements_skipped = entitlementsAlreadyPresent
             )
             (response, HttpCode.`201`(callContext))
           }
@@ -2889,11 +2908,14 @@ trait APIMethods600 {
       implementedInApiVersion,
       nameOf(getUserGroupMemberships),
       "GET",
-      "/users/USER_ID/group-memberships",
+      "/users/USER_ID/group-entitlements",
       "Get User's Group Memberships",
       s"""Get all groups a user is a member of.
          |
          |Returns groups where the user has entitlements with process = "GROUP_MEMBERSHIP".
+         |
+         |The response includes:
+         |- list_of_entitlements: entitlements the user currently has from this group membership
          |
          |Requires either:
          |- CanGetUserGroupMembershipsAtAllBanks (for any user)
@@ -2903,14 +2925,14 @@ trait APIMethods600 {
          |
          |""".stripMargin,
       EmptyBody,
-      GroupMembershipsJsonV600(
-        group_memberships = List(
-          GroupMembershipJsonV600(
+      UserGroupMembershipsJsonV600(
+        group_entitlements = List(
+          UserGroupMembershipJsonV600(
             group_id = "group-id-123",
             user_id = "user-id-123",
             bank_id = Some("gh.29.uk"),
             group_name = "Teller Group",
-            list_of_roles = List("CanGetCustomer", "CanGetAccount", "CanCreateTransaction")
+            list_of_entitlements = List("CanGetCustomer", "CanGetAccount", "CanCreateTransaction")
           )
         )
       ),
@@ -2924,7 +2946,7 @@ trait APIMethods600 {
     )
 
     lazy val getUserGroupMemberships: OBPEndpoint = {
-      case "users" :: userId :: "group-memberships" :: Nil JsonGet _ => {
+      case "users" :: userId :: "group-entitlements" :: Nil JsonGet _ => {
         cc => implicit val ec = EndpointContext(Some(cc))
           for {
             (Full(u), callContext) <- authenticatedAccess(cc)
@@ -2961,15 +2983,101 @@ trait APIMethods600 {
             validGroups = groups.flatten
           } yield {
             val memberships = validGroups.map { group =>
-              GroupMembershipJsonV600(
+              // Get entitlements for this user that came from this specific group
+              val groupSpecificEntitlements = groupEntitlements
+                .filter(_.groupId.contains(group.groupId))
+                .map(_.roleName)
+                .distinct
+
+              UserGroupMembershipJsonV600(
                 group_id = group.groupId,
                 user_id = userId,
                 bank_id = group.bankId,
                 group_name = group.groupName,
-                list_of_roles = group.listOfRoles
+                list_of_entitlements = groupSpecificEntitlements
               )
             }
-            (GroupMembershipsJsonV600(memberships), HttpCode.`200`(callContext))
+            (UserGroupMembershipsJsonV600(group_entitlements = memberships), HttpCode.`200`(callContext))
+          }
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
+      getGroupEntitlements,
+      implementedInApiVersion,
+      nameOf(getGroupEntitlements),
+      "GET",
+      "/management/groups/GROUP_ID/entitlements",
+      "Get Group Entitlements",
+      s"""Get all entitlements that have been granted from a specific group.
+         |
+         |This returns all entitlements where the group_id matches the specified GROUP_ID.
+         |
+         |Requires:
+         |- CanGetEntitlementsForAnyBank
+         |
+         |${userAuthenticationMessage(true)}
+         |
+         |""".stripMargin,
+      EmptyBody,
+      GroupEntitlementsJsonV600(
+        entitlements = List(
+          GroupEntitlementJsonV600(
+            entitlement_id = "entitlement-id-123",
+            role_name = "CanGetCustomer",
+            bank_id = "gh.29.uk",
+            user_id = "user-id-123",
+            username = "susan.uk.29@example.com",
+            group_id = Some("group-id-123"),
+            process = Some("GROUP_MEMBERSHIP")
+          )
+        )
+      ),
+      List(
+        UserNotLoggedIn,
+        UserHasMissingRoles,
+        UnknownError
+      ),
+      List(apiTagGroup, apiTagEntitlement),
+      Some(List(canGetEntitlementsForAnyBank))
+    )
+
+    lazy val getGroupEntitlements: OBPEndpoint = {
+      case "management" :: "groups" :: groupId :: "entitlements" :: Nil JsonGet _ => {
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(u), callContext) <- authenticatedAccess(cc)
+            // Verify the group exists
+            group <- Future {
+              code.group.GroupTrait.group.vend.getGroup(groupId)
+            } map {
+              x => unboxFullOrFail(x, callContext, s"$UnknownError Group not found", 404)
+            }
+            // Get entitlements by group_id
+            groupEntitlements <- Entitlement.entitlement.vend.getEntitlementsByGroupId(groupId) map {
+              x => unboxFullOrFail(x, callContext, s"$UnknownError Cannot get entitlements", 400)
+            }
+            // Get usernames for each entitlement
+            entitlementsWithUsernames <- Future.sequence {
+              groupEntitlements.map { ent =>
+                Users.users.vend.getUserByUserIdFuture(ent.userId).map { userBox =>
+                  val username = userBox.map(_.name).getOrElse("")
+                  GroupEntitlementJsonV600(
+                    entitlement_id = ent.entitlementId,
+                    role_name = ent.roleName,
+                    bank_id = ent.bankId,
+                    user_id = ent.userId,
+                    username = username,
+                    group_id = ent.groupId,
+                    process = ent.process
+                  )
+                }
+              }
+            }
+          } yield {
+            val entitlementCount = entitlementsWithUsernames.length
+            logger.info(s"getGroupEntitlements called for group_id: $groupId, returned $entitlementCount records")
+            (GroupEntitlementsJsonV600(entitlements = entitlementsWithUsernames), HttpCode.`200`(callContext))
           }
       }
     }
@@ -2979,7 +3087,7 @@ trait APIMethods600 {
       implementedInApiVersion,
       nameOf(removeUserFromGroup),
       "DELETE",
-      "/users/USER_ID/group-memberships/GROUP_ID",
+      "/users/USER_ID/group-entitlements/GROUP_ID",
       "Remove User from Group",
       s"""Remove a user from a group. This will delete all entitlements that were created by this group membership.
          |
@@ -3006,7 +3114,7 @@ trait APIMethods600 {
     )
 
     lazy val removeUserFromGroup: OBPEndpoint = {
-      case "users" :: userId :: "group-memberships" :: groupId :: Nil JsonDelete _ => {
+      case "users" :: userId :: "group-entitlements" :: groupId :: Nil JsonDelete _ => {
         cc => implicit val ec = EndpointContext(Some(cc))
           for {
             (Full(u), callContext) <- authenticatedAccess(cc)
@@ -3026,7 +3134,7 @@ trait APIMethods600 {
             entitlements <- Future {
               Entitlement.entitlement.vend.getEntitlementsByUserId(userId)
             }
-            groupEntitlements = entitlements.toOption.getOrElse(List.empty).filter(e => 
+            groupEntitlements = entitlements.toOption.getOrElse(List.empty).filter(e =>
               e.groupId == Some(groupId) && e.process == Some("GROUP_MEMBERSHIP")
             )
             // Delete all entitlements from this group
@@ -3316,13 +3424,13 @@ trait APIMethods600 {
       "Get View Permissions",
       s"""Get a list of all available view permissions.
          |
-         |This endpoint returns all the available permissions that can be assigned to views, 
+         |This endpoint returns all the available permissions that can be assigned to views,
          |organized by category. These permissions control what actions and data can be accessed
          |through a view.
          |
          |${userAuthenticationMessage(true)}
          |
-         |The response contains all available view permission names that can be used in the 
+         |The response contains all available view permission names that can be used in the
          |`allowed_actions` field when creating or updating custom views.
          |
          |""".stripMargin,
@@ -3351,31 +3459,31 @@ trait APIMethods600 {
             _ <- NewStyle.function.hasEntitlement("", u.userId, ApiRole.canGetViewPermissionsAtAllBanks, callContext)
           } yield {
             import Constant._
-            
+
             // Helper function to determine category from permission name
             def categorizePermission(permission: String): String = {
               permission match {
                 case p if p.contains("transaction") && !p.contains("request") => "Transaction"
                 case p if p.contains("bank_account") || p.contains("bank_routing") || p.contains("available_funds") => "Account"
-                case p if p.contains("other_account") || p.contains("other_bank") || 
-                         p.contains("counterparty") || p.contains("more_info") || 
-                         p.contains("url") || p.contains("corporates") || 
+                case p if p.contains("other_account") || p.contains("other_bank") ||
+                         p.contains("counterparty") || p.contains("more_info") ||
+                         p.contains("url") || p.contains("corporates") ||
                          p.contains("location") || p.contains("alias") => "Counterparty"
-                case p if p.contains("comment") || p.contains("tag") || 
+                case p if p.contains("comment") || p.contains("tag") ||
                          p.contains("image") || p.contains("where_tag") => "Metadata"
-                case p if p.contains("transaction_request") || p.contains("direct_debit") || 
+                case p if p.contains("transaction_request") || p.contains("direct_debit") ||
                          p.contains("standing_order") => "Transaction Request"
                 case p if p.contains("view") => "View"
                 case p if p.contains("grant") || p.contains("revoke") => "Access Control"
                 case _ => "Other"
               }
             }
-            
+
             // Return all view permissions directly from the constants with generated categories
             val permissions = ALL_VIEW_PERMISSION_NAMES.map { permission =>
               ViewPermissionJsonV600(permission, categorizePermission(permission))
             }.sortBy(p => (p.category, p.permission))
-            
+
             (ViewPermissionsJsonV600(permissions), HttpCode.`200`(callContext))
           }
       }
@@ -3392,8 +3500,8 @@ trait APIMethods600 {
          |
          |This is a **management endpoint** that requires the `CanCreateCustomView` role (entitlement).
          |
-         |This endpoint provides a simpler, role-based authorization model compared to the original 
-         |v3.0.0 endpoint which requires view-level permissions. Use this endpoint when you want to 
+         |This endpoint provides a simpler, role-based authorization model compared to the original
+         |v3.0.0 endpoint which requires view-level permissions. Use this endpoint when you want to
          |grant view creation ability through direct role assignment rather than through view access.
          |
          |For the original endpoint that checks account-level view permissions, see:
@@ -3569,7 +3677,7 @@ trait APIMethods600 {
                 case Full(user) if user.validated.get && user.email.get == postedData.email =>
                   // Verify user_id matches
                   Users.users.vend.getUserByUserId(postedData.user_id) match {
-                    case Full(resourceUser) if resourceUser.name == postedData.username && 
+                    case Full(resourceUser) if resourceUser.name == postedData.username &&
                                                  resourceUser.emailAddress == postedData.email =>
                       user
                     case _ => throw new Exception("User ID does not match username and email")
@@ -3580,23 +3688,23 @@ trait APIMethods600 {
           } yield {
             // Explicitly type the user to ensure proper method resolution
             val user: code.model.dataAccess.AuthUser = authUser
-            
+
             // Generate new reset token
             // Reset the unique ID token by generating a new random value (32 chars, no hyphens)
             user.uniqueId.set(java.util.UUID.randomUUID().toString.replace("-", ""))
             user.save
-            
+
             // Construct reset URL using portal_hostname
             // Get the unique ID value for the reset token URL
-            val resetPasswordLink = APIUtil.getPropsValue("portal_external_url", Constant.HostName) + 
-              "/user_mgt/reset_password/" + 
+            val resetPasswordLink = APIUtil.getPropsValue("portal_external_url", Constant.HostName) +
+              "/user_mgt/reset_password/" +
               java.net.URLEncoder.encode(user.uniqueId.get, "UTF-8")
-            
+
             // Send email using CommonsEmailWrapper (like createUser does)
             val textContent = Some(s"Please use the following link to reset your password: $resetPasswordLink")
             val htmlContent = Some(s"<p>Please use the following link to reset your password:</p><p><a href='$resetPasswordLink'>$resetPasswordLink</a></p>")
             val subjectContent = "Reset your password - " + user.username.get
-            
+
             val emailContent = code.api.util.CommonsEmailWrapper.EmailContent(
               from = code.model.dataAccess.AuthUser.emailFrom,
               to = List(user.email.get),
@@ -3605,9 +3713,9 @@ trait APIMethods600 {
               textContent = textContent,
               htmlContent = htmlContent
             )
-            
+
             code.api.util.CommonsEmailWrapper.sendHtmlEmail(emailContent)
-            
+
             (
               ResetPasswordUrlJsonV600(resetPasswordLink),
               HttpCode.`201`(callContext)
@@ -3783,7 +3891,7 @@ trait APIMethods600 {
             explicitWebUiPropsWithSource = explicitWebUiProps.map(prop => WebUiPropsCommons(prop.name, prop.value, prop.webUiPropsId, source = Some("database")))
             implicitWebUiProps = getWebUIPropsPairs.map(webUIPropsPairs=>WebUiPropsCommons(webUIPropsPairs._1, webUIPropsPairs._2, webUiPropsId = Some("default"), source = Some("config")))
             result = what match {
-              case "database" => 
+              case "database" =>
                 // Return only database props
                 explicitWebUiPropsWithSource
               case "config" =>
@@ -4062,11 +4170,16 @@ trait APIMethods600 {
          |1. Deletes all data records associated with the dynamic entity
          |2. Deletes the dynamic entity definition itself
          |
+         |This operation is only allowed for non-personal entities (hasPersonalEntity=false).
+         |For personal entities (hasPersonalEntity=true), you must delete the records and definition separately.
+         |
          |Use with caution - this operation cannot be undone.
          |
          |For more information see ${Glossary.getGlossaryItemLink(
           "Dynamic-Entities"
         )}/
+         |
+         |${userAuthenticationMessage(true)}
          |
          |""",
       EmptyBody,
@@ -4099,6 +4212,10 @@ trait APIMethods600 {
           dynamicEntityId,
           cc.callContext
         )
+        // Check if this is a personal entity - cascade delete not allowed for personal entities
+        _ <- Helper.booleanToFuture(failMsg = CannotDeleteCascadePersonalEntity, cc = cc.callContext) {
+          !entity.hasPersonalEntity
+        }
         // Get all data records for this entity
         (box, _) <- NewStyle.function.invokeDynamicConnector(
           GET_ALL,
@@ -4567,7 +4684,8 @@ trait APIMethods600 {
                 AbacParameterJsonV600("transactionRequestOpt", "Option[TransactionRequest]", "Transaction request context", required = false, "TransactionRequest"),
                 AbacParameterJsonV600("transactionRequestAttributes", "List[TransactionRequestAttributeTrait]", "Transaction request attributes", required = false, "TransactionRequest"),
                 AbacParameterJsonV600("customerOpt", "Option[Customer]", "Customer context", required = false, "Customer"),
-                AbacParameterJsonV600("customerAttributes", "List[CustomerAttribute]", "Customer attributes", required = false, "Customer")
+                AbacParameterJsonV600("customerAttributes", "List[CustomerAttribute]", "Customer attributes", required = false, "Customer"),
+                AbacParameterJsonV600("callContext", "Option[CallContext]", "Request call context with metadata (IP, user agent, etc.)", required = false, "Context")
               ),
               object_types = List(
                 AbacObjectTypeJsonV600("User", "User object with profile and authentication information", List(
@@ -4658,6 +4776,16 @@ trait APIMethods600 {
                   AbacObjectPropertyJsonV600("name", "String", "Attribute name"),
                   AbacObjectPropertyJsonV600("value", "String", "Attribute value"),
                   AbacObjectPropertyJsonV600("attributeType", "AttributeType", "Attribute type")
+                )),
+                AbacObjectTypeJsonV600("CallContext", "Request context with metadata", List(
+                  AbacObjectPropertyJsonV600("correlationId", "String", "Correlation ID for request tracking"),
+                  AbacObjectPropertyJsonV600("url", "Option[String]", "Request URL"),
+                  AbacObjectPropertyJsonV600("verb", "Option[String]", "HTTP verb (GET, POST, etc.)"),
+                  AbacObjectPropertyJsonV600("ipAddress", "Option[String]", "Client IP address"),
+                  AbacObjectPropertyJsonV600("userAgent", "Option[String]", "Client user agent"),
+                  AbacObjectPropertyJsonV600("implementedByPartialFunction", "Option[String]", "Endpoint implementation name"),
+                  AbacObjectPropertyJsonV600("startTime", "Option[Date]", "Request start time"),
+                  AbacObjectPropertyJsonV600("endTime", "Option[Date]", "Request end time")
                 ))
               ),
               examples = List(
@@ -4763,7 +4891,7 @@ trait APIMethods600 {
             }
             validationResult <- Future {
               AbacRuleEngine.validateRuleCode(validateJson.rule_code) match {
-                case Full(msg) => 
+                case Full(msg) =>
                   Full(ValidateAbacRuleSuccessJsonV600(
                     valid = true,
                     message = msg
@@ -4776,7 +4904,7 @@ trait APIMethods600 {
                     error = cleanError,
                     message = "Rule validation failed",
                     details = ValidateAbacRuleErrorDetailsJsonV600(
-                      error_type = if (cleanError.toLowerCase.contains("syntax")) "SyntaxError" 
+                      error_type = if (cleanError.toLowerCase.contains("syntax")) "SyntaxError"
                                    else if (cleanError.toLowerCase.contains("type")) "TypeError"
                                    else "CompilationError"
                     )
@@ -4860,20 +4988,20 @@ trait APIMethods600 {
             } map {
               unboxFullOrFail(_, callContext, s"ABAC Rule not found with ID: $ruleId", 404)
             }
-            
+
             // Execute the rule with IDs - object fetching happens internally
             // authenticatedUserId: can be provided in request (for testing) or defaults to actual authenticated user
             // onBehalfOfUserId: optional delegation - acting on behalf of another user
             // userId: the target user being evaluated (defaults to authenticated user)
             effectiveAuthenticatedUserId = execJson.authenticated_user_id.getOrElse(user.userId)
-            
+
             result <- Future {
               val resultBox = AbacRuleEngine.executeRule(
                 ruleId = ruleId,
                 authenticatedUserId = effectiveAuthenticatedUserId,
                 onBehalfOfUserId = execJson.on_behalf_of_user_id,
                 userId = execJson.user_id,
-                callContext = callContext,
+                callContext = callContext.getOrElse(cc),
                 bankId = execJson.bank_id,
                 accountId = execJson.account_id,
                 viewId = execJson.view_id,
@@ -4881,9 +5009,9 @@ trait APIMethods600 {
                 transactionRequestId = execJson.transaction_request_id,
                 customerId = execJson.customer_id
               )
-              
+
               resultBox match {
-                case Full(allowed) => 
+                case Full(allowed) =>
                   AbacRuleResultJsonV600(result = allowed)
                 case Failure(msg, _, _) =>
                   AbacRuleResultJsonV600(result = false)
