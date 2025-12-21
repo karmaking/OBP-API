@@ -104,6 +104,10 @@ if [ -f "${LOG_DIR}/warning_analysis.tmp" ]; then
     rm -f "${LOG_DIR}/warning_analysis.tmp"
     echo "  - Removed stale warning analysis"
 fi
+if [ -f "${LOG_DIR}/recent_lines.tmp" ]; then
+    rm -f "${LOG_DIR}/recent_lines.tmp"
+    echo "  - Removed stale temp file"
+fi
 
 ################################################################################
 # HELPER FUNCTIONS
@@ -129,8 +133,9 @@ analyze_warnings() {
     local log_file="$1"
     local temp_file="${LOG_DIR}/warning_analysis.tmp"
 
-    # Extract and categorize warnings
-    grep -i "warning" "${log_file}" 2>/dev/null | \
+    # Extract and categorize warnings from last 5000 lines (for performance)
+    # This gives good coverage without scanning entire multi-MB log file
+    tail -n 5000 "${log_file}" 2>/dev/null | grep -i "warning" | \
         # Normalize patterns to group similar warnings
         sed -E 's/line [0-9]+/line XXX/g' | \
         sed -E 's/[0-9]+ warnings?/N warnings/g' | \
@@ -238,10 +243,6 @@ touch "${MONITOR_FLAG}"
 
 # Background process: Monitor log file and update title bar with progress
 (
-    # Debug log
-    MONITOR_DEBUG="${LOG_DIR}/monitor_debug.log"
-    echo "Monitor started at $(date +%s)" > "${MONITOR_DEBUG}"
-
     # Wait for log file to be created and have Maven output
     while [ ! -f "${DETAIL_LOG}" ] || [ ! -s "${DETAIL_LOG}" ]; do
         sleep 1
@@ -252,50 +253,35 @@ touch "${MONITOR_FLAG}"
 
     # Keep monitoring until flag file is removed
     while [ -f "${MONITOR_FLAG}" ]; do
-        echo "Loop iteration at $(date +%s)" >> "${MONITOR_DEBUG}"
-
         # Use tail to look at recent lines only (last 500 lines for performance)
-        echo "About to tail log file" >> "${MONITOR_DEBUG}"
+        # This ensures O(1) performance regardless of log file size
         recent_lines=$(tail -n 500 "${DETAIL_LOG}" 2>/dev/null)
-        echo "Tail complete, lines=$(echo "$recent_lines" | wc -l)" >> "${MONITOR_DEBUG}"
 
         # Switch to "Testing" phase when tests start
-        echo "Checking for Run starting" >> "${MONITOR_DEBUG}"
         if ! $in_testing && echo "$recent_lines" | grep -q "Run starting" 2>/dev/null; then
             phase="Testing"
             in_testing=true
-            echo "Switched to Testing phase" >> "${MONITOR_DEBUG}"
         fi
 
         # Extract current running test suite from recent lines
-        echo "Extracting suite name" >> "${MONITOR_DEBUG}"
         suite=""
         if $in_testing; then
             # Find the most recent test suite name (pattern like "SomeTest:")
-            echo "$recent_lines" > "${LOG_DIR}/recent_lines.tmp"
-            suite=$(grep -E "Test:" "${LOG_DIR}/recent_lines.tmp" | tail -1 | sed 's/\x1b\[[0-9;]*m//g' | sed 's/:$//' | tr -d '\n\r')
+            # Pipe directly to avoid temp file I/O
+            suite=$(echo "$recent_lines" | grep -E "Test:" | tail -1 | sed 's/\x1b\[[0-9;]*m//g' | sed 's/:$//' | tr -d '\n\r')
         fi
-        echo "Suite extracted: $suite" >> "${MONITOR_DEBUG}"
-
-        # Clean up temp file
-        rm -f "${LOG_DIR}/recent_lines.tmp"
 
         # Calculate elapsed time
-        echo "Calculating elapsed time" >> "${MONITOR_DEBUG}"
         duration=$(($(date +%s) - START_TIME))
         minutes=$((duration / 60))
         seconds=$((duration % 60))
         elapsed=$(printf "%dm %ds" $minutes $seconds)
-        echo "Elapsed: $elapsed" >> "${MONITOR_DEBUG}"
 
         # Update title: "Testing: DynamicEntityTest [5m 23s]"
-        echo "Updating title: phase=$phase elapsed=$elapsed suite=$suite" >> "${MONITOR_DEBUG}"
         update_terminal_title "$phase" "$elapsed" "" "$suite"
 
         sleep 5
     done
-
-    echo "Monitor exiting at $(date +%s)" >> "${MONITOR_DEBUG}"
 ) &
 MONITOR_PID=$!
 
