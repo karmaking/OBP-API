@@ -23,24 +23,25 @@ set -e
 # Set terminal to "test mode" - blue background, special title
 set_terminal_style() {
     local phase="${1:-Running}"
-    echo -ne "\033]0;🧪 OBP-API Tests ${phase}...\007"  # Title
+    echo -ne "\033]0;OBP-API Tests ${phase}...\007"  # Title
     echo -ne "\033]11;#001f3f\007"  # Dark blue background
     echo -ne "\033]10;#ffffff\007"  # White text
     # Print header bar
-    printf "\033[44m\033[1;37m%-$(tput cols)s\r  🧪 OBP-API TEST RUNNER ACTIVE - ${phase}  \n%-$(tput cols)s\033[0m\n" " " " "
+    printf "\033[44m\033[1;37m%-$(tput cols)s\r  OBP-API TEST RUNNER ACTIVE - ${phase}  \n%-$(tput cols)s\033[0m\n" " " " "
 }
 
-# Update title bar with progress: "Testing... [5m 23s] ✓42 ✗0"
+# Update title bar with progress: "Testing: DynamicEntityTest [5m 23s] obp-commons:+38 obp-api:+245"
 update_terminal_title() {
     local phase="$1"           # Starting, Building, Testing, Complete
     local elapsed="${2:-}"     # Time elapsed (e.g. "5m 23s")
-    local passed="${3:-}"      # Number of tests passed
-    local failed="${4:-}"      # Number of tests failed
+    local counts="${3:-}"      # Module counts (e.g. "obp-commons:+38 obp-api:+245")
+    local suite="${4:-}"       # Current test suite name
 
-    local title="🧪 OBP-API Tests ${phase}..."
+    local title="OBP-API Tests ${phase}"
+    [ -n "$suite" ] && title="${title}: ${suite}"
+    title="${title}..."
     [ -n "$elapsed" ] && title="${title} [${elapsed}]"
-    [ -n "$passed" ] && title="${title} ✓${passed}"
-    [ -n "$failed" ] && [ "$failed" != "0" ] && title="${title} ✗${failed}"
+    [ -n "$counts" ] && title="${title} ${counts}"
 
     echo -ne "\033]0;${title}\007"
 }
@@ -57,11 +58,9 @@ trap restore_terminal_style EXIT INT TERM
 # CONFIGURATION
 ################################################################################
 
-TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
 LOG_DIR="test-results"
-DETAIL_LOG="${LOG_DIR}/test_run_${TIMESTAMP}.log"       # Full Maven output
-SUMMARY_LOG="${LOG_DIR}/test_summary_${TIMESTAMP}.log"  # Summary only
-LATEST_SUMMARY="${LOG_DIR}/latest_test_summary.log"     # Link to latest
+DETAIL_LOG="${LOG_DIR}/last_run.log"        # Full Maven output
+SUMMARY_LOG="${LOG_DIR}/last_run_summary.log"  # Summary only
 
 # Terminal colors
 GREEN='\033[0;32m'
@@ -71,6 +70,9 @@ BLUE='\033[0;34m'
 NC='\033[0m'
 
 mkdir -p "${LOG_DIR}"
+
+# Delete old log files from previous run
+rm -f "${DETAIL_LOG}" "${SUMMARY_LOG}"
 
 ################################################################################
 # HELPER FUNCTIONS
@@ -89,6 +91,67 @@ print_header() {
     echo "$1"
     echo "================================================================================"
     echo ""
+}
+
+# Analyze warnings and return top contributors
+analyze_warnings() {
+    local log_file="$1"
+    local temp_file="${LOG_DIR}/warning_analysis.tmp"
+
+    # Extract and categorize warnings
+    grep -i "warning" "${log_file}" 2>/dev/null | \
+        # Normalize patterns to group similar warnings
+        sed -E 's/line [0-9]+/line XXX/g' | \
+        sed -E 's/[0-9]+ warnings?/N warnings/g' | \
+        sed -E 's/\[WARNING\] .*(src|test)\/[^ ]+/[WARNING] <source-file>/g' | \
+        sed -E 's/version [0-9]+\.[0-9]+(\.[0-9]+)?/version X.X/g' | \
+        # Extract the core warning message
+        sed -E 's/^.*\[WARNING\] *//' | \
+        sort | uniq -c | sort -rn > "${temp_file}"
+
+    # Return the temp file path for further processing
+    echo "${temp_file}"
+}
+
+# Format and display top warning factors
+display_warning_factors() {
+    local analysis_file="$1"
+    local max_display="${2:-10}"
+
+    if [ ! -f "${analysis_file}" ] || [ ! -s "${analysis_file}" ]; then
+        log_message "  ${YELLOW}No detailed warning analysis available${NC}"
+        return
+    fi
+
+    local total_warning_types=$(wc -l < "${analysis_file}")
+    local displayed=0
+
+    log_message "${YELLOW}Top Warning Factors:${NC}"
+    log_message "-------------------"
+
+    while IFS= read -r line && [ $displayed -lt $max_display ]; do
+        # Extract count and message
+        local count=$(echo "$line" | awk '{print $1}')
+        local message=$(echo "$line" | sed -E 's/^[[:space:]]*[0-9]+[[:space:]]*//')
+
+        # Truncate long messages
+        if [ ${#message} -gt 80 ]; then
+            message="${message:0:77}..."
+        fi
+
+        # Format with count prominence
+        printf "  ${YELLOW}%4d ×${NC} %s\n" "$count" "$message" | tee -a "${SUMMARY_LOG}" > /dev/tty
+
+        displayed=$((displayed + 1))
+    done < "${analysis_file}"
+
+    if [ $total_warning_types -gt $max_display ]; then
+        local remaining=$((total_warning_types - max_display))
+        log_message "  ... and ${remaining} more warning type(s)"
+    fi
+
+    # Clean up temp file
+    rm -f "${analysis_file}"
 }
 
 ################################################################################
@@ -114,12 +177,12 @@ PROPS_FILE="obp-api/src/main/resources/props/test.default.props"
 PROPS_TEMPLATE="${PROPS_FILE}.template"
 
 if [ -f "${PROPS_FILE}" ]; then
-    log_message "${GREEN}✓ Found test.default.props${NC}"
+    log_message "${GREEN}[OK] Found test.default.props${NC}"
 else
-    log_message "${YELLOW}⚠ WARNING: test.default.props not found - creating from template${NC}"
+    log_message "${YELLOW}[WARNING] test.default.props not found - creating from template${NC}"
     if [ -f "${PROPS_TEMPLATE}" ]; then
         cp "${PROPS_TEMPLATE}" "${PROPS_FILE}"
-        log_message "${GREEN}✓ Created test.default.props${NC}"
+        log_message "${GREEN}[OK] Created test.default.props${NC}"
     else
         log_message "${RED}ERROR: ${PROPS_TEMPLATE} not found!${NC}"
         exit 1
@@ -136,31 +199,66 @@ log_message "${BLUE}Executing: mvn clean test${NC}"
 echo ""
 
 START_TIME=$(date +%s)
+export START_TIME
+
+# Create flag file to signal background process to stop
+MONITOR_FLAG="${LOG_DIR}/monitor.flag"
+touch "${MONITOR_FLAG}"
 
 # Background process: Monitor log file and update title bar with progress
 (
-    sleep 5
+    # Wait for log file to be created and have Maven output
+    while [ ! -f "${DETAIL_LOG}" ] || [ ! -s "${DETAIL_LOG}" ]; do
+        sleep 1
+    done
+
     phase="Building"
     in_testing=false
 
-    while true; do
+    # Keep monitoring until flag file is removed
+    while [ -f "${MONITOR_FLAG}" ]; do
         passed=""
         failed=""
+        suite=""
 
-        if [ -f "${DETAIL_LOG}" ]; then
-            # Switch to "Testing" phase when tests start
-            if ! $in_testing && grep -q "Run starting" "${DETAIL_LOG}" 2>/dev/null; then
-                phase="Testing"
-                in_testing=true
+        # Get line numbers for key markers
+        current_run_completed_line=$(grep -n "Run completed" "${DETAIL_LOG}" 2>/dev/null | tail -1 | cut -d: -f1)
+        current_run_line=$(grep -n "Run starting" "${DETAIL_LOG}" 2>/dev/null | tail -1 | cut -d: -f1)
+        current_discovery_line=$(grep -n "Discovery starting" "${DETAIL_LOG}" 2>/dev/null | tail -1 | cut -d: -f1)
+
+        # Determine if we're in discovery phase (between test completion and next test start)
+        in_discovery=false
+        if [ -n "$current_discovery_line" ] && [ -n "$current_run_completed_line" ]; then
+            # If discovery appears after last "Run completed", we're discovering next module
+            if [ "$current_discovery_line" -gt "$current_run_completed_line" ]; then
+                in_discovery=true
             fi
+        fi
 
-            # Extract test counts: "Tests: succeeded 21, failed 0"
-            if $in_testing; then
-                test_line=$(grep -E "Tests:.*succeeded.*failed" "${DETAIL_LOG}" 2>/dev/null | tail -1)
-                if [ -n "$test_line" ]; then
-                    passed=$(echo "$test_line" | grep -oP "succeeded \K\d+" | tail -1)
-                    failed=$(echo "$test_line" | grep -oP "failed \K\d+" | tail -1)
-                fi
+        # Switch to "Testing" phase when tests start
+        if ! $in_testing && grep -q "Run starting" "${DETAIL_LOG}" 2>/dev/null; then
+            phase="Testing"
+            in_testing=true
+        fi
+
+        # Only show test info if we're actually in testing phase AND not in discovery
+        counts=""
+        if $in_testing && ! $in_discovery; then
+            # Extract current running suite name
+            # Find all test suite names (lines matching pattern like "SomeTest:")
+            # Take the last one that appears in the log (most recent/current)
+            suite=$(grep -E "^[A-Z][a-zA-Z0-9]+Test:$" "${DETAIL_LOG}" 2>/dev/null | tail -1 | sed 's/:$//')
+
+            # Extract test counts: Show per-module counts with context
+            # Only show if at least one "Run completed" has appeared
+            if grep -q "Run completed" "${DETAIL_LOG}" 2>/dev/null; then
+                # Build counts with module context
+                # Look for module build messages and count tests per module
+                local commons_count=$(sed -n '/Building Open Bank Project Commons/,/Building Open Bank Project API/{/Tests: succeeded/p;}' "${DETAIL_LOG}" 2>/dev/null | grep -oP "succeeded \K\d+" | head -1)
+                local api_count=$(sed -n '/Building Open Bank Project API/,/OBP Http4s Runner/{/Tests: succeeded/p;}' "${DETAIL_LOG}" 2>/dev/null | grep -oP "succeeded \K\d+" | tail -1)
+
+                [ -n "$commons_count" ] && counts="commons:+${commons_count}"
+                [ -n "$api_count" ] && counts="${counts:+${counts} }api:+${api_count}"
             fi
         fi
 
@@ -170,8 +268,8 @@ START_TIME=$(date +%s)
         seconds=$((duration % 60))
         elapsed=$(printf "%dm %ds" $minutes $seconds)
 
-        # Update title: "Testing... [5m 23s] ✓42 ✗0"
-        update_terminal_title "$phase" "$elapsed" "$passed" "$failed"
+        # Update title: "Testing: DynamicEntityTest [5m 23s] commons:+38 api:+245"
+        update_terminal_title "$phase" "$elapsed" "$counts" "$suite"
 
         sleep 5
     done
@@ -187,7 +285,9 @@ else
     RESULT_COLOR="${RED}"
 fi
 
-# Stop background monitor
+# Stop background monitor by removing flag file
+rm -f "${MONITOR_FLAG}"
+sleep 1
 kill $MONITOR_PID 2>/dev/null
 wait $MONITOR_PID 2>/dev/null
 
@@ -196,11 +296,15 @@ DURATION=$((END_TIME - START_TIME))
 DURATION_MIN=$((DURATION / 60))
 DURATION_SEC=$((DURATION % 60))
 
-# Update title with final results
+# Update title with final results (no suite name for Complete phase)
 FINAL_ELAPSED=$(printf "%dm %ds" $DURATION_MIN $DURATION_SEC)
-FINAL_PASSED=$(grep -E "Tests:.*succeeded.*failed" "${DETAIL_LOG}" 2>/dev/null | tail -1 | grep -oP "succeeded \K\d+" | tail -1)
-FINAL_FAILED=$(grep -E "Tests:.*succeeded.*failed" "${DETAIL_LOG}" 2>/dev/null | tail -1 | grep -oP "failed \K\d+" | tail -1)
-update_terminal_title "Complete" "$FINAL_ELAPSED" "$FINAL_PASSED" "$FINAL_FAILED"
+# Build final counts with module context
+FINAL_COMMONS=$(sed -n '/Building Open Bank Project Commons/,/Building Open Bank Project API/{/Tests: succeeded/p;}' "${DETAIL_LOG}" 2>/dev/null | grep -oP "succeeded \K\d+" | head -1)
+FINAL_API=$(sed -n '/Building Open Bank Project API/,/OBP Http4s Runner/{/Tests: succeeded/p;}' "${DETAIL_LOG}" 2>/dev/null | grep -oP "succeeded \K\d+" | tail -1)
+FINAL_COUNTS=""
+[ -n "$FINAL_COMMONS" ] && FINAL_COUNTS="commons:+${FINAL_COMMONS}"
+[ -n "$FINAL_API" ] && FINAL_COUNTS="${FINAL_COUNTS:+${FINAL_COUNTS} }api:+${FINAL_API}"
+update_terminal_title "Complete" "$FINAL_ELAPSED" "$FINAL_COUNTS" ""
 
 ################################################################################
 # GENERATE SUMMARY
@@ -208,12 +312,13 @@ update_terminal_title "Complete" "$FINAL_ELAPSED" "$FINAL_PASSED" "$FINAL_FAILED
 
 print_header "Test Results Summary"
 
-# Extract test statistics
-TOTAL_TESTS=$(grep -E "Total number of tests run:|Tests run:" "${DETAIL_LOG}" | tail -1 | grep -oP '\d+' | head -1 || echo "0")
-SUCCEEDED=$(grep -oP "succeeded \K\d+" "${DETAIL_LOG}" | tail -1 || echo "0")
-FAILED=$(grep -oP "failed \K\d+" "${DETAIL_LOG}" | tail -1 || echo "0")
-ERRORS=$(grep -oP "errors \K\d+" "${DETAIL_LOG}" | tail -1 || echo "0")
-SKIPPED=$(grep -oP "(skipped|ignored) \K\d+" "${DETAIL_LOG}" | tail -1 || echo "0")
+# Extract test statistics (with UNKNOWN fallback if extraction fails)
+TOTAL_TESTS=$(grep -E "Total number of tests run:|Tests run:" "${DETAIL_LOG}" | tail -1 | grep -oP '\d+' | head -1 || echo "UNKNOWN")
+SUCCEEDED=$(grep -oP "succeeded \K\d+" "${DETAIL_LOG}" | tail -1 || echo "UNKNOWN")
+FAILED=$(grep -oP "failed \K\d+" "${DETAIL_LOG}" | tail -1 || echo "UNKNOWN")
+ERRORS=$(grep -oP "errors \K\d+" "${DETAIL_LOG}" | tail -1 || echo "UNKNOWN")
+SKIPPED=$(grep -oP "(skipped|ignored) \K\d+" "${DETAIL_LOG}" | tail -1 || echo "UNKNOWN")
+WARNINGS=$(grep -c "WARNING" "${DETAIL_LOG}" || echo "UNKNOWN")
 
 # Determine build status
 if grep -q "BUILD SUCCESS" "${DETAIL_LOG}"; then
@@ -240,7 +345,15 @@ log_message "  ${GREEN}Succeeded:   ${SUCCEEDED}${NC}"
 log_message "  ${RED}Failed:      ${FAILED}${NC}"
 log_message "  ${RED}Errors:      ${ERRORS}${NC}"
 log_message "  ${YELLOW}Skipped:     ${SKIPPED}${NC}"
+log_message "  ${YELLOW}Warnings:    ${WARNINGS}${NC}"
 log_message ""
+
+# Analyze and display warning factors if warnings exist
+if [ "${WARNINGS}" != "0" ] && [ "${WARNINGS}" != "UNKNOWN" ]; then
+    warning_analysis=$(analyze_warnings "${DETAIL_LOG}")
+    display_warning_factors "${warning_analysis}" 10
+    log_message ""
+fi
 
 # Show failed tests if any
 if [ "${FAILED}" != "0" ] || [ "${ERRORS}" != "0" ]; then
@@ -249,8 +362,6 @@ if [ "${FAILED}" != "0" ] || [ "${ERRORS}" != "0" ]; then
     log_message ""
 fi
 
-cp "${SUMMARY_LOG}" "${LATEST_SUMMARY}"
-
 ################################################################################
 # FINAL RESULT
 ################################################################################
@@ -258,18 +369,17 @@ cp "${SUMMARY_LOG}" "${LATEST_SUMMARY}"
 print_header "Test Run Complete"
 
 if [ "${BUILD_STATUS}" = "SUCCESS" ] && [ "${FAILED}" = "0" ] && [ "${ERRORS}" = "0" ]; then
-    log_message "${GREEN}✓ All tests passed!${NC}"
+    log_message "${GREEN}[PASS] All tests passed!${NC}"
     EXIT_CODE=0
 else
-    log_message "${RED}✗ Tests failed${NC}"
+    log_message "${RED}[FAIL] Tests failed${NC}"
     EXIT_CODE=1
 fi
 
 log_message ""
-log_message "Logs:"
-log_message "  Detailed: ${DETAIL_LOG}"
-log_message "  Summary:  ${SUMMARY_LOG}"
-log_message "  Latest:   ${LATEST_SUMMARY}"
+log_message "Logs saved to:"
+log_message "  ${DETAIL_LOG}"
+log_message "  ${SUMMARY_LOG}"
 echo ""
 
 exit ${EXIT_CODE}
