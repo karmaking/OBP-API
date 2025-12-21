@@ -51,8 +51,23 @@ restore_terminal_style() {
     echo -ne "\033]0;Terminal\007\033]11;#000000\007\033]10;#ffffff\007\033[0m"
 }
 
-# Always restore terminal on exit (Ctrl+C, errors, or normal completion)
-trap restore_terminal_style EXIT INT TERM
+# Cleanup function: stop monitor, restore terminal, remove flag files
+cleanup_on_exit() {
+    # Stop background monitor if running
+    if [ -n "${MONITOR_PID:-}" ]; then
+        kill $MONITOR_PID 2>/dev/null || true
+        wait $MONITOR_PID 2>/dev/null || true
+    fi
+
+    # Remove monitor flag file
+    rm -f "${LOG_DIR}/monitor.flag" 2>/dev/null || true
+
+    # Restore terminal
+    restore_terminal_style
+}
+
+# Always cleanup on exit (Ctrl+C, errors, or normal completion)
+trap cleanup_on_exit EXIT INT TERM
 
 ################################################################################
 # CONFIGURATION
@@ -71,8 +86,24 @@ NC='\033[0m'
 
 mkdir -p "${LOG_DIR}"
 
-# Delete old log files from previous run
-rm -f "${DETAIL_LOG}" "${SUMMARY_LOG}"
+# Delete old log files and stale flag files from previous run
+echo "Cleaning up old files..."
+if [ -f "${DETAIL_LOG}" ]; then
+    rm -f "${DETAIL_LOG}"
+    echo "  - Removed old detail log"
+fi
+if [ -f "${SUMMARY_LOG}" ]; then
+    rm -f "${SUMMARY_LOG}"
+    echo "  - Removed old summary log"
+fi
+if [ -f "${LOG_DIR}/monitor.flag" ]; then
+    rm -f "${LOG_DIR}/monitor.flag"
+    echo "  - Removed stale monitor flag"
+fi
+if [ -f "${LOG_DIR}/warning_analysis.tmp" ]; then
+    rm -f "${LOG_DIR}/warning_analysis.tmp"
+    echo "  - Removed stale warning analysis"
+fi
 
 ################################################################################
 # HELPER FUNCTIONS
@@ -207,6 +238,10 @@ touch "${MONITOR_FLAG}"
 
 # Background process: Monitor log file and update title bar with progress
 (
+    # Debug log
+    MONITOR_DEBUG="${LOG_DIR}/monitor_debug.log"
+    echo "Monitor started at $(date +%s)" > "${MONITOR_DEBUG}"
+
     # Wait for log file to be created and have Maven output
     while [ ! -f "${DETAIL_LOG}" ] || [ ! -s "${DETAIL_LOG}" ]; do
         sleep 1
@@ -217,62 +252,50 @@ touch "${MONITOR_FLAG}"
 
     # Keep monitoring until flag file is removed
     while [ -f "${MONITOR_FLAG}" ]; do
-        passed=""
-        failed=""
-        suite=""
+        echo "Loop iteration at $(date +%s)" >> "${MONITOR_DEBUG}"
 
-        # Get line numbers for key markers
-        current_run_completed_line=$(grep -n "Run completed" "${DETAIL_LOG}" 2>/dev/null | tail -1 | cut -d: -f1)
-        current_run_line=$(grep -n "Run starting" "${DETAIL_LOG}" 2>/dev/null | tail -1 | cut -d: -f1)
-        current_discovery_line=$(grep -n "Discovery starting" "${DETAIL_LOG}" 2>/dev/null | tail -1 | cut -d: -f1)
-
-        # Determine if we're in discovery phase (between test completion and next test start)
-        in_discovery=false
-        if [ -n "$current_discovery_line" ] && [ -n "$current_run_completed_line" ]; then
-            # If discovery appears after last "Run completed", we're discovering next module
-            if [ "$current_discovery_line" -gt "$current_run_completed_line" ]; then
-                in_discovery=true
-            fi
-        fi
+        # Use tail to look at recent lines only (last 500 lines for performance)
+        echo "About to tail log file" >> "${MONITOR_DEBUG}"
+        recent_lines=$(tail -n 500 "${DETAIL_LOG}" 2>/dev/null)
+        echo "Tail complete, lines=$(echo "$recent_lines" | wc -l)" >> "${MONITOR_DEBUG}"
 
         # Switch to "Testing" phase when tests start
-        if ! $in_testing && grep -q "Run starting" "${DETAIL_LOG}" 2>/dev/null; then
+        echo "Checking for Run starting" >> "${MONITOR_DEBUG}"
+        if ! $in_testing && echo "$recent_lines" | grep -q "Run starting" 2>/dev/null; then
             phase="Testing"
             in_testing=true
+            echo "Switched to Testing phase" >> "${MONITOR_DEBUG}"
         fi
 
-        # Only show test info if we're actually in testing phase AND not in discovery
-        counts=""
-        if $in_testing && ! $in_discovery; then
-            # Extract current running suite name
-            # Find all test suite names (lines matching pattern like "SomeTest:")
-            # Take the last one that appears in the log (most recent/current)
-            suite=$(grep -E "^[A-Z][a-zA-Z0-9]+Test:$" "${DETAIL_LOG}" 2>/dev/null | tail -1 | sed 's/:$//')
-
-            # Extract test counts: Show per-module counts with context
-            # Only show if at least one "Run completed" has appeared
-            if grep -q "Run completed" "${DETAIL_LOG}" 2>/dev/null; then
-                # Build counts with module context
-                # Look for module build messages and count tests per module
-                local commons_count=$(sed -n '/Building Open Bank Project Commons/,/Building Open Bank Project API/{/Tests: succeeded/p;}' "${DETAIL_LOG}" 2>/dev/null | grep -oP "succeeded \K\d+" | head -1)
-                local api_count=$(sed -n '/Building Open Bank Project API/,/OBP Http4s Runner/{/Tests: succeeded/p;}' "${DETAIL_LOG}" 2>/dev/null | grep -oP "succeeded \K\d+" | tail -1)
-
-                [ -n "$commons_count" ] && counts="commons:+${commons_count}"
-                [ -n "$api_count" ] && counts="${counts:+${counts} }api:+${api_count}"
-            fi
+        # Extract current running test suite from recent lines
+        echo "Extracting suite name" >> "${MONITOR_DEBUG}"
+        suite=""
+        if $in_testing; then
+            # Find the most recent test suite name (pattern like "SomeTest:")
+            echo "$recent_lines" > "${LOG_DIR}/recent_lines.tmp"
+            suite=$(grep -E "Test:" "${LOG_DIR}/recent_lines.tmp" | tail -1 | sed 's/\x1b\[[0-9;]*m//g' | sed 's/:$//' | tr -d '\n\r')
         fi
+        echo "Suite extracted: $suite" >> "${MONITOR_DEBUG}"
+
+        # Clean up temp file
+        rm -f "${LOG_DIR}/recent_lines.tmp"
 
         # Calculate elapsed time
+        echo "Calculating elapsed time" >> "${MONITOR_DEBUG}"
         duration=$(($(date +%s) - START_TIME))
         minutes=$((duration / 60))
         seconds=$((duration % 60))
         elapsed=$(printf "%dm %ds" $minutes $seconds)
+        echo "Elapsed: $elapsed" >> "${MONITOR_DEBUG}"
 
-        # Update title: "Testing: DynamicEntityTest [5m 23s] commons:+38 api:+245"
-        update_terminal_title "$phase" "$elapsed" "$counts" "$suite"
+        # Update title: "Testing: DynamicEntityTest [5m 23s]"
+        echo "Updating title: phase=$phase elapsed=$elapsed suite=$suite" >> "${MONITOR_DEBUG}"
+        update_terminal_title "$phase" "$elapsed" "" "$suite"
 
         sleep 5
     done
+
+    echo "Monitor exiting at $(date +%s)" >> "${MONITOR_DEBUG}"
 ) &
 MONITOR_PID=$!
 
@@ -288,8 +311,8 @@ fi
 # Stop background monitor by removing flag file
 rm -f "${MONITOR_FLAG}"
 sleep 1
-kill $MONITOR_PID 2>/dev/null
-wait $MONITOR_PID 2>/dev/null
+kill $MONITOR_PID 2>/dev/null || true
+wait $MONITOR_PID 2>/dev/null || true
 
 END_TIME=$(date +%s)
 DURATION=$((END_TIME - START_TIME))
