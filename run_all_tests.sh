@@ -30,15 +30,17 @@ set_terminal_style() {
     printf "\033[44m\033[1;37m%-$(tput cols)s\r  OBP-API TEST RUNNER ACTIVE - ${phase}  \n%-$(tput cols)s\033[0m\n" " " " "
 }
 
-# Update title bar with progress: "Testing: DynamicEntityTest [5m 23s] obp-commons:+38 obp-api:+245"
+# Update title bar with progress: "Testing: DynamicEntityTest - Scenario name [5m 23s]"
 update_terminal_title() {
     local phase="$1"           # Starting, Building, Testing, Complete
     local elapsed="${2:-}"     # Time elapsed (e.g. "5m 23s")
     local counts="${3:-}"      # Module counts (e.g. "obp-commons:+38 obp-api:+245")
     local suite="${4:-}"       # Current test suite name
+    local scenario="${5:-}"    # Current scenario name
 
-    local title="OBP-API Tests ${phase}"
+    local title="OBP-API ${phase}"
     [ -n "$suite" ] && title="${title}: ${suite}"
+    [ -n "$scenario" ] && title="${title} - ${scenario}"
     title="${title}..."
     [ -n "$elapsed" ] && title="${title} [${elapsed}]"
     [ -n "$counts" ] && title="${title} ${counts}"
@@ -204,7 +206,9 @@ log_message "Summary log: ${SUMMARY_LOG}"
 echo ""
 
 # Set Maven options for tests
-export MAVEN_OPTS="-Xss128m -Xms3G -Xmx6G -XX:MaxMetaspaceSize=2G"
+# The --add-opens flags tell Java 17 to allow Kryo serialization library to access
+# the internal java.lang.invoke and java.lang modules, which fixes the InaccessibleObjectException
+export MAVEN_OPTS="-Xss128m -Xms3G -Xmx6G -XX:MaxMetaspaceSize=2G --add-opens java.base/java.lang.invoke=ALL-UNNAMED --add-opens java.base/java.lang=ALL-UNNAMED"
 log_message "${BLUE}Maven Options: ${MAVEN_OPTS}${NC}"
 echo ""
 
@@ -224,6 +228,39 @@ else
         exit 1
     fi
 fi
+
+################################################################################
+# CLEAN METRICS DATABASE
+################################################################################
+
+print_header "Cleaning Metrics Database"
+log_message "${YELLOW}Checking for test database files...${NC}"
+
+# Only delete specific test database files to prevent accidental data loss
+# The test configuration uses test_only_lift_proto.db as the database filename
+TEST_DB_PATTERNS=(
+    "./test_only_lift_proto.db"
+    "./test_only_lift_proto.db.mv.db"
+    "./test_only_lift_proto.db.trace.db"
+    "./obp-api/test_only_lift_proto.db"
+    "./obp-api/test_only_lift_proto.db.mv.db"
+    "./obp-api/test_only_lift_proto.db.trace.db"
+)
+
+FOUND_FILES=false
+for dbfile in "${TEST_DB_PATTERNS[@]}"; do
+    if [ -f "$dbfile" ]; then
+        FOUND_FILES=true
+        rm -f "$dbfile"
+        log_message "  ${GREEN}✓${NC} Deleted: $dbfile"
+    fi
+done
+
+if [ "$FOUND_FILES" = false ]; then
+    log_message "${GREEN}No old test database files found${NC}"
+fi
+
+log_message ""
 
 ################################################################################
 # RUN TESTS
@@ -263,12 +300,21 @@ touch "${MONITOR_FLAG}"
             in_testing=true
         fi
 
-        # Extract current running test suite from recent lines
+        # Extract current running test suite and scenario from recent lines
         suite=""
+        scenario=""
         if $in_testing; then
             # Find the most recent test suite name (pattern like "SomeTest:")
             # Pipe directly to avoid temp file I/O
             suite=$(echo "$recent_lines" | grep -E "Test:" | tail -1 | sed 's/\x1b\[[0-9;]*m//g' | sed 's/:$//' | tr -d '\n\r')
+
+            # Find the most recent scenario name (pattern like "  Scenario: ..." or "- Scenario: ...")
+            scenario=$(echo "$recent_lines" | grep -i "scenario:" | tail -1 | sed 's/\x1b\[[0-9;]*m//g' | sed 's/^[[:space:]]*-*[[:space:]]*//' | sed -E 's/^[Ss]cenario:[[:space:]]*//' | tr -d '\n\r')
+
+            # Truncate scenario if too long (max 50 chars)
+            if [ -n "$scenario" ] && [ ${#scenario} -gt 50 ]; then
+                scenario="${scenario:0:47}..."
+            fi
         fi
 
         # Calculate elapsed time
@@ -277,8 +323,8 @@ touch "${MONITOR_FLAG}"
         seconds=$((duration % 60))
         elapsed=$(printf "%dm %ds" $minutes $seconds)
 
-        # Update title: "Testing: DynamicEntityTest [5m 23s]"
-        update_terminal_title "$phase" "$elapsed" "" "$suite"
+        # Update title: "Testing: DynamicEntityTest - Scenario name [5m 23s]"
+        update_terminal_title "$phase" "$elapsed" "" "$suite" "$scenario"
 
         sleep 5
     done
@@ -305,7 +351,7 @@ DURATION=$((END_TIME - START_TIME))
 DURATION_MIN=$((DURATION / 60))
 DURATION_SEC=$((DURATION % 60))
 
-# Update title with final results (no suite name for Complete phase)
+# Update title with final results (no suite/scenario name for Complete phase)
 FINAL_ELAPSED=$(printf "%dm %ds" $DURATION_MIN $DURATION_SEC)
 # Build final counts with module context
 FINAL_COMMONS=$(sed -n '/Building Open Bank Project Commons/,/Building Open Bank Project API/{/Tests: succeeded/p;}' "${DETAIL_LOG}" 2>/dev/null | grep -oP "succeeded \K\d+" | head -1)
@@ -313,7 +359,7 @@ FINAL_API=$(sed -n '/Building Open Bank Project API/,/OBP Http4s Runner/{/Tests:
 FINAL_COUNTS=""
 [ -n "$FINAL_COMMONS" ] && FINAL_COUNTS="commons:+${FINAL_COMMONS}"
 [ -n "$FINAL_API" ] && FINAL_COUNTS="${FINAL_COUNTS:+${FINAL_COUNTS} }api:+${FINAL_API}"
-update_terminal_title "Complete" "$FINAL_ELAPSED" "$FINAL_COUNTS" ""
+update_terminal_title "Complete" "$FINAL_ELAPSED" "$FINAL_COUNTS" "" ""
 
 ################################################################################
 # GENERATE SUMMARY
