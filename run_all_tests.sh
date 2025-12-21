@@ -178,7 +178,7 @@ display_warning_factors() {
         fi
 
         # Format with count prominence
-        printf "  ${YELLOW}%4d ×${NC} %s\n" "$count" "$message" | tee -a "${SUMMARY_LOG}" > /dev/tty
+        printf "  ${YELLOW}%4d x${NC} %s\n" "$count" "$message" | tee -a "${SUMMARY_LOG}" > /dev/tty
 
         displayed=$((displayed + 1))
     done < "${analysis_file}"
@@ -252,7 +252,7 @@ for dbfile in "${TEST_DB_PATTERNS[@]}"; do
     if [ -f "$dbfile" ]; then
         FOUND_FILES=true
         rm -f "$dbfile"
-        log_message "  ${GREEN}✓${NC} Deleted: $dbfile"
+        log_message "  ${GREEN}[OK]${NC} Deleted: $dbfile"
     fi
 done
 
