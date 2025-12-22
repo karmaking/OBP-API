@@ -72,7 +72,7 @@ trait APIMethods510 {
 
   val Implementations5_1_0 = new Implementations510()
 
-  class Implementations510 {
+  class Implementations510 extends Helper.MdcLoggable {
 
     val implementedInApiVersion: ScannedApiVersion = ApiVersion.v5_1_0
 
@@ -3377,7 +3377,7 @@ trait APIMethods510 {
          |
          |The `client_certificate` field provides enhanced security through X.509 certificate validation.
          |
-         |**IMPORTANT SECURITY NOTE:** 
+         |**IMPORTANT SECURITY NOTE:**
          |- **This endpoint does NOT validate the certificate at creation time** - any certificate can be provided
          |- The certificate is simply stored with the consumer record without checking if it's from a trusted CA
          |- For PSD2/Berlin Group compliance with certificate validation, use the **Dynamic Registration** endpoint instead
@@ -3834,8 +3834,25 @@ trait APIMethods510 {
         cc => implicit val ec = EndpointContext(Some(cc))
           for {
             httpParams <- NewStyle.function.extractHttpParamsFromUrl(cc.url)
+            _ = logger.info(s"========== CONSUMER QUERY DEBUG START ==========")
+            _ = logger.info(s"[CONSUMER-QUERY] Full URL: ${cc.url}")
+            _ = logger.info(s"[CONSUMER-QUERY] HTTP Params: $httpParams")
             (obpQueryParams, callContext) <- createQueriesByHttpParamsFuture(httpParams, Some(cc))
+            _ = logger.info(s"[CONSUMER-QUERY] OBP Query Params: $obpQueryParams")
+            _ = obpQueryParams.foreach(param => logger.info(s"[CONSUMER-QUERY]   - Param: $param"))
+            totalCount <- Future(Consumer.count())
+            _ = logger.info(s"[CONSUMER-QUERY] Total consumers in database: $totalCount")
+            allConsumers <- Future(Consumer.findAll())
+            consumersWithNullDate = allConsumers.filter(c => c.createdAt.get == null)
+            _ = logger.info(s"[CONSUMER-QUERY] Consumers with NULL createdAt: ${consumersWithNullDate.length}")
+            _ = if (consumersWithNullDate.nonEmpty) {
+              consumersWithNullDate.foreach(c => logger.info(s"[CONSUMER-QUERY]   - NULL createdAt: Consumer ID: ${c.id.get}, Name: ${c.name.get}"))
+            }
             consumers <- Consumers.consumers.vend.getConsumersFuture(obpQueryParams, callContext)
+            _ = logger.info(s"[CONSUMER-QUERY] Consumers returned from query: ${consumers.length}")
+            _ = consumers.foreach(c => logger.info(s"[CONSUMER-QUERY]   - Consumer ID: ${c.id.get}, Name: ${c.name.get}, CreatedAt: ${c.createdAt.get}"))
+            _ = logger.info(s"[CONSUMER-QUERY] RESULT: Returned ${consumers.length} out of $totalCount total consumers")
+            _ = logger.info(s"========== CONSUMER QUERY DEBUG END ==========")
           } yield {
             (JSONFactory510.createConsumersJson(consumers), HttpCode.`200`(callContext))
           }
