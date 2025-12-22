@@ -224,6 +224,41 @@ else
 fi
 
 ################################################################################
+# CHECK AND CLEANUP TEST SERVER PORTS
+# Port 8018 is used by the embedded Jetty test server (configured in test.default.props)
+################################################################################
+
+print_header "Checking Test Server Ports"
+log_message "Checking if test server port 8018 is available..."
+
+# Check if port 8018 is in use
+if lsof -i :8018 >/dev/null 2>&1; then
+    log_message "[WARNING] Port 8018 is in use - attempting to kill process"
+    # Try to kill the process using the port
+    PORT_PID=$(lsof -t -i :8018 2>/dev/null)
+    if [ -n "$PORT_PID" ]; then
+        kill -9 $PORT_PID 2>/dev/null || true
+        sleep 2
+        log_message "[OK] Killed process $PORT_PID using port 8018"
+    fi
+else
+    log_message "[OK] Port 8018 is available"
+fi
+
+# Also check for any stale Java test processes
+STALE_TEST_PROCS=$(ps aux | grep -E "TestServer|ScalaTest.*obp-api" | grep -v grep | awk '{print $2}' || true)
+if [ -n "$STALE_TEST_PROCS" ]; then
+    log_message "[WARNING] Found stale test processes - cleaning up"
+    echo "$STALE_TEST_PROCS" | xargs kill -9 2>/dev/null || true
+    sleep 2
+    log_message "[OK] Cleaned up stale test processes"
+else
+    log_message "[OK] No stale test processes found"
+fi
+
+log_message ""
+
+################################################################################
 # CLEAN METRICS DATABASE
 ################################################################################
 
