@@ -67,7 +67,7 @@ trait DefaultProvider extends Provider {
   val requestTokenUrl = baseUrl + "/oauth/initiate"
   val accessTokenUrl = baseUrl + "/oauth/token"
   val authorizeUrl = baseUrl + "/oauth/authorize"
-  val signupUrl = Some(baseUrl + "/user_mgt/sign_up")
+  val signupUrl = Some(APIUtil.getPropsValue("webui_obp_portal_url", "http://localhost:5174") + "/register")
 
   lazy val oAuthProvider : OAuthProvider = new DefaultOAuthProvider(requestTokenUrl, accessTokenUrl, authorizeUrl)
 

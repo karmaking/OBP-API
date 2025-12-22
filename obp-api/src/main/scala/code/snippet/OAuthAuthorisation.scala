@@ -46,6 +46,7 @@ import net.liftweb.http.S
 import net.liftweb.util.Helpers._
 import net.liftweb.util.{CssSel, Helpers, Props}
 import code.api.oauth1a.OauthParams._
+import code.webuiprops.MappedWebUiPropsProvider.getWebUiPropsValue
 
 import scala.xml.NodeSeq
 
@@ -150,8 +151,12 @@ object OAuthAuthorisation {
 
                   href getOrElse "#"
                 } &
-                ".signup [href]" #>
-                  AuthUser.signUpPath.foldLeft("")(_ + "/" + _)
+                ".signup [href]" #> {
+                  val portalUrl = getWebUiPropsValue("webui_obp_portal_url", "http://localhost:5174")
+                  s"$portalUrl/register"
+                } &
+                ".signup [target]" #> "_blank" &
+                ".signup [rel]" #> "noopener"
             }
           }
           case _ => error("Application not found")

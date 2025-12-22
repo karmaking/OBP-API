@@ -229,7 +229,7 @@ class AuthUser extends MegaProtoUser[AuthUser] with CreatedUpdated with MdcLogga
 
   override lazy val password = new MyPasswordNew
   
-  lazy val signupPasswordRepeatText = getWebUiPropsValue("webui_signup_body_password_repeat_text", S.?("repeat"))
+  // Removed signup password repeat text - not needed with OBP Portal redirect
  
   class MyPasswordNew extends MappedPassword(this) {
     lazy val preFilledPassword = if (APIUtil.getPropsAsBoolValue("allow_pre_filled_password", true)) {get.toString} else ""
@@ -238,13 +238,8 @@ class AuthUser extends MegaProtoUser[AuthUser] with CreatedUpdated with MdcLogga
         Full(
           <span>
             {appendFieldId(<input id="textPassword" aria-labelledby="Password" aria-describedby={uniqueFieldId.getOrElse("")} type={formInputType} name={funcName} value={preFilledPassword}/> ) }
-            <div id="signup-error" class="alert alert-danger hide">
+            <div id="password-error" class="alert alert-danger hide">
               <span data-lift={s"Msg?id=${uniqueFieldId.getOrElse("")}&errorClass=error"}/>
-            </div>
-            <div id ="repeat-password">{signupPasswordRepeatText}</div>
-            <input id="textPasswordRepeat" aria-labelledby="Password Repeat" aria-describedby={uniqueFieldId.getOrElse("")}  type={formInputType} name={funcName} value={preFilledPassword}/>
-            <div id="signup-error" class="alert alert-danger hide">
-              <span data-lift={s"Msg?id=${uniqueFieldId.getOrElse("")}_repeat&errorClass=error"}/>
             </div>
         </span>)
       }
@@ -429,7 +424,6 @@ import net.liftweb.util.Helpers._
   override def screenWrap = Full(<lift:surround with="default" at="content"><lift:bind /></lift:surround>)
   // define the order fields will appear in forms and output
   override def fieldOrder = List(id, firstName, lastName, email, username, password, provider)
-  override def signupFields = List(firstName, lastName, email, username, password)
 
   // To force validation of email addresses set this to false (default as of 29 June 2021)
   override def skipEmailValidation = APIUtil.getPropsAsBoolValue("authUser.skipEmailValidation", false)
@@ -698,28 +692,7 @@ import net.liftweb.util.Helpers._
     case _ => S.error(S.?("invalid.validation.link")); S.redirectTo(homePage)
   }
 
-  override def actionsAfterSignup(theUser: TheUserType, func: () => Nothing): Nothing = {
-    theUser.setValidated(skipEmailValidation).resetUniqueId()
-    theUser.save
-    val privacyPolicyValue: String = getWebUiPropsValue("webui_privacy_policy", "")
-    val termsAndConditionsValue: String = getWebUiPropsValue("webui_terms_and_conditions", "")
-    // User Agreement table
-    UserAgreementProvider.userAgreementProvider.vend.createUserAgreement(
-      theUser.user.foreign.map(_.userId).getOrElse(""), "privacy_conditions", privacyPolicyValue)
-    UserAgreementProvider.userAgreementProvider.vend.createUserAgreement(
-      theUser.user.foreign.map(_.userId).getOrElse(""), "terms_and_conditions", termsAndConditionsValue)
-    if (!skipEmailValidation) {
-      sendValidationEmail(theUser)
-      S.notice(S.?("sign.up.message"))
-      func()
-    } else {
-      grantDefaultEntitlementsToAuthUser(theUser)
-      logUserIn(theUser, () => {
-        S.notice(S.?("welcome"))
-        func()
-      })
-    }
-  }
+
   /**
    * Set this to redirect to a certain page after a failed login
    */
@@ -728,87 +701,9 @@ import net.liftweb.util.Helpers._
   }
 
 
-  def agreeTermsDiv = {
-    val webUi = new WebUI
-    val webUiPropsValue = getWebUiPropsValue("webui_terms_and_conditions", "")
-    val termsAndConditionsCheckboxTitle = Helper.i18n("terms_and_conditions_checkbox_text", Some("I agree to the above Terms and Conditions"))
-    val termsAndConditionsCheckboxLabel = Helper.i18n("terms_and_conditions_checkbox_label", Some("Terms and Conditions"))
-    val agreeTermsHtml = s"""<hr>
-                |                        <div class="form-group" id="terms-and-conditions-div" onclick="enableDisableButton()">
-                |                            <details open style="cursor:s-resize;">
-                |                                <summary style="display:list-item;"><a class="api_group_name">$termsAndConditionsCheckboxLabel</a></summary>
-                |                                <div id="terms-and-conditions-page">${webUi.makeHtml(webUiPropsValue)}</div>
-                |                            </details>
-                |                            <input type="checkbox" class="form-check-input" id="terms_checkbox" >
-                |                            <label id="terms_checkbox_value" class="form-check-label" for="terms_checkbox">$termsAndConditionsCheckboxTitle</label>
-                |                        </div>
-                |                        """.stripMargin
-
-    scala.xml.Unparsed(agreeTermsHtml)
-  }
-
-  def legalNoticeDiv = {
-    val agreeTermsHtml = getWebUiPropsValue("webui_legal_notice_html_text", "")
-    if(agreeTermsHtml.isEmpty){
-      s""
-    } else{
-      scala.xml.Unparsed(s"""$agreeTermsHtml""")
-    }
-  }
-
-  def agreePrivacyPolicy = {
-    val webUi = new WebUI
-    val privacyPolicyCheckboxText = Helper.i18n("privacy_policy_checkbox_text", Some("I agree to the above Privacy Policy"))
-    val privacyPolicyCheckboxLabel = Helper.i18n("privacy_policy_checkbox_label", Some("Privacy Policy"))
-    val webUiPropsValue = getWebUiPropsValue("webui_privacy_policy", "")
-    val agreePrivacyPolicy = s"""<hr>
-                           |                        <div class="form-group" id="privacy-conditions-div" onclick="enableDisableButton()">
-                           |                            <details open style="cursor:s-resize;">
-                           |                                <summary style="display:list-item;"><a class="api_group_name">$privacyPolicyCheckboxLabel</a></summary>
-                           |                                <div id="privacy-policy-page">${webUi.makeHtml(webUiPropsValue)}</div>
-                           |                            </details>
-                           |                            <input id="privacy_checkbox" type="checkbox" class="form-check-input">
-                           |                            <label class="form-check-label" for="privacy_checkbox">$privacyPolicyCheckboxText</label>
-                           |                        </div>
-                           |                        <hr>""".stripMargin
-
-    scala.xml.Unparsed(agreePrivacyPolicy)
-  }
-  def enableDisableSignUpButton = {
-    val javaScriptCode = """<script>
-                               |                function enableDisableButton() {
-                               |                  var checkBox = document.getElementById("terms-and-conditions-div").querySelector("input[type=checkbox]");
-                               |                  var checkBox2 = document.getElementById("privacy-conditions-div").querySelector("input[type=checkbox]");
-                               |                  var button = document.getElementById("submit-button");
-                               |                  if (checkBox.checked == true && checkBox2.checked == true){
-                               |                    button.disabled = false;
-                               |                  } else {
-                               |                     button.disabled = true;
-                               |                  }
-                               |                }
-                               |                </script>""".stripMargin
-
-    scala.xml.Unparsed(javaScriptCode)
-  }
-
-  def signupFormTitle = getWebUiPropsValue("webui_signup_form_title_text", S.?("sign.up"))
-
-  override def signupXhtml (user:AuthUser) =  {
-    <div id="signup" tabindex="-1">
-      <form method="post" action={ObpS.uriAndQueryString.getOrElse(ObpS.uri)}>
-          <h1>{signupFormTitle}</h1>
-          {legalNoticeDiv}
-          <div id="signup-general-error" class="alert alert-danger hide"><span data-lift="Msg?id=error"/></div>
-          {localForm(user, false, signupFields)}
-          {agreeTermsDiv}
-          {agreePrivacyPolicy}
-          <div id="signup-submit">
-            <input onmouseover="enableDisableButton()" onfocus="enableDisableButton()" disabled="true" id="submit-button" type="submit" class="btn btn-danger"/>
-          </div>
-          {enableDisableSignUpButton}
-      </form>
-    </div>
-  }
+  // Removed signup-related methods: agreeTermsDiv, legalNoticeDiv, agreePrivacyPolicy
+  // These were only used in signup forms which now redirect to OBP Portal
+  // Signup functionality removed - users are directed to OBP Portal for registration
 
 
   override def localForm(user: TheUserType, ignorePassword: Boolean, fields: List[FieldPointerType]): NodeSeq = {
@@ -818,18 +713,11 @@ import net.liftweb.util.Helpers._
       if field.show_? && (!ignorePassword || !pointer.isPasswordField_?)
       form <- field.toForm.toList
     } yield {
-      if(field.uniqueFieldId.getOrElse("") == "authuser_password") {
-        <div class="form-group">
-          <label>{field.displayName}</label>
-          {form}
-        </div>
-      } else {
-        <div class="form-group">
-          <label>{field.displayName}</label>
-          {form}
-          <div id="signup-error" class="alert alert-danger hide"><span data-lift={s"Msg?id=${field.uniqueFieldId.getOrElse("")}&errorClass=error"}/></div>
-        </div>
-      }
+      <div class="form-group">
+        <label>{field.displayName}</label>
+        {form}
+        <div id="form-error" class="alert alert-danger hide"><span data-lift={s"Msg?id=${field.uniqueFieldId.getOrElse("")}&errorClass=error"}/></div>
+      </div>
     }
 
   }
@@ -1610,67 +1498,8 @@ def restoreSomeSessions(): Unit = {
     val usernames: List[String] = this.getResourceUsersByEmail(email).map(_.user.name)
     findAll(ByList(this.username, usernames))
   }
-  def signupSubmitButtonValue() = getWebUiPropsValue("webui_signup_form_submit_button_value", S.?("sign.up"))
 
-  //overridden to allow redirect to loginRedirect after signup. This is mostly to allow
-  // loginFirst menu items to work if the user doesn't have an account. Without this,
-  // if a user tries to access a logged-in only page, and then signs up, they don't get redirected
-  // back to the proper page.
-  override def signup = {
-    val theUser: TheUserType = mutateUserOnSignup(createNewUserInstance())
-    val theName = signUpPath.mkString("")
 
-    //Check the internal redirect, in case for open redirect issue.
-    // variable redir is from loginRedirect, it is set-up in OAuthAuthorisation.scala as following code:
-    // val currentUrl = ObpS.uriAndQueryString.getOrElse("/")
-    // AuthUser.loginRedirect.set(Full(Helpers.appendParams(currentUrl, List((LogUserOutParam, "false")))))
-    val loginRedirectSave = loginRedirect.is
-
-    def testSignup() {
-      validateSignup(theUser) match {
-        case Nil =>
-          //here we check loginRedirectSave (different from implementation in super class)
-          val redir = loginRedirectSave match {
-            case Full(url) =>
-              loginRedirect(Empty)
-              url
-            case _ =>
-              //if the register page url (user_mgt/sign_up?after-signup=link-to-customer) contains the parameter 
-              //after-signup=link-to-customer,then it will redirect to the on boarding customer page.
-              ObpS.param("after-signup") match { 
-                case url if (url.equals("link-to-customer")) =>
-                  "/add-user-auth-context-update-request"
-                case _ =>
-                  homePage
-            }
-          }
-          if (Helper.isValidInternalRedirectUrl(redir.toString)) {
-            actionsAfterSignup(theUser, () => {
-              S.redirectTo(redir)
-            })
-          } else {
-            S.error(S.?(ErrorMessages.InvalidInternalRedirectUrl))
-            logger.info(ErrorMessages.InvalidInternalRedirectUrl + loginRedirect.get)
-          }
-
-        case xs =>
-          xs.foreach{
-            e => S.error(e.field.uniqueFieldId.openOrThrowException("There is no uniqueFieldId."), e.msg)
-          }
-          signupFunc(Full(innerSignup _))
-      }
-    }
-
-    def innerSignup = {
-      val bind = "type=submit" #> signupSubmitButton(signupSubmitButtonValue(), testSignup _)
-      bind(signupXhtml(theUser))
-    }
-    
-    if(APIUtil.getPropsAsBoolValue("user_invitation.mandatory", false)) 
-      S.redirectTo("/user-invitation-info") 
-    else 
-      innerSignup
-  }
 
   def scrambleAuthUser(userPrimaryKey: UserPrimaryKey): Box[Boolean] = tryo {
     AuthUser.find(By(AuthUser.user, userPrimaryKey.value)) match {
