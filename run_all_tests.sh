@@ -11,10 +11,21 @@
 #   5. Saves detailed log and summary to test-results/
 #   6. Restores terminal to normal when done
 #
-# Usage: ./run_all_tests.sh
+# Usage:
+#   ./run_all_tests.sh              - Run full test suite
+#   ./run_all_tests.sh --summary-only - Regenerate summary from existing log
 ################################################################################
 
 set -e
+
+################################################################################
+# PARSE COMMAND LINE ARGUMENTS
+################################################################################
+
+SUMMARY_ONLY=false
+if [ "$1" = "--summary-only" ]; then
+    SUMMARY_ONLY=true
+fi
 
 ################################################################################
 # TERMINAL STYLING FUNCTIONS
@@ -79,31 +90,46 @@ LOG_DIR="test-results"
 DETAIL_LOG="${LOG_DIR}/last_run.log"        # Full Maven output
 SUMMARY_LOG="${LOG_DIR}/last_run_summary.log"  # Summary only
 
-
 mkdir -p "${LOG_DIR}"
 
-# Delete old log files and stale flag files from previous run
-echo "Cleaning up old files..."
-if [ -f "${DETAIL_LOG}" ]; then
-    rm -f "${DETAIL_LOG}"
-    echo "  - Removed old detail log"
-fi
-if [ -f "${SUMMARY_LOG}" ]; then
-    rm -f "${SUMMARY_LOG}"
-    echo "  - Removed old summary log"
-fi
+# If summary-only mode, skip to summary generation
+if [ "$SUMMARY_ONLY" = true ]; then
+    if [ ! -f "${DETAIL_LOG}" ]; then
+        echo "ERROR: No log file found at ${DETAIL_LOG}"
+        echo "Please run tests first without --summary-only flag"
+        exit 1
+    fi
+    echo "Regenerating summary from existing log: ${DETAIL_LOG}"
+    # Skip cleanup and jump to summary generation
+    START_TIME=0
+    END_TIME=0
+    DURATION=0
+    DURATION_MIN=0
+    DURATION_SEC=0
+else
+    # Delete old log files and stale flag files from previous run
+    echo "Cleaning up old files..."
+    if [ -f "${DETAIL_LOG}" ]; then
+        rm -f "${DETAIL_LOG}"
+        echo "  - Removed old detail log"
+    fi
+    if [ -f "${SUMMARY_LOG}" ]; then
+        rm -f "${SUMMARY_LOG}"
+        echo "  - Removed old summary log"
+    fi
 if [ -f "${LOG_DIR}/monitor.flag" ]; then
     rm -f "${LOG_DIR}/monitor.flag"
     echo "  - Removed stale monitor flag"
 fi
-if [ -f "${LOG_DIR}/warning_analysis.tmp" ]; then
-    rm -f "${LOG_DIR}/warning_analysis.tmp"
-    echo "  - Removed stale warning analysis"
-fi
-if [ -f "${LOG_DIR}/recent_lines.tmp" ]; then
-    rm -f "${LOG_DIR}/recent_lines.tmp"
-    echo "  - Removed stale temp file"
-fi
+    if [ -f "${LOG_DIR}/warning_analysis.tmp" ]; then
+        rm -f "${LOG_DIR}/warning_analysis.tmp"
+        echo "  - Removed stale warning analysis"
+    fi
+    if [ -f "${LOG_DIR}/recent_lines.tmp" ]; then
+        rm -f "${LOG_DIR}/recent_lines.tmp"
+        echo "  - Removed stale temp file"
+    fi
+fi  # End of if [ "$SUMMARY_ONLY" = true ]
 
 ################################################################################
 # HELPER FUNCTIONS
@@ -185,6 +211,130 @@ display_warning_factors() {
     # Clean up temp file
     rm -f "${analysis_file}"
 }
+
+################################################################################
+# GENERATE SUMMARY FUNCTION (DRY)
+################################################################################
+
+generate_summary() {
+    local detail_log="$1"
+    local summary_log="$2"
+    local start_time="${3:-0}"
+    local end_time="${4:-0}"
+
+    # Calculate duration
+    local duration=$((end_time - start_time))
+    local duration_min=$((duration / 60))
+    local duration_sec=$((duration % 60))
+
+    # If no timing info (summary-only mode), extract from log
+    if [ $duration -eq 0 ] && grep -q "Total time:" "$detail_log"; then
+        local time_str=$(grep "Total time:" "$detail_log" | tail -1)
+        duration_min=$(echo "$time_str" | grep -oP '\d+(?= min)' || echo "0")
+        duration_sec=$(echo "$time_str" | grep -oP '\d+(?=\.\d+ s)' || echo "0")
+    fi
+
+    print_header "Test Results Summary"
+
+    # Extract test statistics from ScalaTest output (with UNKNOWN fallback if extraction fails)
+    # ScalaTest outputs across multiple lines:
+    #   Run completed in X seconds.
+    #   Total number of tests run: N
+    #   Suites: completed M, aborted 0
+    #   Tests: succeeded N, failed 0, canceled 0, ignored 0, pending 0
+    #   All tests passed.
+    # We need to extract the stats from the last test run (in case there are multiple modules)
+    SCALATEST_SECTION=$(grep -A 4 "Run completed" "${detail_log}" | tail -5)
+    if [ -n "$SCALATEST_SECTION" ]; then
+        TOTAL_TESTS=$(echo "$SCALATEST_SECTION" | grep -oP "Total number of tests run: \K\d+" || echo "UNKNOWN")
+        SUCCEEDED=$(echo "$SCALATEST_SECTION" | grep -oP "succeeded \K\d+" || echo "UNKNOWN")
+        FAILED=$(echo "$SCALATEST_SECTION" | grep -oP "failed \K\d+" || echo "UNKNOWN")
+        ERRORS=$(echo "$SCALATEST_SECTION" | grep -oP "errors \K\d+" || echo "0")
+        SKIPPED=$(echo "$SCALATEST_SECTION" | grep -oP "ignored \K\d+" || echo "UNKNOWN")
+    else
+        TOTAL_TESTS="UNKNOWN"
+        SUCCEEDED="UNKNOWN"
+        FAILED="UNKNOWN"
+        ERRORS="0"
+        SKIPPED="UNKNOWN"
+    fi
+    WARNINGS=$(grep -c "WARNING" "${detail_log}" || echo "UNKNOWN")
+
+    # Determine build status
+    if grep -q "BUILD SUCCESS" "${detail_log}"; then
+        BUILD_STATUS="SUCCESS"
+        BUILD_COLOR=""
+    elif grep -q "BUILD FAILURE" "${detail_log}"; then
+        BUILD_STATUS="FAILURE"
+        BUILD_COLOR=""
+    else
+        BUILD_STATUS="UNKNOWN"
+        BUILD_COLOR=""
+    fi
+
+    # Print summary
+    log_message "Test Run Summary"
+    log_message "================"
+    log_message "Timestamp:     $(date)"
+    log_message "Duration:      ${duration_min}m ${duration_sec}s"
+    log_message "Build Status:  ${BUILD_STATUS}"
+    log_message ""
+    log_message "Test Statistics:"
+    log_message "  Total:       ${TOTAL_TESTS}"
+    log_message "  Succeeded:   ${SUCCEEDED}"
+    log_message "  Failed:      ${FAILED}"
+    log_message "  Errors:      ${ERRORS}"
+    log_message "  Skipped:     ${SKIPPED}"
+    log_message "  Warnings:    ${WARNINGS}"
+    log_message ""
+
+    # Analyze and display warning factors if warnings exist
+    if [ "${WARNINGS}" != "0" ] && [ "${WARNINGS}" != "UNKNOWN" ]; then
+        warning_analysis=$(analyze_warnings "${detail_log}")
+        display_warning_factors "${warning_analysis}" 10
+        log_message ""
+    fi
+
+    # Show failed tests if any (only actual test failures, not application ERROR logs)
+    if [ "${FAILED}" != "0" ] && [ "${FAILED}" != "UNKNOWN" ]; then
+        log_message "Failed Tests:"
+        # Look for ScalaTest failure markers, not application ERROR logs
+        grep -E "\*\*\* FAILED \*\*\*|\*\*\* RUN ABORTED \*\*\*" "${detail_log}" | head -50 >> "${summary_log}"
+        log_message ""
+    elif [ "${ERRORS}" != "0" ] && [ "${ERRORS}" != "UNKNOWN" ]; then
+        log_message "Test Errors:"
+        grep -E "\*\*\* FAILED \*\*\*|\*\*\* RUN ABORTED \*\*\*" "${detail_log}" | head -50 >> "${summary_log}"
+        log_message ""
+    fi
+
+    # Final result
+    print_header "Test Run Complete"
+
+    if [ "${BUILD_STATUS}" = "SUCCESS" ] && [ "${FAILED}" = "0" ] && [ "${ERRORS}" = "0" ]; then
+        log_message "[PASS] All tests passed!"
+        return 0
+    else
+        log_message "[FAIL] Tests failed"
+        return 1
+    fi
+}
+
+################################################################################
+# SUMMARY-ONLY MODE
+################################################################################
+
+if [ "$SUMMARY_ONLY" = true ]; then
+    # Just regenerate the summary and exit
+    rm -f "${SUMMARY_LOG}"
+    if generate_summary "${DETAIL_LOG}" "${SUMMARY_LOG}" 0 0; then
+        log_message ""
+        log_message "Summary regenerated:"
+        log_message "  ${SUMMARY_LOG}"
+        exit 0
+    else
+        exit 1
+    fi
+fi
 
 ################################################################################
 # START TEST RUN
@@ -391,72 +541,12 @@ FINAL_COUNTS=""
 update_terminal_title "Complete" "$FINAL_ELAPSED" "$FINAL_COUNTS" "" ""
 
 ################################################################################
-# GENERATE SUMMARY
+# GENERATE SUMMARY (using DRY function)
 ################################################################################
 
-print_header "Test Results Summary"
-
-# Extract test statistics (with UNKNOWN fallback if extraction fails)
-TOTAL_TESTS=$(grep -E "Total number of tests run:|Tests run:" "${DETAIL_LOG}" | tail -1 | grep -oP '\d+' | head -1 || echo "UNKNOWN")
-SUCCEEDED=$(grep -oP "succeeded \K\d+" "${DETAIL_LOG}" | tail -1 || echo "UNKNOWN")
-FAILED=$(grep -oP "failed \K\d+" "${DETAIL_LOG}" | tail -1 || echo "UNKNOWN")
-ERRORS=$(grep -oP "errors \K\d+" "${DETAIL_LOG}" | tail -1 || echo "UNKNOWN")
-SKIPPED=$(grep -oP "(skipped|ignored) \K\d+" "${DETAIL_LOG}" | tail -1 || echo "UNKNOWN")
-WARNINGS=$(grep -c "WARNING" "${DETAIL_LOG}" || echo "UNKNOWN")
-
-# Determine build status
-if grep -q "BUILD SUCCESS" "${DETAIL_LOG}"; then
-    BUILD_STATUS="SUCCESS"
-    BUILD_COLOR=""
-elif grep -q "BUILD FAILURE" "${DETAIL_LOG}"; then
-    BUILD_STATUS="FAILURE"
-    BUILD_COLOR=""
-else
-    BUILD_STATUS="UNKNOWN"
-    BUILD_COLOR=""
-fi
-
-# Print summary
-log_message "Test Run Summary"
-log_message "================"
-log_message "Timestamp:     $(date)"
-log_message "Duration:      ${DURATION_MIN}m ${DURATION_SEC}s"
-log_message "Build Status:  ${BUILD_STATUS}"
-log_message ""
-log_message "Test Statistics:"
-log_message "  Total:       ${TOTAL_TESTS}"
-log_message "  Succeeded:   ${SUCCEEDED}"
-log_message "  Failed:      ${FAILED}"
-log_message "  Errors:      ${ERRORS}"
-log_message "  Skipped:     ${SKIPPED}"
-log_message "  Warnings:    ${WARNINGS}"
-log_message ""
-
-# Analyze and display warning factors if warnings exist
-if [ "${WARNINGS}" != "0" ] && [ "${WARNINGS}" != "UNKNOWN" ]; then
-    warning_analysis=$(analyze_warnings "${DETAIL_LOG}")
-    display_warning_factors "${warning_analysis}" 10
-    log_message ""
-fi
-
-# Show failed tests if any
-if [ "${FAILED}" != "0" ] || [ "${ERRORS}" != "0" ]; then
-    log_message "Failed Tests:"
-    grep -A 5 "FAILED\|ERROR" "${DETAIL_LOG}" | head -50 >> "${SUMMARY_LOG}"
-    log_message ""
-fi
-
-################################################################################
-# FINAL RESULT
-################################################################################
-
-print_header "Test Run Complete"
-
-if [ "${BUILD_STATUS}" = "SUCCESS" ] && [ "${FAILED}" = "0" ] && [ "${ERRORS}" = "0" ]; then
-    log_message "[PASS] All tests passed!"
+if generate_summary "${DETAIL_LOG}" "${SUMMARY_LOG}" "$START_TIME" "$END_TIME"; then
     EXIT_CODE=0
 else
-    log_message "[FAIL] Tests failed"
     EXIT_CODE=1
 fi
 
