@@ -14,59 +14,87 @@ import code.util.Helper.MdcLoggable
 
 import scala.collection.mutable.ArrayBuffer
 
+// Test case classes for JSON escaping tests
+case class TestWithQuotes(name: String, description: String)
+case class TestWithNewlines(text: String)
+case class AbacRule(rule: String)
+
 class SwaggerFactoryUnitTest extends V140ServerSetup with MdcLoggable {
 
   feature("Unit tests for the translateEntity method") {
     scenario("Test the $colon faild case") {
-      val translateCaseClassToSwaggerFormatString: String = SwaggerJSONFactory.translateEntity(SwaggerDefinitionsJSON.license)
+      val translateCaseClassToSwaggerFormatString: String =
+        SwaggerJSONFactory.translateEntity(SwaggerDefinitionsJSON.license)
       logger.debug("{" + translateCaseClassToSwaggerFormatString + "}")
       translateCaseClassToSwaggerFormatString should not include ("$colon")
     }
     scenario("Test the the List[Case Class] in translateEntity function") {
-      val translateCaseClassToSwaggerFormatString: String = SwaggerJSONFactory.translateEntity(SwaggerDefinitionsJSON.postCounterpartyJSON)
+      val translateCaseClassToSwaggerFormatString: String =
+        SwaggerJSONFactory.translateEntity(
+          SwaggerDefinitionsJSON.postCounterpartyJSON
+        )
       logger.debug("{" + translateCaseClassToSwaggerFormatString + "}")
       translateCaseClassToSwaggerFormatString should not include ("$colon")
     }
 
     scenario("Test `null` in translateEntity function") {
-      val translateCaseClassToSwaggerFormatString: String = SwaggerJSONFactory.translateEntity(SwaggerDefinitionsJSON.counterpartyMetadataJson)
+      val translateCaseClassToSwaggerFormatString: String =
+        SwaggerJSONFactory.translateEntity(
+          SwaggerDefinitionsJSON.counterpartyMetadataJson
+        )
       logger.debug("{" + translateCaseClassToSwaggerFormatString + "}")
       translateCaseClassToSwaggerFormatString should not include ("$colon")
     }
 
-    scenario("Test `SecondaryIdentification: Option[String] = None,` in translateEntity function") {
-      val translateCaseClassToSwaggerFormatString: String = SwaggerJSONFactory.translateEntity(SwaggerDefinitionsJSON.accountInnerJsonUKOpenBanking_v200.copy(SecondaryIdentification = Some("1111")))
+    scenario(
+      "Test `SecondaryIdentification: Option[String] = None,` in translateEntity function"
+    ) {
+      val translateCaseClassToSwaggerFormatString: String =
+        SwaggerJSONFactory.translateEntity(
+          SwaggerDefinitionsJSON.accountInnerJsonUKOpenBanking_v200
+            .copy(SecondaryIdentification = Some("1111"))
+        )
       logger.debug("{" + translateCaseClassToSwaggerFormatString + "}")
-      //This optional type should be "1111", should not contain Some(1111)
+      // This optional type should be "1111", should not contain Some(1111)
       translateCaseClassToSwaggerFormatString should not include ("""Some(1111)""")
     }
 
-    scenario("Test `product_attributes = Some(List(productAttributeResponseJson))` in translateEntity function") {
-      val translateCaseClassToSwaggerFormatString: String = SwaggerJSONFactory.translateEntity(SwaggerDefinitionsJSON.productJsonV310)
+    scenario(
+      "Test `product_attributes = Some(List(productAttributeResponseJson))` in translateEntity function"
+    ) {
+      val translateCaseClassToSwaggerFormatString: String =
+        SwaggerJSONFactory.translateEntity(
+          SwaggerDefinitionsJSON.productJsonV310
+        )
       logger.debug("{" + translateCaseClassToSwaggerFormatString + "}")
       translateCaseClassToSwaggerFormatString should not include ("""/definitions/scala.Some""")
       translateCaseClassToSwaggerFormatString should not include ("""$colon""")
     }
-    
+
     scenario("Test `enumeration` for translateEntity function") {
-      val translateCaseClassToSwaggerFormatString: String = SwaggerJSONFactory.translateEntity(SwaggerDefinitionsJSON.cardAttributeCommons)
+      val translateCaseClassToSwaggerFormatString: String =
+        SwaggerJSONFactory.translateEntity(
+          SwaggerDefinitionsJSON.cardAttributeCommons
+        )
       logger.debug("{" + translateCaseClassToSwaggerFormatString + "}")
       translateCaseClassToSwaggerFormatString should not include ("""/definitions/Val""")
     }
   }
-  feature("Test all V300, V220 and V210, exampleRequestBodies and successResponseBodies and all the case classes in SwaggerDefinitionsJSON") {
+  feature(
+    "Test all V300, V220 and V210, exampleRequestBodies and successResponseBodies and all the case classes in SwaggerDefinitionsJSON"
+  ) {
     scenario("Test all the case classes") {
       val resourceDocList: ArrayBuffer[ResourceDoc] = ArrayBuffer.empty
-        OBPAPI6_0_0.allResourceDocs ++
-        OBPAPI5_1_0.allResourceDocs ++ 
-        OBPAPI5_0_0.allResourceDocs ++ 
-        OBPAPI4_0_0.allResourceDocs ++ 
-        OBPAPI3_1_0.allResourceDocs ++ 
-        OBPAPI3_0_0.allResourceDocs ++ 
-        OBPAPI2_2_0.allResourceDocs ++ 
+      OBPAPI6_0_0.allResourceDocs ++
+        OBPAPI5_1_0.allResourceDocs ++
+        OBPAPI5_0_0.allResourceDocs ++
+        OBPAPI4_0_0.allResourceDocs ++
+        OBPAPI3_1_0.allResourceDocs ++
+        OBPAPI3_0_0.allResourceDocs ++
+        OBPAPI2_2_0.allResourceDocs ++
         OBPAPI2_1_0.allResourceDocs
 
-      //Translate every entity(JSON Case Class) in a list to appropriate swagger format
+      // Translate every entity(JSON Case Class) in a list to appropriate swagger format
       val listOfExampleRequestBodyDefinition =
         for (e <- resourceDocList if e.exampleRequestBody != null)
           yield {
@@ -79,13 +107,15 @@ class SwaggerFactoryUnitTest extends V140ServerSetup with MdcLoggable {
             SwaggerJSONFactory.translateEntity(e.successResponseBody)
           }
 
-      val listNestedMissingDefinition: List[String] = SwaggerDefinitionsJSON.allFields
-        .map(SwaggerJSONFactory.translateEntity)
-        .toList
+      val listNestedMissingDefinition: List[String] =
+        SwaggerDefinitionsJSON.allFields
+          .map(SwaggerJSONFactory.translateEntity)
+          .toList
 
-      val allStrings = listOfExampleRequestBodyDefinition ++ listOfSuccessRequestBodyDefinition ++ listNestedMissingDefinition
-      //All of the following are invalid value in Swagger, if any of them exist, 
-      //need check how you create the case class object in SwaggerDefinitionsJSON.json. 
+      val allStrings =
+        listOfExampleRequestBodyDefinition ++ listOfSuccessRequestBodyDefinition ++ listNestedMissingDefinition
+      // All of the following are invalid value in Swagger, if any of them exist,
+      // need check how you create the case class object in SwaggerDefinitionsJSON.json.
       allStrings.toString() should not include ("Nil$")
       allStrings.toString() should not include ("JArray")
       allStrings.toString() should not include ("JBool")
@@ -98,30 +128,35 @@ class SwaggerFactoryUnitTest extends V140ServerSetup with MdcLoggable {
       logger.debug(allStrings)
     }
   }
- 
 
   feature("Test JSON escaping robustness in Swagger generation") {
     scenario("Test quotes in example values are properly escaped") {
-      case class TestWithQuotes(name: String, description: String)
-      val testObj = TestWithQuotes(name = "Test with \"quotes\"", description = "Has 'single' and \"double\" quotes")
+      val testObj = TestWithQuotes(
+        name = "Test with \"quotes\"",
+        description = "Has 'single' and \"double\" quotes"
+      )
       val result = SwaggerJSONFactory.translateEntity(testObj)
-      noException should be thrownBy { net.liftweb.json.parse("{" + result + "}") }
-      result should include ("\\\"")
+      noException should be thrownBy {
+        net.liftweb.json.parse("{" + result + "}")
+      }
+      result should include("\\\"")
     }
 
     scenario("Test newlines and special chars are properly escaped") {
-      case class TestWithNewlines(text: String)
       val testObj = TestWithNewlines(text = "Line 1\nLine 2\tTab")
       val result = SwaggerJSONFactory.translateEntity(testObj)
-      noException should be thrownBy { net.liftweb.json.parse("{" + result + "}") }
-      result should include ("\\n")
+      noException should be thrownBy {
+        net.liftweb.json.parse("{" + result + "}")
+      }
+      result should include("\\n")
     }
 
     scenario("Test ABAC rule-like strings with escaped quotes") {
-      case class AbacRule(rule: String)
       val testObj = AbacRule(rule = """user.emailAddress.contains(\"admin\")""")
       val result = SwaggerJSONFactory.translateEntity(testObj)
-      noException should be thrownBy { net.liftweb.json.parse("{" + result + "}") }
+      noException should be thrownBy {
+        net.liftweb.json.parse("{" + result + "}")
+      }
     }
 
     scenario("Test error messages with special characters") {
@@ -148,7 +183,10 @@ class SwaggerFactoryUnitTest extends V140ServerSetup with MdcLoggable {
         created_by_bank_id = None
       )
       noException should be thrownBy {
-        SwaggerJSONFactory.loadDefinitions(List(mockResourceDoc), SwaggerDefinitionsJSON.allFields.take(10))
+        SwaggerJSONFactory.loadDefinitions(
+          List(mockResourceDoc),
+          SwaggerDefinitionsJSON.allFields.take(10)
+        )
       }
     }
   }
