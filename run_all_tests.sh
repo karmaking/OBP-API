@@ -79,12 +79,6 @@ LOG_DIR="test-results"
 DETAIL_LOG="${LOG_DIR}/last_run.log"        # Full Maven output
 SUMMARY_LOG="${LOG_DIR}/last_run_summary.log"  # Summary only
 
-# Terminal colors
-GREEN='\033[0;32m'
-RED='\033[0;31m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m'
 
 mkdir -p "${LOG_DIR}"
 
@@ -117,8 +111,8 @@ fi
 
 # Log message to terminal and summary file
 log_message() {
-    echo -e "$1"
-    echo "[$(date +"%Y-%m-%d %H:%M:%S")] $1" | sed 's/\x1b\[[0-9;]*m//g' >> "${SUMMARY_LOG}"
+    echo "$1"
+    echo "[$(date +"%Y-%m-%d %H:%M:%S")] $1" >> "${SUMMARY_LOG}"
 }
 
 # Print section header
@@ -157,14 +151,14 @@ display_warning_factors() {
     local max_display="${2:-10}"
 
     if [ ! -f "${analysis_file}" ] || [ ! -s "${analysis_file}" ]; then
-        log_message "  ${YELLOW}No detailed warning analysis available${NC}"
+        log_message "  No detailed warning analysis available"
         return
     fi
 
     local total_warning_types=$(wc -l < "${analysis_file}")
     local displayed=0
 
-    log_message "${YELLOW}Top Warning Factors:${NC}"
+    log_message "Top Warning Factors:"
     log_message "-------------------"
 
     while IFS= read -r line && [ $displayed -lt $max_display ]; do
@@ -178,7 +172,7 @@ display_warning_factors() {
         fi
 
         # Format with count prominence
-        printf "  ${YELLOW}%4d x${NC} %s\n" "$count" "$message" | tee -a "${SUMMARY_LOG}" > /dev/tty
+        printf "  %4d x %s\n" "$count" "$message" | tee -a "${SUMMARY_LOG}" > /dev/tty
 
         displayed=$((displayed + 1))
     done < "${analysis_file}"
@@ -200,7 +194,7 @@ set_terminal_style "Starting"
 
 # Start the test run
 print_header "OBP-API Test Suite"
-log_message "${BLUE}Starting test run at $(date)${NC}"
+log_message "Starting test run at $(date)"
 log_message "Detail log: ${DETAIL_LOG}"
 log_message "Summary log: ${SUMMARY_LOG}"
 echo ""
@@ -209,7 +203,7 @@ echo ""
 # The --add-opens flags tell Java 17 to allow Kryo serialization library to access
 # the internal java.lang.invoke and java.lang modules, which fixes the InaccessibleObjectException
 export MAVEN_OPTS="-Xss128m -Xms3G -Xmx6G -XX:MaxMetaspaceSize=2G --add-opens java.base/java.lang.invoke=ALL-UNNAMED --add-opens java.base/java.lang=ALL-UNNAMED"
-log_message "${BLUE}Maven Options: ${MAVEN_OPTS}${NC}"
+log_message "Maven Options: ${MAVEN_OPTS}"
 echo ""
 
 # Ensure test properties file exists
@@ -217,14 +211,14 @@ PROPS_FILE="obp-api/src/main/resources/props/test.default.props"
 PROPS_TEMPLATE="${PROPS_FILE}.template"
 
 if [ -f "${PROPS_FILE}" ]; then
-    log_message "${GREEN}[OK] Found test.default.props${NC}"
+    log_message "[OK] Found test.default.props"
 else
-    log_message "${YELLOW}[WARNING] test.default.props not found - creating from template${NC}"
+    log_message "[WARNING] test.default.props not found - creating from template"
     if [ -f "${PROPS_TEMPLATE}" ]; then
         cp "${PROPS_TEMPLATE}" "${PROPS_FILE}"
-        log_message "${GREEN}[OK] Created test.default.props${NC}"
+        log_message "[OK] Created test.default.props"
     else
-        log_message "${RED}ERROR: ${PROPS_TEMPLATE} not found!${NC}"
+        log_message "ERROR: ${PROPS_TEMPLATE} not found!"
         exit 1
     fi
 fi
@@ -234,7 +228,7 @@ fi
 ################################################################################
 
 print_header "Cleaning Metrics Database"
-log_message "${YELLOW}Checking for test database files...${NC}"
+log_message "Checking for test database files..."
 
 # Only delete specific test database files to prevent accidental data loss
 # The test configuration uses test_only_lift_proto.db as the database filename
@@ -252,12 +246,12 @@ for dbfile in "${TEST_DB_PATTERNS[@]}"; do
     if [ -f "$dbfile" ]; then
         FOUND_FILES=true
         rm -f "$dbfile"
-        log_message "  ${GREEN}[OK]${NC} Deleted: $dbfile"
+        log_message "  [OK] Deleted: $dbfile"
     fi
 done
 
 if [ "$FOUND_FILES" = false ]; then
-    log_message "${GREEN}No old test database files found${NC}"
+    log_message "No old test database files found"
 fi
 
 log_message ""
@@ -268,7 +262,7 @@ log_message ""
 
 print_header "Running Tests"
 update_terminal_title "Building"
-log_message "${BLUE}Executing: mvn clean test${NC}"
+log_message "Executing: mvn clean test"
 echo ""
 
 START_TIME=$(date +%s)
@@ -334,10 +328,10 @@ MONITOR_PID=$!
 # Run Maven (all output goes to terminal AND log file)
 if mvn clean test 2>&1 | tee "${DETAIL_LOG}"; then
     TEST_RESULT="SUCCESS"
-    RESULT_COLOR="${GREEN}"
+    RESULT_COLOR=""
 else
     TEST_RESULT="FAILURE"
-    RESULT_COLOR="${RED}"
+    RESULT_COLOR=""
 fi
 
 # Stop background monitor by removing flag file
@@ -378,13 +372,13 @@ WARNINGS=$(grep -c "WARNING" "${DETAIL_LOG}" || echo "UNKNOWN")
 # Determine build status
 if grep -q "BUILD SUCCESS" "${DETAIL_LOG}"; then
     BUILD_STATUS="SUCCESS"
-    BUILD_COLOR="${GREEN}"
+    BUILD_COLOR=""
 elif grep -q "BUILD FAILURE" "${DETAIL_LOG}"; then
     BUILD_STATUS="FAILURE"
-    BUILD_COLOR="${RED}"
+    BUILD_COLOR=""
 else
     BUILD_STATUS="UNKNOWN"
-    BUILD_COLOR="${YELLOW}"
+    BUILD_COLOR=""
 fi
 
 # Print summary
@@ -392,15 +386,15 @@ log_message "Test Run Summary"
 log_message "================"
 log_message "Timestamp:     $(date)"
 log_message "Duration:      ${DURATION_MIN}m ${DURATION_SEC}s"
-log_message "Build Status:  ${BUILD_COLOR}${BUILD_STATUS}${NC}"
+log_message "Build Status:  ${BUILD_STATUS}"
 log_message ""
 log_message "Test Statistics:"
 log_message "  Total:       ${TOTAL_TESTS}"
-log_message "  ${GREEN}Succeeded:   ${SUCCEEDED}${NC}"
-log_message "  ${RED}Failed:      ${FAILED}${NC}"
-log_message "  ${RED}Errors:      ${ERRORS}${NC}"
-log_message "  ${YELLOW}Skipped:     ${SKIPPED}${NC}"
-log_message "  ${YELLOW}Warnings:    ${WARNINGS}${NC}"
+log_message "  Succeeded:   ${SUCCEEDED}"
+log_message "  Failed:      ${FAILED}"
+log_message "  Errors:      ${ERRORS}"
+log_message "  Skipped:     ${SKIPPED}"
+log_message "  Warnings:    ${WARNINGS}"
 log_message ""
 
 # Analyze and display warning factors if warnings exist
@@ -412,7 +406,7 @@ fi
 
 # Show failed tests if any
 if [ "${FAILED}" != "0" ] || [ "${ERRORS}" != "0" ]; then
-    log_message "${RED}Failed Tests:${NC}"
+    log_message "Failed Tests:"
     grep -A 5 "FAILED\|ERROR" "${DETAIL_LOG}" | head -50 >> "${SUMMARY_LOG}"
     log_message ""
 fi
@@ -424,10 +418,10 @@ fi
 print_header "Test Run Complete"
 
 if [ "${BUILD_STATUS}" = "SUCCESS" ] && [ "${FAILED}" = "0" ] && [ "${ERRORS}" = "0" ]; then
-    log_message "${GREEN}[PASS] All tests passed!${NC}"
+    log_message "[PASS] All tests passed!"
     EXIT_CODE=0
 else
-    log_message "${RED}[FAIL] Tests failed${NC}"
+    log_message "[FAIL] Tests failed"
     EXIT_CODE=1
 fi
 
