@@ -99,4 +99,57 @@ class SwaggerFactoryUnitTest extends V140ServerSetup with MdcLoggable {
     }
   }
  
+
+  feature("Test JSON escaping robustness in Swagger generation") {
+    scenario("Test quotes in example values are properly escaped") {
+      case class TestWithQuotes(name: String, description: String)
+      val testObj = TestWithQuotes(name = "Test with \"quotes\"", description = "Has 'single' and \"double\" quotes")
+      val result = SwaggerJSONFactory.translateEntity(testObj)
+      noException should be thrownBy { net.liftweb.json.parse("{" + result + "}") }
+      result should include ("\\\"")
+    }
+
+    scenario("Test newlines and special chars are properly escaped") {
+      case class TestWithNewlines(text: String)
+      val testObj = TestWithNewlines(text = "Line 1\nLine 2\tTab")
+      val result = SwaggerJSONFactory.translateEntity(testObj)
+      noException should be thrownBy { net.liftweb.json.parse("{" + result + "}") }
+      result should include ("\\n")
+    }
+
+    scenario("Test ABAC rule-like strings with escaped quotes") {
+      case class AbacRule(rule: String)
+      val testObj = AbacRule(rule = """user.emailAddress.contains(\"admin\")""")
+      val result = SwaggerJSONFactory.translateEntity(testObj)
+      noException should be thrownBy { net.liftweb.json.parse("{" + result + "}") }
+    }
+
+    scenario("Test error messages with special characters") {
+      import code.api.v1_4_0.JSONFactory1_4_0
+      val mockResourceDoc = JSONFactory1_4_0.ResourceDocJson(
+        operation_id = "testOp",
+        implemented_by = JSONFactory1_4_0.ImplementedByJson("1.0.0", "test"),
+        request_verb = "GET",
+        request_url = "/test",
+        summary = "Test",
+        description = "Test desc",
+        description_markdown = "Test desc",
+        example_request_body = null,
+        success_response_body = SwaggerDefinitionsJSON.bankJSON,
+        error_response_bodies = List("OBP-10000"),
+        tags = List("Test"),
+        typed_request_body = net.liftweb.json.JNothing,
+        typed_success_response_body = net.liftweb.json.JNothing,
+        roles = Some(List()),
+        is_featured = false,
+        special_instructions = "",
+        specified_url = "/obp/v4.0.0/test",
+        connector_methods = List(),
+        created_by_bank_id = None
+      )
+      noException should be thrownBy {
+        SwaggerJSONFactory.loadDefinitions(List(mockResourceDoc), SwaggerDefinitionsJSON.allFields.take(10))
+      }
+    }
+  }
 }
