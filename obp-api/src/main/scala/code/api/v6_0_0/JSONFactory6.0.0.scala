@@ -587,6 +587,22 @@ object JSONFactory600 extends CustomJsonFormats with MdcLoggable {
     )
   }
 
+  def createActiveCallLimitsJsonV600FromCallLimit(
+      rateLimit: code.api.util.RateLimitingJson.CallLimit,
+      activeDate: java.util.Date
+  ): ActiveCallLimitsJsonV600 = {
+    ActiveCallLimitsJsonV600(
+      call_limits = List.empty,
+      active_at_date = activeDate,
+      total_per_second_call_limit = rateLimit.per_second,
+      total_per_minute_call_limit = rateLimit.per_minute,
+      total_per_hour_call_limit = rateLimit.per_hour,
+      total_per_day_call_limit = rateLimit.per_day,
+      total_per_week_call_limit = rateLimit.per_week,
+      total_per_month_call_limit = rateLimit.per_month
+    )
+  }
+
   def createTokenJSON(token: String): TokenJSON = {
     TokenJSON(token)
   }

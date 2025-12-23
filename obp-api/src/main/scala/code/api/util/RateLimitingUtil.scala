@@ -1,5 +1,9 @@
 package code.api.util
 
+import java.util.Date
+import code.ratelimiting.{RateLimiting, RateLimitingDI}
+import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global
 import code.api.{APIFailureNewStyle, JedisMethod}
 import code.api.cache.Redis
 import code.api.util.APIUtil.fullBoxOrException
@@ -73,6 +77,83 @@ object RateLimitingUtil extends MdcLoggable {
   import code.api.util.RateLimitingPeriod._
   
   def useConsumerLimits = APIUtil.getPropsAsBoolValue("use_consumer_limits", false)
+
+  /** Get system default rate limits from properties. Used when no RateLimiting records exist for a consumer.
+    * @param consumerId The consumer ID
+    * @return RateLimit with system property defaults (default to -1 if not set)
+    */
+  def getSystemDefaultRateLimits(consumerId: String): CallLimit = {
+    RateLimitingJson.CallLimit(
+      consumerId,
+      None,
+      None,
+      None,
+      APIUtil.getPropsAsLongValue("rate_limiting_per_second", -1),
+      APIUtil.getPropsAsLongValue("rate_limiting_per_minute", -1),
+      APIUtil.getPropsAsLongValue("rate_limiting_per_hour", -1),
+      APIUtil.getPropsAsLongValue("rate_limiting_per_day", -1),
+      APIUtil.getPropsAsLongValue("rate_limiting_per_week", -1),
+      APIUtil.getPropsAsLongValue("rate_limiting_per_month", -1)
+    )
+  }
+
+  /** Aggregate multiple rate limiting records into a single CallLimit. This is the SINGLE SOURCE OF TRUTH for aggregation logic.
+    * Rules:
+    * - Only positive values (> 0) are summed
+    * - If no positive values exist for a period, return -1 (unlimited)
+    * - Multiple overlapping records have their limits added together
+    * @param rateLimitRecords List of RateLimiting records to aggregate
+    * @param consumerId The consumer ID
+    * @return Aggregated CallLimit
+    */
+  def aggregateRateLimits(rateLimitRecords: List[RateLimiting], consumerId: String): CallLimit = {
+    def sumLimits(values: List[Long]): Long = {
+      val positiveValues = values.filter(_ > 0)
+      if (positiveValues.isEmpty) -1 else positiveValues.sum
+    }
+
+    if (rateLimitRecords.nonEmpty) {
+      RateLimitingJson.CallLimit(
+        consumerId,
+        rateLimitRecords.find(_.apiName.isDefined).flatMap(_.apiName),
+        rateLimitRecords.find(_.apiVersion.isDefined).flatMap(_.apiVersion),
+        rateLimitRecords.find(_.bankId.isDefined).flatMap(_.bankId),
+        sumLimits(rateLimitRecords.map(_.perSecondCallLimit)),
+        sumLimits(rateLimitRecords.map(_.perMinuteCallLimit)),
+        sumLimits(rateLimitRecords.map(_.perHourCallLimit)),
+        sumLimits(rateLimitRecords.map(_.perDayCallLimit)),
+        sumLimits(rateLimitRecords.map(_.perWeekCallLimit)),
+        sumLimits(rateLimitRecords.map(_.perMonthCallLimit))
+      )
+    } else {
+      RateLimitingJson.CallLimit(consumerId, None, None, None, -1, -1, -1, -1, -1, -1)
+    }
+  }
+
+  /** Get the active rate limits for a consumer at a specific date. This is the SINGLE SOURCE OF TRUTH for rate limit calculation used by both:
+    * - The enforcement system (AfterApiAuth.checkRateLimiting)
+    * - The API endpoint (GET /consumer/rate-limits/active-at-date/{DATE})
+    * @param consumerId The consumer ID
+    * @param date The date to check active limits for
+    * @return Future containing the aggregated CallLimit that will be enforced
+    */
+  def getActiveRateLimits(consumerId: String, date: Date): Future[CallLimit] = {
+    def getActiveRateLimitings(consumerId: String): Future[List[RateLimiting]] = {
+      useConsumerLimits match {
+        case true => RateLimitingDI.rateLimiting.vend.getActiveCallLimitsByConsumerIdAtDate(consumerId, date)
+        case false => Future(List.empty)
+      }
+    }
+
+    for {
+      rateLimitRecords <- getActiveRateLimitings(consumerId)
+    } yield {
+      rateLimitRecords match {
+        case Nil => getSystemDefaultRateLimits(consumerId)
+        case records => aggregateRateLimits(records, consumerId)
+      }
+    }
+  }
 
   private def createUniqueKey(consumerKey: String, period: LimitCallPeriod) = consumerKey + "_" + RateLimitingPeriod.toString(period)
 
