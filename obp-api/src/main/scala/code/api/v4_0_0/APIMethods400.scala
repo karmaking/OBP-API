@@ -1547,7 +1547,7 @@ trait APIMethods400 extends MdcLoggable {
                           value = rejectReasonCode,
                           callContext = callContext
                         )
-                    } else Future.successful()
+                    } else Future.successful(())
                   rejectAdditionalInformation =
                     challengeAnswerJson.additional_information.getOrElse("")
                   _ <-
@@ -1563,7 +1563,7 @@ trait APIMethods400 extends MdcLoggable {
                           value = rejectAdditionalInformation,
                           callContext = callContext
                         )
-                    } else Future.successful()
+                    } else Future.successful(())
                   _ <- NewStyle.function.notifyTransactionRequest(
                     fromAccount,
                     toAccount,
@@ -3372,7 +3372,7 @@ trait APIMethods400 extends MdcLoggable {
       case (Nil | "root" :: Nil) JsonGet _ => { cc =>
         implicit val ec = EndpointContext(Some(cc))
         for {
-          _ <- Future() // Just start async call
+          _ <- Future(()) // Just start async call
         } yield {
           (
             JSONFactory400.getApiInfoJSON(
@@ -3406,7 +3406,7 @@ trait APIMethods400 extends MdcLoggable {
       case "development" :: "call_context" :: Nil JsonGet _ => { cc =>
         implicit val ec = EndpointContext(Some(cc))
         for {
-          _ <- Future() // Just start async call
+          _ <- Future(()) // Just start async call
         } yield {
           (cc.callContext, HttpCode.`200`(cc.callContext))
         }
@@ -3435,7 +3435,7 @@ trait APIMethods400 extends MdcLoggable {
         cc =>
           implicit val ec = EndpointContext(Some(cc))
           for {
-            _ <- Future() // Just start async call
+            _ <- Future(()) // Just start async call
           } yield {
             (cc.callContext, HttpCode.`200`(cc.callContext))
           }
@@ -10458,7 +10458,7 @@ trait APIMethods400 extends MdcLoggable {
                   (account, callContext)
                 }
               } else
-                Future { (Full(), Some(cc)) }
+                Future { (Full(()), Some(cc)) }
 
             otherAccountRoutingSchemeOBPFormat =
               if (
@@ -10811,7 +10811,7 @@ trait APIMethods400 extends MdcLoggable {
                   (account, callContext)
                 }
               } else
-                Future { (Full(), Some(cc)) }
+                Future { (Full(()), Some(cc)) }
 
             otherAccountRoutingSchemeOBPFormat =
               if (
@@ -12873,7 +12873,7 @@ trait APIMethods400 extends MdcLoggable {
 
     // auth type validation related endpoints
     private val allowedAuthTypes =
-      AuthenticationType.values.filterNot(AuthenticationType.Anonymous ==)
+      AuthenticationType.values.filterNot(AuthenticationType.Anonymous.==)
     staticResourceDocs += ResourceDoc(
       createAuthenticationTypeValidation,
       implementedInApiVersion,
@@ -16725,7 +16725,7 @@ trait APIMethods400 extends MdcLoggable {
         s"$EntitlementAlreadyExists user_id($userId) ${duplicatedRoles.mkString(",")}"
       Helper.booleanToFuture(errorMessages, cc = callContext) { false }
     } else
-      Future.successful(Full())
+      Future.successful(Full(()))
   }
 
   /** This method will check all the roles the loggedIn user already has and the
@@ -16759,7 +16759,7 @@ trait APIMethods400 extends MdcLoggable {
             .mkString(",")}"
       Helper.booleanToFuture(errorMessages, cc = callContext) { false }
     } else
-      Future.successful(Full())
+      Future.successful(Full(()))
   }
 
   private def checkRoleBankIdMapping(

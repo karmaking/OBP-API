@@ -102,7 +102,7 @@ trait APIMethods310 {
         cc =>
           implicit val ec = EndpointContext(Some(cc))
           for {
-            _ <- Future() // Just start async call
+            _ <- Future(()) // Just start async call
           } yield {
             (JSONFactory.getApiInfoJSON(OBPAPI3_1_0.version, OBPAPI3_1_0.versionStatus), HttpCode.`200`(cc.callContext))
           }

@@ -654,7 +654,7 @@ class WebUI extends MdcLoggable{
     val html = XML.loadString(htmlString)
 
     // Sleep if in development environment so can see the effects of content loading slowly
-    if (Props.mode == Props.RunModes.Development) Thread.sleep(10 seconds)
+    if (Props.mode == Props.RunModes.Development) Thread.sleep(10.seconds)
 
     // Return the HTML
     html

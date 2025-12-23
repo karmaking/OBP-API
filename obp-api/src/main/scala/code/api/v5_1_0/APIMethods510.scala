@@ -108,7 +108,7 @@ trait APIMethods510 {
       case (Nil | "root" :: Nil) JsonGet _ => {
         cc => implicit val ec = EndpointContext(Some(cc))
           for {
-            _ <- Future() // Just start async call
+            _ <- Future(()) // Just start async call
           } yield {
             (JSONFactory510.getApiInfoJSON(OBPAPI5_1_0.version,OBPAPI5_1_0.versionStatus), HttpCode.`200`(cc.callContext))
           }
@@ -4286,7 +4286,7 @@ trait APIMethods510 {
       case "tags" ::  Nil JsonGet _ =>
         cc => implicit val ec = EndpointContext(Some(cc))
           for {
-            _ <- Future.successful() // Just start async call
+            _ <- Future.successful(()) // Just start async call
           } yield {
             (APITags(ApiTag.allDisplayTagNames.toList), HttpCode.`200`(cc.callContext))
           }

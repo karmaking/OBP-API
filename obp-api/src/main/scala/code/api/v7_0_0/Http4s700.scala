@@ -48,7 +48,7 @@ object Http4s700 {
       val callContext = req.attributes.lookup(callContextKey).get.asInstanceOf[CallContext]
       Ok(IO.fromFuture(IO(
         for {
-          _ <- Future() // Just start async call
+          _ <- Future(()) // Just start async call
         } yield {
           convertAnyToJsonString(
             JSONFactory700.getApiInfoJSON(apiVersion, s"Hello, ${callContext.userId}! Your request ID is ${callContext.requestId}.")

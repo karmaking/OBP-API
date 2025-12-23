@@ -105,7 +105,7 @@ trait APIMethods500 {
         cc =>
           implicit val ec = EndpointContext(Some(cc))
           for {
-            _ <- Future() // Just start async call
+            _ <- Future(()) // Just start async call
           } yield {
             (JSONFactory400.getApiInfoJSON(OBPAPI5_0_0.version,OBPAPI5_0_0.versionStatus), HttpCode.`200`(cc.callContext))
           }
@@ -221,14 +221,14 @@ trait APIMethods500 {
             _ <- entitlementsByBank.filter(_.roleName == CanCreateEntitlementAtOneBank.toString()).size > 0 match {
               case true =>
                 // Already has entitlement
-                Future()
+                Future(())
               case false =>
                 Future(Entitlement.entitlement.vend.addEntitlement(postJson.id.getOrElse(""), cc.userId, CanCreateEntitlementAtOneBank.toString()))
             }
             _ <- entitlementsByBank.filter(_.roleName == CanReadDynamicResourceDocsAtOneBank.toString()).size > 0 match {
               case true =>
                 // Already has entitlement
-                Future()
+                Future(())
               case false =>
                 Future(Entitlement.entitlement.vend.addEntitlement(postJson.id.getOrElse(""), cc.userId, CanReadDynamicResourceDocsAtOneBank.toString()))
             }
