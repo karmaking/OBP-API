@@ -227,7 +227,7 @@ trait APIMethods600 {
          |
          |""".stripMargin,
       EmptyBody,
-      redisCallLimitJson,
+      redisCallLimitJsonV600,
       List(
         $UserNotLoggedIn,
         InvalidJsonFormat,

@@ -109,6 +109,21 @@ case class ActiveCallLimitsJsonV600(
     total_per_month_call_limit: Long
 )
 
+case class RateLimitV600(
+    calls_made: Option[Long],
+    reset_in_seconds: Option[Long],
+    status: String
+)
+
+case class RedisCallLimitJsonV600(
+    per_second: Option[RateLimitV600],
+    per_minute: Option[RateLimitV600],
+    per_hour: Option[RateLimitV600],
+    per_day: Option[RateLimitV600],
+    per_week: Option[RateLimitV600],
+    per_month: Option[RateLimitV600]
+)
+
 case class TransactionRequestBodyCardanoJsonV600(
     to: CardanoPaymentJsonV600,
     value: AmountOfMoneyJsonV121,
@@ -387,19 +402,24 @@ object JSONFactory600 extends CustomJsonFormats with MdcLoggable {
 
   def createCurrentUsageJson(
       rateLimits: List[((Option[Long], Option[Long]), LimitCallPeriod)]
-  ): Option[RedisCallLimitJson] = {
+  ): Option[RedisCallLimitJsonV600] = {
     if (rateLimits.isEmpty) None
     else {
       val grouped: Map[LimitCallPeriod, (Option[Long], Option[Long])] =
         rateLimits.map { case (limits, period) => period -> limits }.toMap
 
-      def getInfo(period: RateLimitingPeriod.Value): Option[RateLimit] =
-        grouped.get(period).collect { case (Some(x), Some(y)) =>
-          RateLimit(Some(x), Some(y))
-        }
+      def getInfo(period: RateLimitingPeriod.Value): Option[RateLimitV600] =
+        grouped.get(period) match {
+          case Some((Some(calls), Some(ttl))) =>
+            Some(RateLimitV600(Some(calls), Some(ttl), "ACTIVE"))
+          case Some((None, None)) =>
+            Some(RateLimitV600(None, None, "EXPIRED"))
+          case _ =>
+            Some(RateLimitV600(None, None, "NO_DATA"))
+      }
 
       Some(
-        RedisCallLimitJson(
+        RedisCallLimitJsonV600(
           getInfo(RateLimitingPeriod.PER_SECOND),
           getInfo(RateLimitingPeriod.PER_MINUTE),
           getInfo(RateLimitingPeriod.PER_HOUR),
