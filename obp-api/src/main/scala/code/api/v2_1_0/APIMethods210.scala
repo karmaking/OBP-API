@@ -1,5 +1,6 @@
 package code.api.v2_1_0
 
+import scala.language.reflectiveCalls
 import code.TransactionTypes.TransactionType
 import code.api.Constant.CAN_SEE_TRANSACTION_REQUESTS
 import code.api.util.ApiTag._

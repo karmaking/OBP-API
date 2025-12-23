@@ -1,6 +1,7 @@
 package code.api.v5_1_0
 
 
+import scala.language.reflectiveCalls
 import code.api.Constant
 import code.api.Constant._
 import code.api.OAuth2Login.{Keycloak, OBPOIDC}

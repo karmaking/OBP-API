@@ -1,5 +1,6 @@
 package code.api.v4_0_0
 
+import scala.language.reflectiveCalls
 import code.DynamicData.DynamicData
 import code.DynamicEndpoint.DynamicEndpointSwagger
 import code.accountattribute.AccountAttributeX

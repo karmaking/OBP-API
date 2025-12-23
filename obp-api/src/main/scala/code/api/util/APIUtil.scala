@@ -26,6 +26,8 @@ TESOBE (http://www.tesobe.com/)
  */
 
 package code.api.util
+
+import scala.language.implicitConversions
 import bootstrap.liftweb.CustomDBVendor
 import code.accountholders.AccountHolders
 import code.api.Constant._

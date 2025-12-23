@@ -1,6 +1,7 @@
 package code.api.ResourceDocs1_4_0
 
-import code.api.Constant.{GET_DYNAMIC_RESOURCE_DOCS_TTL, GET_STATIC_RESOURCE_DOCS_TTL, PARAM_LOCALE, HostName}
+import scala.language.reflectiveCalls
+import code.api.Constant.{GET_DYNAMIC_RESOURCE_DOCS_TTL, GET_STATIC_RESOURCE_DOCS_TTL, HostName, PARAM_LOCALE}
 import code.api.OBPRestHelper
 import code.api.cache.Caching
 import code.api.util.APIUtil._
@@ -39,6 +40,7 @@ import net.liftweb.json.JsonAST.{JField, JString, JValue}
 import net.liftweb.json._
 
 import java.util.concurrent.ConcurrentHashMap
+import scala.collection.immutable
 import scala.collection.immutable.{List, Nil}
 import scala.concurrent.Future
 
@@ -117,7 +119,7 @@ trait ResourceDocsAPIMethods extends MdcLoggable with APIMethods220 with APIMeth
 
       logger.debug(s"getResourceDocsList says requestedApiVersion is $requestedApiVersion")
 
-      val resourceDocs = requestedApiVersion match {
+      val resourceDocs: ArrayBuffer[ResourceDoc] = requestedApiVersion match {
         case ApiVersion.v6_0_0 => OBPAPI6_0_0.allResourceDocs
         case ApiVersion.v5_1_0 => OBPAPI5_1_0.allResourceDocs
         case ApiVersion.v5_0_0 => OBPAPI5_0_0.allResourceDocs
@@ -138,7 +140,7 @@ trait ResourceDocsAPIMethods extends MdcLoggable with APIMethods220 with APIMeth
 
       logger.debug(s"There are ${resourceDocs.length} resource docs available to $requestedApiVersion")
 
-      val versionRoutes = requestedApiVersion match {
+      val versionRoutes: immutable.Seq[OBPEndpoint] = requestedApiVersion match {
         case ApiVersion.v6_0_0 => OBPAPI6_0_0.routes
         case ApiVersion.v5_1_0 => OBPAPI5_1_0.routes
         case ApiVersion.v5_0_0 => OBPAPI5_0_0.routes

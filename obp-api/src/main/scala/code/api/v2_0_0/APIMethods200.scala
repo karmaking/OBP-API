@@ -1,5 +1,6 @@
 package code.api.v2_0_0
 
+import scala.language.reflectiveCalls
 import code.TransactionTypes.TransactionType
 import code.api.APIFailureNewStyle
 import code.api.Constant._

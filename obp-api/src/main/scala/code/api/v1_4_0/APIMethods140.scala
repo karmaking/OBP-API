@@ -1,5 +1,6 @@
 package code.api.v1_4_0
 
+import scala.language.reflectiveCalls
 import code.api.Constant._
 import code.api.util.ApiRole._
 import code.api.util.ApiTag._

@@ -1,5 +1,6 @@
 package code.api.v3_0_0
 
+import scala.language.reflectiveCalls
 import code.accountattribute.AccountAttributeX
 import code.api.Constant._
 import code.api.ResourceDocs1_4_0.SwaggerDefinitionsJSON

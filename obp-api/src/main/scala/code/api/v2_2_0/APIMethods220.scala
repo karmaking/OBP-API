@@ -1,5 +1,6 @@
 package code.api.v2_2_0
 
+import scala.language.reflectiveCalls
 import code.api.Constant._
 import code.api.ResourceDocs1_4_0.SwaggerDefinitionsJSON._
 import code.api.util.APIUtil._

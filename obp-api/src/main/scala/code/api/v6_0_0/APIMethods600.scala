@@ -1,5 +1,6 @@
 package code.api.v6_0_0
 
+import scala.language.reflectiveCalls
 import code.accountattribute.AccountAttributeX
 import code.api.Constant
 import code.api.{DirectLogin, ObpApiFailure}
