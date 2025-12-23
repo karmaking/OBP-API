@@ -2,7 +2,7 @@ package code.abacrule
 
 /**
  * ABAC Rule Examples
- * 
+ *
  * This file contains example ABAC rules that can be used as templates.
  * Copy the rule code (the string in quotes) when creating new ABAC rules via the API.
  */
@@ -15,21 +15,21 @@ object AbacRuleExamples {
    * Only users with "admin" in their email address can access
    */
   val adminOnlyRule: String =
-    """user.emailAddress.contains("admin")"""
+    """user.emailAddress.contains(\"admin\")"""
 
   /**
    * Example 2: Specific User Provider
    * Only allow users from a specific authentication provider
    */
   val providerCheckRule: String =
-    """user.provider == "obp""""
+    """user.provider == \"obp\""""
 
   /**
    * Example 3: User Email Domain
    * Only allow users from specific email domain
    */
   val emailDomainRule: String =
-    """user.emailAddress.endsWith("@example.com")"""
+    """user.emailAddress.endsWith(\"@example.com\")"""
 
   /**
    * Example 4: User Has Username
@@ -45,14 +45,14 @@ object AbacRuleExamples {
    * Only allow access to a specific bank
    */
   val specificBankRule: String =
-    """bankOpt.exists(_.bankId.value == "gh.29.uk")"""
+    """bankOpt.exists(_.bankId.value == \"gh.29.uk\")"""
 
   /**
    * Example 6: Bank Short Name Check
    * Only allow access to banks with specific short name
    */
   val bankShortNameRule: String =
-    """bankOpt.exists(_.shortName.contains("Example"))"""
+    """bankOpt.exists(_.shortName.contains(\"Example\"))"""
 
   /**
    * Example 7: Bank Must Be Present
@@ -86,21 +86,21 @@ object AbacRuleExamples {
    * Only allow access to accounts with specific currency
    */
   val currencyRule: String =
-    """accountOpt.exists(_.currency == "EUR")"""
+    """accountOpt.exists(_.currency == \"EUR\")"""
 
   /**
    * Example 11: Account Type Check
    * Only allow access to savings accounts
    */
   val accountTypeRule: String =
-    """accountOpt.exists(_.accountType == "SAVINGS")"""
+    """accountOpt.exists(_.accountType == \"SAVINGS\")"""
 
   /**
    * Example 12: Account Label Contains
    * Only allow access to accounts with specific label
    */
   val accountLabelRule: String =
-    """accountOpt.exists(_.label.contains("VIP"))"""
+    """accountOpt.exists(_.label.contains(\"VIP\"))"""
 
   // ==================== TRANSACTION-BASED RULES ====================
 
@@ -127,14 +127,14 @@ object AbacRuleExamples {
    * Only allow access to specific transaction types
    */
   val transactionTypeRule: String =
-    """transactionOpt.exists(_.transactionType == "PAYMENT")"""
+    """transactionOpt.exists(_.transactionType == \"PAYMENT\")"""
 
   /**
    * Example 16: Transaction Currency Check
    * Only allow access to transactions in specific currency
    */
   val transactionCurrencyRule: String =
-    """transactionOpt.exists(_.currency == "USD")"""
+    """transactionOpt.exists(_.currency == \"USD\")"""
 
   // ==================== CUSTOMER-BASED RULES ====================
 
@@ -143,21 +143,21 @@ object AbacRuleExamples {
    * Only allow access if customer email is from specific domain
    */
   val customerEmailDomainRule: String =
-    """customerOpt.exists(_.email.endsWith("@corporate.com"))"""
+    """customerOpt.exists(_.email.endsWith(\"@corporate.com\"))"""
 
   /**
    * Example 18: Customer Legal Name Check
    * Only allow access to customers with specific name pattern
    */
   val customerNameRule: String =
-    """customerOpt.exists(_.legalName.contains("Corporation"))"""
+    """customerOpt.exists(_.legalName.contains(\"Corporation\"))"""
 
   /**
    * Example 19: Customer Mobile Number Pattern
    * Only allow access to customers with specific mobile pattern
    */
   val customerMobileRule: String =
-    """customerOpt.exists(_.mobilePhoneNumber.startsWith("+44"))"""
+    """customerOpt.exists(_.mobilePhoneNumber.startsWith(\"+44\"))"""
 
   // ==================== COMBINED RULES ====================
 
@@ -166,15 +166,15 @@ object AbacRuleExamples {
    * Managers can only access specific bank
    */
   val managerBankRule: String =
-    """user.emailAddress.contains("manager") &&
-      |bankOpt.exists(_.bankId.value == "gh.29.uk")""".stripMargin
+    """user.emailAddress.contains(\"manager\") &&
+      |bankOpt.exists(_.bankId.value == \"gh.29.uk\")""".stripMargin
 
   /**
    * Example 21: High Value Account Access
    * Only managers can access high-value accounts
    */
   val managerHighValueRule: String =
-    """user.emailAddress.contains("manager") &&
+    """user.emailAddress.contains(\"manager\") &&
       |accountOpt.exists(account => {
       |  account.balance.toString.toDoubleOption.exists(_ > 50000.0)
       |})""".stripMargin
@@ -184,27 +184,27 @@ object AbacRuleExamples {
    * Auditors can only view completed transactions
    */
   val auditorTransactionRule: String =
-    """user.emailAddress.contains("auditor") &&
-      |transactionOpt.exists(_.status == "COMPLETED")""".stripMargin
+    """user.emailAddress.contains(\"auditor\") &&
+      |transactionOpt.exists(_.status == \"COMPLETED\")""".stripMargin
 
   /**
    * Example 23: VIP Customer Manager Access
    * Only specific managers can access VIP customer accounts
    */
   val vipManagerRule: String =
-    """(user.emailAddress.contains("vip-manager") || user.emailAddress.contains("director")) &&
-      |accountOpt.exists(_.label.contains("VIP"))""".stripMargin
+    """(user.emailAddress.contains(\"vip-manager\") || user.emailAddress.contains(\"director\")) &&
+      |accountOpt.exists(_.label.contains(\"VIP\"))""".stripMargin
 
   /**
    * Example 24: Multi-Condition Access
    * Complex rule with multiple conditions
    */
   val complexRule: String =
-    """user.emailAddress.contains("manager") &&
-      |user.provider == "obp" &&
-      |bankOpt.exists(_.bankId.value == "gh.29.uk") &&
+    """user.emailAddress.contains(\"manager\") &&
+      |user.provider == \"obp\" &&
+      |bankOpt.exists(_.bankId.value == \"gh.29.uk\") &&
       |accountOpt.exists(account => {
-      |  account.currency == "GBP" &&
+      |  account.currency == \"GBP\" &&
       |  account.balance.toString.toDoubleOption.exists(_ > 5000.0) &&
       |  account.balance.toString.toDoubleOption.exists(_ < 100000.0)
       |})""".stripMargin
@@ -216,7 +216,7 @@ object AbacRuleExamples {
    * Deny access to specific user
    */
   val blockUserRule: String =
-    """!user.emailAddress.contains("blocked@example.com")"""
+    """!user.emailAddress.contains(\"blocked@example.com\")"""
 
   /**
    * Example 26: Block Inactive Accounts
@@ -241,7 +241,7 @@ object AbacRuleExamples {
    * Use regex-like pattern matching
    */
   val emailPatternRule: String =
-    """user.emailAddress.matches(".*@(internal|corporate)\\.com")"""
+    """user.emailAddress.matches(\".*@(internal|corporate)\\\\.com\")"""
 
   /**
    * Example 29: Multiple Bank Access
@@ -249,7 +249,7 @@ object AbacRuleExamples {
    */
   val multipleBanksRule: String =
     """bankOpt.exists(bank => {
-      |  val allowedBanks = Set("gh.29.uk", "de.10.de", "us.01.us")
+      |  val allowedBanks = Set(\"gh.29.uk\", \"de.10.de\", \"us.01.us\")
       |  allowedBanks.contains(bank.bankId.value)
       |})""".stripMargin
 
@@ -269,9 +269,9 @@ object AbacRuleExamples {
    * Allow access if any condition is true
    */
   val orLogicRule: String =
-    """user.emailAddress.contains("admin") ||
-      |user.emailAddress.contains("manager") ||
-      |user.emailAddress.contains("director")""".stripMargin
+    """user.emailAddress.contains(\"admin\") ||
+      |user.emailAddress.contains(\"manager\") ||
+      |user.emailAddress.contains(\"director\")""".stripMargin
 
   /**
    * Example 32: Nested Option Handling
@@ -311,7 +311,7 @@ object AbacRuleExamples {
       |  )
       |} else {
       |  // Default case
-      |  user.emailAddress.contains("admin")
+      |  user.emailAddress.contains(\"admin\")
       |}""".stripMargin
 
   // ==================== HELPER FUNCTIONS ====================

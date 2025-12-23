@@ -663,6 +663,7 @@ trait ResourceDocsAPIMethods extends MdcLoggable with APIMethods220 with APIMeth
       List(apiTagDocumentation, apiTagApi)
     )
 
+    // Note: Swagger format requires special character escaping because it builds JSON via string concatenation (unlike OBP/OpenAPI formats which use case class serialization)
 
     def getResourceDocsSwagger : OBPEndpoint = {
       case "resource-docs" :: requestedApiVersionString :: "swagger" :: Nil JsonGet _ => {
