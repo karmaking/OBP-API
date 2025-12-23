@@ -215,14 +215,14 @@ trait APIMethods600 {
     }
 
     staticResourceDocs += ResourceDoc(
-      getCurrentCallsLimit,
+      getConsumerCallCounters,
       implementedInApiVersion,
-      nameOf(getCurrentCallsLimit),
+      nameOf(getConsumerCallCounters),
       "GET",
-      "/management/consumers/CONSUMER_ID/consumer/current-usage",
-      "Get Rate Limits for a Consumer Usage",
+      "/management/consumers/CONSUMER_ID/call-counters",
+      "Get Call Counts for Consumer",
       s"""
-         |Get the current rate limit usage for a specific consumer.
+         |Get the call counters (current usage) for a specific consumer. Shows how many API calls have been made and when the counters reset.
          |
          |This endpoint returns the current state of API rate limits across all time periods (per second, per minute, per hour, per day, per week, per month).
          |
@@ -256,8 +256,8 @@ trait APIMethods600 {
       Some(List(canGetRateLimits)))
 
 
-    lazy val getCurrentCallsLimit: OBPEndpoint = {
-      case "management" :: "consumers" :: consumerId :: "consumer" :: "current-usage" :: Nil JsonGet _ =>
+    lazy val getConsumerCallCounters: OBPEndpoint = {
+      case "management" :: "consumers" :: consumerId :: "call-counters" :: Nil JsonGet _ =>
         cc =>
           implicit val ec = EndpointContext(Some(cc))
           for {
