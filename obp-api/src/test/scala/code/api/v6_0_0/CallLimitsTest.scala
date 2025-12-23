@@ -26,7 +26,7 @@ TESOBE (http://www.tesobe.com/)
 package code.api.v6_0_0
 
 import code.api.util.APIUtil.OAuth._
-import code.api.util.ApiRole.{CanDeleteRateLimiting, CanReadCallLimits, CanCreateRateLimits}
+import code.api.util.ApiRole.{CanDeleteRateLimits, CanReadCallLimits, CanCreateRateLimits}
 import code.api.util.ErrorMessages.{UserHasMissingRoles, UserNotLoggedIn}
 import code.api.v6_0_0.OBPAPI6_0_0.Implementations6_0_0
 import code.consumer.Consumers
@@ -127,7 +127,7 @@ class CallLimitsTest extends V600ServerSetup {
       val createdCallLimit = createResponse.body.extract[CallLimitJsonV600]
 
       When("We delete the call limit")
-      Entitlement.entitlement.vend.addEntitlement("", resourceUser1.userId, CanDeleteRateLimiting.toString)
+      Entitlement.entitlement.vend.addEntitlement("", resourceUser1.userId, CanDeleteRateLimits.toString)
       val deleteRequest = (v6_0_0_Request / "management" / "consumers" / consumerId / "consumer" / "rate-limits" / createdCallLimit.rate_limiting_id).DELETE <@ (user1)
       val deleteResponse = makeDeleteRequest(deleteRequest)
       
@@ -151,8 +151,8 @@ class CallLimitsTest extends V600ServerSetup {
       
       Then("We should get a 403")
       deleteResponse.code should equal(403)
-      And("error should be " + UserHasMissingRoles + CanDeleteRateLimiting)
-      deleteResponse.body.extract[ErrorMessage].message should equal(UserHasMissingRoles + CanDeleteRateLimiting)
+      And("error should be " + UserHasMissingRoles + CanDeleteRateLimits)
+      deleteResponse.body.extract[ErrorMessage].message should equal(UserHasMissingRoles + CanDeleteRateLimits)
     }
   }
 
