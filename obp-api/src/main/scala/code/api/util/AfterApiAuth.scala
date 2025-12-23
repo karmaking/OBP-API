@@ -93,14 +93,14 @@ object AfterApiAuth extends MdcLoggable{
 
   /**
    * This block of code needs to update Call Context with Rate Limiting
-   * Uses RateLimitingUtil.getActiveRateLimits as the SINGLE SOURCE OF TRUTH
+   * Uses RateLimitingUtil.getActiveRateLimitsWithIds as the SINGLE SOURCE OF TRUTH
    */
   def checkRateLimiting(userIsLockedOrDeleted: Future[(Box[User], Option[CallContext])]): Future[(Box[User], Option[CallContext])] = {
     for {
       (user, cc) <- userIsLockedOrDeleted
       consumer = cc.flatMap(_.consumer)
       consumerId = consumer.map(_.consumerId.get).getOrElse("")
-      rateLimit <- RateLimitingUtil.getActiveRateLimits(consumerId, new Date())
+      (rateLimit, _) <- RateLimitingUtil.getActiveRateLimitsWithIds(consumerId, new Date())
     } yield {
       (user, cc.map(_.copy(rateLimiting = Some(rateLimit))))
     }

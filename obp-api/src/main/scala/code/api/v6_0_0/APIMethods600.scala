@@ -493,9 +493,7 @@ trait APIMethods600 {
               val format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'")
               format.parse(dateString)
             }
-            rateLimit <- RateLimitingUtil.getActiveRateLimits(consumerId, date)
-            rateLimitRecords <- RateLimitingDI.rateLimiting.vend.getActiveCallLimitsByConsumerIdAtDate(consumerId, date)
-            rateLimitIds = rateLimitRecords.map(_.rateLimitingId)
+            (rateLimit, rateLimitIds) <- RateLimitingUtil.getActiveRateLimitsWithIds(consumerId, date)
           } yield {
             (JSONFactory600.createActiveCallLimitsJsonV600FromCallLimit(rateLimit, rateLimitIds, date), HttpCode.`200`(callContext))
           }
