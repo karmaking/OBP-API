@@ -171,7 +171,7 @@ class RateLimitsTest extends V600ServerSetup {
       val currentDateString = ZonedDateTime
         .now(ZoneOffset.UTC)
         .format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'"))
-      val getRequest = (v6_0_0_Request / "management" / "consumers" / consumerId / "consumer" / "active-rate-limits" / currentDateString).GET <@ (user1)
+      val getRequest = (v6_0_0_Request / "management" / "consumers" / consumerId / "active-rate-limits" / currentDateString).GET <@ (user1)
       val getResponse = makeGetRequest(getRequest)
       
       Then("We should get a 200")
@@ -189,7 +189,7 @@ class RateLimitsTest extends V600ServerSetup {
       val currentDateString = ZonedDateTime
         .now(ZoneOffset.UTC)
         .format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'"))
-      val getRequest = (v6_0_0_Request / "management" / "consumers" / consumerId / "consumer" / "active-rate-limits" / currentDateString).GET <@ (user1)
+      val getRequest = (v6_0_0_Request / "management" / "consumers" / consumerId / "active-rate-limits" / currentDateString).GET <@ (user1)
       val getResponse = makeGetRequest(getRequest)
       
       Then("We should get a 403")
@@ -248,7 +248,7 @@ class RateLimitsTest extends V600ServerSetup {
         .now(ZoneOffset.UTC)
         .plusDays(1) // Check 1 day from now (within the range)
         .format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'"))
-      val getRequest = (v6_0_0_Request / "management" / "consumers" / consumerId / "consumer" / "active-rate-limits" / targetDate).GET <@ (user1)
+      val getRequest = (v6_0_0_Request / "management" / "consumers" / consumerId / "active-rate-limits" / targetDate).GET <@ (user1)
       val getResponse = makeGetRequest(getRequest)
       
       Then("We should get a 200")

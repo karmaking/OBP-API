@@ -457,7 +457,7 @@ trait APIMethods600 {
       implementedInApiVersion,
       nameOf(getActiveRateLimitsAtDate),
       "GET",
-      "/management/consumers/CONSUMER_ID/consumer/active-rate-limits/DATE",
+      "/management/consumers/CONSUMER_ID/active-rate-limits/DATE",
       "Get Active Rate Limits at Date",
       s"""
          |Get the active rate limits for a consumer at a specific date. Returns the aggregated rate limits from all active records at that time.
@@ -484,7 +484,7 @@ trait APIMethods600 {
 
 
     lazy val getActiveRateLimitsAtDate: OBPEndpoint = {
-      case "management" :: "consumers" :: consumerId :: "consumer" :: "active-rate-limits" :: dateString :: Nil JsonGet _ =>
+      case "management" :: "consumers" :: consumerId :: "active-rate-limits" :: dateString :: Nil JsonGet _ =>
         cc =>
           implicit val ec = EndpointContext(Some(cc))
           for {
@@ -495,6 +495,52 @@ trait APIMethods600 {
               val format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'")
               format.parse(dateString)
             }
+            (rateLimit, rateLimitIds) <- RateLimitingUtil.getActiveRateLimitsWithIds(consumerId, date)
+          } yield {
+            (JSONFactory600.createActiveCallLimitsJsonV600FromCallLimit(rateLimit, rateLimitIds, date), HttpCode.`200`(callContext))
+          }
+    }
+
+
+    staticResourceDocs += ResourceDoc(
+      getActiveRateLimitsNow,
+      implementedInApiVersion,
+      nameOf(getActiveRateLimitsNow),
+      "GET",
+      "/management/consumers/CONSUMER_ID/active-rate-limits",
+      "Get Active Rate Limits (Current)",
+      s"""
+         |Get the active rate limits for a consumer at the current date/time. Returns the aggregated rate limits from all active records at this moment.
+         |
+         |This is a convenience endpoint that uses the current date/time automatically.
+         |
+         |See ${Glossary.getGlossaryItemLink("Rate Limiting")} for more details on how rate limiting works.
+         |
+         |${userAuthenticationMessage(true)}
+         |
+         |""".stripMargin,
+      EmptyBody,
+      activeCallLimitsJsonV600,
+      List(
+        $UserNotLoggedIn,
+        InvalidConsumerId,
+        ConsumerNotFoundByConsumerId,
+        UserHasMissingRoles,
+        UnknownError
+      ),
+      List(apiTagConsumer),
+      Some(List(canGetRateLimits)))
+
+
+    lazy val getActiveRateLimitsNow: OBPEndpoint = {
+      case "management" :: "consumers" :: consumerId :: "active-rate-limits" :: Nil JsonGet _ =>
+        cc =>
+          implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(u), callContext) <- authenticatedAccess(cc)
+            _ <- NewStyle.function.hasEntitlement("", u.userId, canGetRateLimits, callContext)
+            _ <- NewStyle.function.getConsumerByConsumerId(consumerId, callContext)
+            date = new java.util.Date() // Use current date/time
             (rateLimit, rateLimitIds) <- RateLimitingUtil.getActiveRateLimitsWithIds(consumerId, date)
           } yield {
             (JSONFactory600.createActiveCallLimitsJsonV600FromCallLimit(rateLimit, rateLimitIds, date), HttpCode.`200`(callContext))

@@ -2834,9 +2834,14 @@ PUT /obp/v6.0.0/management/consumers/CONSUMER_ID/consumer/rate-limits/RATE_LIMIT
 }
 ```
 
+Query active rate limits (current date/time):
+```bash
+GET /obp/v6.0.0/management/consumers/CONSUMER_ID/active-rate-limits
+```
+
 Query active rate limits at a specific date:
 ```bash
-GET /obp/v6.0.0/management/consumers/CONSUMER_ID/consumer/active-rate-limits/DATE
+GET /obp/v6.0.0/management/consumers/CONSUMER_ID/active-rate-limits/DATE
 ```
 
 **Rate Limit Headers:**
@@ -2857,6 +2862,11 @@ X-Rate-Limit-Reset: 45
 - **Multiple Records**: Consumers can have multiple overlapping rate limit records
 - **Aggregation**: Active limits are summed together (positive values only)
 - **Single Source of Truth**: `RateLimitingUtil.getActiveRateLimitsWithIds()` calculates all active limits consistently
+- **Unlimited**: A value of `-1` means unlimited for that time period
+X-Rate-Limit-Remaining: 0
+X-Rate-Limit-Reset: 45
+
+{
 - **Unlimited**: A value of `-1` means unlimited for that time period
 
 ### 8.5 Security Best Practices

@@ -300,7 +300,7 @@ object Glossary extends MdcLoggable  {
 				 |
 				 |Use the endpoint:
 				 |```
-				 |GET /obp/v6.0.0/management/consumers/{CONSUMER_ID}/consumer/active-rate-limits/{DATE}
+				 |GET /obp/v6.0.0/management/consumers/{CONSUMER_ID}/active-rate-limits/{DATE}
 				 |```
 				 |
 				 |Returns the aggregated active rate limits at a specific date, including which rate limit records contributed to the totals.
