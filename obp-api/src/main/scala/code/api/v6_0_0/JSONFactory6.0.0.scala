@@ -99,14 +99,14 @@ case class CallLimitJsonV600(
 )
 
 case class ActiveCallLimitsJsonV600(
-    call_limits: List[CallLimitJsonV600],
+    considered_rate_limit_ids: List[String],
     active_at_date: java.util.Date,
-    total_per_second_call_limit: Long,
-    total_per_minute_call_limit: Long,
-    total_per_hour_call_limit: Long,
-    total_per_day_call_limit: Long,
-    total_per_week_call_limit: Long,
-    total_per_month_call_limit: Long
+    active_per_second_rate_limit: Long,
+    active_per_minute_rate_limit: Long,
+    active_per_hour_rate_limit: Long,
+    active_per_day_rate_limit: Long,
+    active_per_week_rate_limit: Long,
+    active_per_month_rate_limit: Long
 )
 
 case class RateLimitV600(
@@ -574,32 +574,34 @@ object JSONFactory600 extends CustomJsonFormats with MdcLoggable {
       rateLimitings: List[code.ratelimiting.RateLimiting],
       activeDate: java.util.Date
   ): ActiveCallLimitsJsonV600 = {
-    val callLimits = rateLimitings.map(createCallLimitJsonV600)
+    val rateLimitIds = rateLimitings.map(_.rateLimitingId)
     ActiveCallLimitsJsonV600(
-      call_limits = callLimits,
+      considered_rate_limit_ids = rateLimitIds,
       active_at_date = activeDate,
-      total_per_second_call_limit = rateLimitings.map(_.perSecondCallLimit).sum,
-      total_per_minute_call_limit = rateLimitings.map(_.perMinuteCallLimit).sum,
-      total_per_hour_call_limit = rateLimitings.map(_.perHourCallLimit).sum,
-      total_per_day_call_limit = rateLimitings.map(_.perDayCallLimit).sum,
-      total_per_week_call_limit = rateLimitings.map(_.perWeekCallLimit).sum,
-      total_per_month_call_limit = rateLimitings.map(_.perMonthCallLimit).sum
+      active_per_second_rate_limit = rateLimitings.map(_.perSecondCallLimit).sum,
+      active_per_minute_rate_limit = rateLimitings.map(_.perMinuteCallLimit).sum,
+      active_per_hour_rate_limit = rateLimitings.map(_.perHourCallLimit).sum,
+      active_per_day_rate_limit = rateLimitings.map(_.perDayCallLimit).sum,
+      active_per_week_rate_limit = rateLimitings.map(_.perWeekCallLimit).sum,
+      active_per_month_rate_limit = rateLimitings.map(_.perMonthCallLimit).sum
     )
   }
 
   def createActiveCallLimitsJsonV600FromCallLimit(
+      
       rateLimit: code.api.util.RateLimitingJson.CallLimit,
+      rateLimitIds: List[String],
       activeDate: java.util.Date
   ): ActiveCallLimitsJsonV600 = {
     ActiveCallLimitsJsonV600(
-      call_limits = List.empty,
+      considered_rate_limit_ids = rateLimitIds,
       active_at_date = activeDate,
-      total_per_second_call_limit = rateLimit.per_second,
-      total_per_minute_call_limit = rateLimit.per_minute,
-      total_per_hour_call_limit = rateLimit.per_hour,
-      total_per_day_call_limit = rateLimit.per_day,
-      total_per_week_call_limit = rateLimit.per_week,
-      total_per_month_call_limit = rateLimit.per_month
+      active_per_second_rate_limit = rateLimit.per_second,
+      active_per_minute_rate_limit = rateLimit.per_minute,
+      active_per_hour_rate_limit = rateLimit.per_hour,
+      active_per_day_rate_limit = rateLimit.per_day,
+      active_per_week_rate_limit = rateLimit.per_week,
+      active_per_month_rate_limit = rateLimit.per_month
     )
   }
 

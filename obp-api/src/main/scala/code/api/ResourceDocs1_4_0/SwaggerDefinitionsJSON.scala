@@ -4157,14 +4157,14 @@ object SwaggerDefinitionsJSON {
   )
 
   lazy val activeCallLimitsJsonV600 = ActiveCallLimitsJsonV600(
-    call_limits = List(callLimitJsonV600),
+    considered_rate_limit_ids = List("80e1e0b2-d8bf-4f85-a579-e69ef36e3305"),
     active_at_date = DateWithDayExampleObject,
-    total_per_second_call_limit = 100,
-    total_per_minute_call_limit = 1000,
-    total_per_hour_call_limit = -1,
-    total_per_day_call_limit = -1,
-    total_per_week_call_limit = -1,
-    total_per_month_call_limit = -1
+    active_per_second_rate_limit = 100,
+    active_per_minute_rate_limit = 1000,
+    active_per_hour_rate_limit = -1,
+    active_per_day_rate_limit = -1,
+    active_per_week_rate_limit = -1,
+    active_per_month_rate_limit = -1
   )
 
   lazy val accountWebhookPostJson = AccountWebhookPostJson(

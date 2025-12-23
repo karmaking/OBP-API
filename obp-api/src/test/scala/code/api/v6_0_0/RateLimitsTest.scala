@@ -41,7 +41,7 @@ import java.time.format.DateTimeFormatter
 import java.time.{ZoneOffset, ZonedDateTime}
 import java.util.Date
 
-class CallLimitsTest extends V600ServerSetup {
+class RateLimitsTest extends V600ServerSetup {
 
   object VersionOfApi extends Tag(ApiVersion.v6_0_0.toString)
   object ApiEndpoint1 extends Tag(nameOf(Implementations6_0_0.createCallLimits))
@@ -171,15 +171,15 @@ class CallLimitsTest extends V600ServerSetup {
       val currentDateString = ZonedDateTime
         .now(ZoneOffset.UTC)
         .format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'"))
-      val getRequest = (v6_0_0_Request / "management" / "consumers" / consumerId / "consumer" / "rate-limits" / "active-at-date" / currentDateString).GET <@ (user1)
+      val getRequest = (v6_0_0_Request / "management" / "consumers" / consumerId / "consumer" / "active-rate-limits" / currentDateString).GET <@ (user1)
       val getResponse = makeGetRequest(getRequest)
       
       Then("We should get a 200")
       getResponse.code should equal(200)
       And("we should get the active call limits response")
       val activeCallLimits = getResponse.body.extract[ActiveCallLimitsJsonV600]
-      activeCallLimits.call_limits.size == 0
-      activeCallLimits.total_per_second_call_limit == 0L
+      activeCallLimits.considered_rate_limit_ids.size >= 0
+      activeCallLimits.active_per_second_rate_limit == 0L
     }
 
     scenario("We will try to get active call limits without proper role", ApiEndpoint3, VersionOfApi) {
@@ -189,13 +189,79 @@ class CallLimitsTest extends V600ServerSetup {
       val currentDateString = ZonedDateTime
         .now(ZoneOffset.UTC)
         .format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'"))
-      val getRequest = (v6_0_0_Request / "management" / "consumers" / consumerId / "consumer" / "rate-limits" / "active-at-date" / currentDateString).GET <@ (user1)
+      val getRequest = (v6_0_0_Request / "management" / "consumers" / consumerId / "consumer" / "active-rate-limits" / currentDateString).GET <@ (user1)
       val getResponse = makeGetRequest(getRequest)
       
       Then("We should get a 403")
       getResponse.code should equal(403)
       And("error should be " + UserHasMissingRoles + CanGetRateLimits)
       getResponse.body.extract[ErrorMessage].message should equal(UserHasMissingRoles + CanGetRateLimits)
+    }
+
+    scenario("We will get aggregated call limits for two overlapping rate limit records", ApiEndpoint3, VersionOfApi) {
+      Given("We create two call limit records with overlapping date ranges")
+      val Some((c, _)) = user1
+      val consumerId = Consumers.consumers.vend.getConsumerByConsumerKey(c.key).map(_.consumerId.get).getOrElse("")
+      Entitlement.entitlement.vend.addEntitlement("", resourceUser1.userId, CanCreateRateLimits.toString)
+      
+      // Create first rate limit record
+      val fromDate1 = new Date()
+      val toDate1 = new Date(System.currentTimeMillis() + 172800000L) // +2 days
+      val rateLimit1 = CallLimitPostJsonV600(
+        from_date = fromDate1,
+        to_date = toDate1,
+        api_version = Some("v6.0.0"),
+        api_name = Some("testEndpoint1"),
+        bank_id = None,
+        per_second_call_limit = "10",
+        per_minute_call_limit = "100",
+        per_hour_call_limit = "1000",
+        per_day_call_limit = "5000",
+        per_week_call_limit = "-1",
+        per_month_call_limit = "-1"
+      )
+      val request1 = (v6_0_0_Request / "management" / "consumers" / consumerId / "consumer" / "rate-limits").POST <@ (user1)
+      val createResponse1 = makePostRequest(request1, write(rateLimit1))
+      createResponse1.code should equal(201)
+      
+      // Create second rate limit record with same date range
+      val rateLimit2 = CallLimitPostJsonV600(
+        from_date = fromDate1,
+        to_date = toDate1,
+        api_version = Some("v6.0.0"),
+        api_name = Some("testEndpoint2"),
+        bank_id = None,
+        per_second_call_limit = "5",
+        per_minute_call_limit = "50",
+        per_hour_call_limit = "500",
+        per_day_call_limit = "2500",
+        per_week_call_limit = "-1",
+        per_month_call_limit = "-1"
+      )
+      val request2 = (v6_0_0_Request / "management" / "consumers" / consumerId / "consumer" / "rate-limits").POST <@ (user1)
+      val createResponse2 = makePostRequest(request2, write(rateLimit2))
+      createResponse2.code should equal(201)
+
+      When("We get active call limits at a date within the overlapping range")
+      Entitlement.entitlement.vend.addEntitlement("", resourceUser1.userId, CanGetRateLimits.toString)
+      val targetDate = ZonedDateTime
+        .now(ZoneOffset.UTC)
+        .plusDays(1) // Check 1 day from now (within the range)
+        .format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'"))
+      val getRequest = (v6_0_0_Request / "management" / "consumers" / consumerId / "consumer" / "active-rate-limits" / targetDate).GET <@ (user1)
+      val getResponse = makeGetRequest(getRequest)
+      
+      Then("We should get a 200")
+      getResponse.code should equal(200)
+      
+      And("the totals should be the sum of both records (using single source of truth aggregation)")
+      val activeCallLimits = getResponse.body.extract[ActiveCallLimitsJsonV600]
+      activeCallLimits.active_per_second_rate_limit should equal(15L) // 10 + 5
+      activeCallLimits.active_per_minute_rate_limit should equal(150L) // 100 + 50
+      activeCallLimits.active_per_hour_rate_limit should equal(1500L) // 1000 + 500
+      activeCallLimits.active_per_day_rate_limit should equal(7500L) // 5000 + 2500
+      activeCallLimits.active_per_week_rate_limit should equal(-1L) // -1 (both are -1, so unlimited)
+      activeCallLimits.active_per_month_rate_limit should equal(-1L) // -1 (both are -1, so unlimited)
     }
   }
 }

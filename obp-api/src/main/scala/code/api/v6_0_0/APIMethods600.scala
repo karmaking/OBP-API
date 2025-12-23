@@ -457,10 +457,10 @@ trait APIMethods600 {
       implementedInApiVersion,
       nameOf(getActiveCallLimitsAtDate),
       "GET",
-      "/management/consumers/CONSUMER_ID/consumer/rate-limits/active-at-date/DATE",
+      "/management/consumers/CONSUMER_ID/consumer/active-rate-limits/DATE",
       "Get Active Rate Limits at Date",
       s"""
-         |Get the sum of rate limits at a certain date time. This returns a SUM of all the records that span that time.
+         |Get the active rate limits for a consumer at a specific date. Returns the aggregated rate limits from all active records at that time.
          |
          |Date format: YYYY-MM-DDTHH:MM:SSZ (e.g. 1099-12-31T23:00:00Z)
          |
@@ -482,7 +482,7 @@ trait APIMethods600 {
 
 
     lazy val getActiveCallLimitsAtDate: OBPEndpoint = {
-      case "management" :: "consumers" :: consumerId :: "consumer" :: "rate-limits" :: "active-at-date" :: dateString :: Nil JsonGet _ =>
+      case "management" :: "consumers" :: consumerId :: "consumer" :: "active-rate-limits" :: dateString :: Nil JsonGet _ =>
         cc =>
           implicit val ec = EndpointContext(Some(cc))
           for {
@@ -494,8 +494,10 @@ trait APIMethods600 {
               format.parse(dateString)
             }
             rateLimit <- RateLimitingUtil.getActiveRateLimits(consumerId, date)
+            rateLimitRecords <- RateLimitingDI.rateLimiting.vend.getActiveCallLimitsByConsumerIdAtDate(consumerId, date)
+            rateLimitIds = rateLimitRecords.map(_.rateLimitingId)
           } yield {
-            (JSONFactory600.createActiveCallLimitsJsonV600FromCallLimit(rateLimit, date), HttpCode.`200`(callContext))
+            (JSONFactory600.createActiveCallLimitsJsonV600FromCallLimit(rateLimit, rateLimitIds, date), HttpCode.`200`(callContext))
           }
     }
 
