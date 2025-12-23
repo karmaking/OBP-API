@@ -238,7 +238,7 @@ trait APIMethods600 {
         UnknownError
       ),
       List(apiTagConsumer),
-      Some(List(canReadCallLimits)))
+      Some(List(canGetRateLimits)))
 
 
     lazy val getCurrentCallsLimit: OBPEndpoint = {
@@ -463,7 +463,7 @@ trait APIMethods600 {
         UnknownError
       ),
       List(apiTagConsumer),
-      Some(List(canReadCallLimits)))
+      Some(List(canGetRateLimits)))
 
 
     lazy val getActiveCallLimitsAtDate: OBPEndpoint = {
@@ -472,7 +472,7 @@ trait APIMethods600 {
           implicit val ec = EndpointContext(Some(cc))
           for {
             (Full(u), callContext) <- authenticatedAccess(cc)
-            _ <- NewStyle.function.hasEntitlement("", u.userId, canReadCallLimits, callContext)
+            _ <- NewStyle.function.hasEntitlement("", u.userId, canGetRateLimits, callContext)
             _ <- NewStyle.function.getConsumerByConsumerId(consumerId, callContext)
             date <- NewStyle.function.tryons(s"$InvalidDateFormat Current date format is: $dateString. Please use this format: YYYY-MM-DDTHH:MM:SSZ (e.g. 1099-12-31T23:00:00Z)", 400, callContext) {
               val format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'")

@@ -514,6 +514,9 @@ object ApiRole extends MdcLoggable{
   case class CanReadCallLimits(requiresBankId: Boolean = false) extends ApiRole
   lazy val canReadCallLimits = CanReadCallLimits()
 
+  case class CanGetRateLimits(requiresBankId: Boolean = false) extends ApiRole
+  lazy val canGetRateLimits = CanGetRateLimits()
+
   case class CanCheckFundsAvailable (requiresBankId: Boolean = false) extends ApiRole
   lazy val canCheckFundsAvailable = CanCheckFundsAvailable()
 

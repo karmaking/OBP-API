@@ -26,7 +26,7 @@ TESOBE (http://www.tesobe.com/)
 package code.api.v6_0_0
 
 import code.api.util.APIUtil.OAuth._
-import code.api.util.ApiRole.{CanDeleteRateLimits, CanReadCallLimits, CanCreateRateLimits}
+import code.api.util.ApiRole.{CanDeleteRateLimits, CanGetRateLimits, CanCreateRateLimits}
 import code.api.util.ErrorMessages.{UserHasMissingRoles, UserNotLoggedIn}
 import code.api.v6_0_0.OBPAPI6_0_0.Implementations6_0_0
 import code.consumer.Consumers
@@ -167,7 +167,7 @@ class CallLimitsTest extends V600ServerSetup {
       createResponse.code should equal(201)
 
       When("We get active call limits at current date")
-      Entitlement.entitlement.vend.addEntitlement("", resourceUser1.userId, CanReadCallLimits.toString)
+      Entitlement.entitlement.vend.addEntitlement("", resourceUser1.userId, CanGetRateLimits.toString)
       val currentDateString = ZonedDateTime
         .now(ZoneOffset.UTC)
         .format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'"))
@@ -194,8 +194,8 @@ class CallLimitsTest extends V600ServerSetup {
       
       Then("We should get a 403")
       getResponse.code should equal(403)
-      And("error should be " + UserHasMissingRoles + CanReadCallLimits)
-      getResponse.body.extract[ErrorMessage].message should equal(UserHasMissingRoles + CanReadCallLimits)
+      And("error should be " + UserHasMissingRoles + CanGetRateLimits)
+      getResponse.body.extract[ErrorMessage].message should equal(UserHasMissingRoles + CanGetRateLimits)
     }
   }
 }
