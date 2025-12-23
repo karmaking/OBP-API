@@ -1889,7 +1889,7 @@ api_enabled_endpoints=[
   OBPv5.1.0-updateConsumerRedirectUrl,
   OBPv5.1.0-enableDisableConsumers,
   OBPv5.1.0-deleteConsumer,
-  OBPv6.0.0-getActiveCallLimitsAtDate,
+  OBPv6.0.0-getActiveRateLimitsAtDate,
   OBPv6.0.0-updateRateLimits,
   OBPv5.1.0-getMetrics,
   OBPv5.1.0-getAggregateMetrics,

@@ -47,7 +47,7 @@ class RateLimitsTest extends V600ServerSetup {
   object ApiEndpoint1 extends Tag(nameOf(Implementations6_0_0.createCallLimits))
   object ApiEndpoint2 extends Tag(nameOf(Implementations6_0_0.deleteCallLimits))
   object UpdateRateLimits extends Tag(nameOf(Implementations6_0_0.updateRateLimits))
-  object ApiEndpoint3 extends Tag(nameOf(Implementations6_0_0.getActiveCallLimitsAtDate))
+  object ApiEndpoint3 extends Tag(nameOf(Implementations6_0_0.getActiveRateLimitsAtDate))
 
   lazy val postCallLimitJsonV600 = CallLimitPostJsonV600(
     from_date = new Date(),

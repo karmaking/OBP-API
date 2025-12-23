@@ -453,9 +453,9 @@ trait APIMethods600 {
 
 
     staticResourceDocs += ResourceDoc(
-      getActiveCallLimitsAtDate,
+      getActiveRateLimitsAtDate,
       implementedInApiVersion,
-      nameOf(getActiveCallLimitsAtDate),
+      nameOf(getActiveRateLimitsAtDate),
       "GET",
       "/management/consumers/CONSUMER_ID/consumer/active-rate-limits/DATE",
       "Get Active Rate Limits at Date",
@@ -483,7 +483,7 @@ trait APIMethods600 {
       Some(List(canGetRateLimits)))
 
 
-    lazy val getActiveCallLimitsAtDate: OBPEndpoint = {
+    lazy val getActiveRateLimitsAtDate: OBPEndpoint = {
       case "management" :: "consumers" :: consumerId :: "consumer" :: "active-rate-limits" :: dateString :: Nil JsonGet _ =>
         cc =>
           implicit val ec = EndpointContext(Some(cc))
