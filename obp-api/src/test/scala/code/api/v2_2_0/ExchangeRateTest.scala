@@ -1,25 +1,15 @@
 package code.api.v2_2_0
 
 import com.openbankproject.commons.model.ErrorMessage
-import scala.language.reflectiveCalls
 import code.api.util.APIUtil.OAuth._
-import scala.language.reflectiveCalls
 import code.api.util.ApiRole
-import scala.language.reflectiveCalls
 import code.api.util.ErrorMessages.InvalidISOCurrencyCode
-import scala.language.reflectiveCalls
 import code.consumer.Consumers
-import scala.language.reflectiveCalls
 import code.scope.Scope
-import scala.language.reflectiveCalls
 import code.setup.DefaultUsers
-import scala.language.reflectiveCalls
 import com.github.dwickern.macros.NameOf.nameOf
-import scala.language.reflectiveCalls
 import com.openbankproject.commons.util.ApiVersion
-import scala.language.reflectiveCalls
 import org.scalatest.Tag
-import scala.language.reflectiveCalls
 
 class ExchangeRateTest extends V220ServerSetup with DefaultUsers {
 

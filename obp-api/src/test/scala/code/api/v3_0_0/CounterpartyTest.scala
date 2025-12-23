@@ -1,15 +1,10 @@
 package code.api.v3_0_0
 
 import code.api.Constant._
-import scala.language.reflectiveCalls
 import com.openbankproject.commons.util.ApiVersion
-import scala.language.reflectiveCalls
 import code.api.v3_0_0.OBPAPI3_0_0.Implementations3_0_0
-import scala.language.reflectiveCalls
 import com.github.dwickern.macros.NameOf.nameOf
-import scala.language.reflectiveCalls
 import org.scalatest.Tag
-import scala.language.reflectiveCalls
 
 class CounterpartyTest extends V300ServerSetup {
   /**

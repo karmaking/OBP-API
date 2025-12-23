@@ -1,24 +1,15 @@
 package code.connector
 
 import code.api.util.{CallContext, OBPQueryParam}
-import scala.language.postfixOps
 import code.api.v5_1_0.V510ServerSetup
-import scala.language.postfixOps
 import code.bankconnectors.Connector
-import scala.language.postfixOps
 import com.github.dwickern.macros.NameOf
-import scala.language.postfixOps
 import com.openbankproject.commons.model.OutboundAdapterCallContext
-import scala.language.postfixOps
 import com.openbankproject.commons.util.ReflectUtils
-import scala.language.postfixOps
 import org.scalatest.{FlatSpec, Matchers, Tag}
-import scala.language.postfixOps
 
 import scala.collection.immutable.List
-import scala.language.postfixOps
 import scala.reflect.runtime.universe
-import scala.language.postfixOps
 
 class ConnectorTest extends V510ServerSetup {
   object ConnectorTestTag extends Tag(NameOf.nameOfType[ConnectorTest])

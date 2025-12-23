@@ -26,60 +26,33 @@ TESOBE (http://www.tesobe.com/)
 package code.api.v5_1_0
 
 import code.api.RequestHeader
-import scala.language.reflectiveCalls
 import code.api.ResourceDocs1_4_0.SwaggerDefinitionsJSON
-import scala.language.reflectiveCalls
 import code.api.ResourceDocs1_4_0.SwaggerDefinitionsJSON.{accountRoutingJsonV121, bankRoutingJsonV121, branchRoutingJsonV141, postCounterpartyLimitV510}
-import scala.language.reflectiveCalls
 import code.api.v5_0_0.ConsentJsonV500
-import scala.language.reflectiveCalls
 import code.api.util.APIUtil.OAuth._
-import scala.language.reflectiveCalls
 import code.api.util.ApiRole._
-import scala.language.reflectiveCalls
 import code.api.util.Consent
-import scala.language.reflectiveCalls
 import code.api.util.ErrorMessages._
-import scala.language.reflectiveCalls
 import code.api.util.ExampleValue.counterpartyNameExample
-import scala.language.reflectiveCalls
 import code.api.v2_1_0.{CounterpartyIdJson, TransactionRequestBodyCounterpartyJSON}
-import scala.language.reflectiveCalls
 import code.api.v3_0_0.CoreAccountsJsonV300
-import scala.language.reflectiveCalls
 import code.api.v3_0_0.OBPAPI3_0_0.Implementations3_0_0
-import scala.language.reflectiveCalls
 import code.api.v3_1_0.PostConsentChallengeJsonV310
-import scala.language.reflectiveCalls
 import code.api.v4_0_0.OBPAPI4_0_0.Implementations4_0_0
-import scala.language.reflectiveCalls
 import code.api.v4_0_0.{TransactionRequestWithChargeJSON400, UsersJsonV400}
-import scala.language.reflectiveCalls
 import code.api.v5_0_0.ConsentRequestResponseJson
-import scala.language.reflectiveCalls
 import code.api.v5_0_0.OBPAPI5_0_0.Implementations5_0_0
-import scala.language.reflectiveCalls
 import code.api.v5_1_0.OBPAPI5_1_0.Implementations5_1_0
-import scala.language.reflectiveCalls
 import code.consent.ConsentStatus
-import scala.language.reflectiveCalls
 import code.entitlement.Entitlement
-import scala.language.reflectiveCalls
 import code.setup.PropsReset
-import scala.language.reflectiveCalls
 import com.github.dwickern.macros.NameOf.nameOf
-import scala.language.reflectiveCalls
 import com.openbankproject.commons.model.{AmountOfMoneyJsonV121, ErrorMessage}
-import scala.language.reflectiveCalls
 import com.openbankproject.commons.util.ApiVersion
-import scala.language.reflectiveCalls
 import net.liftweb.json.Serialization.write
-import scala.language.reflectiveCalls
 import org.scalatest.Tag
-import scala.language.reflectiveCalls
 
 import scala.language.postfixOps
-import scala.language.reflectiveCalls
 
 class VRPConsentRequestTest extends V510ServerSetup with PropsReset{
 

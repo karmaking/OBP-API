@@ -179,8 +179,8 @@ class TransactionRequestsTest extends V400ServerSetup with DefaultUsers {
           cvv = cardJsonV500.cvv,
           card_number = cardJsonV500.card_number,
           name_on_card = cardJsonV500.name_on_card,
-          expiry_year = (cardJsonV500.expires_date.toInstant.atZone(java.time.ZoneId.systemDefault()).getYear + 1900).toString,
-          expiry_month = (cardJsonV500.expires_date.toInstant.atZone(java.time.ZoneId.systemDefault()).getMonthValue).toString
+          expiry_year = (cardJsonV500.expires_date.getYear+1900).toString,
+          expiry_month = (cardJsonV500.expires_date.getMonth+1).toString
         ),
         CounterpartyIdJson(counterpartyCounterparty.counterpartyId), 
         bodyValue, 

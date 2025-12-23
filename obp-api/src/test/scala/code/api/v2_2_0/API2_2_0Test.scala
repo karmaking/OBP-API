@@ -27,34 +27,20 @@ TESOBE (http://www.tesobe.com/)
 package code.api.v2_2_0
 
 import code.api.Constant._
-import scala.language.reflectiveCalls
 import _root_.net.liftweb.json.Serialization.write
-import scala.language.reflectiveCalls
 import com.openbankproject.commons.model.ErrorMessage
-import scala.language.reflectiveCalls
 import code.api.ResourceDocs1_4_0.SwaggerDefinitionsJSON.createViewJsonV300
-import scala.language.reflectiveCalls
 import code.api.util.APIUtil.OAuth._
-import scala.language.reflectiveCalls
 import code.api.v1_2._
-import scala.language.reflectiveCalls
 import code.api.v1_2_1.UpdateViewJsonV121
-import scala.language.reflectiveCalls
 import code.setup.{APIResponse, DefaultUsers}
-import scala.language.reflectiveCalls
 import com.openbankproject.commons.model.CreateViewJson
-import scala.language.reflectiveCalls
 import net.liftweb.util.Helpers._
-import scala.language.reflectiveCalls
 import org.scalatest._
-import scala.language.reflectiveCalls
 import code.api.v2_2_0.OBPAPI2_2_0.Implementations2_2_0
-import scala.language.reflectiveCalls
 import com.github.dwickern.macros.NameOf.nameOf
-import scala.language.reflectiveCalls
 
 import scala.util.Random._
-import scala.language.reflectiveCalls
 
 
 class API2_2_0Test extends V220ServerSetup with DefaultUsers {

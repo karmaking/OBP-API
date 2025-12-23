@@ -31,7 +31,7 @@ import code.api.util.APIUtil.OAuth._
 import code.api.util.ApiRole._
 import com.openbankproject.commons.util.ApiVersion
 import code.api.util.ErrorMessages._
-// Removed import that shadows local object definition: APIMethods600
+import code.api.v6_0_0.APIMethods600
 
 import code.entitlement.Entitlement
 import code.model.dataAccess.{AuthUser, ResourceUser}

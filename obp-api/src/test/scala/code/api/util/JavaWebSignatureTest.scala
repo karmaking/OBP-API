@@ -11,7 +11,6 @@ import com.github.dwickern.macros.NameOf.nameOf
 import net.liftweb.common.Full
 import net.liftweb.util.Helpers._
 import org.scalatest.Tag
-import scala.language.postfixOps
 
 class JavaWebSignatureTest extends V400ServerSetup {
   /**

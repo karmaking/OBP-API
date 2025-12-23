@@ -12,7 +12,6 @@ import org.scalatest.matchers.{MatchResult, Matcher}
 import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers, Tag}
 
 import scala.reflect.runtime.universe._
-import scala.language.postfixOps
 
 
 /**

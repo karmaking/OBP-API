@@ -26,25 +26,15 @@ TESOBE (http://www.tesobe.com/)
 package code.api.v3_0_0
 
 import code.api.util.ApiRole.canGetAdapterInfoAtOneBank
-import scala.language.reflectiveCalls
 import code.api.util.ErrorMessages.{UserHasMissingRoles, UserNotLoggedIn}
-import scala.language.reflectiveCalls
 import code.api.v3_0_0.OBPAPI3_0_0.Implementations3_0_0
-import scala.language.reflectiveCalls
 import code.api.util.APIUtil.OAuth._
-import scala.language.reflectiveCalls
 import code.entitlement.Entitlement
-import scala.language.reflectiveCalls
 import code.setup.DefaultUsers
-import scala.language.reflectiveCalls
 import com.github.dwickern.macros.NameOf.nameOf
-import scala.language.reflectiveCalls
 import com.openbankproject.commons.model.ErrorMessage
-import scala.language.reflectiveCalls
 import com.openbankproject.commons.util.ApiVersion
-import scala.language.reflectiveCalls
 import org.scalatest.Tag
-import scala.language.reflectiveCalls
 
 class GetAdapterInfoTest extends V300ServerSetup with DefaultUsers {
 

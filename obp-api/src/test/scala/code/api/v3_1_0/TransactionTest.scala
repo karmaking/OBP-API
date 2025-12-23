@@ -26,6 +26,7 @@ TESOBE (http://www.tesobe.com/)
 package code.api.v3_1_0
 
 import code.api.Constant._
+import com.openbankproject.commons.model.ErrorMessage
 import code.api.ResourceDocs1_4_0.SwaggerDefinitionsJSON
 import code.api.util.APIUtil.OAuth._
 import code.api.util.ApiRole.CanCreateHistoricalTransaction
@@ -41,11 +42,10 @@ import code.api.v3_1_0.OBPAPI3_1_0.Implementations3_1_0
 import code.api.v3_1_0.OBPAPI3_1_0.Implementations2_2_0
 import code.entitlement.Entitlement
 import com.github.dwickern.macros.NameOf.nameOf
-import com.openbankproject.commons.model.{AmountOfMoneyJsonV121, ErrorMessage}
+import com.openbankproject.commons.model.AmountOfMoneyJsonV121
 import com.openbankproject.commons.util.ApiVersion
-import net.liftweb.json.Serialization.write
 import org.scalatest.Tag
-import scala.language.reflectiveCalls
+import net.liftweb.json.Serialization.write
 
 class TransactionTest extends V310ServerSetup {
 
@@ -448,7 +448,7 @@ class TransactionTest extends V310ServerSetup {
 
       val responseError1 = makePostRequest(request310, write(postJsonCounterparty1))
       Then("We should get a 400")
-
+      
       responseError1.code should equal(400)
       responseError1.body.toString contains("from object should only contain bank_id and account_id or counterparty_id in the post json body.") should be (true)
 

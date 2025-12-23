@@ -27,26 +27,16 @@ TESOBE (http://www.tesobe.com/)
 package code.api.v5_0_0
 
 import code.api.Constant._
-import scala.language.reflectiveCalls
 import code.api.ResourceDocs1_4_0.SwaggerDefinitionsJSON._
-import scala.language.reflectiveCalls
 import code.api.util.APIUtil.OAuth._
-import scala.language.reflectiveCalls
 import code.api.v1_2_1.{PermissionJSON, PermissionsJSON}
-import scala.language.reflectiveCalls
 import code.api.v3_0_0.OBPAPI3_0_0.Implementations3_0_0
-import scala.language.reflectiveCalls
 import code.setup.APIResponse
-import scala.language.reflectiveCalls
 import com.github.dwickern.macros.NameOf.nameOf
-import scala.language.reflectiveCalls
 import com.openbankproject.commons.util.ApiVersion
-import scala.language.reflectiveCalls
 import org.scalatest.Tag
-import scala.language.reflectiveCalls
 
 import scala.util.Random.nextInt
-import scala.language.reflectiveCalls
 
 class ViewsTests extends V500ServerSetup {
 

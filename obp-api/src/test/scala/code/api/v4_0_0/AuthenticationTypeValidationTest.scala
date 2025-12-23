@@ -1,35 +1,20 @@
 package code.api.v4_0_0
 
 import code.api.util.APIUtil.OAuth._
-import scala.language.reflectiveCalls
 import code.api.util.ApiRole
-import scala.language.reflectiveCalls
 import code.api.util.ApiRole._
-import scala.language.reflectiveCalls
 import code.api.util.ErrorMessages._
-import scala.language.reflectiveCalls
 import code.api.v3_0_0.OBPAPI3_0_0.Implementations2_2_0
-import scala.language.reflectiveCalls
 import code.api.v4_0_0.OBPAPI4_0_0.Implementations4_0_0
-import scala.language.reflectiveCalls
 import code.entitlement.Entitlement
-import scala.language.reflectiveCalls
 import code.setup.APIResponse
-import scala.language.reflectiveCalls
 import com.github.dwickern.macros.NameOf.nameOf
-import scala.language.reflectiveCalls
 import com.openbankproject.commons.model.ErrorMessage
-import scala.language.reflectiveCalls
 import com.openbankproject.commons.util.ApiVersion
-import scala.language.reflectiveCalls
 import net.liftweb.json
-import scala.language.reflectiveCalls
 import net.liftweb.json.JsonAST.JBool
-import scala.language.reflectiveCalls
 import net.liftweb.json.{JArray, JString}
-import scala.language.reflectiveCalls
 import org.scalatest.Tag
-import scala.language.reflectiveCalls
 
 class AuthenticationTypeValidationTest extends V400ServerSetup {
   /**

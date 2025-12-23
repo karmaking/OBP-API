@@ -1,6 +1,4 @@
 package code.api.v1_4_0
-// Note: This test intentionally uses deprecated model classes (LobbyStringT, DriveUpStringT)
-// to maintain backwards compatibility testing. These warnings are expected.
 
 import code.api.util.APIUtil.OAuth._
 import code.api.util.OBPQueryParam
