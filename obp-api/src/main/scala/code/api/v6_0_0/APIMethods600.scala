@@ -462,6 +462,8 @@ trait APIMethods600 {
       s"""
          |Get the active rate limits for a consumer at a specific date. Returns the aggregated rate limits from all active records at that time.
          |
+         |See ${Glossary.getGlossaryItemLink("Rate Limiting")} for more details on how rate limiting works.
+         |
          |Date format: YYYY-MM-DDTHH:MM:SSZ (e.g. 1099-12-31T23:00:00Z)
          |
          |${userAuthenticationMessage(true)}

@@ -196,6 +196,156 @@ object Glossary extends MdcLoggable  {
 
 
 	glossaryItems += GlossaryItem(
+		title = "Rate Limiting",
+		description =
+			s"""
+				 |Rate Limiting controls the number of API requests a Consumer can make within specific time periods. This prevents abuse and ensures fair resource allocation across all API consumers.
+				 |
+				 |### Architecture - Single Source of Truth
+				 |
+				 |```
+				 |┌─────────────────────────────────────────────────────────────────────────┐
+				 |│                      RateLimitingUtil.scala                             │
+				 |│                                                                         │
+				 |│  ┌───────────────────────────────────────────────────────────────────┐ │
+				 |│  │                                                                   │ │
+				 |│  │  getActiveRateLimitsWithIds(consumerId, date):                   │ │
+				 |│  │  Future[(CallLimit, List[String])]                               │ │
+				 |│  │                                                                   │ │
+				 |│  │  ═══════════════════════════════════════════════════════         │ │
+				 |│  │  Single Source of Truth                              │ │
+				 |│  │  ═══════════════════════════════════════════════════════         │ │
+				 |│  │                                                                   │ │
+				 |│  │  This function calculates active rate limits                │ │
+				 |│  │                                                                   │ │
+				 |│  │  Logic:                                                           │ │
+				 |│  │  1. Query RateLimiting table for active records                  │ │
+				 |│  │  2. If found:                                                     │ │
+				 |│  │     • Sum positive values (> 0) for each period                  │ │
+				 |│  │     • Return -1 if no positive values (unlimited)                │ │
+				 |│  │     • Extract rate_limiting_ids                                  │ │
+				 |│  │  3. If not found:                                                 │ │
+				 |│  │     • Return system defaults from props                          │ │
+				 |│  │     • Empty ID list                                              │ │
+				 |│  │  4. Return: (CallLimit, List[rate_limiting_ids])                 │ │
+				 |│  │                                                                   │ │
+				 |│  └───────────────────────────────────────────────────────────────────┘ │
+				 |│                              ▲                                          │
+				 |│                              │                                          │
+				 |└──────────────────────────────┼──────────────────────────────────────────┘
+				 |                               │
+				 |                               │ Both callers use
+				 |                               │ the same function
+				 |                               │
+				 |               ┌───────────────┴───────────────┐
+				 |               │                               │
+				 |               │                               │
+				 |    ┌──────────▼──────────┐         ┌──────────▼──────────┐
+				 |    │                     │         │                     │
+				 |    │  AfterApiAuth.scala │         │ APIMethods600.scala │
+				 |    │                     │         │                     │
+				 |    │  checkRateLimiting()│         │ getActiveCallLimits │
+				 |    │                     │         │ AtDate              │
+				 |    │  ─────────────────  │         │  ────────────────   │
+				 |    │                     │         │                     │
+				 |    │  Called: Every      │         │  Endpoint:          │
+				 |    │  API request        │         │  GET /management/   │
+				 |    │                     │         │  consumers/ID/      │
+				 |    │  Uses:              │         │  consumer/active-   │
+				 |    │  (rateLimit, _)     │         │  rate-limits/DATE   │
+				 |    │                     │         │                     │
+				 |    │  Ignores IDs,       │         │  Uses:              │
+				 |    │  just needs the     │         │  (rateLimit, ids)   │
+				 |    │  CallLimit for      │         │                     │
+				 |    │  enforcement        │         │  Returns both in    │
+				 |    │                     │         │  JSON response      │
+				 |    │                     │         │                     │
+				 |    └─────────────────────┘         └─────────────────────┘
+				 |```
+				 |
+				 |**Key Point**: There is one function that calculates active rate limits. Both enforcement and API reporting call this one function.
+				 |
+				 |### How It Works
+				 |
+				 |1. **Rate Limit Records**: Stored in the `RateLimiting` table with date ranges (from_date, to_date)
+				 |2. **Multiple Records**: A consumer can have multiple active rate limit records that overlap
+				 |3. **Aggregation**: When multiple records are active, their limits are summed together (positive values only)
+				 |4. **Enforcement**: On every API request, the system checks Redis counters against the aggregated limits
+				 |
+				 |### Time Periods
+				 |
+				 |Rate limits can be set for six time periods:
+				 |- **per_second_rate_limit**: Maximum requests per second
+				 |- **per_minute_rate_limit**: Maximum requests per minute  
+				 |- **per_hour_rate_limit**: Maximum requests per hour
+				 |- **per_day_rate_limit**: Maximum requests per day
+				 |- **per_week_rate_limit**: Maximum requests per week
+				 |- **per_month_rate_limit**: Maximum requests per month
+				 |
+				 |A value of `-1` means unlimited for that period.
+				 |
+				 |### HTTP Headers
+				 |
+				 |When rate limiting is active, responses include:
+				 |- `X-Rate-Limit-Limit`: Maximum allowed requests for the period
+				 |- `X-Rate-Limit-Remaining`: Remaining requests in current period
+				 |- `X-Rate-Limit-Reset`: Seconds until the limit resets
+				 |
+				 |### HTTP Status Codes
+				 |
+				 |- **200 OK**: Request allowed, headers show current limit status
+				 |- **429 Too Many Requests**: Rate limit exceeded for a time period
+				 |
+				 |### Querying Active Rate Limits
+				 |
+				 |Use the endpoint:
+				 |```
+				 |GET /obp/v6.0.0/management/consumers/{CONSUMER_ID}/consumer/active-rate-limits/{DATE}
+				 |```
+				 |
+				 |Returns the aggregated active rate limits at a specific date, including which rate limit records contributed to the totals.
+				 |
+				 |### System Defaults
+				 |
+				 |If no rate limit records exist for a consumer, system-wide defaults are used from properties:
+				 |- `rate_limiting_per_second`
+				 |- `rate_limiting_per_minute`
+				 |- `rate_limiting_per_hour`
+				 |- `rate_limiting_per_day`
+				 |- `rate_limiting_per_week`
+				 |- `rate_limiting_per_month`
+				 |
+				 |Default value: `-1` (unlimited)
+				 |
+				 |### Example
+				 |
+				 |A consumer with two overlapping rate limit records:
+				 |- Record 1: 10 requests/second, 100 requests/minute
+				 |- Record 2: 5 requests/second, 50 requests/minute
+				 |
+				 |**Aggregated limits**: 15 requests/second, 150 requests/minute
+				 |
+				 |### Configuration
+				 |
+				 |Enable rate limiting by setting:
+				 |```
+				 |use_consumer_limits=true
+				 |```
+				 |
+				 |For anonymous access, configure:
+				 |```
+				 |user_consumer_limit_anonymous_access=1000
+				 |```
+				 |(Default: 1000 requests per hour)
+				 |
+				 |### Related Concepts
+				 |
+				 |- **Consumer**: The API client subject to rate limiting
+				 |- **Redis**: Storage system for tracking request counts
+				 |- **Single Source of Truth**: `RateLimitingUtil.getActiveRateLimitsWithIds()` function calculates all active rate limits
+			""".stripMargin)
+
+	glossaryItems += GlossaryItem(
     title = "API-Explorer-II-Help",
     description = s"""
 			 |## API Explorer II - How to Use
