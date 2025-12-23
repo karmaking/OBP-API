@@ -402,33 +402,26 @@ object JSONFactory600 extends CustomJsonFormats with MdcLoggable {
 
   def createCurrentUsageJson(
       rateLimits: List[((Option[Long], Option[Long]), LimitCallPeriod)]
-  ): Option[RedisCallLimitJsonV600] = {
-    if (rateLimits.isEmpty) None
-    else {
-      val grouped: Map[LimitCallPeriod, (Option[Long], Option[Long])] =
-        rateLimits.map { case (limits, period) => period -> limits }.toMap
+  ): RedisCallLimitJsonV600 = {
+    val grouped: Map[LimitCallPeriod, (Option[Long], Option[Long])] =
+      rateLimits.map { case (limits, period) => period -> limits }.toMap
 
-      def getInfo(period: RateLimitingPeriod.Value): Option[RateLimitV600] =
-        grouped.get(period) match {
-          case Some((Some(calls), Some(ttl))) =>
-            Some(RateLimitV600(Some(calls), Some(ttl), "ACTIVE"))
-          case Some((None, None)) =>
-            Some(RateLimitV600(None, None, "EXPIRED"))
-          case _ =>
-            Some(RateLimitV600(None, None, "NO_DATA"))
+    def getInfo(period: RateLimitingPeriod.Value): RateLimitV600 =
+      grouped.get(period) match {
+        case Some((Some(calls), Some(ttl))) =>
+          RateLimitV600(Some(calls), Some(ttl), "ACTIVE")
+        case _ =>
+          RateLimitV600(None, None, "UNKNOWN")
       }
 
-      Some(
-        RedisCallLimitJsonV600(
-          getInfo(RateLimitingPeriod.PER_SECOND),
-          getInfo(RateLimitingPeriod.PER_MINUTE),
-          getInfo(RateLimitingPeriod.PER_HOUR),
-          getInfo(RateLimitingPeriod.PER_DAY),
-          getInfo(RateLimitingPeriod.PER_WEEK),
-          getInfo(RateLimitingPeriod.PER_MONTH)
-        )
-      )
-    }
+    RedisCallLimitJsonV600(
+      Some(getInfo(RateLimitingPeriod.PER_SECOND)),
+      Some(getInfo(RateLimitingPeriod.PER_MINUTE)),
+      Some(getInfo(RateLimitingPeriod.PER_HOUR)),
+      Some(getInfo(RateLimitingPeriod.PER_DAY)),
+      Some(getInfo(RateLimitingPeriod.PER_WEEK)),
+      Some(getInfo(RateLimitingPeriod.PER_MONTH))
+    )
   }
 
   def createUserInfoJSON(

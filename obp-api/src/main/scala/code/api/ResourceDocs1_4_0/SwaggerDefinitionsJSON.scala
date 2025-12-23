@@ -4086,6 +4086,17 @@ object SwaggerDefinitionsJSON {
     Some(rateLimit)
   )
   
+  lazy val rateLimitV600 = RateLimitV600(Some(42), Some(15), "ACTIVE")
+  
+  lazy val redisCallLimitJsonV600 = RedisCallLimitJsonV600(
+    Some(rateLimitV600),
+    Some(rateLimitV600),
+    Some(rateLimitV600),
+    Some(rateLimitV600),
+    Some(rateLimitV600),
+    Some(rateLimitV600)
+  )
+  
   lazy val callLimitJson = CallLimitJson(
     per_second_call_limit = "-1",
     per_minute_call_limit = "-1",

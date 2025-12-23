@@ -222,7 +222,22 @@ trait APIMethods600 {
       "/management/consumers/CONSUMER_ID/consumer/current-usage",
       "Get Rate Limits for a Consumer Usage",
       s"""
-         |Get Rate Limits for a Consumer Usage.
+         |Get the current rate limit usage for a specific consumer.
+         |
+         |This endpoint returns the current state of API rate limits across all time periods (per second, per minute, per hour, per day, per week, per month).
+         |
+         |**Response Structure:**
+         |The response always contains a consistent structure with all six time periods, regardless of whether rate limits are configured or active.
+         |
+         |Each time period contains:
+         |- `calls_made`: Number of API calls made in the current period (null if no data available)
+         |- `reset_in_seconds`: Seconds until the counter resets (null if no data available)
+         |- `status`: Current state of the rate limit for this period
+         |
+         |**Status Values:**
+         |- `ACTIVE`: Rate limit counter is active and tracking calls. Both `calls_made` and `reset_in_seconds` will have numeric values.
+         |- `UNKNOWN`: Data is not available. This could mean the rate limit period has expired, no rate limit is configured, or the data cannot be retrieved. Both `calls_made` and `reset_in_seconds` will be null.
+         |
          |${userAuthenticationMessage(true)}
          |
          |""".stripMargin,
