@@ -27,33 +27,29 @@ TESOBE (http://www.tesobe.com/)
 package code
 
 import java.io.File
-import junit.framework._
-import Assert._
 import scala.xml.XML
 import net.liftweb.util._
 import net.liftweb.common._
+import org.scalatest.{FlatSpec, Matchers}
 
 object AppTest {
-  def suite: Test = {
-    val suite = new TestSuite(classOf[AppTest])
-    suite
-  }
-
   def main(args : Array[String]) {
-    junit.textui.TestRunner.run(suite)
+    // Use ScalaTest runner instead
+    println("Use 'sbt test' or 'mvn test' to run tests")
   }
 }
 
 /**
  * Unit test for simple App.
  */
-class AppTest extends TestCase("app") {
+class AppTest extends FlatSpec with Matchers {
 
   /**
-   * Rigourous Tests :-)
+   * Basic functionality test
    */
-  def testOK() = assertTrue(true)
-  // def testKO() = assertTrue(false);
+  "App" should "pass basic test" in {
+    true should be(true)
+  }
 
   /**
    * Tests to make sure the project's XML files are well-formed.
@@ -61,7 +57,7 @@ class AppTest extends TestCase("app") {
    * Finds every *.html and *.xml file in src/main/webapp (and its
    * subdirectories) and tests to make sure they are well-formed.
    */
-  def testXml() = {
+  it should "have well-formed XML files" in {
     var failed: List[File] = Nil
 
     def handledXml(file: String) =

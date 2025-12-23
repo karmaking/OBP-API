@@ -10,6 +10,7 @@ import code.setup.DefaultUsers
 import code.transaction_types.MappedTransactionType
 import com.github.dwickern.macros.NameOf.nameOf
 import com.openbankproject.commons.model.{AmountOfMoneyJsonV121, ErrorMessage, TransactionTypeId}
+import scala.language.reflectiveCalls
 import com.openbankproject.commons.util.ApiVersion
 import net.liftweb.json.Serialization._
 import org.scalatest.Tag

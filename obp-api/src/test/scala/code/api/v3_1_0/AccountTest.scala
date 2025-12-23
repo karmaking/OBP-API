@@ -1,31 +1,56 @@
 package code.api.v3_1_0
 
 import code.api.Constant
+import scala.language.reflectiveCalls
 import com.openbankproject.commons.model.{AccountRouting, AccountRoutingJsonV121, AmountOfMoneyJsonV121, ErrorMessage, enums}
+import scala.language.reflectiveCalls
 import code.api.ResourceDocs1_4_0.SwaggerDefinitionsJSON
+import scala.language.reflectiveCalls
 import code.api.ResourceDocs1_4_0.SwaggerDefinitionsJSON.updateAccountRequestJsonV310
+import scala.language.reflectiveCalls
 import code.api.util.APIUtil.OAuth._
+import scala.language.reflectiveCalls
 import code.api.util.APIUtil.extractErrorMessageCode
+import scala.language.reflectiveCalls
 import code.api.util.ErrorMessages.{UserHasMissingRoles, UserNotLoggedIn}
+import scala.language.reflectiveCalls
 import code.api.util.ApiRole
+import scala.language.reflectiveCalls
 import code.api.v2_0_0.BasicAccountJSON
+import scala.language.reflectiveCalls
 import code.api.v2_2_0.CreateAccountJSONV220
+import scala.language.reflectiveCalls
 import code.api.v3_0_0.{CoreAccountsJsonV300, ModeratedCoreAccountJsonV300}
+import scala.language.reflectiveCalls
 import code.api.v3_0_0.OBPAPI3_0_0.Implementations3_0_0
+import scala.language.reflectiveCalls
 import code.api.v3_1_0.OBPAPI3_1_0.Implementations3_1_0
+import scala.language.reflectiveCalls
 import code.api.v2_0_0.OBPAPI2_0_0.Implementations2_0_0
+import scala.language.reflectiveCalls
 import code.entitlement.Entitlement
+import scala.language.reflectiveCalls
 import code.model.dataAccess.BankAccountRouting
+import scala.language.reflectiveCalls
 import code.setup.DefaultUsers
+import scala.language.reflectiveCalls
 import com.github.dwickern.macros.NameOf.nameOf
+import scala.language.reflectiveCalls
 import com.openbankproject.commons.model.enums.AccountRoutingScheme
+import scala.language.reflectiveCalls
 import com.openbankproject.commons.util.ApiVersion
+import scala.language.reflectiveCalls
 import net.liftweb.json.Serialization.write
+import scala.language.reflectiveCalls
 import org.scalatest.Tag
+import scala.language.reflectiveCalls
 
 import java.util.UUID
+import scala.language.reflectiveCalls
 import java.util.concurrent.TimeUnit
+import scala.language.reflectiveCalls
 import scala.util.Random
+import scala.language.reflectiveCalls
 
 class AccountTest extends V310ServerSetup with DefaultUsers {
 

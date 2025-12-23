@@ -10,6 +10,7 @@ import code.entitlement.Entitlement
 import code.setup.DefaultUsers
 import com.github.dwickern.macros.NameOf.nameOf
 import com.openbankproject.commons.util.ApiVersion
+import scala.language.reflectiveCalls
 import org.scalatest.Tag
 
 

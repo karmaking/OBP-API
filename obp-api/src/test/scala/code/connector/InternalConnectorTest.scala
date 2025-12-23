@@ -8,6 +8,7 @@ import org.scalatest.{FlatSpec, Matchers}
 
 import scala.concurrent.duration._
 import scala.concurrent.Future
+import scala.language.postfixOps
 
 class InternalConnectorTest extends FlatSpec with Matchers {
 

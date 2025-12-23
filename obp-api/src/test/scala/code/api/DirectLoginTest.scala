@@ -13,6 +13,7 @@ import code.setup.{APIResponse, ServerSetup, TestPasswordConfig}
 import code.userlocks.UserLocksProvider
 import com.github.dwickern.macros.NameOf.nameOf
 import com.openbankproject.commons.model.ErrorMessage
+import scala.language.reflectiveCalls
 import com.openbankproject.commons.util.ApiVersion
 import net.liftweb.json.JsonAST.{JArray, JField, JObject, JString}
 import net.liftweb.mapper.By

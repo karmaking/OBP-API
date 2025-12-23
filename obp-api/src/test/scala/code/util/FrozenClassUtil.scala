@@ -11,6 +11,7 @@ import net.liftweb.common.Loggable
 import org.apache.commons.io.IOUtils
 
 import scala.reflect.runtime.universe._
+import scala.language.postfixOps
 
 /**
   * this util is for persist metadata of frozen type, those frozen type is versionStatus = "STABLE" related example classes,

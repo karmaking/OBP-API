@@ -1,7 +1,6 @@
 package code.api
 
 import code.api.util.APIUtil.{ResourceDoc, EmptyBody}
-import code.api.OBPRestHelper
 import com.openbankproject.commons.util.{ApiVersion, ScannedApiVersion}
 import org.scalatest.{FlatSpec, Matchers, Tag}
 

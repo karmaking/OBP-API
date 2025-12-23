@@ -9,6 +9,7 @@ import code.api.v1_4_0.JSONFactory1_4_0.ResourceDocsJson
 import code.setup.{DefaultUsers, PropsReset}
 import com.github.dwickern.macros.NameOf.nameOf
 import com.openbankproject.commons.util.{ApiVersion, Functions}
+import scala.language.reflectiveCalls
 import net.liftweb.json
 import net.liftweb.json.JsonAST._
 import net.liftweb.json.{Formats, JString, Serializer, TypeInfo}

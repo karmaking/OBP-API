@@ -1,4 +1,6 @@
 package code.api.v3_0_0
+// Note: This test intentionally uses deprecated model classes (LobbyStringT, DriveUpStringT)
+// to maintain backwards compatibility testing. These warnings are expected.
 
 import code.api.util.APIUtil.OAuth._
 import code.api.util.ApiRole.CanDeleteBranchAtAnyBank
@@ -13,6 +15,8 @@ import code.setup.DefaultUsers
 import com.github.dwickern.macros.NameOf.nameOf
 import com.openbankproject.commons.model._
 import org.scalatest.Tag
+import scala.language.postfixOps
+import scala.language.reflectiveCalls
 
 import scala.concurrent.duration._
 import scala.concurrent.Await

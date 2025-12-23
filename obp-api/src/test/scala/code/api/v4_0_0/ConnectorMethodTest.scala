@@ -281,7 +281,7 @@ class ConnectorMethodTest extends V400ServerSetup {
       val future = connectorMethod.getBank(BankId("Hello_bank_id"), None)
       val result = Await.result(future, Duration.apply(10, TimeUnit.SECONDS))
 
-      result shouldBe a[Full[(Bank, Option[CallContext])]]
+      result shouldBe a[net.liftweb.common.Box[_]]
       val Full((bank, _)) = result
 
       bank.bankId.value shouldBe "Hello_bank_id"

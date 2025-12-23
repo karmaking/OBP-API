@@ -5,6 +5,7 @@ import code.api.util.{ApiRole, CustomJsonFormats}
 import code.setup.{DefaultUsers, PropsReset}
 import com.github.dwickern.macros.NameOf.nameOf
 import com.openbankproject.commons.util.{ApiVersion, Functions}
+import scala.language.reflectiveCalls
 import io.swagger.parser.OpenAPIParser
 import net.liftweb.json
 import net.liftweb.json.JsonAST._

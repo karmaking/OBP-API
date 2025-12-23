@@ -89,7 +89,7 @@ object RunTLSWebApp extends App with PropsProgrammatically {
     // RESET HEADER
     https.addCustomizer(customizer)
 
-    val sslContextFactory = new SslContextFactory()
+    val sslContextFactory = new SslContextFactory.Server()
     sslContextFactory.setKeyStorePath(this.getClass.getResource("/cert/server.jks").toExternalForm)
     sslContextFactory.setKeyStorePassword("123456")
 
