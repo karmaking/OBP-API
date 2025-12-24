@@ -229,7 +229,25 @@ object RateLimitingUtil extends MdcLoggable {
       // get value (assuming string storage)
       val valueOpt: Option[Long] = Redis.use(JedisMethod.GET, key).map(_.toLong)
 
-      ((valueOpt, ttlOpt), period)
+      // TTL meanings:
+      // -2: Key does not exist
+      // -1: Key exists with no expiry (shouldn't happen in our rate limiting)
+      // >0: Seconds until key expires
+      val calls = ttlOpt match {
+        case Some(-2) => Some(0L)  // Key doesn't exist -> 0 calls
+        case Some(ttl) if ttl <= 0 => Some(0L)  // Expired or invalid -> 0 calls
+        case Some(_) => valueOpt.orElse(Some(0L))  // Active key -> return value or 0
+        case None => Some(0L)  // Redis unavailable -> 0 calls
+      }
+      
+      val normalizedTtl = ttlOpt match {
+        case Some(-2) => Some(0L)  // Key doesn't exist -> 0 TTL
+        case Some(ttl) if ttl <= 0 => Some(0L)  // Expired -> 0 TTL
+        case Some(ttl) => Some(ttl)  // Active -> actual TTL
+        case None => Some(0L)  // Redis unavailable -> 0 TTL
+      }
+
+      ((calls, normalizedTtl), period)
     }
 
     getCallCounterForPeriod(consumerKey, RateLimitingPeriod.PER_SECOND) ::
