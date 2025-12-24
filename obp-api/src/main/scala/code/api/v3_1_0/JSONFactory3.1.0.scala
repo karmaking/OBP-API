@@ -813,7 +813,7 @@ object JSONFactory310{
     val redisRateLimit = rateLimits match {
       case Nil => None
       case _   =>
-        def getInfo(period: RateLimitingPeriod.Value): Option[RateLimit] = {
+        def getCallCounterForPeriod(period: RateLimitingPeriod.Value): Option[RateLimit] = {
           rateLimits.filter(_._2 == period) match {
             case x :: Nil =>
               x._1 match {
@@ -826,12 +826,12 @@ object JSONFactory310{
         }
         Some(
           RedisCallLimitJson(
-            getInfo(RateLimitingPeriod.PER_SECOND),
-            getInfo(RateLimitingPeriod.PER_MINUTE),
-            getInfo(RateLimitingPeriod.PER_HOUR),
-            getInfo(RateLimitingPeriod.PER_DAY),
-            getInfo(RateLimitingPeriod.PER_WEEK),
-            getInfo(RateLimitingPeriod.PER_MONTH)
+            getCallCounterForPeriod(RateLimitingPeriod.PER_SECOND),
+            getCallCounterForPeriod(RateLimitingPeriod.PER_MINUTE),
+            getCallCounterForPeriod(RateLimitingPeriod.PER_HOUR),
+            getCallCounterForPeriod(RateLimitingPeriod.PER_DAY),
+            getCallCounterForPeriod(RateLimitingPeriod.PER_WEEK),
+            getCallCounterForPeriod(RateLimitingPeriod.PER_MONTH)
           )
         )
     }

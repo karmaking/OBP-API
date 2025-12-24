@@ -220,7 +220,7 @@ object RateLimitingUtil extends MdcLoggable {
 
   def consumerRateLimitState(consumerKey: String): immutable.Seq[((Option[Long], Option[Long]), LimitCallPeriod)] = {
 
-    def getInfo(consumerKey: String, period: LimitCallPeriod): ((Option[Long], Option[Long]), LimitCallPeriod) = {
+    def getCallCounterForPeriod(consumerKey: String, period: LimitCallPeriod): ((Option[Long], Option[Long]), LimitCallPeriod) = {
       val key = createUniqueKey(consumerKey, period)
 
       // get TTL
@@ -232,12 +232,12 @@ object RateLimitingUtil extends MdcLoggable {
       ((valueOpt, ttlOpt), period)
     }
 
-    getInfo(consumerKey, RateLimitingPeriod.PER_SECOND) ::
-    getInfo(consumerKey, RateLimitingPeriod.PER_MINUTE) ::
-    getInfo(consumerKey, RateLimitingPeriod.PER_HOUR) ::
-    getInfo(consumerKey, RateLimitingPeriod.PER_DAY) ::
-    getInfo(consumerKey, RateLimitingPeriod.PER_WEEK) ::
-    getInfo(consumerKey, RateLimitingPeriod.PER_MONTH) ::
+    getCallCounterForPeriod(consumerKey, RateLimitingPeriod.PER_SECOND) ::
+    getCallCounterForPeriod(consumerKey, RateLimitingPeriod.PER_MINUTE) ::
+    getCallCounterForPeriod(consumerKey, RateLimitingPeriod.PER_HOUR) ::
+    getCallCounterForPeriod(consumerKey, RateLimitingPeriod.PER_DAY) ::
+    getCallCounterForPeriod(consumerKey, RateLimitingPeriod.PER_WEEK) ::
+    getCallCounterForPeriod(consumerKey, RateLimitingPeriod.PER_MONTH) ::
       Nil
   }
 

@@ -406,7 +406,7 @@ object JSONFactory600 extends CustomJsonFormats with MdcLoggable {
     val grouped: Map[LimitCallPeriod, (Option[Long], Option[Long])] =
       rateLimits.map { case (limits, period) => period -> limits }.toMap
 
-    def getInfo(period: RateLimitingPeriod.Value): RateLimitV600 =
+    def getCallCounterForPeriod(period: RateLimitingPeriod.Value): RateLimitV600 =
       grouped.get(period) match {
         case Some((Some(calls), Some(ttl))) =>
           RateLimitV600(Some(calls), Some(ttl), "ACTIVE")
@@ -415,12 +415,12 @@ object JSONFactory600 extends CustomJsonFormats with MdcLoggable {
       }
 
     RedisCallCountersJsonV600(
-      getInfo(RateLimitingPeriod.PER_SECOND),
-      getInfo(RateLimitingPeriod.PER_MINUTE),
-      getInfo(RateLimitingPeriod.PER_HOUR),
-      getInfo(RateLimitingPeriod.PER_DAY),
-      getInfo(RateLimitingPeriod.PER_WEEK),
-      getInfo(RateLimitingPeriod.PER_MONTH)
+      getCallCounterForPeriod(RateLimitingPeriod.PER_SECOND),
+      getCallCounterForPeriod(RateLimitingPeriod.PER_MINUTE),
+      getCallCounterForPeriod(RateLimitingPeriod.PER_HOUR),
+      getCallCounterForPeriod(RateLimitingPeriod.PER_DAY),
+      getCallCounterForPeriod(RateLimitingPeriod.PER_WEEK),
+      getCallCounterForPeriod(RateLimitingPeriod.PER_MONTH)
     )
   }
 
