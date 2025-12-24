@@ -116,12 +116,12 @@ case class RateLimitV600(
 )
 
 case class RedisCallLimitJsonV600(
-    per_second: Option[RateLimitV600],
-    per_minute: Option[RateLimitV600],
-    per_hour: Option[RateLimitV600],
-    per_day: Option[RateLimitV600],
-    per_week: Option[RateLimitV600],
-    per_month: Option[RateLimitV600]
+    per_second: RateLimitV600,
+    per_minute: RateLimitV600,
+    per_hour: RateLimitV600,
+    per_day: RateLimitV600,
+    per_week: RateLimitV600,
+    per_month: RateLimitV600
 )
 
 case class TransactionRequestBodyCardanoJsonV600(
@@ -415,12 +415,12 @@ object JSONFactory600 extends CustomJsonFormats with MdcLoggable {
       }
 
     RedisCallLimitJsonV600(
-      Some(getInfo(RateLimitingPeriod.PER_SECOND)),
-      Some(getInfo(RateLimitingPeriod.PER_MINUTE)),
-      Some(getInfo(RateLimitingPeriod.PER_HOUR)),
-      Some(getInfo(RateLimitingPeriod.PER_DAY)),
-      Some(getInfo(RateLimitingPeriod.PER_WEEK)),
-      Some(getInfo(RateLimitingPeriod.PER_MONTH))
+      getInfo(RateLimitingPeriod.PER_SECOND),
+      getInfo(RateLimitingPeriod.PER_MINUTE),
+      getInfo(RateLimitingPeriod.PER_HOUR),
+      getInfo(RateLimitingPeriod.PER_DAY),
+      getInfo(RateLimitingPeriod.PER_WEEK),
+      getInfo(RateLimitingPeriod.PER_MONTH)
     )
   }
 
