@@ -115,7 +115,7 @@ case class RateLimitV600(
     status: String
 )
 
-case class RedisCallLimitJsonV600(
+case class RedisCallCountersJsonV600(
     per_second: RateLimitV600,
     per_minute: RateLimitV600,
     per_hour: RateLimitV600,
@@ -402,7 +402,7 @@ object JSONFactory600 extends CustomJsonFormats with MdcLoggable {
 
   def createCurrentUsageJson(
       rateLimits: List[((Option[Long], Option[Long]), LimitCallPeriod)]
-  ): RedisCallLimitJsonV600 = {
+  ): RedisCallCountersJsonV600 = {
     val grouped: Map[LimitCallPeriod, (Option[Long], Option[Long])] =
       rateLimits.map { case (limits, period) => period -> limits }.toMap
 
@@ -414,7 +414,7 @@ object JSONFactory600 extends CustomJsonFormats with MdcLoggable {
           RateLimitV600(None, None, "UNKNOWN")
       }
 
-    RedisCallLimitJsonV600(
+    RedisCallCountersJsonV600(
       getInfo(RateLimitingPeriod.PER_SECOND),
       getInfo(RateLimitingPeriod.PER_MINUTE),
       getInfo(RateLimitingPeriod.PER_HOUR),
