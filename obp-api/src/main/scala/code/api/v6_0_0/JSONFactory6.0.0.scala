@@ -72,6 +72,7 @@ case class CurrentConsumerJsonV600(
     app_type: String,
     description: String,
     consumer_id: String,
+    active_rate_limits: ActiveRateLimitsJsonV600,
     call_counters: RedisCallCountersJsonV600
 )
 
@@ -106,7 +107,7 @@ case class CallLimitJsonV600(
     updated_at: java.util.Date
 )
 
-case class ActiveCallLimitsJsonV600(
+case class ActiveRateLimitsJsonV600(
     considered_rate_limit_ids: List[String],
     active_at_date: java.util.Date,
     active_per_second_rate_limit: Long,
@@ -580,12 +581,12 @@ object JSONFactory600 extends CustomJsonFormats with MdcLoggable {
     )
   }
 
-  def createActiveCallLimitsJsonV600(
+  def createActiveRateLimitsJsonV600(
       rateLimitings: List[code.ratelimiting.RateLimiting],
       activeDate: java.util.Date
-  ): ActiveCallLimitsJsonV600 = {
+  ): ActiveRateLimitsJsonV600 = {
     val rateLimitIds = rateLimitings.map(_.rateLimitingId)
-    ActiveCallLimitsJsonV600(
+    ActiveRateLimitsJsonV600(
       considered_rate_limit_ids = rateLimitIds,
       active_at_date = activeDate,
       active_per_second_rate_limit = rateLimitings.map(_.perSecondCallLimit).sum,
@@ -597,13 +598,13 @@ object JSONFactory600 extends CustomJsonFormats with MdcLoggable {
     )
   }
 
-  def createActiveCallLimitsJsonV600FromCallLimit(
+  def createActiveRateLimitsJsonV600FromCallLimit(
 
       rateLimit: code.api.util.RateLimitingJson.CallLimit,
       rateLimitIds: List[String],
       activeDate: java.util.Date
-  ): ActiveCallLimitsJsonV600 = {
-    ActiveCallLimitsJsonV600(
+  ): ActiveRateLimitsJsonV600 = {
+    ActiveRateLimitsJsonV600(
       considered_rate_limit_ids = rateLimitIds,
       active_at_date = activeDate,
       active_per_second_rate_limit = rateLimit.per_second,

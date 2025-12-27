@@ -26,7 +26,7 @@ import code.api.v5_0_0.JSONFactory500
 import code.api.v5_0_0.{ViewJsonV500, ViewsJsonV500}
 import code.api.v5_1_0.{JSONFactory510, PostCustomerLegalNameJsonV510}
 import code.api.dynamic.entity.helper.{DynamicEntityHelper, DynamicEntityInfo}
-import code.api.v6_0_0.JSONFactory600.{AddUserToGroupResponseJsonV600, DynamicEntityDiagnosticsJsonV600, DynamicEntityIssueJsonV600, GroupEntitlementJsonV600, GroupEntitlementsJsonV600, GroupJsonV600, GroupsJsonV600, PostGroupJsonV600, PostGroupMembershipJsonV600, PostResetPasswordUrlJsonV600, PutGroupJsonV600, ReferenceTypeJsonV600, ReferenceTypesJsonV600, ResetPasswordUrlJsonV600, RoleWithEntitlementCountJsonV600, RolesWithEntitlementCountsJsonV600, ScannedApiVersionJsonV600, UpdateViewJsonV600, UserGroupMembershipJsonV600, UserGroupMembershipsJsonV600, ValidateUserEmailJsonV600, ValidateUserEmailResponseJsonV600, ViewJsonV600, ViewPermissionJsonV600, ViewPermissionsJsonV600, ViewsJsonV600, createAbacRuleJsonV600, createAbacRulesJsonV600, createActiveCallLimitsJsonV600, createCallLimitJsonV600, createRedisCallCountersJson}
+import code.api.v6_0_0.JSONFactory600.{AddUserToGroupResponseJsonV600, DynamicEntityDiagnosticsJsonV600, DynamicEntityIssueJsonV600, GroupEntitlementJsonV600, GroupEntitlementsJsonV600, GroupJsonV600, GroupsJsonV600, PostGroupJsonV600, PostGroupMembershipJsonV600, PostResetPasswordUrlJsonV600, PutGroupJsonV600, ReferenceTypeJsonV600, ReferenceTypesJsonV600, ResetPasswordUrlJsonV600, RoleWithEntitlementCountJsonV600, RolesWithEntitlementCountsJsonV600, ScannedApiVersionJsonV600, UpdateViewJsonV600, UserGroupMembershipJsonV600, UserGroupMembershipsJsonV600, ValidateUserEmailJsonV600, ValidateUserEmailResponseJsonV600, ViewJsonV600, ViewPermissionJsonV600, ViewPermissionsJsonV600, ViewsJsonV600, createAbacRuleJsonV600, createAbacRulesJsonV600, createActiveRateLimitsJsonV600, createCallLimitJsonV600, createRedisCallCountersJson}
 import code.api.v6_0_0.{AbacRuleJsonV600, AbacRuleResultJsonV600, AbacRulesJsonV600, CreateAbacRuleJsonV600, CurrentConsumerJsonV600, ExecuteAbacRuleJsonV600, UpdateAbacRuleJsonV600}
 import code.api.v6_0_0.OBPAPI6_0_0
 import code.abacrule.{AbacRuleEngine, MappedAbacRuleProvider}
@@ -473,7 +473,7 @@ trait APIMethods600 {
          |
          |""".stripMargin,
       EmptyBody,
-      activeCallLimitsJsonV600,
+      activeRateLimitsJsonV600,
       List(
         $UserNotLoggedIn,
         InvalidConsumerId,
@@ -500,7 +500,7 @@ trait APIMethods600 {
             }
             (rateLimit, rateLimitIds) <- RateLimitingUtil.getActiveRateLimitsWithIds(consumerId, date)
           } yield {
-            (JSONFactory600.createActiveCallLimitsJsonV600FromCallLimit(rateLimit, rateLimitIds, date), HttpCode.`200`(callContext))
+            (JSONFactory600.createActiveRateLimitsJsonV600FromCallLimit(rateLimit, rateLimitIds, date), HttpCode.`200`(callContext))
           }
     }
 
@@ -523,7 +523,7 @@ trait APIMethods600 {
          |
          |""".stripMargin,
       EmptyBody,
-      activeCallLimitsJsonV600,
+      activeRateLimitsJsonV600,
       List(
         $UserNotLoggedIn,
         InvalidConsumerId,
@@ -546,7 +546,7 @@ trait APIMethods600 {
             date = new java.util.Date() // Use current date/time
             (rateLimit, rateLimitIds) <- RateLimitingUtil.getActiveRateLimitsWithIds(consumerId, date)
           } yield {
-            (JSONFactory600.createActiveCallLimitsJsonV600FromCallLimit(rateLimit, rateLimitIds, date), HttpCode.`200`(callContext))
+            (JSONFactory600.createActiveRateLimitsJsonV600FromCallLimit(rateLimit, rateLimitIds, date), HttpCode.`200`(callContext))
           }
     }
 
@@ -571,6 +571,7 @@ trait APIMethods600 {
         app_type = "Web",
         description = "Account Management",
         consumer_id = "123",
+        active_rate_limits = activeRateLimitsJsonV600,
         call_counters = redisCallCountersJsonV600
       ),
       List(
@@ -598,9 +599,12 @@ trait APIMethods600 {
               unboxFullOrFail(_, cc.callContext, InvalidConsumerCredentials, 401)
             }
             currentConsumerCallCounters <- Future(RateLimitingUtil.consumerRateLimitState(consumer.consumerId.get).toList)
+            date = new java.util.Date()
+            (activeRateLimit, rateLimitIds) <- RateLimitingUtil.getActiveRateLimitsWithIds(consumer.consumerId.get, date)
+            activeRateLimitsJson = JSONFactory600.createActiveRateLimitsJsonV600FromCallLimit(activeRateLimit, rateLimitIds, date)
             callCountersJson = createRedisCallCountersJson(currentConsumerCallCounters)
           } yield {
-            (CurrentConsumerJsonV600(consumer.name.get, consumer.appType.get, consumer.description.get, consumer.consumerId.get, callCountersJson), HttpCode.`200`(callContext))
+            (CurrentConsumerJsonV600(consumer.name.get, consumer.appType.get, consumer.description.get, consumer.consumerId.get, activeRateLimitsJson, callCountersJson), HttpCode.`200`(callContext))
           }
         }
       }

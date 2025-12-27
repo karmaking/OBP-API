@@ -177,7 +177,7 @@ class RateLimitsTest extends V600ServerSetup {
       Then("We should get a 200")
       getResponse.code should equal(200)
       And("we should get the active call limits response")
-      val activeCallLimits = getResponse.body.extract[ActiveCallLimitsJsonV600]
+      val activeCallLimits = getResponse.body.extract[ActiveRateLimitsJsonV600]
       activeCallLimits.considered_rate_limit_ids.size >= 0
       activeCallLimits.active_per_second_rate_limit == 0L
     }
@@ -255,7 +255,7 @@ class RateLimitsTest extends V600ServerSetup {
       getResponse.code should equal(200)
       
       And("the totals should be the sum of both records (using single source of truth aggregation)")
-      val activeCallLimits = getResponse.body.extract[ActiveCallLimitsJsonV600]
+      val activeCallLimits = getResponse.body.extract[ActiveRateLimitsJsonV600]
       activeCallLimits.active_per_second_rate_limit should equal(15L) // 10 + 5
       activeCallLimits.active_per_minute_rate_limit should equal(150L) // 100 + 50
       activeCallLimits.active_per_hour_rate_limit should equal(1500L) // 1000 + 500

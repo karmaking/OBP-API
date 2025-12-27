@@ -4156,7 +4156,7 @@ object SwaggerDefinitionsJSON {
     updated_at = DateWithDayExampleObject
   )
 
-  lazy val activeCallLimitsJsonV600 = ActiveCallLimitsJsonV600(
+  lazy val activeRateLimitsJsonV600 = ActiveRateLimitsJsonV600(
     considered_rate_limit_ids = List("80e1e0b2-d8bf-4f85-a579-e69ef36e3305"),
     active_at_date = DateWithDayExampleObject,
     active_per_second_rate_limit = 100,
