@@ -256,16 +256,21 @@ object RateLimitingUtil extends MdcLoggable {
       (-1, -1)
     }
   }
-
+  /**
+   * Get remaining TTL (time to live) for a rate limit counter.
+   * Used to populate X-Rate-Limit-Reset header when rate limit is exceeded.
+   * 
+   * NOTE: This function could be further optimized by eliminating it entirely.
+   * We already call getCounterState() in underConsumerLimits(), so we could 
+   * cache/reuse that TTL value instead of making another Redis call here.
+   * 
+   * @param consumerKey The consumer ID or IP address
+   * @param period The time period
+   * @return Seconds until counter resets, or 0 if no counter exists
+   */
   private def ttl(consumerKey: String, period: LimitCallPeriod): Long = {
-    val key = createUniqueKey(consumerKey, period)
-    val ttl = Redis.use(JedisMethod.TTL, key).get.toInt
-    ttl match {
-      case -2 => // if the Key does not exists, -2 is returned
-        0
-      case _ => // otherwise increment the counter
-        ttl
-    }
+    val state = getCounterState(consumerKey, period)
+    state.ttl.getOrElse(0L)
   }
 
 
