@@ -151,6 +151,14 @@ object RateLimitingUtil extends MdcLoggable {
         (limit) match {
           case l if l > 0 => // Redis is available and limit is set
             val key = createUniqueKey(consumerKey, period)
+            // TODO: Check if we can remove redundant EXISTS check. GET returns None when key does not exist.
+            // Check This would reduce Redis operations from 2 to 1 (25% reduction per request).
+            // Simplified code:
+            //   val currentValue = Redis.use(JedisMethod.GET, key)
+            //   currentValue match {
+            //     case Some(value) => value.toLong + 1 <= limit
+            //     case None => true  // Key does not exist, first call
+            //   }
             val exists = Redis.use(JedisMethod.EXISTS,key).map(_.toBoolean).get
             exists match {
               case true =>
