@@ -226,36 +226,47 @@ object RateLimitingUtil extends MdcLoggable {
     }
   }
 
+  /**
+   * Increment API call counter for a consumer after successful rate limit check.
+   * Called after the request passes all rate limit checks to update the counters.
+   * 
+   * @param consumerKey The consumer ID or IP address
+   * @param period The time period (PER_SECOND, PER_MINUTE, etc.)
+   * @param limit The rate limit value (-1 means disabled)
+   * @return (TTL in seconds, current counter value) or (-1, -1) on error/disabled
+   */
   private def incrementConsumerCounters(consumerKey: String, period: LimitCallPeriod, limit: Long): (Long, Long) = {
     if (useConsumerLimits) {
-      try {
-        (limit) match {
-          case -1 => // Limit is not set for the period
-            val key = createUniqueKey(consumerKey, period)
-            Redis.use(JedisMethod.DELETE, key)
-            (-1, -1)
-          case _ => // Redis is available and limit is set
-            val key = createUniqueKey(consumerKey, period)
-            val ttl =  Redis.use(JedisMethod.TTL, key).get.toInt
-            ttl match {
-              case -2 => // if the Key does not exists, -2 is returned
-                val seconds =  RateLimitingPeriod.toSeconds(period).toInt
-                Redis.use(JedisMethod.SET,key, Some(seconds), Some("1"))
-                (seconds, 1)
-              case _ => // otherwise increment the counter
-                val cnt = Redis.use(JedisMethod.INCR,key).get.toInt
-                (ttl, cnt)
-            }
-        }
-      } catch {
-        case e : Throwable =>
-          logger.error(s"Redis issue: $e")
+      val key = createUniqueKey(consumerKey, period)
+      (limit) match {
+        case -1 => // Limit is disabled for this period
+          Redis.use(JedisMethod.DELETE, key)
           (-1, -1)
+        case _ => // Limit is enabled, increment counter
+          val ttlOpt = Redis.use(JedisMethod.TTL, key).map(_.toInt)
+          ttlOpt match {
+            case Some(-2) => // Key does not exist, create it
+              val seconds = RateLimitingPeriod.toSeconds(period).toInt
+              Redis.use(JedisMethod.SET, key, Some(seconds), Some("1"))
+              (seconds, 1)
+            case Some(ttl) if ttl > 0 => // Key exists with TTL, increment it
+              val cnt = Redis.use(JedisMethod.INCR, key).map(_.toInt).getOrElse(1)
+              (ttl, cnt)
+            case Some(ttl) if ttl <= 0 => // Key expired or has no expiry (shouldn't happen)
+              logger.warn(s"Unexpected TTL state ($ttl) for consumer $consumerKey, period $period - recreating counter")
+              val seconds = RateLimitingPeriod.toSeconds(period).toInt
+              Redis.use(JedisMethod.SET, key, Some(seconds), Some("1"))
+              (seconds, 1)
+            case None => // Redis unavailable
+              logger.error(s"Redis unavailable when incrementing counter for consumer $consumerKey, period $period")
+              (-1, -1)
+          }
       }
     } else {
       (-1, -1)
     }
   }
+
   /**
    * Get remaining TTL (time to live) for a rate limit counter.
    * Used to populate X-Rate-Limit-Reset header when rate limit is exceeded.
