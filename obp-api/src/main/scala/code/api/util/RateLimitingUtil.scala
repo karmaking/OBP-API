@@ -75,7 +75,7 @@ object RateLimitingJson {
 
 object RateLimitingUtil extends MdcLoggable {
   import code.api.util.RateLimitingPeriod._
-  
+
   def useConsumerLimits = APIUtil.getPropsAsBoolValue("use_consumer_limits", false)
 
   /** Get system default rate limits from properties. Used when no RateLimiting records exist for a consumer.
@@ -85,7 +85,7 @@ object RateLimitingUtil extends MdcLoggable {
   /** THE SINGLE SOURCE OF TRUTH for active rate limits.
     * This is the ONLY function that should be called to get active rate limits.
     * Used by BOTH enforcement (AfterApiAuth) and API reporting (APIMethods600).
-    * 
+    *
     * @param consumerId The consumer ID
     * @param date The date to check active limits for
     * @return Future containing (aggregated CallLimit, List of rate_limiting_ids that contributed)
@@ -226,7 +226,7 @@ object RateLimitingUtil extends MdcLoggable {
 
 
 
-  def consumerRateLimitState(consumerKey: String): immutable.Seq[((Option[Long], Option[Long]), LimitCallPeriod)] = {
+  def consumerRateLimitState(consumerKey: String): immutable.Seq[((Option[Long], Option[Long], String), LimitCallPeriod)] = {
 
     def getCallCounterForPeriod(consumerKey: String, period: LimitCallPeriod): ((Option[Long], Option[Long]), LimitCallPeriod) = {
       val key = createUniqueKey(consumerKey, period)
@@ -235,6 +235,7 @@ object RateLimitingUtil extends MdcLoggable {
       val ttlOpt: Option[Long] = Redis.use(JedisMethod.TTL, key).map(_.toLong)
 
       // get value (assuming string storage)
+      // TODO: Why do we assume string for a counter that we INCR?
       val valueOpt: Option[Long] = Redis.use(JedisMethod.GET, key).map(_.toLong)
 
       // TTL meanings:
@@ -247,7 +248,7 @@ object RateLimitingUtil extends MdcLoggable {
         case Some(_) => valueOpt.orElse(Some(0L))  // Active key -> return value or 0
         case None => Some(0L)  // Redis unavailable -> 0 calls
       }
-      
+
       val normalizedTtl = ttlOpt match {
         case Some(-2) => Some(0L)  // Key doesn't exist -> 0 TTL
         case Some(ttl) if ttl <= 0 => Some(0L)  // Expired -> 0 TTL
@@ -269,10 +270,10 @@ object RateLimitingUtil extends MdcLoggable {
 
   /**
     * Rate limiting guard that enforces API call limits for both authorized and anonymous access.
-    * 
+    *
     * This is the main rate limiting enforcement function that controls access to OBP API endpoints.
     * It operates in two modes depending on whether the caller is authenticated or anonymous.
-    * 
+    *
     * AUTHORIZED ACCESS (with valid consumer credentials):
     * - Enforces limits across 6 time periods: per second, minute, hour, day, week, and month
     * - Uses consumer_id as the rate limiting key (simplified for current implementation)
@@ -281,28 +282,28 @@ object RateLimitingUtil extends MdcLoggable {
     * - Stores counters in Redis with TTL matching the time period
     * - Returns 429 status with appropriate error message when any limit is exceeded
     * - Lower period limits take precedence in error messages (e.g., per-second over per-minute)
-    * 
+    *
     * ANONYMOUS ACCESS (no consumer credentials):
     * - Only enforces per-hour limits (configurable via "user_consumer_limit_anonymous_access", default: 1000)
     * - Uses client IP address as the rate limiting key
     * - Designed to prevent abuse while allowing reasonable anonymous usage
-    * 
+    *
     * REDIS STORAGE MECHANISM:
     * - Keys format: {consumer_id}_{PERIOD} (e.g., "consumer123_PER_MINUTE")
     * - Values: current call count within the time window
     * - TTL: automatically expires keys when time period ends
     * - Atomic operations ensure thread-safe counter increments
-    * 
+    *
     * RATE LIMIT HEADERS:
     * - Sets X-Rate-Limit-Limit: maximum allowed requests for the period
     * - Sets X-Rate-Limit-Reset: seconds until the limit resets (TTL)
     * - Sets X-Rate-Limit-Remaining: requests remaining in current period
-    * 
+    *
     * ERROR HANDLING:
     * - Redis connectivity issues default to allowing the request (fail-open)
     * - Rate limiting can be globally disabled via "use_consumer_limits" property
     * - Malformed or missing limits default to unlimited access
-    * 
+    *
     * @param userAndCallContext Tuple containing (Box[User], Option[CallContext]) from authentication
     * @return Same tuple structure, either with updated rate limit headers or rate limit exceeded error
     */

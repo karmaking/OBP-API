@@ -400,7 +400,8 @@ case class AbacRuleSchemaJsonV600(
 
 object JSONFactory600 extends CustomJsonFormats with MdcLoggable {
 
-  def createCurrentUsageJson(
+  def createRedisCallCountersJson(
+    // Convert list to map for easy lookup by period
       rateLimits: List[((Option[Long], Option[Long]), LimitCallPeriod)]
   ): RedisCallCountersJsonV600 = {
     val grouped: Map[LimitCallPeriod, (Option[Long], Option[Long])] =
@@ -408,7 +409,9 @@ object JSONFactory600 extends CustomJsonFormats with MdcLoggable {
 
     def getCallCounterForPeriod(period: RateLimitingPeriod.Value): RateLimitV600 =
       grouped.get(period) match {
-        case Some((Some(calls), Some(ttl))) =>
+      // ACTIVE: Both calls and TTL exist, and TTL > 0 (key has time remaining)
+      // UNKNOWN: Missing data, TTL <= 0 (expired), or Redis unavailable
+        case Some((Some(calls), Some(ttl))) if ttl > 0 =>
           RateLimitV600(Some(calls), Some(ttl), "ACTIVE")
         case _ =>
           RateLimitV600(None, None, "UNKNOWN")
