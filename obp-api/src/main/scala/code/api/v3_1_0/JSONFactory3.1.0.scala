@@ -809,7 +809,7 @@ object JSONFactory310{
   def createBadLoginStatusJson(badLoginStatus: BadLoginAttempt) : BadLoginStatusJson = {
     BadLoginStatusJson(badLoginStatus.username,badLoginStatus.badAttemptsSinceLastSuccessOrReset, badLoginStatus.lastFailureDate)
   }
-  def createCallLimitJson(consumer: Consumer, rateLimits: List[((Option[Long], Option[Long]), LimitCallPeriod)]) : CallLimitJson = {
+  def createCallLimitJson(consumer: Consumer, rateLimits: List[((Option[Long], Option[Long], String), LimitCallPeriod)]) : CallLimitJson = {
     val redisRateLimit = rateLimits match {
       case Nil => None
       case _   =>
@@ -817,7 +817,8 @@ object JSONFactory310{
           rateLimits.filter(_._2 == period) match {
             case x :: Nil =>
               x._1 match {
-                case (Some(x), Some(y)) => Some(RateLimit(Some(x), Some(y)))
+                case (Some(x), Some(y), _) => Some(RateLimit(Some(x), Some(y)))
+                // Ignore status field for v3.1.0 API (backward compatibility)
                 case _                  => None
 
               }

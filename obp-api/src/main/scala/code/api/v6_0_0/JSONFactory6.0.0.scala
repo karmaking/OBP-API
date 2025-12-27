@@ -402,19 +402,18 @@ object JSONFactory600 extends CustomJsonFormats with MdcLoggable {
 
   def createRedisCallCountersJson(
     // Convert list to map for easy lookup by period
-      rateLimits: List[((Option[Long], Option[Long]), LimitCallPeriod)]
+      rateLimits: List[((Option[Long], Option[Long], String), LimitCallPeriod)]
   ): RedisCallCountersJsonV600 = {
-    val grouped: Map[LimitCallPeriod, (Option[Long], Option[Long])] =
+    val grouped: Map[LimitCallPeriod, (Option[Long], Option[Long], String)] =
       rateLimits.map { case (limits, period) => period -> limits }.toMap
 
     def getCallCounterForPeriod(period: RateLimitingPeriod.Value): RateLimitV600 =
       grouped.get(period) match {
-      // ACTIVE: Both calls and TTL exist, and TTL > 0 (key has time remaining)
-      // UNKNOWN: Missing data, TTL <= 0 (expired), or Redis unavailable
-        case Some((Some(calls), Some(ttl))) if ttl > 0 =>
-          RateLimitV600(Some(calls), Some(ttl), "ACTIVE")
+        // Use status calculated by RateLimitingUtil (ACTIVE, NO_COUNTER, EXPIRED, REDIS_UNAVAILABLE)
+        case Some((calls, ttl, status)) =>
+          RateLimitV600(calls, ttl, status)
         case _ =>
-          RateLimitV600(None, None, "UNKNOWN")
+          RateLimitV600(None, None, "DATA_MISSING")
       }
 
     RedisCallCountersJsonV600(
@@ -591,7 +590,7 @@ object JSONFactory600 extends CustomJsonFormats with MdcLoggable {
   }
 
   def createActiveCallLimitsJsonV600FromCallLimit(
-      
+
       rateLimit: code.api.util.RateLimitingJson.CallLimit,
       rateLimitIds: List[String],
       activeDate: java.util.Date

@@ -236,7 +236,10 @@ trait APIMethods600 {
          |
          |**Status Values:**
          |- `ACTIVE`: Rate limit counter is active and tracking calls. Both `calls_made` and `reset_in_seconds` will have numeric values.
-         |- `UNKNOWN`: Data is not available. This could mean the rate limit period has expired, no rate limit is configured, or the data cannot be retrieved. Both `calls_made` and `reset_in_seconds` will be null.
+         |- `NO_COUNTER`: Key does not exist - the consumer has not made any API calls in this time period yet.
+         |- `EXPIRED`: The rate limit counter has expired (TTL reached 0). The counter will be recreated on the next API call.
+         |- `REDIS_UNAVAILABLE`: Cannot retrieve data from Redis. This indicates a system connectivity issue.
+         |- `DATA_MISSING`: Unexpected error - period data is missing from the response. This should not occur under normal circumstances.
          |
          |${userAuthenticationMessage(true)}
          |

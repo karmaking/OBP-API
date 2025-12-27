@@ -228,7 +228,7 @@ object RateLimitingUtil extends MdcLoggable {
 
   def consumerRateLimitState(consumerKey: String): immutable.Seq[((Option[Long], Option[Long], String), LimitCallPeriod)] = {
 
-    def getCallCounterForPeriod(consumerKey: String, period: LimitCallPeriod): ((Option[Long], Option[Long]), LimitCallPeriod) = {
+    def getCallCounterForPeriod(consumerKey: String, period: LimitCallPeriod): ((Option[Long], Option[Long], String), LimitCallPeriod) = {
       val key = createUniqueKey(consumerKey, period)
 
       // get TTL
@@ -256,7 +256,16 @@ object RateLimitingUtil extends MdcLoggable {
         case None => Some(0L)  // Redis unavailable -> 0 TTL
       }
 
-      ((calls, normalizedTtl), period)
+      
+      // Calculate status based on Redis TTL response
+      val status = ttlOpt match {
+        case Some(ttl) if ttl > 0 => "ACTIVE"        // Counter running with time remaining
+        case Some(-2) => "NO_COUNTER"                // Key does not exist, never been set
+        case Some(ttl) if ttl <= 0 => "EXPIRED"      // Key expired (TTL=0) or no expiry (TTL=-1)
+        case None => "REDIS_UNAVAILABLE"             // Redis connection failed
+      }
+
+      ((calls, normalizedTtl, status), period)
     }
 
     getCallCounterForPeriod(consumerKey, RateLimitingPeriod.PER_SECOND) ::
