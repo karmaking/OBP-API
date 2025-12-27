@@ -94,6 +94,13 @@ class ConsumerTest extends V600ServerSetup {
       consumerJson.consumer_id should not be empty
       consumerJson.consumer_id should not be null
       consumerJson.consumer_id shouldBe a[String]
+      consumerJson.call_counters should not be null
+      consumerJson.call_counters.per_second should not be null
+      consumerJson.call_counters.per_minute should not be null
+      consumerJson.call_counters.per_hour should not be null
+      consumerJson.call_counters.per_day should not be null
+      consumerJson.call_counters.per_week should not be null
+      consumerJson.call_counters.per_month should not be null
     }
   }
 }

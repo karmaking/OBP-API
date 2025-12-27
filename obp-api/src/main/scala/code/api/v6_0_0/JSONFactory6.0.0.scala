@@ -68,7 +68,8 @@ case class TokenJSON(
 )
 
 case class CurrentConsumerJsonV600(
-    consumer_id: String
+    consumer_id: String,
+    call_counters: RedisCallCountersJsonV600
 )
 
 case class CallLimitPostJsonV600(

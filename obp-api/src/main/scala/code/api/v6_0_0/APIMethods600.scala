@@ -567,7 +567,8 @@ trait APIMethods600 {
         |""",
       EmptyBody,
       CurrentConsumerJsonV600(
-        consumer_id = "123"
+        consumer_id = "123",
+        call_counters = redisCallCountersJsonV600
       ),
       List(
         UserNotLoggedIn,
@@ -593,8 +594,10 @@ trait APIMethods600 {
             } map {
               unboxFullOrFail(_, cc.callContext, InvalidConsumerCredentials, 401)
             }
+            currentConsumerCallCounters <- Future(RateLimitingUtil.consumerRateLimitState(consumer.consumerId.get).toList)
+            callCountersJson = createRedisCallCountersJson(currentConsumerCallCounters)
           } yield {
-            (CurrentConsumerJsonV600(consumer.consumerId.get), HttpCode.`200`(callContext))
+            (CurrentConsumerJsonV600(consumer.consumerId.get, callCountersJson), HttpCode.`200`(callContext))
           }
         }
       }
