@@ -68,6 +68,9 @@ case class TokenJSON(
 )
 
 case class CurrentConsumerJsonV600(
+    app_name: String,
+    app_type: String,
+    description: String,
     consumer_id: String,
     call_counters: RedisCallCountersJsonV600
 )

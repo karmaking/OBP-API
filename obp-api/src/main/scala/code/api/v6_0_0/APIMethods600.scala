@@ -567,6 +567,9 @@ trait APIMethods600 {
         |""",
       EmptyBody,
       CurrentConsumerJsonV600(
+        app_name = "SOFI",
+        app_type = "Web",
+        description = "Account Management",
         consumer_id = "123",
         call_counters = redisCallCountersJsonV600
       ),
@@ -597,7 +600,7 @@ trait APIMethods600 {
             currentConsumerCallCounters <- Future(RateLimitingUtil.consumerRateLimitState(consumer.consumerId.get).toList)
             callCountersJson = createRedisCallCountersJson(currentConsumerCallCounters)
           } yield {
-            (CurrentConsumerJsonV600(consumer.consumerId.get, callCountersJson), HttpCode.`200`(callContext))
+            (CurrentConsumerJsonV600(consumer.name.get, consumer.appType.get, consumer.description.get, consumer.consumerId.get, callCountersJson), HttpCode.`200`(callContext))
           }
         }
       }
