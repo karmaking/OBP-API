@@ -67,6 +67,10 @@ case class TokenJSON(
     token: String
 )
 
+case class CurrentConsumerJsonV600(
+    consumer_id: String
+)
+
 case class CallLimitPostJsonV600(
     from_date: java.util.Date,
     to_date: java.util.Date,
