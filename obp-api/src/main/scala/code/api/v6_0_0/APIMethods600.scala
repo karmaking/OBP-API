@@ -557,23 +557,26 @@ trait APIMethods600 {
       "GET",
       "/current-consumer",
       "Get Current Consumer",
-      """Returns the consumer_id of the current authenticated consumer.
+      s"""Returns the consumer_id of the current authenticated consumer.
         |
         |This endpoint requires authentication via:
         |* User authentication (OAuth, DirectLogin, etc.) - returns the consumer associated with the user's session
         |* Consumer/Client authentication - returns the consumer credentials being used
         |
-        |Authentication is required.""",
+        |${userAuthenticationMessage(true)}
+        |""",
       EmptyBody,
       CurrentConsumerJsonV600(
         consumer_id = "123"
       ),
       List(
         UserNotLoggedIn,
+        UserHasMissingRoles,
         InvalidConsumerCredentials,
         UnknownError
       ),
-      apiTagConsumer :: apiTagApi :: Nil
+      apiTagConsumer :: apiTagApi :: Nil,
+      Some(List(canGetCurrentConsumer))
     )
 
     lazy val getCurrentConsumer: OBPEndpoint = {
@@ -581,6 +584,7 @@ trait APIMethods600 {
         cc => {
           implicit val ec = EndpointContext(Some(cc))
           for {
+            (Full(u), callContext) <- authenticatedAccess(cc)
             consumer <- Future {
               cc.consumer match {
                 case Full(c) => Full(c)
@@ -590,7 +594,7 @@ trait APIMethods600 {
               unboxFullOrFail(_, cc.callContext, InvalidConsumerCredentials, 401)
             }
           } yield {
-            (CurrentConsumerJsonV600(consumer.consumerId.get), HttpCode.`200`(cc.callContext))
+            (CurrentConsumerJsonV600(consumer.consumerId.get), HttpCode.`200`(callContext))
           }
         }
       }
