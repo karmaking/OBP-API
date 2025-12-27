@@ -101,6 +101,14 @@ class ConsumerTest extends V600ServerSetup {
       consumerJson.call_counters.per_day should not be null
       consumerJson.call_counters.per_week should not be null
       consumerJson.call_counters.per_month should not be null
+      // Verify each counter has valid status
+      val validStatuses = List("ACTIVE", "NO_COUNTER", "EXPIRED", "REDIS_UNAVAILABLE", "DATA_MISSING")
+      consumerJson.call_counters.per_second.status should (be ("ACTIVE") or be ("NO_COUNTER") or be ("EXPIRED") or be ("REDIS_UNAVAILABLE") or be ("DATA_MISSING"))
+      consumerJson.call_counters.per_minute.status should (be ("ACTIVE") or be ("NO_COUNTER") or be ("EXPIRED") or be ("REDIS_UNAVAILABLE") or be ("DATA_MISSING"))
+      consumerJson.call_counters.per_hour.status should (be ("ACTIVE") or be ("NO_COUNTER") or be ("EXPIRED") or be ("REDIS_UNAVAILABLE") or be ("DATA_MISSING"))
+      consumerJson.call_counters.per_day.status should (be ("ACTIVE") or be ("NO_COUNTER") or be ("EXPIRED") or be ("REDIS_UNAVAILABLE") or be ("DATA_MISSING"))
+      consumerJson.call_counters.per_week.status should (be ("ACTIVE") or be ("NO_COUNTER") or be ("EXPIRED") or be ("REDIS_UNAVAILABLE") or be ("DATA_MISSING"))
+      consumerJson.call_counters.per_month.status should (be ("ACTIVE") or be ("NO_COUNTER") or be ("EXPIRED") or be ("REDIS_UNAVAILABLE") or be ("DATA_MISSING"))
     }
   }
 }
