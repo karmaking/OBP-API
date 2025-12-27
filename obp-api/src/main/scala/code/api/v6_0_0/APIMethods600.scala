@@ -555,7 +555,7 @@ trait APIMethods600 {
       implementedInApiVersion,
       nameOf(getCurrentConsumer),
       "GET",
-      "/current-consumer",
+      "/consumers/current",
       "Get Current Consumer",
       s"""Returns the consumer_id of the current authenticated consumer.
         |
@@ -580,7 +580,7 @@ trait APIMethods600 {
     )
 
     lazy val getCurrentConsumer: OBPEndpoint = {
-      case "current-consumer" :: Nil JsonGet _ => {
+      case "consumers" :: "current" :: Nil JsonGet _ => {
         cc => {
           implicit val ec = EndpointContext(Some(cc))
           for {
