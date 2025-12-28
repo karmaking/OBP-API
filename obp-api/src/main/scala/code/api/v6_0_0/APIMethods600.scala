@@ -1084,7 +1084,7 @@ trait APIMethods600 {
         UserHasMissingRoles,
         UnknownError
       ),
-      List(apiTagSystem, apiTagApi),
+      List(apiTagCache, apiTagSystem, apiTagApi),
       Some(List(canGetCacheNamespaces))
     )
 
