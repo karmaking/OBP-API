@@ -192,7 +192,7 @@ object RateLimitingUtil extends MdcLoggable {
     
     RateLimitCounterState(calls, normalizedTtl, status)
   }
-  private def createUniqueKey(consumerKey: String, period: LimitCallPeriod) = consumerKey + "_" + RateLimitingPeriod.toString(period)
+  private def createUniqueKey(consumerKey: String, period: LimitCallPeriod) = "rl_counter_" + consumerKey + "_" + RateLimitingPeriod.toString(period)
   private def underConsumerLimits(consumerKey: String, period: LimitCallPeriod, limit: Long): Boolean = {
 
     if (useConsumerLimits) {
