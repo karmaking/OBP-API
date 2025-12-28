@@ -412,6 +412,15 @@ object ApiRole extends MdcLoggable{
   lazy val canGetMetricsAtOneBank = CanGetMetricsAtOneBank()
 
   case class CanGetConfig(requiresBankId: Boolean = false) extends ApiRole
+
+  case class CanGetCacheNamespaces(requiresBankId: Boolean = false) extends ApiRole
+  lazy val canGetCacheNamespaces = CanGetCacheNamespaces()
+
+  case class CanDeleteCacheNamespace(requiresBankId: Boolean = false) extends ApiRole
+  lazy val canDeleteCacheNamespace = CanDeleteCacheNamespace()
+
+  case class CanDeleteCacheKey(requiresBankId: Boolean = false) extends ApiRole
+  lazy val canDeleteCacheKey = CanDeleteCacheKey()
   lazy val canGetConfig = CanGetConfig()
   
   case class CanGetAdapterInfo(requiresBankId: Boolean = false) extends ApiRole

@@ -197,4 +197,51 @@ object Redis extends MdcLoggable {
     memoize(ttl)(f)
   }
 
+
+  /**
+   * Scan Redis keys matching a pattern using KEYS command
+   * Note: In production with large datasets, consider using SCAN instead
+   *
+   * @param pattern Redis pattern (e.g., "rl_counter_*", "rd_*")
+   * @return List of matching keys
+   */
+  def scanKeys(pattern: String): List[String] = {
+    var jedisConnection: Option[Jedis] = None
+    try {
+      jedisConnection = Some(jedisPool.getResource())
+      val jedis = jedisConnection.get
+
+      import scala.collection.JavaConverters._
+      val keys = jedis.keys(pattern)
+      keys.asScala.toList
+
+    } catch {
+      case e: Throwable =>
+        logger.error(s"Error scanning Redis keys with pattern $pattern: ${e.getMessage}")
+        List.empty
+    } finally {
+      if (jedisConnection.isDefined && jedisConnection.get != null)
+        jedisConnection.foreach(_.close())
+    }
+  }
+
+  /**
+   * Count keys matching a pattern
+   *
+   * @param pattern Redis pattern (e.g., "rl_counter_*")
+   * @return Number of matching keys
+   */
+  def countKeys(pattern: String): Int = {
+    scanKeys(pattern).size
+  }
+
+  /**
+   * Get a sample key matching a pattern (first found)
+   *
+   * @param pattern Redis pattern
+   * @return Option of a sample key
+   */
+  def getSampleKey(pattern: String): Option[String] = {
+    scanKeys(pattern).headOption
+  }
 }

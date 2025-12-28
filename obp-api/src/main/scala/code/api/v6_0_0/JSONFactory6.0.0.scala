@@ -246,6 +246,17 @@ case class ProvidersJsonV600(providers: List[String])
 
 case class ConnectorMethodNamesJsonV600(connector_method_names: List[String])
 
+case class CacheNamespaceJsonV600(
+    prefix: String,
+    description: String,
+    ttl_seconds: String,
+    category: String,
+    key_count: Int,
+    example_key: String
+)
+
+case class CacheNamespacesJsonV600(namespaces: List[CacheNamespaceJsonV600])
+
 case class PostCustomerJsonV600(
     legal_name: String,
     customer_number: Option[String] = None,
@@ -1029,5 +1040,29 @@ object JSONFactory600 extends CustomJsonFormats with MdcLoggable {
       rules: List[code.abacrule.AbacRuleTrait]
   ): AbacRulesJsonV600 = {
     AbacRulesJsonV600(rules.map(createAbacRuleJsonV600))
+  }
+
+  def createCacheNamespaceJsonV600(
+      prefix: String,
+      description: String,
+      ttlSeconds: String,
+      category: String,
+      keyCount: Int,
+      exampleKey: Option[String]
+  ): CacheNamespaceJsonV600 = {
+    CacheNamespaceJsonV600(
+      prefix = prefix,
+      description = description,
+      ttl_seconds = ttlSeconds,
+      category = category,
+      key_count = keyCount,
+      example_key = exampleKey.getOrElse("")
+    )
+  }
+
+  def createCacheNamespacesJsonV600(
+      namespaces: List[CacheNamespaceJsonV600]
+  ): CacheNamespacesJsonV600 = {
+    CacheNamespacesJsonV600(namespaces)
   }
 }

@@ -127,6 +127,21 @@ object Constant extends MdcLoggable {
   final val GET_DYNAMIC_RESOURCE_DOCS_TTL: Int = APIUtil.getPropsValue(s"dynamicResourceDocsObp.cache.ttl.seconds", "3600").toInt
   final val GET_STATIC_RESOURCE_DOCS_TTL: Int = APIUtil.getPropsValue(s"staticResourceDocsObp.cache.ttl.seconds", "3600").toInt
   final val SHOW_USED_CONNECTOR_METHODS: Boolean = APIUtil.getPropsAsBoolValue(s"show_used_connector_methods", false)
+
+  // Rate Limiting Cache Prefixes
+  final val RATE_LIMIT_COUNTER_PREFIX = "rl_counter_"
+  final val RATE_LIMIT_ACTIVE_PREFIX = "rl_active_"
+  final val RATE_LIMIT_ACTIVE_CACHE_TTL: Int = APIUtil.getPropsValue("rateLimitActive.cache.ttl.seconds", "3600").toInt
+
+  // Connector Cache Prefixes
+  final val CONNECTOR_PREFIX = "connector_"
+
+  // Metrics Cache Prefixes
+  final val METRICS_STABLE_PREFIX = "metrics_stable_"
+  final val METRICS_RECENT_PREFIX = "metrics_recent_"
+
+  // ABAC Cache Prefixes
+  final val ABAC_RULE_PREFIX = "abac_rule_"
   
   final val CAN_SEE_TRANSACTION_OTHER_BANK_ACCOUNT = "can_see_transaction_other_bank_account"
   final val CAN_SEE_TRANSACTION_METADATA = "can_see_transaction_metadata"
@@ -517,7 +532,7 @@ object PrivateKeyConstants {
 
 object JedisMethod extends Enumeration {
   type JedisMethod = Value
-  val GET, SET, EXISTS, DELETE, TTL, INCR, FLUSHDB= Value
+  val GET, SET, EXISTS, DELETE, TTL, INCR, FLUSHDB, SCAN = Value
 }
 
 

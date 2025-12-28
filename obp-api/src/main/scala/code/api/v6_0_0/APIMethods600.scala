@@ -4,7 +4,7 @@ import code.accountattribute.AccountAttributeX
 import code.api.Constant
 import code.api.{DirectLogin, ObpApiFailure}
 import code.api.ResourceDocs1_4_0.SwaggerDefinitionsJSON._
-import code.api.cache.Caching
+import code.api.cache.{Caching, Redis}
 import code.api.util.APIUtil._
 import code.api.util.ApiRole
 import code.api.util.ApiRole._
@@ -1025,6 +1025,110 @@ trait APIMethods600 {
           val migrations = code.migration.MigrationScriptLogProvider.migrationScriptLogProvider.vend.getMigrationScriptLogs()
           (JSONFactory600.createMigrationScriptLogsJsonV600(migrations), HttpCode.`200`(callContext))
         }
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
+      getCacheNamespaces,
+      implementedInApiVersion,
+      nameOf(getCacheNamespaces),
+      "GET",
+      "/system/cache/namespaces",
+      "Get Cache Namespaces",
+      """Returns information about all cache namespaces in the system.
+        |
+        |This endpoint provides visibility into:
+        |* Cache namespace prefixes and their purposes
+        |* Number of keys in each namespace
+        |* TTL configurations
+        |* Example keys for each namespace
+        |
+        |This is useful for:
+        |* Monitoring cache usage
+        |* Understanding cache structure
+        |* Debugging cache-related issues
+        |* Planning cache management operations
+        |
+        |""",
+      EmptyBody,
+      CacheNamespacesJsonV600(
+        namespaces = List(
+          CacheNamespaceJsonV600(
+            prefix = "rl_counter_",
+            description = "Rate limiting counters per consumer and time period",
+            ttl_seconds = "varies",
+            category = "Rate Limiting",
+            key_count = 42,
+            example_key = "rl_counter_consumer123_PER_MINUTE"
+          ),
+          CacheNamespaceJsonV600(
+            prefix = "rl_active_",
+            description = "Active rate limit configurations",
+            ttl_seconds = "3600",
+            category = "Rate Limiting",
+            key_count = 15,
+            example_key = "rl_active_consumer123_2024-12-27-14"
+          ),
+          CacheNamespaceJsonV600(
+            prefix = "rd_localised_",
+            description = "Localized resource documentation",
+            ttl_seconds = "3600",
+            category = "Resource Documentation",
+            key_count = 128,
+            example_key = "rd_localised_operationId:getBanks-locale:en"
+          )
+        )
+      ),
+      List(
+        $UserNotLoggedIn,
+        UserHasMissingRoles,
+        UnknownError
+      ),
+      List(apiTagSystem, apiTagApi),
+      Some(List(canGetCacheNamespaces))
+    )
+
+    lazy val getCacheNamespaces: OBPEndpoint = {
+      case "system" :: "cache" :: "namespaces" :: Nil JsonGet _ => {
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(u), callContext) <- authenticatedAccess(cc)
+            _ <- NewStyle.function.hasEntitlement("", u.userId, canGetCacheNamespaces, callContext)
+          } yield {
+            // Define known cache namespaces with their metadata
+            val namespaces = List(
+              // Rate Limiting
+              (Constant.RATE_LIMIT_COUNTER_PREFIX, "Rate limiting counters per consumer and time period", "varies", "Rate Limiting"),
+              (Constant.RATE_LIMIT_ACTIVE_PREFIX, "Active rate limit configurations", Constant.RATE_LIMIT_ACTIVE_CACHE_TTL.toString, "Rate Limiting"),
+              // Resource Documentation
+              (Constant.LOCALISED_RESOURCE_DOC_PREFIX, "Localized resource documentation", Constant.CREATE_LOCALISED_RESOURCE_DOC_JSON_TTL.toString, "Resource Documentation"),
+              (Constant.DYNAMIC_RESOURCE_DOC_CACHE_KEY_PREFIX, "Dynamic resource documentation", Constant.GET_DYNAMIC_RESOURCE_DOCS_TTL.toString, "Resource Documentation"),
+              (Constant.STATIC_RESOURCE_DOC_CACHE_KEY_PREFIX, "Static resource documentation", Constant.GET_STATIC_RESOURCE_DOCS_TTL.toString, "Resource Documentation"),
+              (Constant.ALL_RESOURCE_DOC_CACHE_KEY_PREFIX, "All resource documentation", Constant.GET_STATIC_RESOURCE_DOCS_TTL.toString, "Resource Documentation"),
+              (Constant.STATIC_SWAGGER_DOC_CACHE_KEY_PREFIX, "Swagger documentation", Constant.GET_STATIC_RESOURCE_DOCS_TTL.toString, "Resource Documentation"),
+              // Connector
+              (Constant.CONNECTOR_PREFIX, "Connector method names and metadata", "3600", "Connector"),
+              // Metrics
+              (Constant.METRICS_STABLE_PREFIX, "Stable metrics (historical)", "86400", "Metrics"),
+              (Constant.METRICS_RECENT_PREFIX, "Recent metrics", "7", "Metrics"),
+              // ABAC
+              (Constant.ABAC_RULE_PREFIX, "ABAC rule cache", "indefinite", "ABAC")
+            ).map { case (prefix, description, ttl, category) =>
+              // Get actual key count and example from Redis
+              val keyCount = Redis.countKeys(s"${prefix}*")
+              val exampleKey = Redis.getSampleKey(s"${prefix}*")
+              JSONFactory600.createCacheNamespaceJsonV600(
+                prefix = prefix,
+                description = description,
+                ttlSeconds = ttl,
+                category = category,
+                keyCount = keyCount,
+                exampleKey = exampleKey
+              )
+            }
+
+            (JSONFactory600.createCacheNamespacesJsonV600(namespaces), HttpCode.`200`(callContext))
+          }
       }
     }
 
