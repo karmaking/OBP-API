@@ -5018,22 +5018,179 @@ trait APIMethods600 {
                   AbacObjectPropertyJsonV600("endTime", "Option[Date]", "Request end time")
                 ))
               ),
-              examples = List(
-                "// Check if authenticated user matches target user",
+              scala_code_examples = List(
+                "// === authenticatedUser (User) - Always Available ===",
+                "authenticatedUser.emailAddress.contains(\"@example.com\")",
+                "authenticatedUser.provider == \"obp\"",
                 "authenticatedUser.userId == userOpt.get.userId",
-                "// Check user email contains admin",
-                "authenticatedUser.emailAddress.contains(\"admin\")",
-                "// Check specific bank",
-                "bankOpt.isDefined && bankOpt.get.bankId.value == \"gh.29.uk\"",
-                "// Check account balance",
-                "accountOpt.isDefined && accountOpt.get.balance > 1000",
-                "// Check user attributes",
+                "!authenticatedUser.isDeleted.getOrElse(false)",
+
+                "// === authenticatedUserAttributes (List[UserAttributeTrait]) ===",
+                "authenticatedUserAttributes.exists(attr => attr.name == \"role\" && attr.value == \"admin\")",
+                "authenticatedUserAttributes.find(_.name == \"department\").exists(_.value == \"finance\")",
+                "authenticatedUserAttributes.exists(attr => attr.name == \"role\" && List(\"admin\", \"manager\").contains(attr.value))",
+
+                "// === authenticatedUserAuthContext (List[UserAuthContext]) ===",
+                "authenticatedUserAuthContext.exists(_.key == \"session_type\" && _.value == \"secure\")",
+                "authenticatedUserAuthContext.exists(_.key == \"auth_method\" && _.value == \"certificate\")",
+
+                "// === onBehalfOfUserOpt (Option[User]) - Delegation ===",
+                "onBehalfOfUserOpt.exists(_.emailAddress.endsWith(\"@company.com\"))",
+                "onBehalfOfUserOpt.isEmpty || onBehalfOfUserOpt.get.userId == authenticatedUser.userId",
+                "onBehalfOfUserOpt.forall(_.userId != authenticatedUser.userId)",
+
+                "// === onBehalfOfUserAttributes (List[UserAttributeTrait]) ===",
+                "onBehalfOfUserAttributes.exists(attr => attr.name == \"delegation_level\" && attr.value == \"full\")",
+                "onBehalfOfUserAttributes.isEmpty || onBehalfOfUserAttributes.exists(_.name == \"authorized\")",
+
+                "// === userOpt (Option[User]) - Target User ===",
+                "userOpt.isDefined && userOpt.get.userId == authenticatedUser.userId",
+                "userOpt.exists(_.provider == \"obp\")",
+                "userOpt.exists(_.emailAddress.endsWith(\"@trusted.com\"))",
+                "userOpt.forall(!_.isDeleted.getOrElse(false))",
+
+                "// === userAttributes (List[UserAttributeTrait]) ===",
                 "userAttributes.exists(attr => attr.name == \"account_type\" && attr.value == \"premium\")",
-                "// Check authenticated user has role attribute",
-                "authenticatedUserAttributes.find(_.name == \"role\").exists(_.value == \"admin\")",
-                "// IMPORTANT: Use camelCase (userId NOT user_id)",
-                "// IMPORTANT: Parameters are: authenticatedUser, userOpt, accountOpt (with Opt suffix for Optional)",
-                "// IMPORTANT: Check isDefined before using .get on Option types"
+                "userAttributes.exists(attr => attr.name == \"kyc_status\" && attr.value == \"verified\")",
+                "userAttributes.find(_.name == \"tier\").exists(_.value.toInt >= 2)",
+
+                "// === bankOpt (Option[Bank]) ===",
+                "bankOpt.isDefined && bankOpt.get.bankId.value == \"gh.29.uk\"",
+                "bankOpt.exists(_.fullName.contains(\"Community\"))",
+                "bankOpt.exists(_.websiteUrl.contains(\"https://\"))",
+
+                "// === bankAttributes (List[BankAttributeTrait]) ===",
+                "bankAttributes.exists(attr => attr.name == \"region\" && attr.value == \"EU\")",
+                "bankAttributes.exists(attr => attr.name == \"certified\" && attr.value == \"true\")",
+
+                "// === accountOpt (Option[BankAccount]) ===",
+                "accountOpt.isDefined && accountOpt.get.balance > 1000",
+                "accountOpt.exists(acc => acc.currency == \"USD\" && acc.balance > 5000)",
+                "accountOpt.exists(_.accountType == \"SAVINGS\")",
+                "accountOpt.exists(_.number.length >= 10)",
+
+                "// === accountAttributes (List[AccountAttribute]) ===",
+                "accountAttributes.exists(attr => attr.name == \"status\" && attr.value == \"active\")",
+                "accountAttributes.exists(attr => attr.name == \"account_tier\" && attr.value == \"gold\")",
+
+                "// === transactionOpt (Option[Transaction]) ===",
+                "transactionOpt.isDefined && transactionOpt.get.amount < 10000",
+                "transactionOpt.exists(_.transactionType.contains(\"TRANSFER\"))",
+                "transactionOpt.exists(t => t.currency == \"EUR\" && t.amount > 100)",
+                "transactionOpt.exists(_.balance > 0)",
+
+                "// === transactionAttributes (List[TransactionAttribute]) ===",
+                "transactionAttributes.exists(attr => attr.name == \"category\" && attr.value == \"business\")",
+                "!transactionAttributes.exists(attr => attr.name == \"flagged\" && attr.value == \"true\")",
+
+                "// === transactionRequestOpt (Option[TransactionRequest]) ===",
+                "transactionRequestOpt.exists(_.status == \"PENDING\")",
+                "transactionRequestOpt.exists(_.type == \"SEPA\")",
+                "transactionRequestOpt.exists(_.this_bank_id.value == bankOpt.get.bankId.value)",
+
+                "// === transactionRequestAttributes (List[TransactionRequestAttributeTrait]) ===",
+                "transactionRequestAttributes.exists(attr => attr.name == \"priority\" && attr.value == \"high\")",
+                "transactionRequestAttributes.exists(attr => attr.name == \"source\" && attr.value == \"mobile_app\")",
+
+                "// === customerOpt (Option[Customer]) ===",
+                "customerOpt.exists(_.legalName.contains(\"Corp\"))",
+                "customerOpt.isDefined && customerOpt.get.email == authenticatedUser.emailAddress",
+                "customerOpt.exists(_.relationshipStatus == \"ACTIVE\")",
+                "customerOpt.exists(_.mobileNumber.nonEmpty)",
+
+                "// === customerAttributes (List[CustomerAttribute]) ===",
+                "customerAttributes.exists(attr => attr.name == \"risk_level\" && attr.value == \"low\")",
+                "customerAttributes.exists(attr => attr.name == \"vip_status\" && attr.value == \"true\")",
+
+                "// === callContext (Option[CallContext]) ===",
+                "callContext.exists(_.ipAddress.exists(_.startsWith(\"192.168\")))",
+                "callContext.exists(_.verb.exists(_ == \"GET\"))",
+                "callContext.exists(_.url.exists(_.contains(\"/accounts/\")))",
+
+                "// === OBJECT-TO-OBJECT COMPARISONS ===",
+                "// User Comparisons - Self Access",
+                "userOpt.exists(_.userId == authenticatedUser.userId)",
+                "userOpt.exists(_.emailAddress == authenticatedUser.emailAddress)",
+                "userOpt.exists(u => authenticatedUser.emailAddress.split(\"@\")(1) == u.emailAddress.split(\"@\")(1))",
+
+                "// User Comparisons - Delegation",
+                "onBehalfOfUserOpt.isDefined && userOpt.isDefined && onBehalfOfUserOpt.get.userId == userOpt.get.userId",
+                "userOpt.exists(_.userId != authenticatedUser.userId)",
+
+                "// Customer-User Comparisons",
+                "customerOpt.exists(_.email == authenticatedUser.emailAddress)",
+                "customerOpt.isDefined && userOpt.isDefined && customerOpt.get.email == userOpt.get.emailAddress",
+                "customerOpt.exists(c => userOpt.exists(u => c.legalName.contains(u.name)))",
+
+                "// Account-Transaction Comparisons",
+                "transactionOpt.isDefined && accountOpt.isDefined && transactionOpt.get.amount < accountOpt.get.balance",
+                "transactionOpt.exists(t => accountOpt.exists(a => t.amount <= a.balance * 0.5))",
+                "transactionOpt.exists(t => accountOpt.exists(a => t.currency == a.currency))",
+                "transactionOpt.exists(t => accountOpt.exists(a => a.balance - t.amount >= 0))",
+                "transactionOpt.exists(t => accountOpt.exists(a => (a.accountType == \"CHECKING\" && t.transactionType.exists(_.contains(\"DEBIT\")))))",
+
+                "// Bank-Account Comparisons",
+                "accountOpt.isDefined && bankOpt.isDefined && accountOpt.get.bankId == bankOpt.get.bankId.value",
+                "accountOpt.exists(a => bankAttributes.exists(attr => attr.name == \"primary_currency\" && attr.value == a.currency))",
+
+                "// Transaction Request Comparisons",
+                "transactionRequestOpt.exists(tr => accountOpt.exists(a => tr.this_account_id.value == a.accountId.value))",
+                "transactionRequestOpt.exists(tr => bankOpt.exists(b => tr.this_bank_id.value == b.bankId.value))",
+                "transactionOpt.isDefined && transactionRequestOpt.isDefined && transactionOpt.get.amount == transactionRequestOpt.get.charge.value.toDouble",
+
+                "// Attribute Cross-Comparisons",
+                "userAttributes.exists(ua => ua.name == \"tier\" && accountAttributes.exists(aa => aa.name == \"tier\" && ua.value == aa.value))",
+                "customerAttributes.exists(ca => ca.name == \"segment\" && accountAttributes.exists(aa => aa.name == \"segment\" && ca.value == aa.value))",
+                "authenticatedUserAttributes.exists(ua => ua.name == \"department\" && accountAttributes.exists(aa => aa.name == \"department\" && ua.value == aa.value))",
+                "transactionAttributes.exists(ta => ta.name == \"risk_score\" && userAttributes.exists(ua => ua.name == \"risk_tolerance\" && ta.value.toInt <= ua.value.toInt))",
+                "bankAttributes.exists(ba => ba.name == \"region\" && customerAttributes.exists(ca => ca.name == \"region\" && ba.value == ca.value))",
+
+                "// === COMPLEX MULTI-OBJECT EXAMPLES ===",
+                "authenticatedUser.emailAddress.endsWith(\"@bank.com\") && accountOpt.exists(_.balance > 0) && bankOpt.exists(_.bankId.value == \"gh.29.uk\")",
+                "authenticatedUserAttributes.exists(_.name == \"role\" && _.value == \"manager\") && userOpt.exists(_.userId != authenticatedUser.userId)",
+                "(onBehalfOfUserOpt.isEmpty || onBehalfOfUserOpt.exists(_.userId == authenticatedUser.userId)) && accountOpt.exists(_.balance > 1000)",
+                "userAttributes.exists(_.name == \"kyc_status\" && _.value == \"verified\") && (onBehalfOfUserOpt.isEmpty || onBehalfOfUserAttributes.exists(_.name == \"authorized\"))",
+                "customerAttributes.exists(_.name == \"vip_status\" && _.value == \"true\") && accountAttributes.exists(_.name == \"account_tier\" && _.value == \"premium\")",
+
+                "// Chained Object Validation",
+                "userOpt.exists(u => customerOpt.exists(c => c.email == u.emailAddress && accountOpt.exists(a => transactionOpt.exists(t => t.accountId.value == a.accountId.value))))",
+                "bankOpt.exists(b => accountOpt.exists(a => a.bankId == b.bankId.value && transactionRequestOpt.exists(tr => tr.this_account_id.value == a.accountId.value)))",
+
+                "// Aggregation Examples",
+                "authenticatedUserAttributes.exists(aua => userAttributes.exists(ua => aua.name == ua.name && aua.value == ua.value))",
+                "transactionAttributes.forall(ta => accountAttributes.exists(aa => aa.name == \"allowed_transaction_\" + ta.name))",
+
+                "// === REAL-WORLD BUSINESS LOGIC ===",
+                "// Loan Approval",
+                "customerAttributes.exists(ca => ca.name == \"credit_score\" && ca.value.toInt > 650) && accountOpt.exists(_.balance > 5000)",
+
+                "// Wire Transfer Authorization",
+                "transactionOpt.exists(t => t.amount < 100000 && t.transactionType.exists(_.contains(\"WIRE\"))) && authenticatedUserAttributes.exists(_.name == \"wire_authorized\")",
+
+                "// Self-Service Account Closure",
+                "accountOpt.exists(a => (a.balance == 0 && userOpt.exists(_.userId == authenticatedUser.userId)) || authenticatedUserAttributes.exists(_.name == \"role\" && _.value == \"manager\"))",
+
+                "// VIP Priority Processing",
+                "(customerAttributes.exists(_.name == \"vip_status\" && _.value == \"true\") || accountAttributes.exists(_.name == \"account_tier\" && _.value == \"platinum\"))",
+
+                "// Joint Account Access",
+                "accountOpt.exists(a => a.accountHolders.exists(h => h.userId == authenticatedUser.userId || h.emailAddress == authenticatedUser.emailAddress))",
+
+                "// === SAFE OPTION HANDLING PATTERNS ===",
+                "userOpt match { case Some(u) => u.userId == authenticatedUser.userId case None => false }",
+                "accountOpt.exists(_.balance > 0)",
+                "userOpt.forall(!_.isDeleted.getOrElse(false))",
+                "accountOpt.map(_.balance).getOrElse(0) > 100",
+
+                "// === ERROR PREVENTION EXAMPLES ===",
+                "// WRONG: accountOpt.get.balance > 1000 (unsafe!)",
+                "// RIGHT: accountOpt.exists(_.balance > 1000)",
+                "// WRONG: userOpt.get.userId == authenticatedUser.userId",
+                "// RIGHT: userOpt.exists(_.userId == authenticatedUser.userId)",
+
+                "// IMPORTANT: Use camelCase (userId NOT user_id, emailAddress NOT email_address)",
+                "// IMPORTANT: Parameters use Opt suffix for Optional types (userOpt, accountOpt, bankOpt)",
+                "// IMPORTANT: Always check isDefined before using .get, or use safe methods like exists(), forall(), map()"
               ),
               available_operators = List(
                 "==", "!=", "&&", "||", "!", ">", "<", ">=", "<=",
