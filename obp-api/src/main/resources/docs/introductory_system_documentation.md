@@ -2805,6 +2805,7 @@ user_consumer_limit_anonymous_access=1000
 **Managing Rate Limits:**
 
 Create rate limits:
+
 ```bash
 POST /obp/v6.0.0/management/consumers/CONSUMER_ID/consumer/rate-limits
 {
@@ -2820,6 +2821,7 @@ POST /obp/v6.0.0/management/consumers/CONSUMER_ID/consumer/rate-limits
 ```
 
 Update rate limits:
+
 ```bash
 PUT /obp/v6.0.0/management/consumers/CONSUMER_ID/consumer/rate-limits/RATE_LIMITING_ID
 {
@@ -2835,11 +2837,13 @@ PUT /obp/v6.0.0/management/consumers/CONSUMER_ID/consumer/rate-limits/RATE_LIMIT
 ```
 
 Query active rate limits (current date/time):
+
 ```bash
 GET /obp/v6.0.0/management/consumers/CONSUMER_ID/active-rate-limits
 ```
 
 Query active rate limits at a specific date:
+
 ```bash
 GET /obp/v6.0.0/management/consumers/CONSUMER_ID/active-rate-limits/DATE
 ```
@@ -2862,11 +2866,6 @@ X-Rate-Limit-Reset: 45
 - **Multiple Records**: Consumers can have multiple overlapping rate limit records
 - **Aggregation**: Active limits are summed together (positive values only)
 - **Single Source of Truth**: `RateLimitingUtil.getActiveRateLimitsWithIds()` calculates all active limits consistently
-- **Unlimited**: A value of `-1` means unlimited for that time period
-X-Rate-Limit-Remaining: 0
-X-Rate-Limit-Reset: 45
-
-{
 - **Unlimited**: A value of `-1` means unlimited for that time period
 
 ### 8.5 Security Best Practices
@@ -2926,6 +2925,7 @@ For comprehensive use case examples and implementation guides, see the dedicated
 - **Variable Recurring Payments (VRP)** - Enable authorized applications to make multiple payments to a beneficiary over time with varying amounts, subject to pre-defined limits. See [use_cases.md](use_cases.md#1-variable-recurring-payments-vrp) for full details.
 
 **Coming Soon:**
+
 - Account Aggregation
 - Payment Initiation Services (PIS)
 - Account Information Services (AIS)
