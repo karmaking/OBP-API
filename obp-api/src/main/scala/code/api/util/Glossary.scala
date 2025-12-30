@@ -276,7 +276,7 @@ object Glossary extends MdcLoggable  {
 				 |
 				 |Rate limits can be set for six time periods:
 				 |- **per_second_rate_limit**: Maximum requests per second
-				 |- **per_minute_rate_limit**: Maximum requests per minute  
+				 |- **per_minute_rate_limit**: Maximum requests per minute
 				 |- **per_hour_rate_limit**: Maximum requests per hour
 				 |- **per_day_rate_limit**: Maximum requests per day
 				 |- **per_week_rate_limit**: Maximum requests per week
@@ -300,10 +300,14 @@ object Glossary extends MdcLoggable  {
 				 |
 				 |Use the endpoint:
 				 |```
-				 |GET /obp/v6.0.0/management/consumers/{CONSUMER_ID}/active-rate-limits/{DATE}
+				 |GET /obp/v6.0.0/management/consumers/{CONSUMER_ID}/active-rate-limits/{DATE_WITH_HOUR}
 				 |```
 				 |
-				 |Returns the aggregated active rate limits at a specific date, including which rate limit records contributed to the totals.
+				 |Where `DATE_WITH_HOUR` is in format `YYYY-MM-DD-HH` (e.g., `2025-12-31-13` for hour 13:00-13:59 on Dec 31, 2025).
+				 |
+				 |Returns the aggregated active rate limits for the specified hour, including which rate limit records contributed to the totals.
+				 |
+				 |Rate limits are cached and queried at hour-level granularity for performance.
 				 |
 				 |### System Defaults
 				 |
@@ -4116,7 +4120,7 @@ object Glossary extends MdcLoggable  {
 				 |
 				 |**Rule 1: User Must Own Account**
 				 |```scala
-				 |accountOpt.exists(account => 
+				 |accountOpt.exists(account =>
 				 |  account.owners.exists(owner => owner.userId == user.userId)
 				 |)
 				 |```
@@ -4200,7 +4204,7 @@ object Glossary extends MdcLoggable  {
 				 |accountOpt.exists(account => account.balance.toDouble >= 1000.0)
 				 |
 				 |// Check user attributes (non-personal only)
-				 |authenticatedUserAttributes.exists(attr => 
+				 |authenticatedUserAttributes.exists(attr =>
 				 |  attr.name == "role" && attr.value == "admin"
 				 |)
 				 |

@@ -2842,11 +2842,15 @@ Query active rate limits (current date/time):
 GET /obp/v6.0.0/management/consumers/CONSUMER_ID/active-rate-limits
 ```
 
-Query active rate limits at a specific date:
+Query active rate limits for a specific hour:
 
 ```bash
-GET /obp/v6.0.0/management/consumers/CONSUMER_ID/active-rate-limits/DATE
+GET /obp/v6.0.0/management/consumers/CONSUMER_ID/active-rate-limits/DATE_WITH_HOUR
 ```
+
+Where `DATE_WITH_HOUR` is in format `YYYY-MM-DD-HH` (e.g., `2025-12-31-13` for hour 13:00-13:59 on Dec 31, 2025).
+
+Rate limits are cached and queried at hour-level granularity for performance.
 
 **Rate Limit Headers:**
 

@@ -130,7 +130,7 @@ class RateLimitsTest extends V600ServerSetup {
       Entitlement.entitlement.vend.addEntitlement("", resourceUser1.userId, CanDeleteRateLimits.toString)
       val deleteRequest = (v6_0_0_Request / "management" / "consumers" / consumerId / "consumer" / "rate-limits" / createdCallLimit.rate_limiting_id).DELETE <@ (user1)
       val deleteResponse = makeDeleteRequest(deleteRequest)
-      
+
       Then("We should get a 204")
       deleteResponse.code should equal(204)
     }
@@ -148,7 +148,7 @@ class RateLimitsTest extends V600ServerSetup {
       When("We try to delete without proper role")
       val deleteRequest = (v6_0_0_Request / "management" / "consumers" / consumerId / "consumer" / "rate-limits" / createdCallLimit.rate_limiting_id).DELETE <@ (user1)
       val deleteResponse = makeDeleteRequest(deleteRequest)
-      
+
       Then("We should get a 403")
       deleteResponse.code should equal(403)
       And("error should be " + UserHasMissingRoles + CanDeleteRateLimits)
@@ -170,10 +170,10 @@ class RateLimitsTest extends V600ServerSetup {
       Entitlement.entitlement.vend.addEntitlement("", resourceUser1.userId, CanGetRateLimits.toString)
       val currentDateString = ZonedDateTime
         .now(ZoneOffset.UTC)
-        .format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'"))
+        .format(DateTimeFormatter.ofPattern("yyyy-MM-dd-HH"))
       val getRequest = (v6_0_0_Request / "management" / "consumers" / consumerId / "active-rate-limits" / currentDateString).GET <@ (user1)
       val getResponse = makeGetRequest(getRequest)
-      
+
       Then("We should get a 200")
       getResponse.code should equal(200)
       And("we should get the active call limits response")
@@ -188,10 +188,10 @@ class RateLimitsTest extends V600ServerSetup {
       val consumerId = Consumers.consumers.vend.getConsumerByConsumerKey(c.key).map(_.consumerId.get).getOrElse("")
       val currentDateString = ZonedDateTime
         .now(ZoneOffset.UTC)
-        .format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'"))
+        .format(DateTimeFormatter.ofPattern("yyyy-MM-dd-HH"))
       val getRequest = (v6_0_0_Request / "management" / "consumers" / consumerId / "active-rate-limits" / currentDateString).GET <@ (user1)
       val getResponse = makeGetRequest(getRequest)
-      
+
       Then("We should get a 403")
       getResponse.code should equal(403)
       And("error should be " + UserHasMissingRoles + CanGetRateLimits)
@@ -203,7 +203,7 @@ class RateLimitsTest extends V600ServerSetup {
       val Some((c, _)) = user1
       val consumerId = Consumers.consumers.vend.getConsumerByConsumerKey(c.key).map(_.consumerId.get).getOrElse("")
       Entitlement.entitlement.vend.addEntitlement("", resourceUser1.userId, CanCreateRateLimits.toString)
-      
+
       // Create first rate limit record
       val fromDate1 = new Date()
       val toDate1 = new Date(System.currentTimeMillis() + 172800000L) // +2 days
@@ -223,7 +223,7 @@ class RateLimitsTest extends V600ServerSetup {
       val request1 = (v6_0_0_Request / "management" / "consumers" / consumerId / "consumer" / "rate-limits").POST <@ (user1)
       val createResponse1 = makePostRequest(request1, write(rateLimit1))
       createResponse1.code should equal(201)
-      
+
       // Create second rate limit record with same date range
       val rateLimit2 = CallLimitPostJsonV600(
         from_date = fromDate1,
@@ -247,13 +247,13 @@ class RateLimitsTest extends V600ServerSetup {
       val targetDate = ZonedDateTime
         .now(ZoneOffset.UTC)
         .plusDays(1) // Check 1 day from now (within the range)
-        .format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'"))
+        .format(DateTimeFormatter.ofPattern("yyyy-MM-dd-HH"))
       val getRequest = (v6_0_0_Request / "management" / "consumers" / consumerId / "active-rate-limits" / targetDate).GET <@ (user1)
       val getResponse = makeGetRequest(getRequest)
-      
+
       Then("We should get a 200")
       getResponse.code should equal(200)
-      
+
       And("the totals should be the sum of both records (using single source of truth aggregation)")
       val activeCallLimits = getResponse.body.extract[ActiveRateLimitsJsonV600]
       activeCallLimits.active_per_second_rate_limit should equal(15L) // 10 + 5

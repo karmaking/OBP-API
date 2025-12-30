@@ -460,14 +460,16 @@ trait APIMethods600 {
       implementedInApiVersion,
       nameOf(getActiveRateLimitsAtDate),
       "GET",
-      "/management/consumers/CONSUMER_ID/active-rate-limits/DATE",
-      "Get Active Rate Limits at Date",
+      "/management/consumers/CONSUMER_ID/active-rate-limits/DATE_WITH_HOUR",
+      "Get Active Rate Limits for Hour",
       s"""
-         |Get the active rate limits for a consumer at a specific date. Returns the aggregated rate limits from all active records at that time.
+         |Get the active rate limits for a consumer for a specific hour. Returns the aggregated rate limits from all active records during that hour.
+         |
+         |Rate limits are cached and queried at hour-level granularity.
          |
          |See ${Glossary.getGlossaryItemLink("Rate Limiting")} for more details on how rate limiting works.
          |
-         |Date format: YYYY-MM-DDTHH:MM:SSZ (e.g. 1099-12-31T23:00:00Z)
+         |Date format: YYYY-MM-DD-HH (e.g. 2025-12-31-13 for hour 13:00-13:59 on Dec 31, 2025)
          |
          |${userAuthenticationMessage(true)}
          |
@@ -487,16 +489,17 @@ trait APIMethods600 {
 
 
     lazy val getActiveRateLimitsAtDate: OBPEndpoint = {
-      case "management" :: "consumers" :: consumerId :: "active-rate-limits" :: dateString :: Nil JsonGet _ =>
+      case "management" :: "consumers" :: consumerId :: "active-rate-limits" :: dateWithHourString :: Nil JsonGet _ =>
         cc =>
           implicit val ec = EndpointContext(Some(cc))
           for {
             (Full(u), callContext) <- authenticatedAccess(cc)
             _ <- NewStyle.function.hasEntitlement("", u.userId, canGetRateLimits, callContext)
             _ <- NewStyle.function.getConsumerByConsumerId(consumerId, callContext)
-            date <- NewStyle.function.tryons(s"$InvalidDateFormat Current date format is: $dateString. Please use this format: YYYY-MM-DDTHH:MM:SSZ (e.g. 1099-12-31T23:00:00Z)", 400, callContext) {
-              val format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'")
-              format.parse(dateString)
+            date <- NewStyle.function.tryons(s"$InvalidDateFormat Current date format is: $dateWithHourString. Please use this format: YYYY-MM-DD-HH (e.g. 2025-12-31-13 for hour 13 on Dec 31, 2025)", 400, callContext) {
+              val formatter = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd-HH")
+              val localDateTime = java.time.LocalDateTime.parse(dateWithHourString, formatter)
+              java.util.Date.from(localDateTime.atZone(java.time.ZoneOffset.UTC).toInstant())
             }
             (rateLimit, rateLimitIds) <- RateLimitingUtil.getActiveRateLimitsWithIds(consumerId, date)
           } yield {
