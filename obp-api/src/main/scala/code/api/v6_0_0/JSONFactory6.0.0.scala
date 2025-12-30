@@ -410,10 +410,17 @@ case class AbacObjectTypeJsonV600(
     properties: List[AbacObjectPropertyJsonV600]
 )
 
+case class AbacRuleExampleJsonV600(
+    category: String,
+    title: String,
+    code: String,
+    description: String
+)
+
 case class AbacRuleSchemaJsonV600(
     parameters: List[AbacParameterJsonV600],
     object_types: List[AbacObjectTypeJsonV600],
-    examples: List[String],
+    examples: List[AbacRuleExampleJsonV600],
     available_operators: List[String],
     notes: List[String]
 )
