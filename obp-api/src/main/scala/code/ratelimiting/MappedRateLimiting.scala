@@ -6,7 +6,7 @@ import code.api.cache.Caching
 import java.util.Date
 import java.util.UUID.randomUUID
 import code.util.{MappedUUID, UUIDString}
-import net.liftweb.common.{Box, Full}
+import net.liftweb.common.{Box, Full, Logger}
 import net.liftweb.mapper._
 import net.liftweb.util.Helpers.tryo
 import com.openbankproject.commons.ExecutionContext.Implicits.global
@@ -19,7 +19,7 @@ import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.language.postfixOps
 
-object MappedRateLimitingProvider extends RateLimitingProviderTrait {
+object MappedRateLimitingProvider extends RateLimitingProviderTrait with Logger {
 
   def getAll(): Future[List[RateLimiting]] = Future(RateLimiting.findAll())
   def getAllByConsumerId(consumerId: String, date: Option[Date] = None): Future[List[RateLimiting]] = Future {
@@ -269,23 +269,26 @@ object MappedRateLimitingProvider extends RateLimitingProviderTrait {
 
     // Start of hour: 00 mins, 00 seconds
     val startOfHour = localDateTime.withMinute(0).withSecond(0)
-    val startInstant = startOfHour.atZone(java.time.ZoneId.systemDefault()).toInstant()
+    val startInstant = startOfHour.atZone(java.time.ZoneOffset.UTC).toInstant()
     val startDate = Date.from(startInstant)
 
     // End of hour: 59 mins, 59 seconds
     val endOfHour = localDateTime.withMinute(59).withSecond(59)
-    val endInstant = endOfHour.atZone(java.time.ZoneId.systemDefault()).toInstant()
+    val endInstant = endOfHour.atZone(java.time.ZoneOffset.UTC).toInstant()
     val endDate = Date.from(endInstant)
 
     val cacheKey = s"rl_active_${consumerId}_${dateWithHour}"
       Caching.memoizeSyncWithProvider(Some(cacheKey))(3600 second) {
         // Find rate limits that are active at any point during this hour
         // A rate limit is active if: fromDate <= endOfHour AND toDate >= startOfHour
-        RateLimiting.findAll(
+        debug(s"[RateLimiting] Query: consumerId=$consumerId, dateWithHour=$dateWithHour, startDate=$startDate, endDate=$endDate")
+        val results = RateLimiting.findAll(
           By(RateLimiting.ConsumerId, consumerId),
           By_<=(RateLimiting.FromDate, endDate),
           By_>=(RateLimiting.ToDate, startDate)
         )
+        debug(s"[RateLimiting] Found ${results.size} rate limits for consumerId=$consumerId at dateWithHour=$dateWithHour")
+        results
       }
   }
 
@@ -293,7 +296,7 @@ object MappedRateLimitingProvider extends RateLimitingProviderTrait {
     // Convert the provided date parameter (not current time!) to hour format
     def dateWithHour: String = {
       val instant = date.toInstant()
-      val localDateTime = LocalDateTime.ofInstant(instant, java.time.ZoneId.systemDefault())
+      val localDateTime = LocalDateTime.ofInstant(instant, java.time.ZoneOffset.UTC)
       val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd-HH")
       localDateTime.format(formatter)
     }
