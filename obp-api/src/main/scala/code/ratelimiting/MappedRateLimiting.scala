@@ -20,7 +20,7 @@ import scala.concurrent.duration._
 import scala.language.postfixOps
 
 object MappedRateLimitingProvider extends RateLimitingProviderTrait {
-  
+
   def getAll(): Future[List[RateLimiting]] = Future(RateLimiting.findAll())
   def getAllByConsumerId(consumerId: String, date: Option[Date] = None): Future[List[RateLimiting]] = Future {
     date match {
@@ -35,13 +35,13 @@ object MappedRateLimitingProvider extends RateLimitingProviderTrait {
           By_>(RateLimiting.ToDate, date)
         )
     }
-    
+
   }
-  def getByConsumerId(consumerId: String, 
-                      apiVersion: String, 
-                      apiName: String, 
+  def getByConsumerId(consumerId: String,
+                      apiVersion: String,
+                      apiName: String,
                       date: Option[Date] = None): Future[Box[RateLimiting]] = Future {
-    val result = 
+    val result =
       date match {
         case None =>
           RateLimiting.find( // 1st try: Consumer and Version and Name
@@ -261,32 +261,43 @@ object MappedRateLimitingProvider extends RateLimitingProviderTrait {
     RateLimiting.find(By(RateLimiting.RateLimitingId, rateLimitingId))
   }
 
-  private def getActiveCallLimitsByConsumerIdAtDateCached(consumerId: String, currentDateWithHour: String): List[RateLimiting] = {
+  private def getActiveCallLimitsByConsumerIdAtDateCached(consumerId: String, dateWithHour: String): List[RateLimiting] = {
     // Cache key uses standardized prefix: rl_active_{consumerId}_{dateWithHour}
-    // Create a proper Date object from the date_with_hour string (assuming 0 mins and 0 seconds)
+    // Create Date objects for start and end of the hour from the date_with_hour string
     val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd-HH")
-    val localDateTime = LocalDateTime.parse(currentDateWithHour, formatter).withMinute(0).withSecond(0)
-    // Convert LocalDateTime to java.util.Date
-    val instant = localDateTime.atZone(java.time.ZoneId.systemDefault()).toInstant()
-    val date = Date.from(instant)
-    
-    val cacheKey = s"rl_active_${consumerId}_${currentDateWithHour}"
+    val localDateTime = LocalDateTime.parse(dateWithHour, formatter)
+
+    // Start of hour: 00 mins, 00 seconds
+    val startOfHour = localDateTime.withMinute(0).withSecond(0)
+    val startInstant = startOfHour.atZone(java.time.ZoneId.systemDefault()).toInstant()
+    val startDate = Date.from(startInstant)
+
+    // End of hour: 59 mins, 59 seconds
+    val endOfHour = localDateTime.withMinute(59).withSecond(59)
+    val endInstant = endOfHour.atZone(java.time.ZoneId.systemDefault()).toInstant()
+    val endDate = Date.from(endInstant)
+
+    val cacheKey = s"rl_active_${consumerId}_${dateWithHour}"
       Caching.memoizeSyncWithProvider(Some(cacheKey))(3600 second) {
+        // Find rate limits that are active at any point during this hour
+        // A rate limit is active if: fromDate <= endOfHour AND toDate >= startOfHour
         RateLimiting.findAll(
           By(RateLimiting.ConsumerId, consumerId),
-          By_<=(RateLimiting.FromDate, date),
-          By_>=(RateLimiting.ToDate, date)
+          By_<=(RateLimiting.FromDate, endDate),
+          By_>=(RateLimiting.ToDate, startDate)
         )
       }
   }
 
   def getActiveCallLimitsByConsumerIdAtDate(consumerId: String, date: Date): Future[List[RateLimiting]] = Future {
-    def currentDateWithHour: String = {
-      val now = LocalDateTime.now()
+    // Convert the provided date parameter (not current time!) to hour format
+    def dateWithHour: String = {
+      val instant = date.toInstant()
+      val localDateTime = LocalDateTime.ofInstant(instant, java.time.ZoneId.systemDefault())
       val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd-HH")
-      now.format(formatter)
+      localDateTime.format(formatter)
     }
-    getActiveCallLimitsByConsumerIdAtDateCached(consumerId, currentDateWithHour)
+    getActiveCallLimitsByConsumerIdAtDateCached(consumerId, dateWithHour)
   }
 
 }
