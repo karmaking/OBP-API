@@ -469,7 +469,9 @@ trait APIMethods600 {
          |
          |See ${Glossary.getGlossaryItemLink("Rate Limiting")} for more details on how rate limiting works.
          |
-         |Date format: YYYY-MM-DD-HH (e.g. 2025-12-31-13 for hour 13:00-13:59 on Dec 31, 2025)
+         |Date format: YYYY-MM-DD-HH in UTC timezone (e.g. 2025-12-31-13 for hour 13:00-13:59 UTC on Dec 31, 2025)
+         |
+         |Note: The hour is always interpreted in UTC for consistency across all servers.
          |
          |${userAuthenticationMessage(true)}
          |
@@ -496,7 +498,7 @@ trait APIMethods600 {
             (Full(u), callContext) <- authenticatedAccess(cc)
             _ <- NewStyle.function.hasEntitlement("", u.userId, canGetRateLimits, callContext)
             _ <- NewStyle.function.getConsumerByConsumerId(consumerId, callContext)
-            date <- NewStyle.function.tryons(s"$InvalidDateFormat Current date format is: $dateWithHourString. Please use this format: YYYY-MM-DD-HH (e.g. 2025-12-31-13 for hour 13 on Dec 31, 2025)", 400, callContext) {
+            date <- NewStyle.function.tryons(s"$InvalidDateFormat Current date format is: $dateWithHourString. Please use this format: YYYY-MM-DD-HH in UTC (e.g. 2025-12-31-13 for hour 13:00-13:59 UTC on Dec 31, 2025)", 400, callContext) {
               val formatter = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd-HH")
               val localDateTime = java.time.LocalDateTime.parse(dateWithHourString, formatter)
               java.util.Date.from(localDateTime.atZone(java.time.ZoneOffset.UTC).toInstant())

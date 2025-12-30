@@ -303,11 +303,11 @@ object Glossary extends MdcLoggable  {
 				 |GET /obp/v6.0.0/management/consumers/{CONSUMER_ID}/active-rate-limits/{DATE_WITH_HOUR}
 				 |```
 				 |
-				 |Where `DATE_WITH_HOUR` is in format `YYYY-MM-DD-HH` (e.g., `2025-12-31-13` for hour 13:00-13:59 on Dec 31, 2025).
+				 |Where `DATE_WITH_HOUR` is in format `YYYY-MM-DD-HH` in **UTC timezone** (e.g., `2025-12-31-13` for hour 13:00-13:59 UTC on Dec 31, 2025).
 				 |
 				 |Returns the aggregated active rate limits for the specified hour, including which rate limit records contributed to the totals.
 				 |
-				 |Rate limits are cached and queried at hour-level granularity for performance.
+				 |Rate limits are cached and queried at hour-level granularity for performance. All hours are interpreted in UTC for consistency across all servers.
 				 |
 				 |### System Defaults
 				 |

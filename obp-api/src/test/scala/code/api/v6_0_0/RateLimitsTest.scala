@@ -26,7 +26,7 @@ TESOBE (http://www.tesobe.com/)
 package code.api.v6_0_0
 
 import code.api.util.APIUtil.OAuth._
-import code.api.util.ApiRole.{CanDeleteRateLimits, CanGetRateLimits, CanCreateRateLimits}
+import code.api.util.ApiRole.{CanCreateRateLimits, CanDeleteRateLimits, CanGetRateLimits}
 import code.api.util.ErrorMessages.{UserHasMissingRoles, UserNotLoggedIn}
 import code.api.v6_0_0.OBPAPI6_0_0.Implementations6_0_0
 import code.consumer.Consumers

@@ -264,15 +264,16 @@ object MappedRateLimitingProvider extends RateLimitingProviderTrait with Logger 
   private def getActiveCallLimitsByConsumerIdAtDateCached(consumerId: String, dateWithHour: String): List[RateLimiting] = {
     // Cache key uses standardized prefix: rl_active_{consumerId}_{dateWithHour}
     // Create Date objects for start and end of the hour from the date_with_hour string
+    // IMPORTANT: Hour format is in UTC for consistency across all servers
     val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd-HH")
     val localDateTime = LocalDateTime.parse(dateWithHour, formatter)
 
-    // Start of hour: 00 mins, 00 seconds
+    // Start of hour: 00 mins, 00 seconds (UTC)
     val startOfHour = localDateTime.withMinute(0).withSecond(0)
     val startInstant = startOfHour.atZone(java.time.ZoneOffset.UTC).toInstant()
     val startDate = Date.from(startInstant)
 
-    // End of hour: 59 mins, 59 seconds
+    // End of hour: 59 mins, 59 seconds (UTC)
     val endOfHour = localDateTime.withMinute(59).withSecond(59)
     val endInstant = endOfHour.atZone(java.time.ZoneOffset.UTC).toInstant()
     val endDate = Date.from(endInstant)
@@ -292,10 +293,11 @@ object MappedRateLimitingProvider extends RateLimitingProviderTrait with Logger 
       }
   }
 
-  def getActiveCallLimitsByConsumerIdAtDate(consumerId: String, date: Date): Future[List[RateLimiting]] = Future {
+  def getActiveCallLimitsByConsumerIdAtDate(consumerId: String, dateUtc: Date): Future[List[RateLimiting]] = Future {
     // Convert the provided date parameter (not current time!) to hour format
+    // Date is timezone-agnostic (millis since epoch), we interpret it as UTC
     def dateWithHour: String = {
-      val instant = date.toInstant()
+      val instant = dateUtc.toInstant()
       val localDateTime = LocalDateTime.ofInstant(instant, java.time.ZoneOffset.UTC)
       val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd-HH")
       localDateTime.format(formatter)
