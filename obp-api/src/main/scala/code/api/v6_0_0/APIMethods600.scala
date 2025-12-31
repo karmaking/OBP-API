@@ -589,6 +589,75 @@ trait APIMethods600 {
       Some(List(canGetCurrentConsumer))
     )
 
+    staticResourceDocs += ResourceDoc(
+      invalidateCacheNamespace,
+      implementedInApiVersion,
+      nameOf(invalidateCacheNamespace),
+      "POST",
+      "/management/cache/namespaces/invalidate",
+      "Invalidate Cache Namespace",
+      """Invalidates a cache namespace by incrementing its version counter.
+        |
+        |This provides instant cache invalidation without deleting individual keys.
+        |Incrementing the version counter makes all keys with the old version unreachable.
+        |
+        |Available namespace IDs: call_counter, rl_active, rd_localised, rd_dynamic,
+        |rd_static, rd_all, swagger_static, connector, metrics_stable, metrics_recent, abac_rule
+        |
+        |Use after updating rate limits, translations, endpoints, or CBS data.
+        |
+        |Authentication is Required
+        |""",
+      InvalidateCacheNamespaceJsonV600(namespace_id = "rd_localised"),
+      InvalidatedCacheNamespaceJsonV600(
+        namespace_id = "rd_localised",
+        old_version = 1,
+        new_version = 2,
+        status = "invalidated"
+      ),
+      List(
+        InvalidJsonFormat,
+        UserNotLoggedIn,
+        UserHasMissingRoles,
+        UnknownError
+      ),
+      List(apiTagCache, apiTagSystem, apiTagApi),
+      Some(List(canInvalidateCacheNamespace))
+    )
+
+    lazy val invalidateCacheNamespace: OBPEndpoint = {
+      case "management" :: "cache" :: "namespaces" :: "invalidate" :: Nil JsonPost json -> _ => {
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(u), callContext) <- authenticatedAccess(cc)
+            postJson <- NewStyle.function.tryons(InvalidJsonFormat, 400, callContext) {
+              json.extract[InvalidateCacheNamespaceJsonV600]
+            }
+            namespaceId = postJson.namespace_id
+            _ <- Helper.booleanToFuture(
+              s"Invalid namespace_id: $namespaceId. Valid values: ${Constant.ALL_CACHE_NAMESPACES.mkString(", ")}",
+              400,
+              callContext
+            )(Constant.ALL_CACHE_NAMESPACES.contains(namespaceId))
+            oldVersion = Constant.getCacheNamespaceVersion(namespaceId)
+            newVersionOpt = Constant.incrementCacheNamespaceVersion(namespaceId)
+            _ <- Helper.booleanToFuture(
+              s"Failed to increment cache namespace version for: $namespaceId",
+              500,
+              callContext
+            )(newVersionOpt.isDefined)
+          } yield {
+            val result = InvalidatedCacheNamespaceJsonV600(
+              namespace_id = namespaceId,
+              old_version = oldVersion,
+              new_version = newVersionOpt.get,
+              status = "invalidated"
+            )
+            (result, HttpCode.`200`(callContext))
+          }
+      }
+    }
+
     lazy val getCurrentConsumer: OBPEndpoint = {
       case "consumers" :: "current" :: Nil JsonGet _ => {
         cc => {

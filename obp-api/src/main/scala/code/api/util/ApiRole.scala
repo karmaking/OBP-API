@@ -416,6 +416,9 @@ object ApiRole extends MdcLoggable{
   case class CanGetCacheNamespaces(requiresBankId: Boolean = false) extends ApiRole
   lazy val canGetCacheNamespaces = CanGetCacheNamespaces()
 
+  case class CanInvalidateCacheNamespace(requiresBankId: Boolean = false) extends ApiRole
+  lazy val canInvalidateCacheNamespace = CanInvalidateCacheNamespace()
+
   case class CanDeleteCacheNamespace(requiresBankId: Boolean = false) extends ApiRole
   lazy val canDeleteCacheNamespace = CanDeleteCacheNamespace()
 

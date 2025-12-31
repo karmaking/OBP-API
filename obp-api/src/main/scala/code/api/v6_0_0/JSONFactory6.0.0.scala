@@ -257,6 +257,17 @@ case class CacheNamespaceJsonV600(
 
 case class CacheNamespacesJsonV600(namespaces: List[CacheNamespaceJsonV600])
 
+case class InvalidateCacheNamespaceJsonV600(
+    namespace_id: String
+)
+
+case class InvalidatedCacheNamespaceJsonV600(
+    namespace_id: String,
+    old_version: Long,
+    new_version: Long,
+    status: String
+)
+
 case class PostCustomerJsonV600(
     legal_name: String,
     customer_number: Option[String] = None,

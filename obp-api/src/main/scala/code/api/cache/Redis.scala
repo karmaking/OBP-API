@@ -2,6 +2,7 @@ package code.api.cache
 
 import code.api.JedisMethod
 import code.api.util.APIUtil
+import code.api.Constant
 import code.util.Helper.MdcLoggable
 import com.openbankproject.commons.ExecutionContext.Implicits.global
 import redis.clients.jedis.{Jedis, JedisPool, JedisPoolConfig}
@@ -58,8 +59,11 @@ object Redis extends MdcLoggable {
   // Redis startup health check
   private def performStartupHealthCheck(): Unit = {
     try {
+      val namespacePrefix = Constant.getGlobalCacheNamespacePrefix
       logger.info(s"Redis startup health check: connecting to $url:$port")
-      val testKey = "obp_startup_test"
+      logger.info(s"Global cache namespace prefix: '$namespacePrefix'")
+
+      val testKey = s"${namespacePrefix}obp_startup_test"
       val testValue = s"OBP started at ${new java.util.Date()}"
 
       // Write test key with 1 hour TTL
@@ -71,6 +75,7 @@ object Redis extends MdcLoggable {
       if (readResult.contains(testValue)) {
         logger.info(s"Redis health check PASSED - connected to $url:$port")
         logger.info(s"   Pool: max=${poolConfig.getMaxTotal}, idle=${poolConfig.getMaxIdle}")
+        logger.info(s"   Test key: $testKey")
       } else {
         logger.warn(s"WARNING: Redis health check FAILED - could not read back test key")
       }
@@ -138,28 +143,28 @@ object Redis extends MdcLoggable {
 
   /**
    * this is the help method, which can be used to auto close all the jedisConnection
-   * 
-   * @param method can only be "get" or "set" 
+   *
+   * @param method can only be "get" or "set"
    * @param key the cache key
-   * @param ttlSeconds the ttl is option. 
-   *            if ttl == None, this means value will be cached forver 
+   * @param ttlSeconds the ttl is option.
+   *            if ttl == None, this means value will be cached forver
    *            if ttl == Some(0), this means turn off the cache, do not use cache at all
    *            if ttl == Some(Int), this mean the cache will be only cached for ttl seconds
    * @param value the cache value.
-   *              
+   *
    * @return
    */
   def use(method:JedisMethod.Value, key:String, ttlSeconds: Option[Int] = None, value:Option[String] = None) : Option[String] = {
-    
+
     //we will get the connection from jedisPool later, and will always close it in the finally clause.
     var jedisConnection = None:Option[Jedis]
-    
+
     if(ttlSeconds.equals(Some(0))){ // set ttl = 0, we will totally turn off the cache
       None
     }else{
       try {
         jedisConnection = Some(jedisPool.getResource())
-        
+
         val redisResult = if (method ==JedisMethod.EXISTS) {
           jedisConnection.head.exists(key).toString
         }else if (method == JedisMethod.FLUSHDB) {
@@ -175,13 +180,13 @@ object Redis extends MdcLoggable {
         } else if(method ==JedisMethod.SET && value.isDefined){
           if (ttlSeconds.isDefined) {//if set ttl, call `setex` method to set the expired seconds.
             jedisConnection.head.setex(key, ttlSeconds.get, value.get).toString
-          } else {//if do not set ttl, call `set` method, the cache will be forever. 
+          } else {//if do not set ttl, call `set` method, the cache will be forever.
             jedisConnection.head.set(key, value.get).toString
           }
-        } else {// the use()method parameters need to be set properly, it missing value in set, then will throw the exception. 
+        } else {// the use()method parameters need to be set properly, it missing value in set, then will throw the exception.
           throw new RuntimeException("Please check the Redis.use parameters, if the method == set, the value can not be None !!!")
         }
-        //change the null to Option 
+        //change the null to Option
         APIUtil.stringOrNone(redisResult)
       } catch {
         case e: Throwable =>
@@ -190,7 +195,7 @@ object Redis extends MdcLoggable {
         if (jedisConnection.isDefined && jedisConnection.get != null)
           jedisConnection.map(_.close())
       }
-    } 
+    }
   }
 
   /**
