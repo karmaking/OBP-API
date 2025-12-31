@@ -163,6 +163,40 @@ object Redis extends MdcLoggable {
     } 
   }
 
+  /**
+   * Delete all Redis keys matching a pattern using KEYS command
+   * @param pattern Redis key pattern (e.g., "rl_active_CONSUMER123_*")
+   * @return Number of keys deleted
+   */
+  def deleteKeysByPattern(pattern: String): Int = {
+    var jedisConnection: Option[Jedis] = None
+    try {
+      jedisConnection = Some(jedisPool.getResource())
+      val jedis = jedisConnection.get
+
+      // Use keys command for pattern matching (acceptable for rate limiting cache which has limited keys)
+      // In production with millions of keys, consider using SCAN instead
+      val keys = jedis.keys(pattern)
+
+      val deletedCount = if (!keys.isEmpty) {
+        val keysArray = keys.toArray(new Array[String](keys.size()))
+        jedis.del(keysArray: _*).toInt
+      } else {
+        0
+      }
+
+      logger.info(s"Deleted $deletedCount Redis keys matching pattern: $pattern")
+      deletedCount
+    } catch {
+      case e: Throwable =>
+        logger.error(s"Error deleting keys by pattern: $pattern", e)
+        0
+    } finally {
+      if (jedisConnection.isDefined && jedisConnection.get != null)
+        jedisConnection.map(_.close())
+    }
+  }
+
   implicit val scalaCache = ScalaCache(RedisCache(url, port))
   implicit val flags = Flags(readsEnabled = true, writesEnabled = true)
 

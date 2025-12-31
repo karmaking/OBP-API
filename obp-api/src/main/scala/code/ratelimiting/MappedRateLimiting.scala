@@ -2,6 +2,7 @@ package code.ratelimiting
 
 import code.api.util.APIUtil
 import code.api.cache.Caching
+import code.api.Constant._
 
 import java.util.Date
 import java.util.UUID.randomUUID
@@ -167,7 +168,10 @@ object MappedRateLimitingProvider extends RateLimitingProviderTrait with Logger 
         c.saveMe()
       }
     }
-    createRateLimit(RateLimiting.create)
+    val result = createRateLimit(RateLimiting.create)
+    // Invalidate cache when creating new rate limit
+    result.foreach(_ => Caching.invalidateRateLimitCache(consumerId))
+    result
   }
   def createOrUpdateConsumerCallLimits(consumerId: String,
                                        fromDate: Date,
@@ -245,6 +249,8 @@ object MappedRateLimitingProvider extends RateLimitingProviderTrait with Logger 
 
       c.saveMe()
     }
+    // Invalidate cache when updating rate limit
+    result.foreach(rl => Caching.invalidateRateLimitCache(rl.consumerId))
     result
   }
 
@@ -253,7 +259,11 @@ object MappedRateLimitingProvider extends RateLimitingProviderTrait with Logger 
   }
 
   def deleteByRateLimitingId(rateLimitingId: String): Future[Box[Boolean]] = Future {
-    RateLimiting.find(By(RateLimiting.RateLimitingId, rateLimitingId)).map(_.delete_!)
+    val rl = RateLimiting.find(By(RateLimiting.RateLimitingId, rateLimitingId))
+    val result = rl.map(_.delete_!)
+    // Invalidate cache when deleting rate limit
+    rl.foreach(r => Caching.invalidateRateLimitCache(r.consumerId))
+    result
   }
 
   private def getActiveCallLimitsByConsumerIdAtDateCached(consumerId: String, dateWithHour: String): List[RateLimiting] = {
@@ -273,8 +283,8 @@ object MappedRateLimitingProvider extends RateLimitingProviderTrait with Logger 
     val endInstant = endOfHour.atZone(java.time.ZoneOffset.UTC).toInstant()
     val endDate = Date.from(endInstant)
 
-    val cacheKey = s"rl_active_${consumerId}_${dateWithHour}"
-      Caching.memoizeSyncWithProvider(Some(cacheKey))(3600 second) {
+    val cacheKey = s"${RATE_LIMIT_ACTIVE_PREFIX}${consumerId}_${dateWithHour}"
+      Caching.memoizeSyncWithProvider(Some(cacheKey))(RATE_LIMIT_ACTIVE_CACHE_TTL second) {
         // Find rate limits that are active at any point during this hour
         // A rate limit is active if: fromDate <= endOfHour AND toDate >= startOfHour
         debug(s"[RateLimiting] Query: consumerId=$consumerId, dateWithHour=$dateWithHour, startDate=$startDate, endDate=$endDate")
