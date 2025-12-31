@@ -55,6 +55,36 @@ object Redis extends MdcLoggable {
       new JedisPool(poolConfig, url, port, timeout, password)
     }
 
+  // Redis startup health check
+  private def performStartupHealthCheck(): Unit = {
+    try {
+      logger.info(s"Redis startup health check: connecting to $url:$port")
+      val testKey = "obp_startup_test"
+      val testValue = s"OBP started at ${new java.util.Date()}"
+
+      // Write test key with 1 hour TTL
+      use(JedisMethod.SET, testKey, Some(3600), Some(testValue))
+
+      // Read it back
+      val readResult = use(JedisMethod.GET, testKey, None, None)
+
+      if (readResult.contains(testValue)) {
+        logger.info(s"Redis health check PASSED - connected to $url:$port")
+        logger.info(s"   Pool: max=${poolConfig.getMaxTotal}, idle=${poolConfig.getMaxIdle}")
+      } else {
+        logger.warn(s"WARNING: Redis health check FAILED - could not read back test key")
+      }
+    } catch {
+      case e: Throwable =>
+        logger.error(s"ERROR: Redis health check FAILED - ${e.getMessage}")
+        logger.error(s"   Redis may be unavailable at $url:$port")
+    }
+
+  }
+
+  // Run health check on startup
+  performStartupHealthCheck()
+
   def jedisPoolDestroy: Unit = jedisPool.destroy()
 
   def isRedisReady: Boolean = {
