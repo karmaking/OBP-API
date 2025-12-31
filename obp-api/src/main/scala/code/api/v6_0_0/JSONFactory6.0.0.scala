@@ -268,6 +268,36 @@ case class InvalidatedCacheNamespaceJsonV600(
     status: String
 )
 
+case class CacheProviderConfigJsonV600(
+    provider: String,
+    enabled: Boolean,
+    url: Option[String],
+    port: Option[Int],
+    use_ssl: Option[Boolean]
+)
+
+case class CacheConfigJsonV600(
+    providers: List[CacheProviderConfigJsonV600],
+    instance_id: String,
+    environment: String,
+    global_prefix: String
+)
+
+case class CacheNamespaceInfoJsonV600(
+    namespace_id: String,
+    prefix: String,
+    current_version: Long,
+    key_count: Int,
+    description: String,
+    category: String
+)
+
+case class CacheInfoJsonV600(
+    namespaces: List[CacheNamespaceInfoJsonV600],
+    total_keys: Int,
+    redis_available: Boolean
+)
+
 case class PostCustomerJsonV600(
     legal_name: String,
     customer_number: Option[String] = None,
@@ -1082,5 +1112,98 @@ object JSONFactory600 extends CustomJsonFormats with MdcLoggable {
       namespaces: List[CacheNamespaceJsonV600]
   ): CacheNamespacesJsonV600 = {
     CacheNamespacesJsonV600(namespaces)
+  }
+
+  def createCacheConfigJsonV600(): CacheConfigJsonV600 = {
+    import code.api.cache.{Redis, InMemory}
+    import code.api.Constant
+    import net.liftweb.util.Props
+
+    val redisProvider = CacheProviderConfigJsonV600(
+      provider = "redis",
+      enabled = true,
+      url = Some(Redis.url),
+      port = Some(Redis.port),
+      use_ssl = Some(Redis.useSsl)
+    )
+
+    val inMemoryProvider = CacheProviderConfigJsonV600(
+      provider = "in_memory",
+      enabled = true,
+      url = None,
+      port = None,
+      use_ssl = None
+    )
+
+    val instanceId = code.api.util.APIUtil.getPropsValue("api_instance_id").getOrElse("obp")
+    val environment = Props.mode match {
+      case Props.RunModes.Production => "prod"
+      case Props.RunModes.Staging => "staging"
+      case Props.RunModes.Development => "dev"
+      case Props.RunModes.Test => "test"
+      case _ => "unknown"
+    }
+
+    CacheConfigJsonV600(
+      providers = List(redisProvider, inMemoryProvider),
+      instance_id = instanceId,
+      environment = environment,
+      global_prefix = Constant.getGlobalCacheNamespacePrefix
+    )
+  }
+
+  def createCacheInfoJsonV600(): CacheInfoJsonV600 = {
+    import code.api.cache.Redis
+    import code.api.Constant
+
+    val namespaceDescriptions = Map(
+      Constant.CALL_COUNTER_NAMESPACE -> ("Rate limit call counters", "Rate Limiting"),
+      Constant.RL_ACTIVE_NAMESPACE -> ("Active rate limit states", "Rate Limiting"),
+      Constant.RD_LOCALISED_NAMESPACE -> ("Localized resource docs", "API Documentation"),
+      Constant.RD_DYNAMIC_NAMESPACE -> ("Dynamic resource docs", "API Documentation"),
+      Constant.RD_STATIC_NAMESPACE -> ("Static resource docs", "API Documentation"),
+      Constant.RD_ALL_NAMESPACE -> ("All resource docs", "API Documentation"),
+      Constant.SWAGGER_STATIC_NAMESPACE -> ("Static Swagger docs", "API Documentation"),
+      Constant.CONNECTOR_NAMESPACE -> ("Connector cache", "Connector"),
+      Constant.METRICS_STABLE_NAMESPACE -> ("Stable metrics data", "Metrics"),
+      Constant.METRICS_RECENT_NAMESPACE -> ("Recent metrics data", "Metrics"),
+      Constant.ABAC_RULE_NAMESPACE -> ("ABAC rule cache", "Authorization")
+    )
+
+    var redisAvailable = true
+    var totalKeys = 0
+
+    val namespaces = Constant.ALL_CACHE_NAMESPACES.map { namespaceId =>
+      val version = Constant.getCacheNamespaceVersion(namespaceId)
+      val prefix = Constant.getVersionedCachePrefix(namespaceId)
+      val pattern = s"${prefix}*"
+
+      val keyCount = try {
+        val count = Redis.countKeys(pattern)
+        totalKeys += count
+        count
+      } catch {
+        case _: Throwable =>
+          redisAvailable = false
+          0
+      }
+
+      val (description, category) = namespaceDescriptions.getOrElse(namespaceId, ("Unknown namespace", "Other"))
+
+      CacheNamespaceInfoJsonV600(
+        namespace_id = namespaceId,
+        prefix = prefix,
+        current_version = version,
+        key_count = keyCount,
+        description = description,
+        category = category
+      )
+    }
+
+    CacheInfoJsonV600(
+      namespaces = namespaces,
+      total_keys = totalKeys,
+      redis_available = redisAvailable
+    )
   }
 }

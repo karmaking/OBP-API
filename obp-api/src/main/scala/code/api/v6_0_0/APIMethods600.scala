@@ -27,7 +27,7 @@ import code.api.v5_0_0.{ViewJsonV500, ViewsJsonV500}
 import code.api.v5_1_0.{JSONFactory510, PostCustomerLegalNameJsonV510}
 import code.api.dynamic.entity.helper.{DynamicEntityHelper, DynamicEntityInfo}
 import code.api.v6_0_0.JSONFactory600.{AddUserToGroupResponseJsonV600, DynamicEntityDiagnosticsJsonV600, DynamicEntityIssueJsonV600, GroupEntitlementJsonV600, GroupEntitlementsJsonV600, GroupJsonV600, GroupsJsonV600, PostGroupJsonV600, PostGroupMembershipJsonV600, PostResetPasswordUrlJsonV600, PutGroupJsonV600, ReferenceTypeJsonV600, ReferenceTypesJsonV600, ResetPasswordUrlJsonV600, RoleWithEntitlementCountJsonV600, RolesWithEntitlementCountsJsonV600, ScannedApiVersionJsonV600, UpdateViewJsonV600, UserGroupMembershipJsonV600, UserGroupMembershipsJsonV600, ValidateUserEmailJsonV600, ValidateUserEmailResponseJsonV600, ViewJsonV600, ViewPermissionJsonV600, ViewPermissionsJsonV600, ViewsJsonV600, createAbacRuleJsonV600, createAbacRulesJsonV600, createActiveRateLimitsJsonV600, createCallLimitJsonV600, createRedisCallCountersJson}
-import code.api.v6_0_0.{AbacRuleJsonV600, AbacRuleResultJsonV600, AbacRulesJsonV600, CreateAbacRuleJsonV600, CurrentConsumerJsonV600, ExecuteAbacRuleJsonV600, UpdateAbacRuleJsonV600}
+import code.api.v6_0_0.{AbacRuleJsonV600, AbacRuleResultJsonV600, AbacRulesJsonV600, CacheConfigJsonV600, CacheInfoJsonV600, CacheNamespaceInfoJsonV600, CacheProviderConfigJsonV600, CreateAbacRuleJsonV600, CurrentConsumerJsonV600, ExecuteAbacRuleJsonV600, UpdateAbacRuleJsonV600}
 import code.api.v6_0_0.OBPAPI6_0_0
 import code.abacrule.{AbacRuleEngine, MappedAbacRuleProvider}
 import code.metrics.APIMetrics
@@ -653,6 +653,133 @@ trait APIMethods600 {
               new_version = newVersionOpt.get,
               status = "invalidated"
             )
+            (result, HttpCode.`200`(callContext))
+          }
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
+      getCacheConfig,
+      implementedInApiVersion,
+      nameOf(getCacheConfig),
+      "GET",
+      "/system/cache/config",
+      "Get Cache Configuration",
+      """Returns cache configuration information including:
+        |
+        |- Available cache providers (Redis, In-Memory)
+        |- Redis connection details (URL, port, SSL)
+        |- Instance ID and environment
+        |- Global cache namespace prefix
+        |
+        |This helps understand what cache backend is being used and how it's configured.
+        |
+        |Authentication is Required
+        |""",
+      EmptyBody,
+      CacheConfigJsonV600(
+        providers = List(
+          CacheProviderConfigJsonV600(
+            provider = "redis",
+            enabled = true,
+            url = Some("127.0.0.1"),
+            port = Some(6379),
+            use_ssl = Some(false)
+          ),
+          CacheProviderConfigJsonV600(
+            provider = "in_memory",
+            enabled = true,
+            url = None,
+            port = None,
+            use_ssl = None
+          )
+        ),
+        instance_id = "obp",
+        environment = "dev",
+        global_prefix = "obp_dev_"
+      ),
+      List(
+        UserNotLoggedIn,
+        UserHasMissingRoles,
+        UnknownError
+      ),
+      List(apiTagCache, apiTagSystem, apiTagApi),
+      Some(List(canGetCacheConfig))
+    )
+
+    lazy val getCacheConfig: OBPEndpoint = {
+      case "system" :: "cache" :: "config" :: Nil JsonGet _ => {
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(u), callContext) <- authenticatedAccess(cc)
+            _ <- NewStyle.function.hasEntitlement("", u.userId, canGetCacheConfig, callContext)
+          } yield {
+            val result = JSONFactory600.createCacheConfigJsonV600()
+            (result, HttpCode.`200`(callContext))
+          }
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
+      getCacheInfo,
+      implementedInApiVersion,
+      nameOf(getCacheInfo),
+      "GET",
+      "/system/cache/info",
+      "Get Cache Information",
+      """Returns detailed cache information for all namespaces:
+        |
+        |- Namespace ID and versioned prefix
+        |- Current version counter
+        |- Number of keys in each namespace
+        |- Description and category
+        |- Total key count across all namespaces
+        |- Redis availability status
+        |
+        |This endpoint helps monitor cache usage and identify which namespaces contain the most data.
+        |
+        |Authentication is Required
+        |""",
+      EmptyBody,
+      CacheInfoJsonV600(
+        namespaces = List(
+          CacheNamespaceInfoJsonV600(
+            namespace_id = "call_counter",
+            prefix = "obp_dev_call_counter_1_",
+            current_version = 1,
+            key_count = 42,
+            description = "Rate limit call counters",
+            category = "Rate Limiting"
+          ),
+          CacheNamespaceInfoJsonV600(
+            namespace_id = "rd_localised",
+            prefix = "obp_dev_rd_localised_1_",
+            current_version = 1,
+            key_count = 128,
+            description = "Localized resource docs",
+            category = "API Documentation"
+          )
+        ),
+        total_keys = 170,
+        redis_available = true
+      ),
+      List(
+        UserNotLoggedIn,
+        UserHasMissingRoles,
+        UnknownError
+      ),
+      List(apiTagCache, apiTagSystem, apiTagApi),
+      Some(List(canGetCacheInfo))
+    )
+
+    lazy val getCacheInfo: OBPEndpoint = {
+      case "system" :: "cache" :: "info" :: Nil JsonGet _ => {
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(u), callContext) <- authenticatedAccess(cc)
+            _ <- NewStyle.function.hasEntitlement("", u.userId, canGetCacheInfo, callContext)
+          } yield {
+            val result = JSONFactory600.createCacheInfoJsonV600()
             (result, HttpCode.`200`(callContext))
           }
       }
