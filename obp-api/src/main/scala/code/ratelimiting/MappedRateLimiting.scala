@@ -167,8 +167,7 @@ object MappedRateLimitingProvider extends RateLimitingProviderTrait with Logger 
         c.saveMe()
       }
     }
-    val result = createRateLimit(RateLimiting.create)
-    result
+    createRateLimit(RateLimiting.create)
   }
   def createOrUpdateConsumerCallLimits(consumerId: String,
                                        fromDate: Date,
@@ -225,7 +224,7 @@ object MappedRateLimitingProvider extends RateLimitingProviderTrait with Logger 
                                perDay: Option[String],
                                perWeek: Option[String],
                                perMonth: Option[String]): Future[Box[RateLimiting]] = Future {
-    RateLimiting.find(
+    val result = RateLimiting.find(
       By(RateLimiting.RateLimitingId, rateLimitingId)
     ) map { c =>
       c.FromDate(fromDate)
@@ -246,19 +245,15 @@ object MappedRateLimitingProvider extends RateLimitingProviderTrait with Logger 
 
       c.saveMe()
     }
-  }
-
-  def deleteByRateLimitingId(rateLimitingId: String): Future[Box[Boolean]] = Future {
-    tryo {
-      RateLimiting.find(By(RateLimiting.RateLimitingId, rateLimitingId)) match {
-        case Full(rateLimiting) => rateLimiting.delete_!
-        case _ => false
-      }
-    }
+    result
   }
 
   def getByRateLimitingId(rateLimitingId: String): Future[Box[RateLimiting]] = Future {
     RateLimiting.find(By(RateLimiting.RateLimitingId, rateLimitingId))
+  }
+
+  def deleteByRateLimitingId(rateLimitingId: String): Future[Box[Boolean]] = Future {
+    RateLimiting.find(By(RateLimiting.RateLimitingId, rateLimitingId)).map(_.delete_!)
   }
 
   private def getActiveCallLimitsByConsumerIdAtDateCached(consumerId: String, dateWithHour: String): List[RateLimiting] = {
