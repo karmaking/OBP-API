@@ -1059,7 +1059,7 @@ trait APIMethods600 {
       CacheNamespacesJsonV600(
         namespaces = List(
           CacheNamespaceJsonV600(
-            prefix = "rl_counter_",
+            prefix = "call_counter_",
             description = "Rate limiting counters per consumer and time period",
             ttl_seconds = "varies",
             category = "Rate Limiting",

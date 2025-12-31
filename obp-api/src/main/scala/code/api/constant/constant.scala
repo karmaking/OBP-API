@@ -129,7 +129,7 @@ object Constant extends MdcLoggable {
   final val SHOW_USED_CONNECTOR_METHODS: Boolean = APIUtil.getPropsAsBoolValue(s"show_used_connector_methods", false)
 
   // Rate Limiting Cache Prefixes
-  final val CALL_COUNTER_PREFIX = "rl_counter_"
+  final val CALL_COUNTER_PREFIX = "call_counter_"
   final val RATE_LIMIT_ACTIVE_PREFIX = "rl_active_"
   final val RATE_LIMIT_ACTIVE_CACHE_TTL: Int = APIUtil.getPropsValue("rateLimitActive.cache.ttl.seconds", "3600").toInt
 

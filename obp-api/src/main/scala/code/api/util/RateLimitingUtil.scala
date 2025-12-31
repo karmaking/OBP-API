@@ -5,6 +5,7 @@ import code.ratelimiting.{RateLimiting, RateLimitingDI}
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 import code.api.{APIFailureNewStyle, JedisMethod}
+import code.api.Constant._
 import code.api.cache.Redis
 import code.api.util.APIUtil.fullBoxOrException
 import code.api.util.ErrorMessages.TooManyRequests
@@ -192,7 +193,7 @@ object RateLimitingUtil extends MdcLoggable {
     
     RateLimitCounterState(calls, normalizedTtl, status)
   }
-  private def createUniqueKey(consumerKey: String, period: LimitCallPeriod) = "rl_counter_" + consumerKey + "_" + RateLimitingPeriod.toString(period)
+  private def createUniqueKey(consumerKey: String, period: LimitCallPeriod) = CALL_COUNTER_PREFIX + consumerKey + "_" + RateLimitingPeriod.toString(period)
   private def underConsumerLimits(consumerKey: String, period: LimitCallPeriod, limit: Long): Boolean = {
 
     if (useConsumerLimits) {
