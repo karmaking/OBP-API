@@ -100,5 +100,16 @@ object Caching extends MdcLoggable {
     Redis.deleteKeysByPattern(pattern)
   }
 
+  /**
+   * Invalidate ALL rate limit cache entries for ALL consumers.
+   * Use with caution - this clears the entire rate limiting cache namespace.
+   *
+   * @return Number of cache keys deleted
+   */
+  def invalidateAllRateLimitCache(): Int = {
+    val pattern = s"${RATE_LIMIT_ACTIVE_PREFIX}*"
+    Redis.deleteKeysByPattern(pattern)
+  }
+
   
 }

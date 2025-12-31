@@ -84,7 +84,7 @@ object RateLimitingUtil extends MdcLoggable {
     status: String             // ACTIVE, NO_COUNTER, EXPIRED, REDIS_UNAVAILABLE
   )
 
-  def useConsumerLimits = APIUtil.getPropsAsBoolValue("use_consumer_limits", false)
+  def useConsumerLimits = APIUtil.getPropsAsBoolValue("use_consumer_limits", true)
 
   /** Get system default rate limits from properties. Used when no RateLimiting records exist for a consumer.
     * @param consumerId The consumer ID

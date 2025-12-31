@@ -198,8 +198,8 @@ class RateLimitsTest extends V600ServerSetup {
       getResponse.body.extract[ErrorMessage].message should equal(UserHasMissingRoles + CanGetRateLimits)
     }
 
-    // TODO: Implement cache invalidation before enabling this test
-    ignore("We will get aggregated call limits for two overlapping rate limit records", ApiEndpoint3, VersionOfApi) {
+    scenario("We will get aggregated call limits for two overlapping rate limit records", ApiEndpoint3, VersionOfApi) {
+    // NOTE: This test requires use_consumer_limits=true in props file
       Given("We create two call limit records with overlapping date ranges")
       val Some((c, _)) = user1
       val consumerId = Consumers.consumers.vend.getConsumerByConsumerKey(c.key).map(_.consumerId.get).getOrElse("")
