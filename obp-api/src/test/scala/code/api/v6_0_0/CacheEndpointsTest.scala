@@ -156,6 +156,8 @@ class CacheEndpointsTest extends V600ServerSetup {
         namespace.key_count should be >= 0
         namespace.description should not be empty
         namespace.category should not be empty
+        namespace.storage_location should not be empty
+        namespace.storage_location should (equal("redis") or equal("memory") or equal("both") or equal("unknown"))
       }
     }
   }
