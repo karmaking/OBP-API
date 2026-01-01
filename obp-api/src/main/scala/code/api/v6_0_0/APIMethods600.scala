@@ -27,7 +27,7 @@ import code.api.v5_0_0.{ViewJsonV500, ViewsJsonV500}
 import code.api.v5_1_0.{JSONFactory510, PostCustomerLegalNameJsonV510}
 import code.api.dynamic.entity.helper.{DynamicEntityHelper, DynamicEntityInfo}
 import code.api.v6_0_0.JSONFactory600.{AddUserToGroupResponseJsonV600, DynamicEntityDiagnosticsJsonV600, DynamicEntityIssueJsonV600, GroupEntitlementJsonV600, GroupEntitlementsJsonV600, GroupJsonV600, GroupsJsonV600, PostGroupJsonV600, PostGroupMembershipJsonV600, PostResetPasswordUrlJsonV600, PutGroupJsonV600, ReferenceTypeJsonV600, ReferenceTypesJsonV600, ResetPasswordUrlJsonV600, RoleWithEntitlementCountJsonV600, RolesWithEntitlementCountsJsonV600, ScannedApiVersionJsonV600, UpdateViewJsonV600, UserGroupMembershipJsonV600, UserGroupMembershipsJsonV600, ValidateUserEmailJsonV600, ValidateUserEmailResponseJsonV600, ViewJsonV600, ViewPermissionJsonV600, ViewPermissionsJsonV600, ViewsJsonV600, createAbacRuleJsonV600, createAbacRulesJsonV600, createActiveRateLimitsJsonV600, createCallLimitJsonV600, createRedisCallCountersJson}
-import code.api.v6_0_0.{AbacRuleJsonV600, AbacRuleResultJsonV600, AbacRulesJsonV600, CacheConfigJsonV600, CacheInfoJsonV600, CacheNamespaceInfoJsonV600, CacheProviderConfigJsonV600, CreateAbacRuleJsonV600, CurrentConsumerJsonV600, ExecuteAbacRuleJsonV600, UpdateAbacRuleJsonV600}
+import code.api.v6_0_0.{AbacRuleJsonV600, AbacRuleResultJsonV600, AbacRulesJsonV600, CacheConfigJsonV600, CacheInfoJsonV600, CacheNamespaceInfoJsonV600, CreateAbacRuleJsonV600, CurrentConsumerJsonV600, ExecuteAbacRuleJsonV600, InMemoryCacheStatusJsonV600, RedisCacheStatusJsonV600, UpdateAbacRuleJsonV600}
 import code.api.v6_0_0.OBPAPI6_0_0
 import code.abacrule.{AbacRuleEngine, MappedAbacRuleProvider}
 import code.metrics.APIMetrics
