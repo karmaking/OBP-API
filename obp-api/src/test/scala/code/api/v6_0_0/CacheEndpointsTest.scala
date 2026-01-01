@@ -158,6 +158,8 @@ class CacheEndpointsTest extends V600ServerSetup {
         namespace.category should not be empty
         namespace.storage_location should not be empty
         namespace.storage_location should (equal("redis") or equal("memory") or equal("both") or equal("unknown"))
+        namespace.ttl_info should not be empty
+        namespace.ttl_info shouldBe a[String]
       }
     }
   }

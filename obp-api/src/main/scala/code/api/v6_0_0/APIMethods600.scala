@@ -667,8 +667,8 @@ trait APIMethods600 {
       "Get Cache Configuration",
       """Returns cache configuration information including:
         |
-        |- Available cache providers (Redis, In-Memory)
-        |- Redis connection details (URL, port, SSL)
+        |- Redis status: availability, connection details (URL, port, SSL)
+        |- In-memory cache status: availability and current size
         |- Instance ID and environment
         |- Global cache namespace prefix
         |
@@ -678,21 +678,15 @@ trait APIMethods600 {
         |""",
       EmptyBody,
       CacheConfigJsonV600(
-        providers = List(
-          CacheProviderConfigJsonV600(
-            provider = "redis",
-            enabled = true,
-            url = Some("127.0.0.1"),
-            port = Some(6379),
-            use_ssl = Some(false)
-          ),
-          CacheProviderConfigJsonV600(
-            provider = "in_memory",
-            enabled = true,
-            url = None,
-            port = None,
-            use_ssl = None
-          )
+        redis_status = RedisCacheStatusJsonV600(
+          available = true,
+          url = "127.0.0.1",
+          port = 6379,
+          use_ssl = false
+        ),
+        in_memory_status = InMemoryCacheStatusJsonV600(
+          available = true,
+          current_size = 42
         ),
         instance_id = "obp",
         environment = "dev",
@@ -738,6 +732,9 @@ trait APIMethods600 {
         |  - "memory": Keys stored in in-memory cache
         |  - "both": Keys in both locations (indicates a BUG - should never happen)
         |  - "unknown": No keys found, storage location cannot be determined
+        |- TTL info: Sampled TTL information from actual keys
+        |  - Shows actual TTL values from up to 5 sample keys
+        |  - Format: "123s" (fixed), "range 60s to 3600s (avg 1800s)" (variable), "no expiry" (persistent)
         |- Total key count across all namespaces
         |- Redis availability status
         |
@@ -755,7 +752,8 @@ trait APIMethods600 {
             key_count = 42,
             description = "Rate limit call counters",
             category = "Rate Limiting",
-            storage_location = "redis"
+            storage_location = "redis",
+            ttl_info = "range 60s to 86400s (avg 3600s)"
           ),
           CacheNamespaceInfoJsonV600(
             namespace_id = "rd_localised",
@@ -764,7 +762,8 @@ trait APIMethods600 {
             key_count = 128,
             description = "Localized resource docs",
             category = "API Documentation",
-            storage_location = "redis"
+            storage_location = "redis",
+            ttl_info = "3600s"
           )
         ),
         total_keys = 170,
