@@ -90,16 +90,19 @@ class CacheEndpointsTest extends V600ServerSetup {
 
       And("The response should have the correct structure")
       val cacheConfig = response.body.extract[CacheConfigJsonV600]
-      cacheConfig.providers should not be empty
       cacheConfig.instance_id should not be empty
       cacheConfig.environment should not be empty
       cacheConfig.global_prefix should not be empty
 
-      And("Providers should have valid data")
-      cacheConfig.providers.foreach { provider =>
-        provider.provider should not be empty
-        provider.enabled shouldBe a[Boolean]
-      }
+      And("Redis status should have valid data")
+      cacheConfig.redis_status.available shouldBe a[Boolean]
+      cacheConfig.redis_status.url should not be empty
+      cacheConfig.redis_status.port should be > 0
+      cacheConfig.redis_status.use_ssl shouldBe a[Boolean]
+
+      And("In-memory status should have valid data")
+      cacheConfig.in_memory_status.available shouldBe a[Boolean]
+      cacheConfig.in_memory_status.current_size should be >= 0L
     }
   }
 
