@@ -733,6 +733,11 @@ trait APIMethods600 {
         |- Current version counter
         |- Number of keys in each namespace
         |- Description and category
+        |- Storage location (redis, memory, both, or unknown)
+        |  - "redis": Keys stored in Redis
+        |  - "memory": Keys stored in in-memory cache
+        |  - "both": Keys in both locations (indicates a BUG - should never happen)
+        |  - "unknown": No keys found, storage location cannot be determined
         |- Total key count across all namespaces
         |- Redis availability status
         |
@@ -749,7 +754,8 @@ trait APIMethods600 {
             current_version = 1,
             key_count = 42,
             description = "Rate limit call counters",
-            category = "Rate Limiting"
+            category = "Rate Limiting",
+            storage_location = "redis"
           ),
           CacheNamespaceInfoJsonV600(
             namespace_id = "rd_localised",
@@ -757,7 +763,8 @@ trait APIMethods600 {
             current_version = 1,
             key_count = 128,
             description = "Localized resource docs",
-            category = "API Documentation"
+            category = "API Documentation",
+            storage_location = "redis"
           )
         ),
         total_keys = 170,

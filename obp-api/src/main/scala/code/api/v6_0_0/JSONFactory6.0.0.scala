@@ -289,7 +289,8 @@ case class CacheNamespaceInfoJsonV600(
     current_version: Long,
     key_count: Int,
     description: String,
-    category: String
+    category: String,
+    storage_location: String
 )
 
 case class CacheInfoJsonV600(
@@ -1153,7 +1154,7 @@ object JSONFactory600 extends CustomJsonFormats with MdcLoggable {
   }
 
   def createCacheInfoJsonV600(): CacheInfoJsonV600 = {
-    import code.api.cache.Redis
+    import code.api.cache.{Redis, InMemory}
     import code.api.Constant
 
     val namespaceDescriptions = Map(
@@ -1178,14 +1179,41 @@ object JSONFactory600 extends CustomJsonFormats with MdcLoggable {
       val prefix = Constant.getVersionedCachePrefix(namespaceId)
       val pattern = s"${prefix}*"
 
-      val keyCount = try {
-        val count = Redis.countKeys(pattern)
-        totalKeys += count
-        count
+      // Dynamically determine storage location by checking where keys exist
+      var redisKeyCount = 0
+      var memoryKeyCount = 0
+      var storageLocation = "unknown"
+
+      try {
+        redisKeyCount = Redis.countKeys(pattern)
+        totalKeys += redisKeyCount
       } catch {
         case _: Throwable =>
           redisAvailable = false
-          0
+      }
+
+      try {
+        memoryKeyCount = InMemory.countKeys(pattern)
+        totalKeys += memoryKeyCount
+      } catch {
+        case _: Throwable =>
+          // In-memory cache error (shouldn't happen, but handle gracefully)
+      }
+
+      // Determine storage based on where keys actually exist
+      val keyCount = if (redisKeyCount > 0 && memoryKeyCount > 0) {
+        storageLocation = "both"
+        redisKeyCount + memoryKeyCount
+      } else if (redisKeyCount > 0) {
+        storageLocation = "redis"
+        redisKeyCount
+      } else if (memoryKeyCount > 0) {
+        storageLocation = "memory"
+        memoryKeyCount
+      } else {
+        // No keys found in either location - we don't know where they would be stored
+        storageLocation = "unknown"
+        0
       }
 
       val (description, category) = namespaceDescriptions.getOrElse(namespaceId, ("Unknown namespace", "Other"))
@@ -1196,7 +1224,8 @@ object JSONFactory600 extends CustomJsonFormats with MdcLoggable {
         current_version = version,
         key_count = keyCount,
         description = description,
-        category = category
+        category = category,
+        storage_location = storageLocation
       )
     }
 
