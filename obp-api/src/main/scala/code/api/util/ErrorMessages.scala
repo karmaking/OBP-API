@@ -269,7 +269,7 @@ object ErrorMessages {
   val Oauth2ThereIsNoUrlOfJwkSet = "OBP-20203: There is no an URL of OAuth 2.0 server's JWK set, published at a well-known URL."
   val Oauth2BadJWTException = "OBP-20204: Bad JWT error. "
   val Oauth2ParseException = "OBP-20205: Parse error. "
-  val Oauth2BadJOSEException = "OBP-20206: Bad JSON Object Signing and Encryption (JOSE) exception. The ID token is invalid or expired. "
+  val Oauth2BadJOSEException = "OBP-20206: Bad JSON Object Signing and Encryption (JOSE) exception. The ID token is invalid or expired. OBP-API Admin should check the oauth2.jwk_set.url list contains the jwks url of the provider."
   val Oauth2JOSEException = "OBP-20207: Bad JSON Object Signing and Encryption (JOSE) exception. An internal JOSE exception was encountered. "
   val Oauth2CannotMatchIssuerAndJwksUriException = "OBP-20208: Cannot match the issuer and JWKS URI at this server instance. "
   val Oauth2TokenHaveNoConsumer = "OBP-20209: The token have no linked consumer. "
