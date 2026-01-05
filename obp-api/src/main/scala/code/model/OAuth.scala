@@ -323,6 +323,7 @@ object MappedConsumersProvider extends ConsumersProvider with MdcLoggable {
     }
   }
 
+  @deprecated("Use RateLimitingDI.rateLimiting.vend methods instead", "v5.0.0")
   override def updateConsumerCallLimits(id: Long,
                                      perSecond: Option[String],
                                      perMinute: Option[String],

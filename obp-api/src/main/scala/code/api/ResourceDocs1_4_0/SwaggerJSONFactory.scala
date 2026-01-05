@@ -40,6 +40,35 @@ import scala.reflect.runtime.universe
 
 object SwaggerJSONFactory extends MdcLoggable {
   type Coll[T] = GenTraversableLike[T, _]
+
+  /**
+   * Escapes a string value to be safely included in JSON.
+   * Handles quotes, backslashes, newlines, and other special characters.
+   */
+  private def escapeJsonString(value: String): String = {
+    if (value == null) return ""
+    value
+      .replace("\\", "\\\\")
+      .replace("\"", "\\\"")
+      .replace("\n", "\\n")
+      .replace("\r", "\\r")
+      .replace("\t", "\\t")
+      .replace("\b", "\\b")
+      .replace("\f", "\\f")
+  }
+
+  /**
+   * Safely converts any value to a JSON example string.
+   * Handles JValue, String, and other types with proper escaping.
+   */
+  private def safeExampleValue(value: Any): String = {
+    value match {
+      case null | None => ""
+      case v: JValue => try { escapeJsonString(JsonUtils.toString(v)) } catch { case e: Exception => logger.warn(s"Failed to convert JValue to string for example: ${e.getMessage}"); "" }
+      case v: String => escapeJsonString(v)
+      case v => escapeJsonString(v.toString)
+    }
+  }
   //Info Object
   //link ->https://github.com/OAI/OpenAPI-Specification/blob/master/versions/2.0.md#infoObject
   case class InfoJson(
@@ -107,14 +136,26 @@ object SwaggerJSONFactory extends MdcLoggable {
             |     }
             |}
             |""".stripMargin
-      json.parse(definition)
+      try {
+        json.parse(definition)
+      } catch {
+        case e: Exception =>
+          logger.error(s"Failed to parse ListResult schema JSON: ${e.getMessage}\nJSON was: $definition")
+          throw new RuntimeException(s"Invalid JSON in ListResult schema generation: ${e.getMessage}", e)
+      }
     }
   }
   case class JObjectSchemaJson(jObject: JObject) extends ResponseObjectSchemaJson with JsonAble {
 
     override def toJValue(implicit format: Formats): json.JValue = {
       val schema = buildSwaggerSchema(typeOf[JObject], jObject)
-      json.parse(schema)
+      try {
+        json.parse(schema)
+      } catch {
+        case e: Exception =>
+          logger.error(s"Failed to parse JObject schema JSON: ${e.getMessage}\nSchema was: $schema")
+          throw new RuntimeException(s"Invalid JSON in JObject schema generation: ${e.getMessage}", e)
+      }
     }
 
   }
@@ -122,7 +163,13 @@ object SwaggerJSONFactory extends MdcLoggable {
 
     override def toJValue(implicit format: Formats): json.JValue = {
       val schema = buildSwaggerSchema(typeOf[JArray], jArray)
-      json.parse(schema)
+      try {
+        json.parse(schema)
+      } catch {
+        case e: Exception =>
+          logger.error(s"Failed to parse JArray schema JSON: ${e.getMessage}\nSchema was: $schema")
+          throw new RuntimeException(s"Invalid JSON in JArray schema generation: ${e.getMessage}", e)
+      }
     }
 
   }
@@ -646,8 +693,7 @@ object SwaggerJSONFactory extends MdcLoggable {
     }
     def example = exampleValue match {
         case null | None => ""
-        case v: JValue => s""", "example": "${JsonUtils.toString(v)}" """
-        case v => s""", "example": "$v" """
+        case v => s""", "example": "${safeExampleValue(v)}" """
       }
 
     paramType match {
@@ -968,11 +1014,12 @@ object SwaggerJSONFactory extends MdcLoggable {
       .toList
       .map(it => {
         val (errorName, errorMessage) = it
+        val escapedMessage = escapeJsonString(errorMessage.toString)
         s""""Error$errorName": {
         |  "properties": {
         |    "message": {
         |       "type": "string",
-        |       "example": "$errorMessage"
+        |       "example": "$escapedMessage"
         |    }
         |  }
          }""".stripMargin
@@ -989,7 +1036,14 @@ object SwaggerJSONFactory extends MdcLoggable {
     //Make a final string
     val definitions = "{\"definitions\":{" + particularDefinitionsPart + "}}"
     //Make a jsonAST from a string
-    parse(definitions)
+    try {
+      parse(definitions)
+    } catch {
+      case e: Exception =>
+        logger.error(s"Failed to parse Swagger definitions JSON: ${e.getMessage}")
+        logger.error(s"JSON was: ${definitions.take(500)}...")
+        throw new RuntimeException(s"Invalid JSON in Swagger definitions generation. This may be due to unescaped special characters in examples or field names. Error: ${e.getMessage}", e)
+    }
   }
 
 
