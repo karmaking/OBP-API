@@ -225,7 +225,7 @@ trait ResourceDocsAPIMethods extends MdcLoggable with APIMethods220 with APIMeth
      * @param contentParam if this is Some(`true`), only show dynamic endpoints, if Some(`false`), only show static. If it is None,  we will show all.  default is None
      * @return
      */
-    private def getStaticResourceDocsObpCached(
+    def getStaticResourceDocsObpCached(
       requestedApiVersionString: String,
       resourceDocTags: Option[List[ResourceDocTag]],
       partialFunctionNames: Option[List[String]],
@@ -245,7 +245,7 @@ trait ResourceDocsAPIMethods extends MdcLoggable with APIMethods220 with APIMeth
      * @param contentParam if this is Some(`true`), only show dynamic endpoints, if Some(`false`), only show static. If it is None,  we will show all.  default is None
      * @return
      */
-    private def getAllResourceDocsObpCached(
+    def getAllResourceDocsObpCached(
       requestedApiVersionString: String,
       resourceDocTags: Option[List[ResourceDocTag]],
       partialFunctionNames: Option[List[String]],
@@ -288,7 +288,7 @@ trait ResourceDocsAPIMethods extends MdcLoggable with APIMethods220 with APIMeth
   
     }
     
-    private def getResourceDocsObpDynamicCached(
+    def getResourceDocsObpDynamicCached(
       resourceDocTags: Option[List[ResourceDocTag]],
       partialFunctionNames: Option[List[String]],
       locale: Option[String],
