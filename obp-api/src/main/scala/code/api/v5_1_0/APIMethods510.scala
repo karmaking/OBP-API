@@ -270,7 +270,7 @@ trait APIMethods510 {
       EmptyBody,
       EmptyBody,
       List($UserNotLoggedIn, UnknownError),
-      apiTagSystem :: apiTagApi :: Nil,
+      apiTagSystem :: apiTagApi :: apiTagLogCache :: Nil,
       Some(List(canGetSystemLogCacheTrace, canGetSystemLogCacheAll)))
 
     lazy val logCacheTraceEndpoint: OBPEndpoint = {
@@ -301,7 +301,7 @@ trait APIMethods510 {
       EmptyBody,
       EmptyBody,
       List($UserNotLoggedIn, UnknownError),
-      apiTagSystem :: apiTagApi :: Nil,
+      apiTagSystem :: apiTagApi :: apiTagLogCache :: Nil,
       Some(List(canGetSystemLogCacheDebug, canGetSystemLogCacheAll)))
 
     lazy val logCacheDebugEndpoint: OBPEndpoint = {
@@ -332,7 +332,7 @@ trait APIMethods510 {
       EmptyBody,
       EmptyBody,
       List($UserNotLoggedIn, UnknownError),
-      apiTagSystem :: apiTagApi :: Nil,
+      apiTagSystem :: apiTagApi :: apiTagLogCache :: Nil,
       Some(List(canGetSystemLogCacheInfo, canGetSystemLogCacheAll)))
 
     lazy val logCacheInfoEndpoint: OBPEndpoint = {
@@ -363,7 +363,7 @@ trait APIMethods510 {
       EmptyBody,
       EmptyBody,
       List($UserNotLoggedIn, UnknownError),
-      apiTagSystem :: apiTagApi :: Nil,
+      apiTagSystem :: apiTagApi :: apiTagLogCache :: Nil,
       Some(List(canGetSystemLogCacheWarning, canGetSystemLogCacheAll)))
 
     lazy val logCacheWarningEndpoint: OBPEndpoint = {
@@ -394,7 +394,7 @@ trait APIMethods510 {
       EmptyBody,
       EmptyBody,
       List($UserNotLoggedIn, UnknownError),
-      apiTagSystem :: apiTagApi :: Nil,
+      apiTagSystem :: apiTagApi :: apiTagLogCache :: Nil,
       Some(List(canGetSystemLogCacheError, canGetSystemLogCacheAll)))
 
     lazy val logCacheErrorEndpoint: OBPEndpoint = {
@@ -425,7 +425,7 @@ trait APIMethods510 {
       EmptyBody,
       EmptyBody,
       List($UserNotLoggedIn, UnknownError),
-      apiTagSystem :: apiTagApi :: Nil,
+      apiTagSystem :: apiTagApi :: apiTagLogCache :: Nil,
       Some(List(canGetSystemLogCacheAll)))
 
     lazy val logCacheAllEndpoint: OBPEndpoint = {
