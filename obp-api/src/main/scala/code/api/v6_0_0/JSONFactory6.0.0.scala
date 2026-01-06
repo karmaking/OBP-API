@@ -67,6 +67,15 @@ case class TokenJSON(
     token: String
 )
 
+case class CurrentConsumerJsonV600(
+    app_name: String,
+    app_type: String,
+    description: String,
+    consumer_id: String,
+    active_rate_limits: ActiveRateLimitsJsonV600,
+    call_counters: RedisCallCountersJsonV600
+)
+
 case class CallLimitPostJsonV600(
     from_date: java.util.Date,
     to_date: java.util.Date,
@@ -98,15 +107,30 @@ case class CallLimitJsonV600(
     updated_at: java.util.Date
 )
 
-case class ActiveCallLimitsJsonV600(
-    call_limits: List[CallLimitJsonV600],
+case class ActiveRateLimitsJsonV600(
+    considered_rate_limit_ids: List[String],
     active_at_date: java.util.Date,
-    total_per_second_call_limit: Long,
-    total_per_minute_call_limit: Long,
-    total_per_hour_call_limit: Long,
-    total_per_day_call_limit: Long,
-    total_per_week_call_limit: Long,
-    total_per_month_call_limit: Long
+    active_per_second_rate_limit: Long,
+    active_per_minute_rate_limit: Long,
+    active_per_hour_rate_limit: Long,
+    active_per_day_rate_limit: Long,
+    active_per_week_rate_limit: Long,
+    active_per_month_rate_limit: Long
+)
+
+case class RateLimitV600(
+    calls_made: Option[Long],
+    reset_in_seconds: Option[Long],
+    status: String
+)
+
+case class RedisCallCountersJsonV600(
+    per_second: RateLimitV600,
+    per_minute: RateLimitV600,
+    per_hour: RateLimitV600,
+    per_day: RateLimitV600,
+    per_week: RateLimitV600,
+    per_month: RateLimitV600
 )
 
 case class TransactionRequestBodyCardanoJsonV600(
@@ -221,6 +245,58 @@ case class BankJson600(
 case class ProvidersJsonV600(providers: List[String])
 
 case class ConnectorMethodNamesJsonV600(connector_method_names: List[String])
+
+case class CacheNamespaceJsonV600(
+    prefix: String,
+    description: String,
+    ttl_seconds: String,
+    category: String,
+    key_count: Int,
+    example_key: String
+)
+
+case class CacheNamespacesJsonV600(namespaces: List[CacheNamespaceJsonV600])
+
+case class InvalidateCacheNamespaceJsonV600(
+    namespace_id: String
+)
+
+case class InvalidatedCacheNamespaceJsonV600(
+    namespace_id: String,
+    old_version: Long,
+    new_version: Long,
+    status: String
+)
+
+case class CacheProviderConfigJsonV600(
+    provider: String,
+    enabled: Boolean,
+    url: Option[String],
+    port: Option[Int],
+    use_ssl: Option[Boolean]
+)
+
+case class CacheConfigJsonV600(
+    providers: List[CacheProviderConfigJsonV600],
+    instance_id: String,
+    environment: String,
+    global_prefix: String
+)
+
+case class CacheNamespaceInfoJsonV600(
+    namespace_id: String,
+    prefix: String,
+    current_version: Long,
+    key_count: Int,
+    description: String,
+    category: String
+)
+
+case class CacheInfoJsonV600(
+    namespaces: List[CacheNamespaceInfoJsonV600],
+    total_keys: Int,
+    redis_available: Boolean
+)
 
 case class PostCustomerJsonV600(
     legal_name: String,
@@ -375,40 +451,47 @@ case class AbacObjectTypeJsonV600(
     properties: List[AbacObjectPropertyJsonV600]
 )
 
+case class AbacRuleExampleJsonV600(
+    category: String,
+    title: String,
+    code: String,
+    description: String
+)
+
 case class AbacRuleSchemaJsonV600(
     parameters: List[AbacParameterJsonV600],
     object_types: List[AbacObjectTypeJsonV600],
-    examples: List[String],
+    examples: List[AbacRuleExampleJsonV600],
     available_operators: List[String],
     notes: List[String]
 )
 
 object JSONFactory600 extends CustomJsonFormats with MdcLoggable {
 
-  def createCurrentUsageJson(
-      rateLimits: List[((Option[Long], Option[Long]), LimitCallPeriod)]
-  ): Option[RedisCallLimitJson] = {
-    if (rateLimits.isEmpty) None
-    else {
-      val grouped: Map[LimitCallPeriod, (Option[Long], Option[Long])] =
-        rateLimits.map { case (limits, period) => period -> limits }.toMap
+  def createRedisCallCountersJson(
+    // Convert list to map for easy lookup by period
+      rateLimits: List[((Option[Long], Option[Long], String), LimitCallPeriod)]
+  ): RedisCallCountersJsonV600 = {
+    val grouped: Map[LimitCallPeriod, (Option[Long], Option[Long], String)] =
+      rateLimits.map { case (limits, period) => period -> limits }.toMap
 
-      def getInfo(period: RateLimitingPeriod.Value): Option[RateLimit] =
-        grouped.get(period).collect { case (Some(x), Some(y)) =>
-          RateLimit(Some(x), Some(y))
-        }
+    def getCallCounterForPeriod(period: RateLimitingPeriod.Value): RateLimitV600 =
+      grouped.get(period) match {
+        // Use status calculated by RateLimitingUtil (ACTIVE, NO_COUNTER, EXPIRED, REDIS_UNAVAILABLE)
+        case Some((calls, ttl, status)) =>
+          RateLimitV600(calls, ttl, status)
+        case _ =>
+          RateLimitV600(None, None, "DATA_MISSING")
+      }
 
-      Some(
-        RedisCallLimitJson(
-          getInfo(RateLimitingPeriod.PER_SECOND),
-          getInfo(RateLimitingPeriod.PER_MINUTE),
-          getInfo(RateLimitingPeriod.PER_HOUR),
-          getInfo(RateLimitingPeriod.PER_DAY),
-          getInfo(RateLimitingPeriod.PER_WEEK),
-          getInfo(RateLimitingPeriod.PER_MONTH)
-        )
-      )
-    }
+    RedisCallCountersJsonV600(
+      getCallCounterForPeriod(RateLimitingPeriod.PER_SECOND),
+      getCallCounterForPeriod(RateLimitingPeriod.PER_MINUTE),
+      getCallCounterForPeriod(RateLimitingPeriod.PER_HOUR),
+      getCallCounterForPeriod(RateLimitingPeriod.PER_DAY),
+      getCallCounterForPeriod(RateLimitingPeriod.PER_WEEK),
+      getCallCounterForPeriod(RateLimitingPeriod.PER_MONTH)
+    )
   }
 
   def createUserInfoJSON(
@@ -557,20 +640,38 @@ object JSONFactory600 extends CustomJsonFormats with MdcLoggable {
     )
   }
 
-  def createActiveCallLimitsJsonV600(
+  def createActiveRateLimitsJsonV600(
       rateLimitings: List[code.ratelimiting.RateLimiting],
       activeDate: java.util.Date
-  ): ActiveCallLimitsJsonV600 = {
-    val callLimits = rateLimitings.map(createCallLimitJsonV600)
-    ActiveCallLimitsJsonV600(
-      call_limits = callLimits,
+  ): ActiveRateLimitsJsonV600 = {
+    val rateLimitIds = rateLimitings.map(_.rateLimitingId)
+    ActiveRateLimitsJsonV600(
+      considered_rate_limit_ids = rateLimitIds,
       active_at_date = activeDate,
-      total_per_second_call_limit = rateLimitings.map(_.perSecondCallLimit).sum,
-      total_per_minute_call_limit = rateLimitings.map(_.perMinuteCallLimit).sum,
-      total_per_hour_call_limit = rateLimitings.map(_.perHourCallLimit).sum,
-      total_per_day_call_limit = rateLimitings.map(_.perDayCallLimit).sum,
-      total_per_week_call_limit = rateLimitings.map(_.perWeekCallLimit).sum,
-      total_per_month_call_limit = rateLimitings.map(_.perMonthCallLimit).sum
+      active_per_second_rate_limit = rateLimitings.map(_.perSecondCallLimit).sum,
+      active_per_minute_rate_limit = rateLimitings.map(_.perMinuteCallLimit).sum,
+      active_per_hour_rate_limit = rateLimitings.map(_.perHourCallLimit).sum,
+      active_per_day_rate_limit = rateLimitings.map(_.perDayCallLimit).sum,
+      active_per_week_rate_limit = rateLimitings.map(_.perWeekCallLimit).sum,
+      active_per_month_rate_limit = rateLimitings.map(_.perMonthCallLimit).sum
+    )
+  }
+
+  def createActiveRateLimitsJsonV600FromCallLimit(
+
+      rateLimit: code.api.util.RateLimitingJson.CallLimit,
+      rateLimitIds: List[String],
+      activeDate: java.util.Date
+  ): ActiveRateLimitsJsonV600 = {
+    ActiveRateLimitsJsonV600(
+      considered_rate_limit_ids = rateLimitIds,
+      active_at_date = activeDate,
+      active_per_second_rate_limit = rateLimit.per_second,
+      active_per_minute_rate_limit = rateLimit.per_minute,
+      active_per_hour_rate_limit = rateLimit.per_hour,
+      active_per_day_rate_limit = rateLimit.per_day,
+      active_per_week_rate_limit = rateLimit.per_week,
+      active_per_month_rate_limit = rateLimit.per_month
     )
   }
 
@@ -987,5 +1088,122 @@ object JSONFactory600 extends CustomJsonFormats with MdcLoggable {
       rules: List[code.abacrule.AbacRuleTrait]
   ): AbacRulesJsonV600 = {
     AbacRulesJsonV600(rules.map(createAbacRuleJsonV600))
+  }
+
+  def createCacheNamespaceJsonV600(
+      prefix: String,
+      description: String,
+      ttlSeconds: String,
+      category: String,
+      keyCount: Int,
+      exampleKey: Option[String]
+  ): CacheNamespaceJsonV600 = {
+    CacheNamespaceJsonV600(
+      prefix = prefix,
+      description = description,
+      ttl_seconds = ttlSeconds,
+      category = category,
+      key_count = keyCount,
+      example_key = exampleKey.getOrElse("")
+    )
+  }
+
+  def createCacheNamespacesJsonV600(
+      namespaces: List[CacheNamespaceJsonV600]
+  ): CacheNamespacesJsonV600 = {
+    CacheNamespacesJsonV600(namespaces)
+  }
+
+  def createCacheConfigJsonV600(): CacheConfigJsonV600 = {
+    import code.api.cache.{Redis, InMemory}
+    import code.api.Constant
+    import net.liftweb.util.Props
+
+    val redisProvider = CacheProviderConfigJsonV600(
+      provider = "redis",
+      enabled = true,
+      url = Some(Redis.url),
+      port = Some(Redis.port),
+      use_ssl = Some(Redis.useSsl)
+    )
+
+    val inMemoryProvider = CacheProviderConfigJsonV600(
+      provider = "in_memory",
+      enabled = true,
+      url = None,
+      port = None,
+      use_ssl = None
+    )
+
+    val instanceId = code.api.util.APIUtil.getPropsValue("api_instance_id").getOrElse("obp")
+    val environment = Props.mode match {
+      case Props.RunModes.Production => "prod"
+      case Props.RunModes.Staging => "staging"
+      case Props.RunModes.Development => "dev"
+      case Props.RunModes.Test => "test"
+      case _ => "unknown"
+    }
+
+    CacheConfigJsonV600(
+      providers = List(redisProvider, inMemoryProvider),
+      instance_id = instanceId,
+      environment = environment,
+      global_prefix = Constant.getGlobalCacheNamespacePrefix
+    )
+  }
+
+  def createCacheInfoJsonV600(): CacheInfoJsonV600 = {
+    import code.api.cache.Redis
+    import code.api.Constant
+
+    val namespaceDescriptions = Map(
+      Constant.CALL_COUNTER_NAMESPACE -> ("Rate limit call counters", "Rate Limiting"),
+      Constant.RL_ACTIVE_NAMESPACE -> ("Active rate limit states", "Rate Limiting"),
+      Constant.RD_LOCALISED_NAMESPACE -> ("Localized resource docs", "API Documentation"),
+      Constant.RD_DYNAMIC_NAMESPACE -> ("Dynamic resource docs", "API Documentation"),
+      Constant.RD_STATIC_NAMESPACE -> ("Static resource docs", "API Documentation"),
+      Constant.RD_ALL_NAMESPACE -> ("All resource docs", "API Documentation"),
+      Constant.SWAGGER_STATIC_NAMESPACE -> ("Static Swagger docs", "API Documentation"),
+      Constant.CONNECTOR_NAMESPACE -> ("Connector cache", "Connector"),
+      Constant.METRICS_STABLE_NAMESPACE -> ("Stable metrics data", "Metrics"),
+      Constant.METRICS_RECENT_NAMESPACE -> ("Recent metrics data", "Metrics"),
+      Constant.ABAC_RULE_NAMESPACE -> ("ABAC rule cache", "Authorization")
+    )
+
+    var redisAvailable = true
+    var totalKeys = 0
+
+    val namespaces = Constant.ALL_CACHE_NAMESPACES.map { namespaceId =>
+      val version = Constant.getCacheNamespaceVersion(namespaceId)
+      val prefix = Constant.getVersionedCachePrefix(namespaceId)
+      val pattern = s"${prefix}*"
+
+      val keyCount = try {
+        val count = Redis.countKeys(pattern)
+        totalKeys += count
+        count
+      } catch {
+        case _: Throwable =>
+          redisAvailable = false
+          0
+      }
+
+      val (description, category) = namespaceDescriptions.getOrElse(namespaceId, ("Unknown namespace", "Other"))
+
+      CacheNamespaceInfoJsonV600(
+        namespace_id = namespaceId,
+        prefix = prefix,
+        current_version = version,
+        key_count = keyCount,
+        description = description,
+        category = category
+      )
+    }
+
+    CacheInfoJsonV600(
+      namespaces = namespaces,
+      total_keys = totalKeys,
+      redis_available = redisAvailable
+    )
   }
 }

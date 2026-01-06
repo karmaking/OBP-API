@@ -5,7 +5,7 @@ import code.accountattribute.AccountAttributeX
 import code.api.Constant
 import code.api.{DirectLogin, ObpApiFailure}
 import code.api.ResourceDocs1_4_0.SwaggerDefinitionsJSON._
-import code.api.cache.Caching
+import code.api.cache.{Caching, Redis}
 import code.api.util.APIUtil._
 import code.api.util.ApiRole
 import code.api.util.ApiRole._
@@ -27,8 +27,8 @@ import code.api.v5_0_0.JSONFactory500
 import code.api.v5_0_0.{ViewJsonV500, ViewsJsonV500}
 import code.api.v5_1_0.{JSONFactory510, PostCustomerLegalNameJsonV510}
 import code.api.dynamic.entity.helper.{DynamicEntityHelper, DynamicEntityInfo}
-import code.api.v6_0_0.JSONFactory600.{AddUserToGroupResponseJsonV600, DynamicEntityDiagnosticsJsonV600, DynamicEntityIssueJsonV600, GroupEntitlementJsonV600, GroupEntitlementsJsonV600, GroupJsonV600, GroupsJsonV600, PostGroupJsonV600, PostGroupMembershipJsonV600, PostResetPasswordUrlJsonV600, PutGroupJsonV600, ReferenceTypeJsonV600, ReferenceTypesJsonV600, ResetPasswordUrlJsonV600, RoleWithEntitlementCountJsonV600, RolesWithEntitlementCountsJsonV600, ScannedApiVersionJsonV600, UpdateViewJsonV600, UserGroupMembershipJsonV600, UserGroupMembershipsJsonV600, ValidateUserEmailJsonV600, ValidateUserEmailResponseJsonV600, ViewJsonV600, ViewPermissionJsonV600, ViewPermissionsJsonV600, ViewsJsonV600, createAbacRuleJsonV600, createAbacRulesJsonV600, createActiveCallLimitsJsonV600, createCallLimitJsonV600, createCurrentUsageJson}
-import code.api.v6_0_0.{AbacRuleJsonV600, AbacRuleResultJsonV600, AbacRulesJsonV600, CreateAbacRuleJsonV600, ExecuteAbacRuleJsonV600, UpdateAbacRuleJsonV600}
+import code.api.v6_0_0.JSONFactory600.{AddUserToGroupResponseJsonV600, DynamicEntityDiagnosticsJsonV600, DynamicEntityIssueJsonV600, GroupEntitlementJsonV600, GroupEntitlementsJsonV600, GroupJsonV600, GroupsJsonV600, PostGroupJsonV600, PostGroupMembershipJsonV600, PostResetPasswordUrlJsonV600, PutGroupJsonV600, ReferenceTypeJsonV600, ReferenceTypesJsonV600, ResetPasswordUrlJsonV600, RoleWithEntitlementCountJsonV600, RolesWithEntitlementCountsJsonV600, ScannedApiVersionJsonV600, UpdateViewJsonV600, UserGroupMembershipJsonV600, UserGroupMembershipsJsonV600, ValidateUserEmailJsonV600, ValidateUserEmailResponseJsonV600, ViewJsonV600, ViewPermissionJsonV600, ViewPermissionsJsonV600, ViewsJsonV600, createAbacRuleJsonV600, createAbacRulesJsonV600, createActiveRateLimitsJsonV600, createCallLimitJsonV600, createRedisCallCountersJson}
+import code.api.v6_0_0.{AbacRuleJsonV600, AbacRuleResultJsonV600, AbacRulesJsonV600, CacheConfigJsonV600, CacheInfoJsonV600, CacheNamespaceInfoJsonV600, CacheProviderConfigJsonV600, CreateAbacRuleJsonV600, CurrentConsumerJsonV600, ExecuteAbacRuleJsonV600, UpdateAbacRuleJsonV600}
 import code.api.v6_0_0.OBPAPI6_0_0
 import code.abacrule.{AbacRuleEngine, MappedAbacRuleProvider}
 import code.metrics.APIMetrics
@@ -216,19 +216,37 @@ trait APIMethods600 {
     }
 
     staticResourceDocs += ResourceDoc(
-      getCurrentCallsLimit,
+      getConsumerCallCounters,
       implementedInApiVersion,
-      nameOf(getCurrentCallsLimit),
+      nameOf(getConsumerCallCounters),
       "GET",
-      "/management/consumers/CONSUMER_ID/consumer/current-usage",
-      "Get Rate Limits for a Consumer Usage",
+      "/management/consumers/CONSUMER_ID/call-counters",
+      "Get Call Counts for Consumer",
       s"""
-         |Get Rate Limits for a Consumer Usage.
+         |Get the call counters (current usage) for a specific consumer. Shows how many API calls have been made and when the counters reset.
+         |
+         |This endpoint returns the current state of API rate limits across all time periods (per second, per minute, per hour, per day, per week, per month).
+         |
+         |**Response Structure:**
+         |The response always contains a consistent structure with all six time periods, regardless of whether rate limits are configured or active.
+         |
+         |Each time period contains:
+         |- `calls_made`: Number of API calls made in the current period (null if no data available)
+         |- `reset_in_seconds`: Seconds until the counter resets (null if no data available)
+         |- `status`: Current state of the rate limit for this period
+         |
+         |**Status Values:**
+         |- `ACTIVE`: Rate limit counter is active and tracking calls. Both `calls_made` and `reset_in_seconds` will have numeric values.
+         |- `NO_COUNTER`: Key does not exist - the consumer has not made any API calls in this time period yet.
+         |- `EXPIRED`: The rate limit counter has expired (TTL reached 0). The counter will be recreated on the next API call.
+         |- `REDIS_UNAVAILABLE`: Cannot retrieve data from Redis. This indicates a system connectivity issue.
+         |- `DATA_MISSING`: Unexpected error - period data is missing from the response. This should not occur under normal circumstances.
+         |
          |${userAuthenticationMessage(true)}
          |
          |""".stripMargin,
       EmptyBody,
-      redisCallLimitJson,
+      redisCallCountersJsonV600,
       List(
         $UserNotLoggedIn,
         InvalidJsonFormat,
@@ -239,18 +257,18 @@ trait APIMethods600 {
         UnknownError
       ),
       List(apiTagConsumer),
-      Some(List(canReadCallLimits)))
+      Some(List(canGetRateLimits)))
 
 
-    lazy val getCurrentCallsLimit: OBPEndpoint = {
-      case "management" :: "consumers" :: consumerId :: "consumer" :: "current-usage" :: Nil JsonGet _ =>
+    lazy val getConsumerCallCounters: OBPEndpoint = {
+      case "management" :: "consumers" :: consumerId :: "call-counters" :: Nil JsonGet _ =>
         cc =>
           implicit val ec = EndpointContext(Some(cc))
           for {
             _ <- NewStyle.function.getConsumerByConsumerId(consumerId, cc.callContext)
-            currentUsage <- Future(RateLimitingUtil.consumerRateLimitState(consumerId).toList)
+            currentConsumerCallCounters <- Future(RateLimitingUtil.consumerRateLimitState(consumerId).toList)
           } yield {
-            (createCurrentUsageJson(currentUsage), HttpCode.`200`(cc.callContext))
+            (createRedisCallCountersJson(currentConsumerCallCounters), HttpCode.`200`(cc.callContext))
           }
     }
 
@@ -439,22 +457,28 @@ trait APIMethods600 {
 
 
     staticResourceDocs += ResourceDoc(
-      getActiveCallLimitsAtDate,
+      getActiveRateLimitsAtDate,
       implementedInApiVersion,
-      nameOf(getActiveCallLimitsAtDate),
+      nameOf(getActiveRateLimitsAtDate),
       "GET",
-      "/management/consumers/CONSUMER_ID/consumer/rate-limits/active-at-date/DATE",
-      "Get Active Rate Limits at Date",
+      "/management/consumers/CONSUMER_ID/active-rate-limits/DATE_WITH_HOUR",
+      "Get Active Rate Limits for Hour",
       s"""
-         |Get the sum of rate limits at a certain date time. This returns a SUM of all the records that span that time.
+         |Get the active rate limits for a consumer for a specific hour. Returns the aggregated rate limits from all active records during that hour.
          |
-         |Date format: YYYY-MM-DDTHH:MM:SSZ (e.g. 1099-12-31T23:00:00Z)
+         |Rate limits are cached and queried at hour-level granularity.
+         |
+         |See ${Glossary.getGlossaryItemLink("Rate Limiting")} for more details on how rate limiting works.
+         |
+         |Date format: YYYY-MM-DD-HH in UTC timezone (e.g. 2025-12-31-13 for hour 13:00-13:59 UTC on Dec 31, 2025)
+         |
+         |Note: The hour is always interpreted in UTC for consistency across all servers.
          |
          |${userAuthenticationMessage(true)}
          |
          |""".stripMargin,
       EmptyBody,
-      activeCallLimitsJsonV600,
+      activeRateLimitsJsonV600,
       List(
         $UserNotLoggedIn,
         InvalidConsumerId,
@@ -464,25 +488,328 @@ trait APIMethods600 {
         UnknownError
       ),
       List(apiTagConsumer),
-      Some(List(canReadCallLimits)))
+      Some(List(canGetRateLimits)))
 
 
-    lazy val getActiveCallLimitsAtDate: OBPEndpoint = {
-      case "management" :: "consumers" :: consumerId :: "consumer" :: "rate-limits" :: "active-at-date" :: dateString :: Nil JsonGet _ =>
+    lazy val getActiveRateLimitsAtDate: OBPEndpoint = {
+      case "management" :: "consumers" :: consumerId :: "active-rate-limits" :: dateWithHourString :: Nil JsonGet _ =>
         cc =>
           implicit val ec = EndpointContext(Some(cc))
           for {
             (Full(u), callContext) <- authenticatedAccess(cc)
-            _ <- NewStyle.function.hasEntitlement("", u.userId, canReadCallLimits, callContext)
+            _ <- NewStyle.function.hasEntitlement("", u.userId, canGetRateLimits, callContext)
             _ <- NewStyle.function.getConsumerByConsumerId(consumerId, callContext)
-            date <- NewStyle.function.tryons(s"$InvalidDateFormat Current date format is: $dateString. Please use this format: YYYY-MM-DDTHH:MM:SSZ (e.g. 1099-12-31T23:00:00Z)", 400, callContext) {
-              val format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'")
-              format.parse(dateString)
+            date <- NewStyle.function.tryons(s"$InvalidDateFormat Current date format is: $dateWithHourString. Please use this format: YYYY-MM-DD-HH in UTC (e.g. 2025-12-31-13 for hour 13:00-13:59 UTC on Dec 31, 2025)", 400, callContext) {
+              val formatter = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd-HH")
+              val localDateTime = java.time.LocalDateTime.parse(dateWithHourString, formatter)
+              java.util.Date.from(localDateTime.atZone(java.time.ZoneOffset.UTC).toInstant())
             }
-            activeCallLimits <- RateLimitingDI.rateLimiting.vend.getActiveCallLimitsByConsumerIdAtDate(consumerId, date)
+            (rateLimit, rateLimitIds) <- RateLimitingUtil.getActiveRateLimitsWithIds(consumerId, date)
           } yield {
-            (createActiveCallLimitsJsonV600(activeCallLimits, date), HttpCode.`200`(callContext))
+            (JSONFactory600.createActiveRateLimitsJsonV600FromCallLimit(rateLimit, rateLimitIds, date), HttpCode.`200`(callContext))
           }
+    }
+
+
+    staticResourceDocs += ResourceDoc(
+      getActiveRateLimitsNow,
+      implementedInApiVersion,
+      nameOf(getActiveRateLimitsNow),
+      "GET",
+      "/management/consumers/CONSUMER_ID/active-rate-limits",
+      "Get Active Rate Limits (Current)",
+      s"""
+         |Get the active rate limits for a consumer at the current date/time. Returns the aggregated rate limits from all active records at this moment.
+         |
+         |This is a convenience endpoint that uses the current date/time automatically.
+         |
+         |See ${Glossary.getGlossaryItemLink("Rate Limiting")} for more details on how rate limiting works.
+         |
+         |${userAuthenticationMessage(true)}
+         |
+         |""".stripMargin,
+      EmptyBody,
+      activeRateLimitsJsonV600,
+      List(
+        $UserNotLoggedIn,
+        InvalidConsumerId,
+        ConsumerNotFoundByConsumerId,
+        UserHasMissingRoles,
+        UnknownError
+      ),
+      List(apiTagConsumer),
+      Some(List(canGetRateLimits)))
+
+
+    lazy val getActiveRateLimitsNow: OBPEndpoint = {
+      case "management" :: "consumers" :: consumerId :: "active-rate-limits" :: Nil JsonGet _ =>
+        cc =>
+          implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(u), callContext) <- authenticatedAccess(cc)
+            _ <- NewStyle.function.hasEntitlement("", u.userId, canGetRateLimits, callContext)
+            _ <- NewStyle.function.getConsumerByConsumerId(consumerId, callContext)
+            date = new java.util.Date() // Use current date/time
+            (rateLimit, rateLimitIds) <- RateLimitingUtil.getActiveRateLimitsWithIds(consumerId, date)
+          } yield {
+            (JSONFactory600.createActiveRateLimitsJsonV600FromCallLimit(rateLimit, rateLimitIds, date), HttpCode.`200`(callContext))
+          }
+    }
+
+    staticResourceDocs += ResourceDoc(
+      getCurrentConsumer,
+      implementedInApiVersion,
+      nameOf(getCurrentConsumer),
+      "GET",
+      "/consumers/current",
+      "Get Current Consumer",
+      s"""Returns the consumer_id of the current authenticated consumer.
+        |
+        |This endpoint requires authentication via:
+        |* User authentication (OAuth, DirectLogin, etc.) - returns the consumer associated with the user's session
+        |* Consumer/Client authentication - returns the consumer credentials being used
+        |
+        |${userAuthenticationMessage(true)}
+        |""",
+      EmptyBody,
+      CurrentConsumerJsonV600(
+        app_name = "SOFI",
+        app_type = "Web",
+        description = "Account Management",
+        consumer_id = "123",
+        active_rate_limits = activeRateLimitsJsonV600,
+        call_counters = redisCallCountersJsonV600
+      ),
+      List(
+        UserNotLoggedIn,
+        UserHasMissingRoles,
+        InvalidConsumerCredentials,
+        UnknownError
+      ),
+      apiTagConsumer :: apiTagApi :: Nil,
+      Some(List(canGetCurrentConsumer))
+    )
+
+    staticResourceDocs += ResourceDoc(
+      invalidateCacheNamespace,
+      implementedInApiVersion,
+      nameOf(invalidateCacheNamespace),
+      "POST",
+      "/management/cache/namespaces/invalidate",
+      "Invalidate Cache Namespace",
+      """Invalidates a cache namespace by incrementing its version counter.
+        |
+        |This provides instant cache invalidation without deleting individual keys.
+        |Incrementing the version counter makes all keys with the old version unreachable.
+        |
+        |Available namespace IDs: call_counter, rl_active, rd_localised, rd_dynamic,
+        |rd_static, rd_all, swagger_static, connector, metrics_stable, metrics_recent, abac_rule
+        |
+        |Use after updating rate limits, translations, endpoints, or CBS data.
+        |
+        |Authentication is Required
+        |""",
+      InvalidateCacheNamespaceJsonV600(namespace_id = "rd_localised"),
+      InvalidatedCacheNamespaceJsonV600(
+        namespace_id = "rd_localised",
+        old_version = 1,
+        new_version = 2,
+        status = "invalidated"
+      ),
+      List(
+        InvalidJsonFormat,
+        UserNotLoggedIn,
+        UserHasMissingRoles,
+        UnknownError
+      ),
+      List(apiTagCache, apiTagSystem, apiTagApi),
+      Some(List(canInvalidateCacheNamespace))
+    )
+
+    lazy val invalidateCacheNamespace: OBPEndpoint = {
+      case "management" :: "cache" :: "namespaces" :: "invalidate" :: Nil JsonPost json -> _ => {
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(u), callContext) <- authenticatedAccess(cc)
+            postJson <- NewStyle.function.tryons(InvalidJsonFormat, 400, callContext) {
+              json.extract[InvalidateCacheNamespaceJsonV600]
+            }
+            namespaceId = postJson.namespace_id
+            _ <- Helper.booleanToFuture(
+              s"Invalid namespace_id: $namespaceId. Valid values: ${Constant.ALL_CACHE_NAMESPACES.mkString(", ")}",
+              400,
+              callContext
+            )(Constant.ALL_CACHE_NAMESPACES.contains(namespaceId))
+            oldVersion = Constant.getCacheNamespaceVersion(namespaceId)
+            newVersionOpt = Constant.incrementCacheNamespaceVersion(namespaceId)
+            _ <- Helper.booleanToFuture(
+              s"Failed to increment cache namespace version for: $namespaceId",
+              500,
+              callContext
+            )(newVersionOpt.isDefined)
+          } yield {
+            val result = InvalidatedCacheNamespaceJsonV600(
+              namespace_id = namespaceId,
+              old_version = oldVersion,
+              new_version = newVersionOpt.get,
+              status = "invalidated"
+            )
+            (result, HttpCode.`200`(callContext))
+          }
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
+      getCacheConfig,
+      implementedInApiVersion,
+      nameOf(getCacheConfig),
+      "GET",
+      "/system/cache/config",
+      "Get Cache Configuration",
+      """Returns cache configuration information including:
+        |
+        |- Available cache providers (Redis, In-Memory)
+        |- Redis connection details (URL, port, SSL)
+        |- Instance ID and environment
+        |- Global cache namespace prefix
+        |
+        |This helps understand what cache backend is being used and how it's configured.
+        |
+        |Authentication is Required
+        |""",
+      EmptyBody,
+      CacheConfigJsonV600(
+        providers = List(
+          CacheProviderConfigJsonV600(
+            provider = "redis",
+            enabled = true,
+            url = Some("127.0.0.1"),
+            port = Some(6379),
+            use_ssl = Some(false)
+          ),
+          CacheProviderConfigJsonV600(
+            provider = "in_memory",
+            enabled = true,
+            url = None,
+            port = None,
+            use_ssl = None
+          )
+        ),
+        instance_id = "obp",
+        environment = "dev",
+        global_prefix = "obp_dev_"
+      ),
+      List(
+        UserNotLoggedIn,
+        UserHasMissingRoles,
+        UnknownError
+      ),
+      List(apiTagCache, apiTagSystem, apiTagApi),
+      Some(List(canGetCacheConfig))
+    )
+
+    lazy val getCacheConfig: OBPEndpoint = {
+      case "system" :: "cache" :: "config" :: Nil JsonGet _ => {
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(u), callContext) <- authenticatedAccess(cc)
+            _ <- NewStyle.function.hasEntitlement("", u.userId, canGetCacheConfig, callContext)
+          } yield {
+            val result = JSONFactory600.createCacheConfigJsonV600()
+            (result, HttpCode.`200`(callContext))
+          }
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
+      getCacheInfo,
+      implementedInApiVersion,
+      nameOf(getCacheInfo),
+      "GET",
+      "/system/cache/info",
+      "Get Cache Information",
+      """Returns detailed cache information for all namespaces:
+        |
+        |- Namespace ID and versioned prefix
+        |- Current version counter
+        |- Number of keys in each namespace
+        |- Description and category
+        |- Total key count across all namespaces
+        |- Redis availability status
+        |
+        |This endpoint helps monitor cache usage and identify which namespaces contain the most data.
+        |
+        |Authentication is Required
+        |""",
+      EmptyBody,
+      CacheInfoJsonV600(
+        namespaces = List(
+          CacheNamespaceInfoJsonV600(
+            namespace_id = "call_counter",
+            prefix = "obp_dev_call_counter_1_",
+            current_version = 1,
+            key_count = 42,
+            description = "Rate limit call counters",
+            category = "Rate Limiting"
+          ),
+          CacheNamespaceInfoJsonV600(
+            namespace_id = "rd_localised",
+            prefix = "obp_dev_rd_localised_1_",
+            current_version = 1,
+            key_count = 128,
+            description = "Localized resource docs",
+            category = "API Documentation"
+          )
+        ),
+        total_keys = 170,
+        redis_available = true
+      ),
+      List(
+        UserNotLoggedIn,
+        UserHasMissingRoles,
+        UnknownError
+      ),
+      List(apiTagCache, apiTagSystem, apiTagApi),
+      Some(List(canGetCacheInfo))
+    )
+
+    lazy val getCacheInfo: OBPEndpoint = {
+      case "system" :: "cache" :: "info" :: Nil JsonGet _ => {
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(u), callContext) <- authenticatedAccess(cc)
+            _ <- NewStyle.function.hasEntitlement("", u.userId, canGetCacheInfo, callContext)
+          } yield {
+            val result = JSONFactory600.createCacheInfoJsonV600()
+            (result, HttpCode.`200`(callContext))
+          }
+      }
+    }
+
+    lazy val getCurrentConsumer: OBPEndpoint = {
+      case "consumers" :: "current" :: Nil JsonGet _ => {
+        cc => {
+          implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(u), callContext) <- authenticatedAccess(cc)
+            consumer <- Future {
+              cc.consumer match {
+                case Full(c) => Full(c)
+                case _ => Empty
+              }
+            } map {
+              unboxFullOrFail(_, cc.callContext, InvalidConsumerCredentials, 401)
+            }
+            currentConsumerCallCounters <- Future(RateLimitingUtil.consumerRateLimitState(consumer.consumerId.get).toList)
+            date = new java.util.Date()
+            (activeRateLimit, rateLimitIds) <- RateLimitingUtil.getActiveRateLimitsWithIds(consumer.consumerId.get, date)
+            activeRateLimitsJson = JSONFactory600.createActiveRateLimitsJsonV600FromCallLimit(activeRateLimit, rateLimitIds, date)
+            callCountersJson = createRedisCallCountersJson(currentConsumerCallCounters)
+          } yield {
+            (CurrentConsumerJsonV600(consumer.name.get, consumer.appType.get, consumer.description.get, consumer.consumerId.get, activeRateLimitsJson, callCountersJson), HttpCode.`200`(callContext))
+          }
+        }
+      }
     }
 
     staticResourceDocs += ResourceDoc(
@@ -900,6 +1227,110 @@ trait APIMethods600 {
           val migrations = code.migration.MigrationScriptLogProvider.migrationScriptLogProvider.vend.getMigrationScriptLogs()
           (JSONFactory600.createMigrationScriptLogsJsonV600(migrations), HttpCode.`200`(callContext))
         }
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
+      getCacheNamespaces,
+      implementedInApiVersion,
+      nameOf(getCacheNamespaces),
+      "GET",
+      "/system/cache/namespaces",
+      "Get Cache Namespaces",
+      """Returns information about all cache namespaces in the system.
+        |
+        |This endpoint provides visibility into:
+        |* Cache namespace prefixes and their purposes
+        |* Number of keys in each namespace
+        |* TTL configurations
+        |* Example keys for each namespace
+        |
+        |This is useful for:
+        |* Monitoring cache usage
+        |* Understanding cache structure
+        |* Debugging cache-related issues
+        |* Planning cache management operations
+        |
+        |""",
+      EmptyBody,
+      CacheNamespacesJsonV600(
+        namespaces = List(
+          CacheNamespaceJsonV600(
+            prefix = "call_counter_",
+            description = "Rate limiting counters per consumer and time period",
+            ttl_seconds = "varies",
+            category = "Rate Limiting",
+            key_count = 42,
+            example_key = "rl_counter_consumer123_PER_MINUTE"
+          ),
+          CacheNamespaceJsonV600(
+            prefix = "rl_active_",
+            description = "Active rate limit configurations",
+            ttl_seconds = "3600",
+            category = "Rate Limiting",
+            key_count = 15,
+            example_key = "rl_active_consumer123_2024-12-27-14"
+          ),
+          CacheNamespaceJsonV600(
+            prefix = "rd_localised_",
+            description = "Localized resource documentation",
+            ttl_seconds = "3600",
+            category = "Resource Documentation",
+            key_count = 128,
+            example_key = "rd_localised_operationId:getBanks-locale:en"
+          )
+        )
+      ),
+      List(
+        $UserNotLoggedIn,
+        UserHasMissingRoles,
+        UnknownError
+      ),
+      List(apiTagCache, apiTagSystem, apiTagApi),
+      Some(List(canGetCacheNamespaces))
+    )
+
+    lazy val getCacheNamespaces: OBPEndpoint = {
+      case "system" :: "cache" :: "namespaces" :: Nil JsonGet _ => {
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(u), callContext) <- authenticatedAccess(cc)
+            _ <- NewStyle.function.hasEntitlement("", u.userId, canGetCacheNamespaces, callContext)
+          } yield {
+            // Define known cache namespaces with their metadata
+            val namespaces = List(
+              // Rate Limiting
+              (Constant.CALL_COUNTER_PREFIX, "Rate limiting counters per consumer and time period", "varies", "Rate Limiting"),
+              (Constant.RATE_LIMIT_ACTIVE_PREFIX, "Active rate limit configurations", Constant.RATE_LIMIT_ACTIVE_CACHE_TTL.toString, "Rate Limiting"),
+              // Resource Documentation
+              (Constant.LOCALISED_RESOURCE_DOC_PREFIX, "Localized resource documentation", Constant.CREATE_LOCALISED_RESOURCE_DOC_JSON_TTL.toString, "Resource Documentation"),
+              (Constant.DYNAMIC_RESOURCE_DOC_CACHE_KEY_PREFIX, "Dynamic resource documentation", Constant.GET_DYNAMIC_RESOURCE_DOCS_TTL.toString, "Resource Documentation"),
+              (Constant.STATIC_RESOURCE_DOC_CACHE_KEY_PREFIX, "Static resource documentation", Constant.GET_STATIC_RESOURCE_DOCS_TTL.toString, "Resource Documentation"),
+              (Constant.ALL_RESOURCE_DOC_CACHE_KEY_PREFIX, "All resource documentation", Constant.GET_STATIC_RESOURCE_DOCS_TTL.toString, "Resource Documentation"),
+              (Constant.STATIC_SWAGGER_DOC_CACHE_KEY_PREFIX, "Swagger documentation", Constant.GET_STATIC_RESOURCE_DOCS_TTL.toString, "Resource Documentation"),
+              // Connector
+              (Constant.CONNECTOR_PREFIX, "Connector method names and metadata", "3600", "Connector"),
+              // Metrics
+              (Constant.METRICS_STABLE_PREFIX, "Stable metrics (historical)", "86400", "Metrics"),
+              (Constant.METRICS_RECENT_PREFIX, "Recent metrics", "7", "Metrics"),
+              // ABAC
+              (Constant.ABAC_RULE_PREFIX, "ABAC rule cache", "indefinite", "ABAC")
+            ).map { case (prefix, description, ttl, category) =>
+              // Get actual key count and example from Redis
+              val keyCount = Redis.countKeys(s"${prefix}*")
+              val exampleKey = Redis.getSampleKey(s"${prefix}*")
+              JSONFactory600.createCacheNamespaceJsonV600(
+                prefix = prefix,
+                description = description,
+                ttlSeconds = ttl,
+                category = category,
+                keyCount = keyCount,
+                exampleKey = exampleKey
+              )
+            }
+
+            (JSONFactory600.createCacheNamespacesJsonV600(namespaces), HttpCode.`200`(callContext))
+          }
       }
     }
 
@@ -4640,8 +5071,18 @@ trait APIMethods600 {
           )
         ),
         examples = List(
-          "authenticatedUser.userId == user.userId",
-          "bankOpt.isDefined && bankOpt.get.bankId.value == \"gh.29.uk\""
+          AbacRuleExampleJsonV600(
+            category = "User Access",
+            title = "Check User Identity",
+            code = "authenticatedUser.userId == user.userId",
+            description = "Verify that the authenticated user matches the target user"
+          ),
+          AbacRuleExampleJsonV600(
+            category = "Bank Access",
+            title = "Check Specific Bank",
+            code = "bankOpt.isDefined && bankOpt.get.bankId.value == \"gh.29.uk\"",
+            description = "Verify that the bank context is defined and matches a specific bank ID"
+          )
         ),
         available_operators = List("==", "!=", "&&", "||", "!", ">", "<", ">=", "<=", "contains", "isDefined"),
         notes = List(
@@ -4790,21 +5231,540 @@ trait APIMethods600 {
                 ))
               ),
               examples = List(
-                "// Check if authenticated user matches target user",
-                "authenticatedUser.userId == userOpt.get.userId",
-                "// Check user email contains admin",
-                "authenticatedUser.emailAddress.contains(\"admin\")",
-                "// Check specific bank",
-                "bankOpt.isDefined && bankOpt.get.bankId.value == \"gh.29.uk\"",
-                "// Check account balance",
-                "accountOpt.isDefined && accountOpt.get.balance > 1000",
-                "// Check user attributes",
-                "userAttributes.exists(attr => attr.name == \"account_type\" && attr.value == \"premium\")",
-                "// Check authenticated user has role attribute",
-                "authenticatedUserAttributes.find(_.name == \"role\").exists(_.value == \"admin\")",
-                "// IMPORTANT: Use camelCase (userId NOT user_id)",
-                "// IMPORTANT: Parameters are: authenticatedUser, userOpt, accountOpt (with Opt suffix for Optional)",
-                "// IMPORTANT: Check isDefined before using .get on Option types"
+                AbacRuleExampleJsonV600(
+                  category = "User - Authenticated User",
+                  title = "Check Email Domain",
+                  code = "authenticatedUser.emailAddress.contains(\"@example.com\")",
+                  description = "Verify that the authenticated user's email belongs to a specific domain"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "User - Authenticated User",
+                  title = "Check Authentication Provider",
+                  code = "authenticatedUser.provider == \"obp\"",
+                  description = "Verify the authentication provider is OBP"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "User - Authenticated User",
+                  title = "Compare Authenticated to Target User",
+                  code = "authenticatedUser.userId == userOpt.get.userId",
+                  description = "Check if authenticated user matches the target user (unsafe - use exists instead)"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "User - Authenticated User",
+                  title = "Check User Not Deleted",
+                  code = "!authenticatedUser.isDeleted.getOrElse(false)",
+                  description = "Verify the authenticated user is not marked as deleted"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "User Attributes - Authenticated User",
+                  title = "Check Admin Role",
+                  code = "authenticatedUserAttributes.exists(attr => attr.name == \"role\" && attr.value == \"admin\")",
+                  description = "Check if authenticated user has admin role attribute"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "User Attributes - Authenticated User",
+                  title = "Check Department",
+                  code = "authenticatedUserAttributes.find(_.name == \"department\").exists(_.value == \"finance\")",
+                  description = "Check if authenticated user belongs to finance department"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "User Attributes - Authenticated User",
+                  title = "Check Multiple Roles",
+                  code = "authenticatedUserAttributes.exists(attr => attr.name == \"role\" && List(\"admin\", \"manager\").contains(attr.value))",
+                  description = "Check if authenticated user has admin or manager role"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "User Auth Context",
+                  title = "Check Session Type",
+                  code = "authenticatedUserAuthContext.exists(_.key == \"session_type\" && _.value == \"secure\")",
+                  description = "Verify the session type is secure"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "User Auth Context",
+                  title = "Check Auth Method",
+                  code = "authenticatedUserAuthContext.exists(_.key == \"auth_method\" && _.value == \"certificate\")",
+                  description = "Verify authentication was done via certificate"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "User - Delegation",
+                  title = "Check Delegated User Email Domain",
+                  code = "onBehalfOfUserOpt.exists(_.emailAddress.endsWith(\"@company.com\"))",
+                  description = "Check if delegation user belongs to specific company domain"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "User - Delegation",
+                  title = "Check No Delegation or Self Delegation",
+                  code = "onBehalfOfUserOpt.isEmpty || onBehalfOfUserOpt.get.userId == authenticatedUser.userId",
+                  description = "Allow if no delegation or user delegating to themselves"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "User - Delegation",
+                  title = "Check Different User Delegation",
+                  code = "onBehalfOfUserOpt.forall(_.userId != authenticatedUser.userId)",
+                  description = "Check that delegation is to a different user (if present)"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "User Attributes - Delegation",
+                  title = "Check Delegation Level",
+                  code = "onBehalfOfUserAttributes.exists(attr => attr.name == \"delegation_level\" && attr.value == \"full\")",
+                  description = "Check if delegation has full permission level"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "User Attributes - Delegation",
+                  title = "Check Authorized Delegation",
+                  code = "onBehalfOfUserAttributes.isEmpty || onBehalfOfUserAttributes.exists(_.name == \"authorized\")",
+                  description = "Allow if no delegation attributes or has authorized attribute"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "User - Target User",
+                  title = "Check Self Access",
+                  code = "userOpt.isDefined && userOpt.get.userId == authenticatedUser.userId",
+                  description = "Check if target user is the authenticated user (self-access)"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "User - Target User",
+                  title = "Check Target User Provider",
+                  code = "userOpt.exists(_.provider == \"obp\")",
+                  description = "Check if target user is authenticated via OBP provider"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "User - Target User",
+                  title = "Check Target User Email Domain",
+                  code = "userOpt.exists(_.emailAddress.endsWith(\"@trusted.com\"))",
+                  description = "Check if target user belongs to trusted domain"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "User - Target User",
+                  title = "Check Target User Active",
+                  code = "userOpt.forall(!_.isDeleted.getOrElse(false))",
+                  description = "Ensure target user is not deleted (if present)"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "User Attributes - Target User",
+                  title = "Check Premium Account",
+                  code = "userAttributes.exists(attr => attr.name == \"account_type\" && attr.value == \"premium\")",
+                  description = "Check if target user has premium account type"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "User Attributes - Target User",
+                  title = "Check KYC Status",
+                  code = "userAttributes.exists(attr => attr.name == \"kyc_status\" && attr.value == \"verified\")",
+                  description = "Check if target user has verified KYC status"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "User Attributes - Target User",
+                  title = "Check User Tier Level",
+                  code = "userAttributes.find(_.name == \"tier\").exists(_.value.toInt >= 2)",
+                  description = "Check if user tier is 2 or higher"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "Bank",
+                  title = "Check Specific Bank ID",
+                  code = "bankOpt.isDefined && bankOpt.get.bankId.value == \"gh.29.uk\"",
+                  description = "Check if bank context is defined and matches specific bank ID"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "Bank",
+                  title = "Check Bank Name Contains Text",
+                  code = "bankOpt.exists(_.fullName.contains(\"Community\"))",
+                  description = "Check if bank full name contains specific text"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "Bank",
+                  title = "Check Bank Has HTTPS Website",
+                  code = "bankOpt.exists(_.websiteUrl.contains(\"https://\"))",
+                  description = "Check if bank website uses HTTPS"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "Bank Attributes",
+                  title = "Check Bank Region",
+                  code = "bankAttributes.exists(attr => attr.name == \"region\" && attr.value == \"EU\")",
+                  description = "Check if bank is in EU region"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "Bank Attributes",
+                  title = "Check Bank Certification",
+                  code = "bankAttributes.exists(attr => attr.name == \"certified\" && attr.value == \"true\")",
+                  description = "Check if bank has certification attribute"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "Account",
+                  title = "Check Minimum Balance",
+                  code = "accountOpt.isDefined && accountOpt.get.balance > 1000",
+                  description = "Check if account balance is above threshold"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "Account",
+                  title = "Check USD Account Balance",
+                  code = "accountOpt.exists(acc => acc.currency == \"USD\" && acc.balance > 5000)",
+                  description = "Check if USD account has balance above $5000"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "Account",
+                  title = "Check Account Type",
+                  code = "accountOpt.exists(_.accountType == \"SAVINGS\")",
+                  description = "Check if account is a savings account"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "Account",
+                  title = "Check Account Number Length",
+                  code = "accountOpt.exists(_.number.length >= 10)",
+                  description = "Check if account number has minimum length"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "Account Attributes",
+                  title = "Check Account Status",
+                  code = "accountAttributes.exists(attr => attr.name == \"status\" && attr.value == \"active\")",
+                  description = "Check if account has active status"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "Account Attributes",
+                  title = "Check Account Tier",
+                  code = "accountAttributes.exists(attr => attr.name == \"account_tier\" && attr.value == \"gold\")",
+                  description = "Check if account has gold tier"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "Transaction",
+                  title = "Check Transaction Amount Limit",
+                  code = "transactionOpt.isDefined && transactionOpt.get.amount < 10000",
+                  description = "Check if transaction amount is below limit"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "Transaction",
+                  title = "Check Transaction Type",
+                  code = "transactionOpt.exists(_.transactionType.contains(\"TRANSFER\"))",
+                  description = "Check if transaction is a transfer type"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "Transaction",
+                  title = "Check EUR Transaction Amount",
+                  code = "transactionOpt.exists(t => t.currency == \"EUR\" && t.amount > 100)",
+                  description = "Check if EUR transaction exceeds €100"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "Transaction",
+                  title = "Check Positive Balance After Transaction",
+                  code = "transactionOpt.exists(_.balance > 0)",
+                  description = "Check if balance remains positive after transaction"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "Transaction Attributes",
+                  title = "Check Transaction Category",
+                  code = "transactionAttributes.exists(attr => attr.name == \"category\" && attr.value == \"business\")",
+                  description = "Check if transaction is categorized as business"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "Transaction Attributes",
+                  title = "Check Transaction Not Flagged",
+                  code = "!transactionAttributes.exists(attr => attr.name == \"flagged\" && attr.value == \"true\")",
+                  description = "Check that transaction is not flagged"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "Transaction Request",
+                  title = "Check Pending Status",
+                  code = "transactionRequestOpt.exists(_.status == \"PENDING\")",
+                  description = "Check if transaction request is pending"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "Transaction Request",
+                  title = "Check SEPA Type",
+                  code = "transactionRequestOpt.exists(_.type == \"SEPA\")",
+                  description = "Check if transaction request is SEPA type"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "Transaction Request",
+                  title = "Check Same Bank",
+                  code = "transactionRequestOpt.exists(_.this_bank_id.value == bankOpt.get.bankId.value)",
+                  description = "Check if transaction request is for the same bank (unsafe - use exists)"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "Transaction Request Attributes",
+                  title = "Check High Priority",
+                  code = "transactionRequestAttributes.exists(attr => attr.name == \"priority\" && attr.value == \"high\")",
+                  description = "Check if transaction request has high priority"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "Transaction Request Attributes",
+                  title = "Check Mobile App Source",
+                  code = "transactionRequestAttributes.exists(attr => attr.name == \"source\" && attr.value == \"mobile_app\")",
+                  description = "Check if transaction request originated from mobile app"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "Customer",
+                  title = "Check Corporate Customer",
+                  code = "customerOpt.exists(_.legalName.contains(\"Corp\"))",
+                  description = "Check if customer legal name contains Corp"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "Customer",
+                  title = "Check Customer Email Matches User",
+                  code = "customerOpt.isDefined && customerOpt.get.email == authenticatedUser.emailAddress",
+                  description = "Check if customer email matches authenticated user"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "Customer",
+                  title = "Check Active Customer Relationship",
+                  code = "customerOpt.exists(_.relationshipStatus == \"ACTIVE\")",
+                  description = "Check if customer relationship is active"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "Customer",
+                  title = "Check Customer Has Mobile",
+                  code = "customerOpt.exists(_.mobileNumber.nonEmpty)",
+                  description = "Check if customer has mobile number on file"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "Customer Attributes",
+                  title = "Check Low Risk Customer",
+                  code = "customerAttributes.exists(attr => attr.name == \"risk_level\" && attr.value == \"low\")",
+                  description = "Check if customer has low risk level"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "Customer Attributes",
+                  title = "Check VIP Status",
+                  code = "customerAttributes.exists(attr => attr.name == \"vip_status\" && attr.value == \"true\")",
+                  description = "Check if customer has VIP status"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "Call Context",
+                  title = "Check Internal Network",
+                  code = "callContext.exists(_.ipAddress.exists(_.startsWith(\"192.168\")))",
+                  description = "Check if request comes from internal network"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "Call Context",
+                  title = "Check GET Request",
+                  code = "callContext.exists(_.verb.exists(_ == \"GET\"))",
+                  description = "Check if request is GET method"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "Call Context",
+                  title = "Check URL Contains Pattern",
+                  code = "callContext.exists(_.url.exists(_.contains(\"/accounts/\")))",
+                  description = "Check if request URL contains accounts path"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "Cross-Object - User Comparisons",
+                  title = "Self Access Check",
+                  code = "userOpt.exists(_.userId == authenticatedUser.userId)",
+                  description = "Check if target user is the authenticated user"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "Cross-Object - User Comparisons",
+                  title = "Same Email Check",
+                  code = "userOpt.exists(_.emailAddress == authenticatedUser.emailAddress)",
+                  description = "Check if target user has same email as authenticated user"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "Cross-Object - User Comparisons",
+                  title = "Same Email Domain",
+                  code = "userOpt.exists(u => authenticatedUser.emailAddress.split(\"@\")(1) == u.emailAddress.split(\"@\")(1))",
+                  description = "Check if both users belong to same email domain"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "Cross-Object - User Comparisons",
+                  title = "Delegation Match",
+                  code = "onBehalfOfUserOpt.isDefined && userOpt.isDefined && onBehalfOfUserOpt.get.userId == userOpt.get.userId",
+                  description = "Check if delegation user matches target user"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "Cross-Object - User Comparisons",
+                  title = "Different User Access",
+                  code = "userOpt.exists(_.userId != authenticatedUser.userId)",
+                  description = "Check if accessing a different user's data"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "Cross-Object - Customer Comparisons",
+                  title = "Customer Email Matches Auth User",
+                  code = "customerOpt.exists(_.email == authenticatedUser.emailAddress)",
+                  description = "Check if customer email matches authenticated user"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "Cross-Object - Customer Comparisons",
+                  title = "Customer Email Matches Target User",
+                  code = "customerOpt.isDefined && userOpt.isDefined && customerOpt.get.email == userOpt.get.emailAddress",
+                  description = "Check if customer email matches target user email"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "Cross-Object - Customer Comparisons",
+                  title = "Customer Name Contains User Name",
+                  code = "customerOpt.exists(c => userOpt.exists(u => c.legalName.contains(u.name)))",
+                  description = "Check if customer legal name contains user name"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "Cross-Object - Account/Transaction",
+                  title = "Transaction Within Balance",
+                  code = "transactionOpt.isDefined && accountOpt.isDefined && transactionOpt.get.amount < accountOpt.get.balance",
+                  description = "Check if transaction amount is less than account balance"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "Cross-Object - Account/Transaction",
+                  title = "Transaction Within 50% Balance",
+                  code = "transactionOpt.exists(t => accountOpt.exists(a => t.amount <= a.balance * 0.5))",
+                  description = "Check if transaction is within 50% of account balance"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "Cross-Object - Account/Transaction",
+                  title = "Same Currency Check",
+                  code = "transactionOpt.exists(t => accountOpt.exists(a => t.currency == a.currency))",
+                  description = "Check if transaction and account have same currency"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "Cross-Object - Account/Transaction",
+                  title = "Sufficient Funds After Transaction",
+                  code = "transactionOpt.exists(t => accountOpt.exists(a => a.balance - t.amount >= 0))",
+                  description = "Check if account will have sufficient funds after transaction"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "Cross-Object - Account/Transaction",
+                  title = "Debit from Checking",
+                  code = "transactionOpt.exists(t => accountOpt.exists(a => (a.accountType == \"CHECKING\" && t.transactionType.exists(_.contains(\"DEBIT\")))))",
+                  description = "Check if debit transaction from checking account"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "Cross-Object - Bank/Account",
+                  title = "Account Belongs to Bank",
+                  code = "accountOpt.isDefined && bankOpt.isDefined && accountOpt.get.bankId == bankOpt.get.bankId.value",
+                  description = "Check if account belongs to the bank"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "Cross-Object - Bank/Account",
+                  title = "Account Currency Matches Bank Currency",
+                  code = "accountOpt.exists(a => bankAttributes.exists(attr => attr.name == \"primary_currency\" && attr.value == a.currency))",
+                  description = "Check if account currency matches bank's primary currency"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "Cross-Object - Transaction Request",
+                  title = "Transaction Request for Account",
+                  code = "transactionRequestOpt.exists(tr => accountOpt.exists(a => tr.this_account_id.value == a.accountId.value))",
+                  description = "Check if transaction request is for this account"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "Cross-Object - Transaction Request",
+                  title = "Transaction Request for Bank",
+                  code = "transactionRequestOpt.exists(tr => bankOpt.exists(b => tr.this_bank_id.value == b.bankId.value))",
+                  description = "Check if transaction request is for this bank"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "Cross-Object - Transaction Request",
+                  title = "Transaction Amount Matches Charge",
+                  code = "transactionOpt.isDefined && transactionRequestOpt.isDefined && transactionOpt.get.amount == transactionRequestOpt.get.charge.value.toDouble",
+                  description = "Check if transaction amount matches request charge"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "Cross-Object - Attribute Comparisons",
+                  title = "User and Account Same Tier",
+                  code = "userAttributes.exists(ua => ua.name == \"tier\" && accountAttributes.exists(aa => aa.name == \"tier\" && ua.value == aa.value))",
+                  description = "Check if user tier matches account tier"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "Cross-Object - Attribute Comparisons",
+                  title = "Customer and Account Same Segment",
+                  code = "customerAttributes.exists(ca => ca.name == \"segment\" && accountAttributes.exists(aa => aa.name == \"segment\" && ca.value == aa.value))",
+                  description = "Check if customer segment matches account segment"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "Cross-Object - Attribute Comparisons",
+                  title = "Auth User and Account Same Department",
+                  code = "authenticatedUserAttributes.exists(ua => ua.name == \"department\" && accountAttributes.exists(aa => aa.name == \"department\" && ua.value == aa.value))",
+                  description = "Check if authenticated user department matches account department"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "Cross-Object - Attribute Comparisons",
+                  title = "Transaction Risk Within User Tolerance",
+                  code = "transactionAttributes.exists(ta => ta.name == \"risk_score\" && userAttributes.exists(ua => ua.name == \"risk_tolerance\" && ta.value.toInt <= ua.value.toInt))",
+                  description = "Check if transaction risk is within user's tolerance"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "Cross-Object - Attribute Comparisons",
+                  title = "Bank and Customer Same Region",
+                  code = "bankAttributes.exists(ba => ba.name == \"region\" && customerAttributes.exists(ca => ca.name == \"region\" && ba.value == ca.value))",
+                  description = "Check if bank and customer are in same region"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "Complex - Multi-Object",
+                  title = "Bank Employee with Active Account",
+                  code = "authenticatedUser.emailAddress.endsWith(\"@bank.com\") && accountOpt.exists(_.balance > 0) && bankOpt.exists(_.bankId.value == \"gh.29.uk\")",
+                  description = "Check if bank employee accessing active account at specific bank"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "Complex - Multi-Object",
+                  title = "Manager Accessing Other User",
+                  code = "authenticatedUserAttributes.exists(_.name == \"role\" && _.value == \"manager\") && userOpt.exists(_.userId != authenticatedUser.userId)",
+                  description = "Check if manager is accessing another user's data"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "Complex - Multi-Object",
+                  title = "Self or Authorized Delegation with Balance",
+                  code = "(onBehalfOfUserOpt.isEmpty || onBehalfOfUserOpt.get.userId == authenticatedUser.userId) && accountOpt.exists(_.balance > 1000)",
+                  description = "Check if self-access or authorized delegation with minimum balance"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "Complex - Multi-Object",
+                  title = "Verified User with Optional Delegation",
+                  code = "userAttributes.exists(_.name == \"kyc_status\" && _.value == \"verified\") && (onBehalfOfUserOpt.isEmpty || onBehalfOfUserAttributes.exists(_.name == \"authorized\"))",
+                  description = "Check if user is KYC verified and delegation is authorized (if present)"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "Complex - Multi-Object",
+                  title = "VIP Customer with Premium Account",
+                  code = "customerAttributes.exists(_.name == \"vip_status\" && _.value == \"true\") && accountAttributes.exists(_.name == \"account_tier\" && _.value == \"premium\")",
+                  description = "Check if VIP customer has premium account"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "Complex - Chained Validation",
+                  title = "User-Customer-Account-Transaction Chain",
+                  code = "userOpt.exists(u => customerOpt.exists(c => c.email == u.emailAddress && accountOpt.exists(a => transactionOpt.exists(t => t.accountId.value == a.accountId.value))))",
+                  description = "Validate complete chain from user to customer to account to transaction"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "Complex - Chained Validation",
+                  title = "Bank-Account-Transaction Request Chain",
+                  code = "bankOpt.exists(b => accountOpt.exists(a => a.bankId == b.bankId.value && transactionRequestOpt.exists(tr => tr.this_account_id.value == a.accountId.value)))",
+                  description = "Validate bank owns account and transaction request is for that account"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "Complex - Aggregation",
+                  title = "Matching Attributes",
+                  code = "authenticatedUserAttributes.exists(aua => userAttributes.exists(ua => aua.name == ua.name && aua.value == ua.value))",
+                  description = "Check if authenticated user and target user share any matching attributes"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "Complex - Aggregation",
+                  title = "Allowed Transaction Attributes",
+                  code = "transactionAttributes.forall(ta => accountAttributes.exists(aa => aa.name == \"allowed_transaction_\" + ta.name))",
+                  description = "Check if all transaction attributes are allowed for this account"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "Business Logic - Loan Approval",
+                  title = "Credit Score and Balance Check",
+                  code = "customerAttributes.exists(ca => ca.name == \"credit_score\" && ca.value.toInt > 650) && accountOpt.exists(_.balance > 5000)",
+                  description = "Check if customer has good credit score and sufficient balance for loan"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "Business Logic - Wire Transfer",
+                  title = "Wire Transfer Authorization",
+                  code = "transactionOpt.exists(t => t.amount < 100000 && t.transactionType.exists(_.contains(\"WIRE\"))) && authenticatedUserAttributes.exists(_.name == \"wire_authorized\")",
+                  description = "Check if wire transfer is under limit and user is authorized"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "Business Logic - Account Closure",
+                  title = "Self-Service or Manager Account Closure",
+                  code = "accountOpt.exists(a => (a.balance == 0 && userOpt.exists(_.userId == authenticatedUser.userId)) || authenticatedUserAttributes.exists(_.name == \"role\" && _.value == \"manager\"))",
+                  description = "Allow account closure if zero balance self-service or manager override"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "Business Logic - VIP Processing",
+                  title = "VIP Priority Check",
+                  code = "(customerAttributes.exists(_.name == \"vip_status\" && _.value == \"true\") || accountAttributes.exists(_.name == \"account_tier\" && _.value == \"platinum\"))",
+                  description = "Check if customer or account qualifies for VIP priority processing"
+                ),
+                AbacRuleExampleJsonV600(
+                  category = "Business Logic - Joint Account",
+                  title = "Joint Account Access",
+                  code = "accountOpt.exists(a => a.accountHolders.exists(h => h.userId == authenticatedUser.userId || h.emailAddress == authenticatedUser.emailAddress))",
+                  description = "Check if authenticated user is one of the account holders"
+                )
               ),
               available_operators = List(
                 "==", "!=", "&&", "||", "!", ">", "<", ">=", "<=",

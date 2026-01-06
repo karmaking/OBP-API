@@ -982,9 +982,10 @@ featured_apis=elasticSearchWarehouseV300
 # ----------------------------------------------
 
 # -- Rate Limiting -----------------------------------
-# Define how many calls per hour a consumer can make
-# In case isn't defined default value is "false"
-# use_consumer_limits=false
+# Enable consumer-specific rate limiting (queries RateLimiting table)
+# Default is now true. This property may be removed in a future version.
+# Set to false to use only system-wide defaults (not recommended)
+# use_consumer_limits=true
 # In case isn't defined default value is 60
 # user_consumer_limit_anonymous_access=100
 # For the Rate Limiting feature we use Redis cache instance
