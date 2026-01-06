@@ -27,6 +27,7 @@ TESOBE (http://www.tesobe.com/)
 
 package code.api.util
 import bootstrap.liftweb.CustomDBVendor
+import cats.effect.IO
 import code.accountholders.AccountHolders
 import code.api.Constant._
 import code.api.OAuthHandshake._
@@ -96,6 +97,7 @@ import net.liftweb.util.Helpers._
 import net.liftweb.util._
 import org.apache.commons.io.IOUtils
 import org.apache.commons.lang3.StringUtils
+import org.http4s.HttpRoutes
 
 import java.io.InputStream
 import java.net.URLDecoder
@@ -1636,7 +1638,8 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
                           isFeatured: Boolean = false,
                           specialInstructions: Option[String] = None,
                           var specifiedUrl: Option[String] = None, // A derived value: Contains the called version (added at run time). See the resource doc for resource doc!
-                          createdByBankId: Option[String] = None //we need to filter the resource Doc by BankId
+                          createdByBankId: Option[String] = None, //we need to filter the resource Doc by BankId
+                          http4sPartialFunction: Http4sEndpoint = None // http4s endpoint handler
                         ) {
     // this code block will be merged to constructor.
     {
@@ -2789,6 +2792,7 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
 
   type OBPEndpoint = PartialFunction[Req, CallContext => Box[JsonResponse]]
   type OBPReturnType[T] = Future[(T, Option[CallContext])]
+  type Http4sEndpoint = Option[HttpRoutes[IO]]
 
 
   def getAllowedEndpoints (endpoints : Iterable[OBPEndpoint], resourceDocs: ArrayBuffer[ResourceDoc]) : List[OBPEndpoint] = {

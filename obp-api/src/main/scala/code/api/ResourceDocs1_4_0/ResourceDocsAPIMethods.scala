@@ -1,8 +1,10 @@
 package code.api.ResourceDocs1_4_0
 
-import code.api.Constant.{GET_DYNAMIC_RESOURCE_DOCS_TTL, GET_STATIC_RESOURCE_DOCS_TTL, PARAM_LOCALE, HostName}
+import code.api.Constant.{GET_DYNAMIC_RESOURCE_DOCS_TTL, GET_STATIC_RESOURCE_DOCS_TTL, HostName, PARAM_LOCALE}
 import code.api.OBPRestHelper
 import code.api.cache.Caching
+import code.api.dynamic.endpoint.OBPAPIDynamicEndpoint
+import code.api.dynamic.entity.OBPAPIDynamicEntity
 import code.api.util.APIUtil._
 import code.api.util.ApiRole.{canReadDynamicResourceDocsAtOneBank, canReadResourceDoc}
 import code.api.util.ApiTag._
@@ -20,12 +22,9 @@ import code.api.v4_0_0.{APIMethods400, OBPAPI4_0_0}
 import code.api.v5_0_0.OBPAPI5_0_0
 import code.api.v5_1_0.OBPAPI5_1_0
 import code.api.v6_0_0.OBPAPI6_0_0
-import code.api.dynamic.endpoint.OBPAPIDynamicEndpoint
-import code.api.dynamic.entity.OBPAPIDynamicEntity
 import code.apicollectionendpoint.MappedApiCollectionEndpointsProvider
 import code.util.Helper
 import code.util.Helper.{MdcLoggable, ObpS, SILENCE_IS_GOLDEN}
-import net.liftweb.http.S
 import com.github.dwickern.macros.NameOf.nameOf
 import com.openbankproject.commons.model.enums.ContentParam
 import com.openbankproject.commons.model.enums.ContentParam.{ALL, DYNAMIC, STATIC}
@@ -33,6 +32,7 @@ import com.openbankproject.commons.model.{BankId, ListResult, User}
 import com.openbankproject.commons.util.ApiStandards._
 import com.openbankproject.commons.util.{ApiVersion, ScannedApiVersion}
 import net.liftweb.common.{Box, Empty, Full}
+import net.liftweb.http.{LiftRules, S}
 import net.liftweb.http.{InMemoryResponse, LiftRules, PlainTextResponse}
 import net.liftweb.json
 import net.liftweb.json.JsonAST.{JField, JString, JValue}
@@ -118,6 +118,7 @@ trait ResourceDocsAPIMethods extends MdcLoggable with APIMethods220 with APIMeth
       logger.debug(s"getResourceDocsList says requestedApiVersion is $requestedApiVersion")
 
       val resourceDocs = requestedApiVersion match {
+        case ApiVersion.v7_0_0 =>  code.api.v7_0_0.Http4s700.resourceDocs
         case ApiVersion.v6_0_0 => OBPAPI6_0_0.allResourceDocs
         case ApiVersion.v5_1_0 => OBPAPI5_1_0.allResourceDocs
         case ApiVersion.v5_0_0 => OBPAPI5_0_0.allResourceDocs
@@ -139,6 +140,7 @@ trait ResourceDocsAPIMethods extends MdcLoggable with APIMethods220 with APIMeth
       logger.debug(s"There are ${resourceDocs.length} resource docs available to $requestedApiVersion")
 
       val versionRoutes = requestedApiVersion match {
+        case ApiVersion.v7_0_0 => Nil
         case ApiVersion.v6_0_0 => OBPAPI6_0_0.routes
         case ApiVersion.v5_1_0 => OBPAPI5_1_0.routes
         case ApiVersion.v5_0_0 => OBPAPI5_0_0.routes
@@ -165,7 +167,10 @@ trait ResourceDocsAPIMethods extends MdcLoggable with APIMethods220 with APIMeth
       val versionRoutesClasses = versionRoutes.map { vr => vr.getClass }
 
       // Only return the resource docs that have available routes
-      val activeResourceDocs = resourceDocs.filter(rd => versionRoutesClasses.contains(rd.partialFunction.getClass))
+      val activeResourceDocs = requestedApiVersion match {
+        case ApiVersion.v7_0_0 => resourceDocs
+        case _ => resourceDocs.filter(rd => versionRoutesClasses.contains(rd.partialFunction.getClass))
+      }
 
       logger.debug(s"There are ${activeResourceDocs.length} resource docs available to $requestedApiVersion")
 
@@ -1251,4 +1256,3 @@ so the caller must specify any required filtering by catalog explicitly.
 
 
 }
-
