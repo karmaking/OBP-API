@@ -155,13 +155,6 @@
                 <goal>testCompile</goal>
               </goals>
             </execution>
-            <execution>
-              <id>scala-test-compile</id>
-              <phase>process-test-resources</phase>
-              <goals>
-                <goal>testCompile</goal>
-              </goals>
-            </execution>
           </executions>
         </plugin>
         <!-- https://mvnrepository.com/artifact/org.scalatest/scalatest-maven-plugin -->
