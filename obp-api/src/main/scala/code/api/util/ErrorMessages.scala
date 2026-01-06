@@ -84,6 +84,7 @@ object ErrorMessages {
   val FXCurrencyCodeCombinationsNotSupported = "OBP-10004: ISO Currency code combination not supported for FX. Please modify the FROM_CURRENCY_CODE or TO_CURRENCY_CODE. "
   val InvalidDateFormat = "OBP-10005: Invalid Date Format. Could not convert value to a Date."
   val InvalidCurrency = "OBP-10006: Invalid Currency Value."
+  val InvalidCacheNamespaceId = "OBP-10123: Invalid namespace_id."
   val IncorrectRoleName = "OBP-10007: Incorrect Role name:"
   val CouldNotTransformJsonToInternalModel = "OBP-10008: Could not transform Json to internal model."
   val CountNotSaveOrUpdateResource = "OBP-10009: Could not save or update resource."
