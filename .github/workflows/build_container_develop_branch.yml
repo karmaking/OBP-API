@@ -1,18 +1,14 @@
-name: Build and publish container develop
+name: Build and publish container non develop
 
-# read-write repo token
-# access to secrets
 on:
-  workflow_dispatch:
   push:
     branches:
-      - develop
+      - '*'
+      - '!develop'
 
 env:
-  ## Sets environment variable
   DOCKER_HUB_ORGANIZATION: ${{ vars.DOCKER_HUB_ORGANIZATION }}
   DOCKER_HUB_REPOSITORY: obp-api
-
 
 jobs:
   build:
@@ -33,6 +29,9 @@ jobs:
           --health-retries 5
     steps:
       - uses: actions/checkout@v4
+      - name: Extract branch name
+        shell: bash
+        run: echo "branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}"
       - name: Set up JDK 11
         uses: actions/setup-java@v4
         with:
@@ -41,6 +40,7 @@ jobs:
           cache: maven
       - name: Build with Maven
         run: |
+          set -o pipefail
           cp obp-api/src/main/resources/props/sample.props.template obp-api/src/main/resources/props/production.default.props
           echo connector=star > obp-api/src/main/resources/props/test.default.props
           echo starConnector_supported_types=mapped,internal >> obp-api/src/main/resources/props/test.default.props
@@ -76,7 +76,44 @@ jobs:
           echo ResetPasswordUrlEnabled=true >> obp-api/src/main/resources/props/test.default.props
 
           echo consents.allowed=true >> obp-api/src/main/resources/props/test.default.props
-          MAVEN_OPTS="-Xmx3G -Xss2m" mvn clean package -Pprod
+          MAVEN_OPTS="-Xmx3G -Xss2m" mvn clean package -Pprod 2>&1 | tee maven-build.log
+
+      - name: Report failing tests (if any)
+        if: always()
+        run: |
+          echo "Checking build log for failing tests via grep..."
+          if [ ! -f maven-build.log ]; then
+            echo "No maven-build.log found; skipping failure scan."
+            exit 0
+          fi
+          if grep -n "\*\*\* FAILED \*\*\*" maven-build.log; then
+            echo "Failing tests detected above."
+            exit 1
+          else
+            echo "No failing tests detected in maven-build.log."
+          fi
+
+      - name: Upload Maven build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: maven-build-log
+          if-no-files-found: ignore
+          path: |
+            maven-build.log
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          if-no-files-found: ignore
+          path: |
+            obp-api/target/surefire-reports/**
+            obp-commons/target/surefire-reports/**
+            **/target/scalatest-reports/**
+            **/target/site/surefire-report.html
+            **/target/site/surefire-report/*
 
       - name: Save .war artifact
         run: |
@@ -86,3 +123,5 @@ jobs:
         with:
           name: ${{ github.sha }}
           path: push/
+
+
