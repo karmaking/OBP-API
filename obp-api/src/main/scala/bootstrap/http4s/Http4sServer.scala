@@ -17,8 +17,7 @@ object Http4sServer extends IOApp {
   val port = APIUtil.getPropsAsIntValue("http4s.port",8086)
   val host = APIUtil.getPropsValue("http4s.host","127.0.0.1")
   
-  val services: Kleisli[({type λ[β$0$] = OptionT[IO, β$0$]})#λ, Request[IO], Response[IO]] =
-    code.api.v7_0_0.Http4s700.wrappedRoutesV700Services
+  val services: HttpRoutes[IO] = code.api.v7_0_0.Http4s700.wrappedRoutesV700Services
 
   val httpApp: Kleisli[IO, Request[IO], Response[IO]] = (services).orNotFound
   
