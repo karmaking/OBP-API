@@ -635,7 +635,7 @@ trait APIMethods600 {
             }
             namespaceId = postJson.namespace_id
             _ <- Helper.booleanToFuture(
-              s"Invalid namespace_id: $namespaceId. Valid values: ${Constant.ALL_CACHE_NAMESPACES.mkString(", ")}",
+              s"$InvalidCacheNamespaceId $namespaceId. Valid values: ${Constant.ALL_CACHE_NAMESPACES.mkString(", ")}",
               400,
               callContext
             )(Constant.ALL_CACHE_NAMESPACES.contains(namespaceId))
