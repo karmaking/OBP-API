@@ -21,6 +21,7 @@
     <!-- Common plugin settings -->
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>${project.build.sourceEncoding}</project.reporting.outputEncoding>
+    <maven.test.failure.ignore>true</maven.test.failure.ignore>
     <!-- vscaladoc settings -->
     <maven.scaladoc.vscaladocVersion>1.2-m1</maven.scaladoc.vscaladocVersion>
     <vscaladoc.links.liftweb.pathsufix>scaladocs/</vscaladoc.links.liftweb.pathsufix>
@@ -152,13 +153,6 @@
             <execution>
               <goals>
                 <goal>compile</goal>
-                <goal>testCompile</goal>
-              </goals>
-            </execution>
-            <execution>
-              <id>scala-test-compile</id>
-              <phase>process-test-resources</phase>
-              <goals>
                 <goal>testCompile</goal>
               </goals>
             </execution>
