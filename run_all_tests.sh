@@ -31,13 +31,38 @@ fi
 # TERMINAL STYLING FUNCTIONS
 ################################################################################
 
-# Set terminal to "test mode" - blue background, special title
+# Set terminal to "test mode" - different colors for different phases
 set_terminal_style() {
     local phase="${1:-Running}"
-    echo -ne "\033]0;OBP-API Tests ${phase}...\007"  # Title
-    echo -ne "\033]11;#001f3f\007"  # Dark blue background
-    echo -ne "\033]10;#ffffff\007"  # White text
-    # Print header bar
+    
+    # Set different background colors for different phases
+    case "$phase" in
+        "Starting")
+            echo -ne "\033]11;#4a4a4a\007"  # Dark gray background
+            echo -ne "\033]10;#ffffff\007"  # White text
+            ;;
+        "Building") 
+            echo -ne "\033]11;#ff6b35\007"  # Orange background
+            echo -ne "\033]10;#ffffff\007"  # White text
+            ;;
+        "Testing")
+            echo -ne "\033]11;#001f3f\007"  # Dark blue background  
+            echo -ne "\033]10;#ffffff\007"  # White text
+            ;;
+        "Complete")
+            echo -ne "\033]11;#2ecc40\007"  # Green background
+            echo -ne "\033]10;#ffffff\007"  # White text
+            ;;
+        *)
+            echo -ne "\033]11;#001f3f\007"  # Default blue background
+            echo -ne "\033]10;#ffffff\007"  # White text
+            ;;
+    esac
+    
+    # Set window title
+    echo -ne "\033]0;OBP-API Tests ${phase}...\007"
+    
+    # Print header bar with phase-specific styling
     printf "\033[44m\033[1;37m%-$(tput cols)s\r  OBP-API TEST RUNNER ACTIVE - ${phase}  \n%-$(tput cols)s\033[0m\n" " " " "
 }
 
@@ -91,7 +116,73 @@ DETAIL_LOG="${LOG_DIR}/last_run.log"        # Full Maven output
 SUMMARY_LOG="${LOG_DIR}/last_run_summary.log"  # Summary only
 FAILED_TESTS_FILE="${LOG_DIR}/failed_tests.txt"  # Failed test list for run_specific_tests.sh
 
+# Phase timing variables (stored in temporary file)
+PHASE_START_TIME=0
+
 mkdir -p "${LOG_DIR}"
+
+# Function to get current time in milliseconds
+get_time_ms() {
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        # macOS
+        python3 -c "import time; print(int(time.time() * 1000))"
+    else
+        # Linux
+        date +%s%3N
+    fi
+}
+
+# Function to record phase timing
+record_phase_time() {
+    local phase="$1"
+    local current_time=$(get_time_ms)
+    local timing_file="${LOG_DIR}/phase_timing.tmp"
+    
+    case "$phase" in
+        "starting")
+            echo "PHASE_START_TIME=$current_time" > "$timing_file"
+            ;;
+        "building")
+            if [ -f "$timing_file" ]; then
+                local phase_start=$(grep "PHASE_START_TIME=" "$timing_file" | cut -d= -f2)
+                if [ "$phase_start" -gt 0 ]; then
+                    local starting_time=$((current_time - phase_start))
+                    echo "STARTING_TIME=$starting_time" >> "$timing_file"
+                fi
+            fi
+            echo "PHASE_START_TIME=$current_time" >> "$timing_file"
+            ;;
+        "testing")
+            if [ -f "$timing_file" ]; then
+                local phase_start=$(grep "PHASE_START_TIME=" "$timing_file" | tail -1 | cut -d= -f2)
+                if [ "$phase_start" -gt 0 ]; then
+                    local building_time=$((current_time - phase_start))
+                    echo "BUILDING_TIME=$building_time" >> "$timing_file"
+                fi
+            fi
+            echo "PHASE_START_TIME=$current_time" >> "$timing_file"
+            ;;
+        "complete")
+            if [ -f "$timing_file" ]; then
+                local phase_start=$(grep "PHASE_START_TIME=" "$timing_file" | tail -1 | cut -d= -f2)
+                if [ "$phase_start" -gt 0 ]; then
+                    local testing_time=$((current_time - phase_start))
+                    echo "TESTING_TIME=$testing_time" >> "$timing_file"
+                fi
+            fi
+            echo "PHASE_START_TIME=$current_time" >> "$timing_file"
+            ;;
+        "end")
+            if [ -f "$timing_file" ]; then
+                local phase_start=$(grep "PHASE_START_TIME=" "$timing_file" | tail -1 | cut -d= -f2)
+                if [ "$phase_start" -gt 0 ]; then
+                    local complete_time=$((current_time - phase_start))
+                    echo "COMPLETE_TIME=$complete_time" >> "$timing_file"
+                fi
+            fi
+            ;;
+    esac
+}
 
 # If summary-only mode, skip to summary generation
 if [ "$SUMMARY_ONLY" = true ]; then
@@ -129,6 +220,10 @@ fi
     if [ -f "${LOG_DIR}/recent_lines.tmp" ]; then
         rm -f "${LOG_DIR}/recent_lines.tmp"
         echo "  - Removed stale temp file"
+    fi
+    if [ -f "${LOG_DIR}/phase_timing.tmp" ]; then
+        rm -f "${LOG_DIR}/phase_timing.tmp"
+        echo "  - Removed stale timing file"
     fi
 fi  # End of if [ "$SUMMARY_ONLY" = true ]
 
@@ -231,8 +326,10 @@ generate_summary() {
     # If no timing info (summary-only mode), extract from log
     if [ $duration -eq 0 ] && grep -q "Total time:" "$detail_log"; then
         local time_str=$(grep "Total time:" "$detail_log" | tail -1)
-        duration_min=$(echo "$time_str" | grep -oP '\d+(?= min)' || echo "0")
-        duration_sec=$(echo "$time_str" | grep -oP '\d+(?=\.\d+ s)' || echo "0")
+        duration_min=$(echo "$time_str" | sed 's/.*: //' | sed 's/ min.*//' | grep -o '[0-9]*' | head -1)
+        [ -z "$duration_min" ] && duration_min="0"
+        duration_sec=$(echo "$time_str" | sed 's/.* min //' | sed 's/\..*//' | grep -o '[0-9]*' | head -1)
+        [ -z "$duration_sec" ] && duration_sec="0"
     fi
 
     print_header "Test Results Summary"
@@ -244,22 +341,36 @@ generate_summary() {
     #   Suites: completed M, aborted 0
     #   Tests: succeeded N, failed 0, canceled 0, ignored 0, pending 0
     #   All tests passed.
-    # We need to extract the stats from the last test run (in case there are multiple modules)
-    SCALATEST_SECTION=$(grep -A 4 "Run completed" "${detail_log}" | tail -5)
-    if [ -n "$SCALATEST_SECTION" ]; then
-        TOTAL_TESTS=$(echo "$SCALATEST_SECTION" | grep -oP "Total number of tests run: \K\d+" || echo "UNKNOWN")
-        SUCCEEDED=$(echo "$SCALATEST_SECTION" | grep -oP "succeeded \K\d+" || echo "UNKNOWN")
-        FAILED=$(echo "$SCALATEST_SECTION" | grep -oP "failed \K\d+" || echo "UNKNOWN")
-        ERRORS=$(echo "$SCALATEST_SECTION" | grep -oP "errors \K\d+" || echo "0")
-        SKIPPED=$(echo "$SCALATEST_SECTION" | grep -oP "ignored \K\d+" || echo "UNKNOWN")
+    # We need to sum stats from ALL test runs (multiple modules: obp-commons, obp-api, etc.)
+    
+    # Sum up all "Total number of tests run" values (macOS compatible - no grep -P)
+    TOTAL_TESTS=$(grep "Total number of tests run:" "${detail_log}" | sed 's/.*Total number of tests run: //' | awk '{sum+=$1} END {print sum}')
+    [ -z "$TOTAL_TESTS" ] || [ "$TOTAL_TESTS" = "0" ] && TOTAL_TESTS="UNKNOWN"
+    
+    # Sum up all succeeded from "Tests: succeeded N, ..." lines
+    SUCCEEDED=$(grep "Tests: succeeded" "${detail_log}" | sed 's/.*succeeded //' | sed 's/,.*//' | awk '{sum+=$1} END {print sum}')
+    [ -z "$SUCCEEDED" ] && SUCCEEDED="UNKNOWN"
+    
+    # Sum up all failed from "Tests: ... failed N, ..." lines
+    FAILED=$(grep "Tests:.*failed" "${detail_log}" | sed 's/.*failed //' | sed 's/,.*//' | awk '{sum+=$1} END {print sum}')
+    [ -z "$FAILED" ] && FAILED="0"
+    
+    # Sum up all ignored from "Tests: ... ignored N, ..." lines
+    IGNORED=$(grep "Tests:.*ignored" "${detail_log}" | sed 's/.*ignored //' | sed 's/,.*//' | awk '{sum+=$1} END {print sum}')
+    [ -z "$IGNORED" ] && IGNORED="0"
+    
+    # Sum up errors (if any)
+    ERRORS=$(grep "errors" "${detail_log}" | grep -v "ERROR" | sed 's/.*errors //' | sed 's/[^0-9].*//' | awk '{sum+=$1} END {print sum}')
+    [ -z "$ERRORS" ] && ERRORS="0"
+    
+    # Calculate total including ignored (like IntelliJ does)
+    if [ "$TOTAL_TESTS" != "UNKNOWN" ] && [ "$IGNORED" != "0" ]; then
+        TOTAL_WITH_IGNORED=$((TOTAL_TESTS + IGNORED))
     else
-        TOTAL_TESTS="UNKNOWN"
-        SUCCEEDED="UNKNOWN"
-        FAILED="UNKNOWN"
-        ERRORS="0"
-        SKIPPED="UNKNOWN"
+        TOTAL_WITH_IGNORED="$TOTAL_TESTS"
     fi
-    WARNINGS=$(grep -c "WARNING" "${detail_log}" || echo "UNKNOWN")
+    
+    WARNINGS=$(grep -c "WARNING" "${detail_log}" || echo "0")
 
     # Determine build status
     if grep -q "BUILD SUCCESS" "${detail_log}"; then
@@ -276,16 +387,153 @@ generate_summary() {
     # Print summary
     log_message "Test Run Summary"
     log_message "================"
-    log_message "Timestamp:     $(date)"
-    log_message "Duration:      ${duration_min}m ${duration_sec}s"
+    
+    # Extract Maven timestamps and calculate Terminal timestamps
+    local maven_start_timestamp=""
+    local maven_end_timestamp=""
+    local terminal_start_timestamp=""
+    local terminal_end_timestamp=$(date)
+    
+    if [ "$start_time" -gt 0 ] && [ "$end_time" -gt 0 ]; then
+        # Use actual terminal start/end times if available
+        terminal_start_timestamp=$(date -r "$start_time" 2>/dev/null || date -d "@$start_time" 2>/dev/null || echo "Unknown")
+        terminal_end_timestamp=$(date -r "$end_time" 2>/dev/null || date -d "@$end_time" 2>/dev/null || echo "Unknown")
+    else
+        # Calculate terminal start time by subtracting duration from current time
+        if [ "$duration_min" -gt 0 -o "$duration_sec" -gt 0 ]; then
+            local total_seconds=$((duration_min * 60 + duration_sec))
+            local approx_start_epoch=$(($(date "+%s") - total_seconds))
+            terminal_start_timestamp=$(date -r "$approx_start_epoch" 2>/dev/null || echo "Approx. ${duration_min}m ${duration_sec}s ago")
+        else
+            terminal_start_timestamp="Unknown"
+        fi
+    fi
+    
+    # Extract Maven timestamps from log
+    maven_end_timestamp=$(grep "Finished at:" "${detail_log}" | tail -1 | sed 's/.*Finished at: //' | sed 's/T/ /' | sed 's/+.*//' || echo "Unknown")
+    
+    # Calculate Maven start time from Maven's "Total time" if available
+    local maven_total_time=$(grep "Total time:" "${detail_log}" | tail -1 | sed 's/.*Total time: *//' | sed 's/ .*//' || echo "")
+    if [ -n "$maven_total_time" ] && [ "$maven_end_timestamp" != "Unknown" ]; then
+        # Parse Maven duration (e.g., "02:06" for "02:06 min" or "43.653" for "43.653 s")
+        local maven_seconds=0
+        if echo "$maven_total_time" | grep -q ":"; then
+            # Format like "02:06" (minutes:seconds)
+            local maven_min=$(echo "$maven_total_time" | sed 's/:.*//')
+            local maven_sec=$(echo "$maven_total_time" | sed 's/.*://')
+            # Remove leading zeros to avoid octal interpretation
+            maven_min=$(echo "$maven_min" | sed 's/^0*//' | sed 's/^$/0/')
+            maven_sec=$(echo "$maven_sec" | sed 's/^0*//' | sed 's/^$/0/')
+            maven_seconds=$((maven_min * 60 + maven_sec))
+        else
+            # Format like "43.653" (seconds)
+            maven_seconds=$(echo "$maven_total_time" | sed 's/\..*//')
+        fi
+        
+        # Calculate Maven start time
+        if [ "$maven_seconds" -gt 0 ]; then
+            local maven_end_epoch=$(date -j -f "%Y-%m-%d %H:%M:%S" "$maven_end_timestamp" "+%s" 2>/dev/null || echo "0")
+            if [ "$maven_end_epoch" -gt 0 ]; then
+                local maven_start_epoch=$((maven_end_epoch - maven_seconds))
+                maven_start_timestamp=$(date -r "$maven_start_epoch" 2>/dev/null || echo "Unknown")
+            else
+                maven_start_timestamp="Unknown"
+            fi
+        else
+            maven_start_timestamp="Unknown"
+        fi
+    else
+        maven_start_timestamp="Unknown"
+    fi
+    
+    # Format Maven end timestamp nicely
+    if [ "$maven_end_timestamp" != "Unknown" ]; then
+        maven_end_timestamp=$(date -j -f "%Y-%m-%d %H:%M:%S" "$maven_end_timestamp" "+%a %b %d %H:%M:%S %Z %Y" 2>/dev/null || echo "$maven_end_timestamp")
+    fi
+    
+    # Display both timelines
+    log_message "Terminal Timeline:"
+    log_message "  Started:       ${terminal_start_timestamp}"
+    log_message "  Completed:     ${terminal_end_timestamp}"
+    log_message "  Duration:      ${duration_min}m ${duration_sec}s"
+    log_message ""
+    log_message "Maven Timeline:"
+    log_message "  Started:       ${maven_start_timestamp}"
+    log_message "  Completed:     ${maven_end_timestamp}"
+    if [ -n "$maven_total_time" ]; then
+        local maven_duration_display=$(grep "Total time:" "${detail_log}" | tail -1 | sed 's/.*Total time: *//' || echo "Unknown")
+        log_message "  Duration:      ${maven_duration_display}"
+    fi
+    log_message ""
     log_message "Build Status:  ${BUILD_STATUS}"
     log_message ""
+    
+    # Phase timing breakdown (if available)
+    local timing_file="${LOG_DIR}/phase_timing.tmp"
+    if [ -f "$timing_file" ]; then
+        # Read timing values from file
+        local start_ms=$(grep "STARTING_TIME=" "$timing_file" | cut -d= -f2 2>/dev/null || echo "0")
+        local build_ms=$(grep "BUILDING_TIME=" "$timing_file" | cut -d= -f2 2>/dev/null || echo "0")
+        local test_ms=$(grep "TESTING_TIME=" "$timing_file" | cut -d= -f2 2>/dev/null || echo "0")
+        local complete_ms=$(grep "COMPLETE_TIME=" "$timing_file" | cut -d= -f2 2>/dev/null || echo "0")
+        
+        # Ensure we have numeric values (default to 0 if empty)
+        [ -z "$start_ms" ] && start_ms=0
+        [ -z "$build_ms" ] && build_ms=0
+        [ -z "$test_ms" ] && test_ms=0
+        [ -z "$complete_ms" ] && complete_ms=0
+        
+        # Clean up timing file
+        rm -f "$timing_file"
+        
+        if [ "$start_ms" -gt 0 ] 2>/dev/null || [ "$build_ms" -gt 0 ] 2>/dev/null || [ "$test_ms" -gt 0 ] 2>/dev/null || [ "$complete_ms" -gt 0 ] 2>/dev/null; then
+            log_message "Phase Timing Breakdown:"
+            
+            if [ "$start_ms" -gt 0 ] 2>/dev/null; then
+                log_message "  Starting:    ${start_ms}ms ($(printf "%.2f" $(echo "scale=2; $start_ms/1000" | bc))s)"
+            fi
+            if [ "$build_ms" -gt 0 ] 2>/dev/null; then
+                log_message "  Building:    ${build_ms}ms ($(printf "%.2f" $(echo "scale=2; $build_ms/1000" | bc))s)"
+            fi
+            if [ "$test_ms" -gt 0 ] 2>/dev/null; then
+                log_message "  Testing:     ${test_ms}ms ($(printf "%.2f" $(echo "scale=2; $test_ms/1000" | bc))s)"
+            fi
+            if [ "$complete_ms" -gt 0 ] 2>/dev/null; then
+                log_message "  Complete:    ${complete_ms}ms ($(printf "%.2f" $(echo "scale=2; $complete_ms/1000" | bc))s)"
+            fi
+            
+            # Calculate percentages
+            local total_phase_time=$((start_ms + build_ms + test_ms + complete_ms))
+            if [ "$total_phase_time" -gt 0 ]; then
+                log_message ""
+                log_message "Phase Distribution:"
+                if [ "$start_ms" -gt 0 ] 2>/dev/null; then
+                    local starting_pct=$(echo "scale=1; $start_ms * 100 / $total_phase_time" | bc)
+                    log_message "  Starting:    ${starting_pct}%"
+                fi
+                if [ "$build_ms" -gt 0 ] 2>/dev/null; then
+                    local building_pct=$(echo "scale=1; $build_ms * 100 / $total_phase_time" | bc)
+                    log_message "  Building:    ${building_pct}%"
+                fi
+                if [ "$test_ms" -gt 0 ] 2>/dev/null; then
+                    local testing_pct=$(echo "scale=1; $test_ms * 100 / $total_phase_time" | bc)
+                    log_message "  Testing:     ${testing_pct}%"
+                fi
+                if [ "$complete_ms" -gt 0 ] 2>/dev/null; then
+                    local complete_pct=$(echo "scale=1; $complete_ms * 100 / $total_phase_time" | bc)
+                    log_message "  Complete:    ${complete_pct}%"
+                fi
+            fi
+            log_message ""
+        fi
+    fi
+    
     log_message "Test Statistics:"
-    log_message "  Total:       ${TOTAL_TESTS}"
+    log_message "  Total:       ${TOTAL_WITH_IGNORED} (${TOTAL_TESTS} run + ${IGNORED} ignored)"
     log_message "  Succeeded:   ${SUCCEEDED}"
     log_message "  Failed:      ${FAILED}"
+    log_message "  Ignored:     ${IGNORED}"
     log_message "  Errors:      ${ERRORS}"
-    log_message "  Skipped:     ${SKIPPED}"
     log_message "  Warnings:    ${WARNINGS}"
     log_message ""
 
@@ -320,7 +568,7 @@ generate_summary() {
 
         # Extract test class names from failures
         grep -B 20 "\*\*\* FAILED \*\*\*" "${detail_log}" | \
-          grep -oP "^[A-Z][a-zA-Z0-9_]+(?=:)" | \
+          grep -E "^[A-Z][a-zA-Z0-9_]+:" | sed 's/:$//' | \
           sort -u | \
           while read test_class; do
             # Try to find package by searching for the class in test files
@@ -375,6 +623,8 @@ fi
 # START TEST RUN
 ################################################################################
 
+# Record starting phase
+record_phase_time "starting"
 set_terminal_style "Starting"
 
 # Start the test run
@@ -481,7 +731,6 @@ log_message ""
 ################################################################################
 
 print_header "Running Tests"
-update_terminal_title "Building"
 log_message "Executing: mvn clean test"
 echo ""
 
@@ -500,6 +749,7 @@ touch "${MONITOR_FLAG}"
     done
 
     phase="Building"
+    in_building=false
     in_testing=false
 
     # Keep monitoring until flag file is removed
@@ -508,10 +758,22 @@ touch "${MONITOR_FLAG}"
         # This ensures O(1) performance regardless of log file size
         recent_lines=$(tail -n 500 "${DETAIL_LOG}" 2>/dev/null)
 
+        # Switch to "Building" phase when Maven starts compiling
+        if ! $in_building && echo "$recent_lines" | grep -q -E "Compiling|Building.*Open Bank Project" 2>/dev/null; then
+            phase="Building"
+            in_building=true
+            # Record building phase start and change terminal color to orange for building phase
+            record_phase_time "building"
+            set_terminal_style "Building"
+        fi
+
         # Switch to "Testing" phase when tests start
         if ! $in_testing && echo "$recent_lines" | grep -q "Run starting" 2>/dev/null; then
             phase="Testing"
             in_testing=true
+            # Record testing phase start and change terminal color to blue for testing phase
+            record_phase_time "testing"
+            set_terminal_style "Testing"
         fi
 
         # Extract current running test suite and scenario from recent lines
@@ -568,11 +830,15 @@ DURATION_SEC=$((DURATION % 60))
 # Update title with final results (no suite/scenario name for Complete phase)
 FINAL_ELAPSED=$(printf "%dm %ds" $DURATION_MIN $DURATION_SEC)
 # Build final counts with module context
-FINAL_COMMONS=$(sed -n '/Building Open Bank Project Commons/,/Building Open Bank Project API/{/Tests: succeeded/p;}' "${DETAIL_LOG}" 2>/dev/null | grep -oP "succeeded \K\d+" | head -1)
-FINAL_API=$(sed -n '/Building Open Bank Project API/,/OBP Http4s Runner/{/Tests: succeeded/p;}' "${DETAIL_LOG}" 2>/dev/null | grep -oP "succeeded \K\d+" | tail -1)
+FINAL_COMMONS=$(sed -n '/Building Open Bank Project Commons/,/Building Open Bank Project API/{/Tests: succeeded/p;}' "${DETAIL_LOG}" 2>/dev/null | sed 's/.*succeeded //' | sed 's/,.*//' | head -1)
+FINAL_API=$(sed -n '/Building Open Bank Project API/,/OBP Http4s Runner/{/Tests: succeeded/p;}' "${DETAIL_LOG}" 2>/dev/null | sed 's/.*succeeded //' | sed 's/,.*//' | tail -1)
 FINAL_COUNTS=""
 [ -n "$FINAL_COMMONS" ] && FINAL_COUNTS="commons:+${FINAL_COMMONS}"
 [ -n "$FINAL_API" ] && FINAL_COUNTS="${FINAL_COUNTS:+${FINAL_COUNTS} }api:+${FINAL_API}"
+
+# Record complete phase start and change to green for completion phase
+record_phase_time "complete"
+set_terminal_style "Complete"
 update_terminal_title "Complete" "$FINAL_ELAPSED" "$FINAL_COUNTS" "" ""
 
 ################################################################################
@@ -584,6 +850,9 @@ if generate_summary "${DETAIL_LOG}" "${SUMMARY_LOG}" "$START_TIME" "$END_TIME"; 
 else
     EXIT_CODE=1
 fi
+
+# Record end time for complete phase
+record_phase_time "end"
 
 log_message ""
 log_message "Logs saved to:"
