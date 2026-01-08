@@ -231,10 +231,11 @@ fi  # End of if [ "$SUMMARY_ONLY" = true ]
 # HELPER FUNCTIONS
 ################################################################################
 
-# Log message to terminal and summary file
+# Log message to terminal and both log files
 log_message() {
     echo "$1"
     echo "[$(date +"%Y-%m-%d %H:%M:%S")] $1" >> "${SUMMARY_LOG}"
+    echo "$1" >> "${DETAIL_LOG}"
 }
 
 # Print section header
