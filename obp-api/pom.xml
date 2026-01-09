@@ -674,9 +674,10 @@
             <recompileMode>incremental</recompileMode>
             <useZincServer>true</useZincServer>
             <jvmArgs>
-              <jvmArg>-Xms4G</jvmArg>
-              <jvmArg>-Xmx12G</jvmArg>
-              <jvmArg>-XX:MaxMetaspaceSize=4G</jvmArg>
+              <jvmArg>-Xms1G</jvmArg>
+              <jvmArg>-Xmx3G</jvmArg>
+              <jvmArg>-Xss4m</jvmArg>
+              <jvmArg>-XX:MaxMetaspaceSize=1G</jvmArg>
               <jvmArg>-XX:+UseG1GC</jvmArg>
               <jvmArg>-XX:+TieredCompilation</jvmArg>
               <jvmArg>-XX:TieredStopAtLevel=1</jvmArg>
