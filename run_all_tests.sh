@@ -817,6 +817,46 @@ else
     RESULT_COLOR=""
 fi
 
+################################################################################
+# GENERATE HTML REPORT
+################################################################################
+
+print_header "Generating HTML Report"
+log_message "Running: mvn surefire-report:report-only -DskipTests"
+
+# Generate HTML report from surefire XML files (without re-running tests)
+if mvn surefire-report:report-only -DskipTests 2>&1 | tee -a "${DETAIL_LOG}"; then
+    log_message "[OK] HTML report generated"
+    
+    # Copy HTML reports to test-results directory for easy access
+    HTML_REPORT_DIR="${LOG_DIR}/html-reports"
+    mkdir -p "${HTML_REPORT_DIR}"
+    
+    # Copy reports from both modules
+    if [ -f "obp-api/target/surefire-reports/surefire-report.html" ]; then
+        cp "obp-api/target/surefire-reports/surefire-report.html" "${HTML_REPORT_DIR}/obp-api-report.html"
+        log_message "  - obp-api report: ${HTML_REPORT_DIR}/obp-api-report.html"
+    fi
+    if [ -f "obp-commons/target/surefire-reports/surefire-report.html" ]; then
+        cp "obp-commons/target/surefire-reports/surefire-report.html" "${HTML_REPORT_DIR}/obp-commons-report.html"
+        log_message "  - obp-commons report: ${HTML_REPORT_DIR}/obp-commons-report.html"
+    fi
+    
+    # Also check for site reports location
+    if [ -f "obp-api/target/site/surefire-report.html" ]; then
+        cp "obp-api/target/site/surefire-report.html" "${HTML_REPORT_DIR}/obp-api-report.html"
+        log_message "  - obp-api report: ${HTML_REPORT_DIR}/obp-api-report.html"
+    fi
+    if [ -f "obp-commons/target/site/surefire-report.html" ]; then
+        cp "obp-commons/target/site/surefire-report.html" "${HTML_REPORT_DIR}/obp-commons-report.html"
+        log_message "  - obp-commons report: ${HTML_REPORT_DIR}/obp-commons-report.html"
+    fi
+else
+    log_message "[WARNING] Failed to generate HTML report"
+fi
+
+log_message ""
+
 # Stop background monitor by removing flag file
 rm -f "${MONITOR_FLAG}"
 sleep 1
@@ -861,6 +901,13 @@ log_message "  ${DETAIL_LOG}"
 log_message "  ${SUMMARY_LOG}"
 if [ -f "${FAILED_TESTS_FILE}" ]; then
     log_message "  ${FAILED_TESTS_FILE}"
+fi
+if [ -d "${LOG_DIR}/html-reports" ]; then
+    log_message ""
+    log_message "HTML Reports:"
+    for report in "${LOG_DIR}/html-reports"/*.html; do
+        [ -f "$report" ] && log_message "  $report"
+    done
 fi
 echo ""
 
