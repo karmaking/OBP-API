@@ -821,7 +821,7 @@ fi
         recent_lines=$(tail -n 500 "${DETAIL_LOG}" 2>/dev/null || true)
 
         # Switch to "Building" phase when Maven starts compiling
-        if ! $in_building && echo "$recent_lines" | grep -q -E "Compiling|Building.*Open Bank Project" 2>/dev/null; then
+        if ! $in_building && echo "$recent_lines" | grep -q -E 'Compiling|Building.*Open Bank Project' 2>/dev/null; then
             phase="Building"
             in_building=true
             # Record building phase and update terminal (inline to avoid subshell issues)
