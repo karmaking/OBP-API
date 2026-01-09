@@ -117,9 +117,10 @@
                     <argLine>-Drun.mode=test -XX:MaxMetaspaceSize=1G -Xms2G -Xmx4G -XX:+UseG1GC -XX:+TieredCompilation -XX:TieredStopAtLevel=1 -XX:+UseStringDeduplication</argLine>
                     <tagsToExclude>code.external</tagsToExclude>
                     <testFailureIgnore>${maven.test.failure.ignore}</testFailureIgnore>
-                    <!-- Enable parallel test execution - keep at 4 to avoid shared state issues -->
-                    <parallel>true</parallel>
-                    <threadCount>4</threadCount>
+                    <!-- Disable parallel test execution to avoid shared state issues -->
+<!--                    <parallel>true</parallel>-->
+<!--                    <threadCount>4</threadCount>-->
+                    <parallel>false</parallel>
                 </configuration>
                 <executions>
                     <execution>
