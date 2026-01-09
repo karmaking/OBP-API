@@ -833,16 +833,22 @@ if mvn surefire-report:report-only -DskipTests 2>&1 | tee -a "${DETAIL_LOG}"; th
     mkdir -p "${HTML_REPORT_DIR}"
     
     # Copy reports from both modules
-    if [ -f "obp-api/target/surefire-reports/surefire-report.html" ]; then
-        cp "obp-api/target/surefire-reports/surefire-report.html" "${HTML_REPORT_DIR}/obp-api-report.html"
+    if [ -f "obp-api/target/surefire-reports/surefire.html" ]; then
+        cp "obp-api/target/surefire-reports/surefire.html" "${HTML_REPORT_DIR}/obp-api-report.html"
+        # Also copy CSS, JS, images for proper rendering
+        cp -r "obp-api/target/surefire-reports/css" "${HTML_REPORT_DIR}/" 2>/dev/null || true
+        cp -r "obp-api/target/surefire-reports/js" "${HTML_REPORT_DIR}/" 2>/dev/null || true
+        cp -r "obp-api/target/surefire-reports/images" "${HTML_REPORT_DIR}/" 2>/dev/null || true
+        cp -r "obp-api/target/surefire-reports/fonts" "${HTML_REPORT_DIR}/" 2>/dev/null || true
+        cp -r "obp-api/target/surefire-reports/img" "${HTML_REPORT_DIR}/" 2>/dev/null || true
         log_message "  - obp-api report: ${HTML_REPORT_DIR}/obp-api-report.html"
     fi
-    if [ -f "obp-commons/target/surefire-reports/surefire-report.html" ]; then
-        cp "obp-commons/target/surefire-reports/surefire-report.html" "${HTML_REPORT_DIR}/obp-commons-report.html"
+    if [ -f "obp-commons/target/surefire-reports/surefire.html" ]; then
+        cp "obp-commons/target/surefire-reports/surefire.html" "${HTML_REPORT_DIR}/obp-commons-report.html"
         log_message "  - obp-commons report: ${HTML_REPORT_DIR}/obp-commons-report.html"
     fi
     
-    # Also check for site reports location
+    # Also check for site reports location (alternative naming)
     if [ -f "obp-api/target/site/surefire-report.html" ]; then
         cp "obp-api/target/site/surefire-report.html" "${HTML_REPORT_DIR}/obp-api-report.html"
         log_message "  - obp-api report: ${HTML_REPORT_DIR}/obp-api-report.html"
