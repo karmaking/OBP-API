@@ -14,18 +14,29 @@
 # Usage:
 #   ./run_all_tests.sh              - Run full test suite
 #   ./run_all_tests.sh --summary-only - Regenerate summary from existing log
+#   ./run_all_tests.sh --timeout=60 - Run with 60 minute timeout
 ################################################################################
 
-set -e
+# Don't use set -e globally - it causes issues with grep returning 1 when no match
+# Instead, we handle errors explicitly where needed
 
 ################################################################################
 # PARSE COMMAND LINE ARGUMENTS
 ################################################################################
 
 SUMMARY_ONLY=false
-if [ "$1" = "--summary-only" ]; then
-    SUMMARY_ONLY=true
-fi
+TIMEOUT_MINUTES=0  # 0 means no timeout
+
+for arg in "$@"; do
+    case $arg in
+        --summary-only)
+            SUMMARY_ONLY=true
+            ;;
+        --timeout=*)
+            TIMEOUT_MINUTES="${arg#*=}"
+            ;;
+    esac
+done
 
 ################################################################################
 # TERMINAL STYLING FUNCTIONS
@@ -345,23 +356,23 @@ generate_summary() {
     # We need to sum stats from ALL test runs (multiple modules: obp-commons, obp-api, etc.)
     
     # Sum up all "Total number of tests run" values (macOS compatible - no grep -P)
-    TOTAL_TESTS=$(grep "Total number of tests run:" "${detail_log}" | sed 's/.*Total number of tests run: //' | awk '{sum+=$1} END {print sum}')
+    TOTAL_TESTS=$(grep "Total number of tests run:" "${detail_log}" 2>/dev/null | sed 's/.*Total number of tests run: //' | awk '{sum+=$1} END {print sum}' || echo "0")
     [ -z "$TOTAL_TESTS" ] || [ "$TOTAL_TESTS" = "0" ] && TOTAL_TESTS="UNKNOWN"
     
     # Sum up all succeeded from "Tests: succeeded N, ..." lines
-    SUCCEEDED=$(grep "Tests: succeeded" "${detail_log}" | sed 's/.*succeeded //' | sed 's/,.*//' | awk '{sum+=$1} END {print sum}')
+    SUCCEEDED=$(grep "Tests: succeeded" "${detail_log}" 2>/dev/null | sed 's/.*succeeded //' | sed 's/,.*//' | awk '{sum+=$1} END {print sum}' || echo "0")
     [ -z "$SUCCEEDED" ] && SUCCEEDED="UNKNOWN"
     
     # Sum up all failed from "Tests: ... failed N, ..." lines
-    FAILED=$(grep "Tests:.*failed" "${detail_log}" | sed 's/.*failed //' | sed 's/,.*//' | awk '{sum+=$1} END {print sum}')
+    FAILED=$(grep "Tests:.*failed" "${detail_log}" 2>/dev/null | sed 's/.*failed //' | sed 's/,.*//' | awk '{sum+=$1} END {print sum}' || echo "0")
     [ -z "$FAILED" ] && FAILED="0"
     
     # Sum up all ignored from "Tests: ... ignored N, ..." lines
-    IGNORED=$(grep "Tests:.*ignored" "${detail_log}" | sed 's/.*ignored //' | sed 's/,.*//' | awk '{sum+=$1} END {print sum}')
+    IGNORED=$(grep "Tests:.*ignored" "${detail_log}" 2>/dev/null | sed 's/.*ignored //' | sed 's/,.*//' | awk '{sum+=$1} END {print sum}' || echo "0")
     [ -z "$IGNORED" ] && IGNORED="0"
     
     # Sum up errors (if any)
-    ERRORS=$(grep "errors" "${detail_log}" | grep -v "ERROR" | sed 's/.*errors //' | sed 's/[^0-9].*//' | awk '{sum+=$1} END {print sum}')
+    ERRORS=$(grep "errors" "${detail_log}" 2>/dev/null | grep -v "ERROR" | sed 's/.*errors //' | sed 's/[^0-9].*//' | awk '{sum+=$1} END {print sum}' || echo "0")
     [ -z "$ERRORS" ] && ERRORS="0"
     
     # Calculate total including ignored (like IntelliJ does)
@@ -371,7 +382,7 @@ generate_summary() {
         TOTAL_WITH_IGNORED="$TOTAL_TESTS"
     fi
     
-    WARNINGS=$(grep -c "WARNING" "${detail_log}" || echo "0")
+    WARNINGS=$(grep -c "WARNING" "${detail_log}" 2>/dev/null || echo "0")
 
     # Determine build status
     if grep -q "BUILD SUCCESS" "${detail_log}"; then
@@ -665,24 +676,67 @@ fi
 ################################################################################
 
 print_header "Checking Test Server Ports"
-log_message "Checking if test server port 8018 is available..."
 
-# Check if port 8018 is in use
-if lsof -i :8018 >/dev/null 2>&1; then
-    log_message "[WARNING] Port 8018 is in use - attempting to kill process"
-    # Try to kill the process using the port
-    PORT_PID=$(lsof -t -i :8018 2>/dev/null)
+# Default test port (can be overridden)
+TEST_PORT=8018
+MAX_PORT_ATTEMPTS=5
+
+log_message "Checking if test server port ${TEST_PORT} is available..."
+
+# Function to find an available port
+find_available_port() {
+    local port=$1
+    local max_attempts=$2
+    local attempt=0
+    
+    while [ $attempt -lt $max_attempts ]; do
+        if ! lsof -i :$port >/dev/null 2>&1; then
+            echo $port
+            return 0
+        fi
+        port=$((port + 1))
+        attempt=$((attempt + 1))
+    done
+    
+    echo ""
+    return 1
+}
+
+# Check if port is in use
+if lsof -i :${TEST_PORT} >/dev/null 2>&1; then
+    log_message "[WARNING] Port ${TEST_PORT} is in use - attempting to kill process"
+    PORT_PID=$(lsof -t -i :${TEST_PORT} 2>/dev/null || true)
     if [ -n "$PORT_PID" ]; then
         kill -9 $PORT_PID 2>/dev/null || true
         sleep 2
-        log_message "[OK] Killed process $PORT_PID using port 8018"
+        
+        # Verify port is now free
+        if lsof -i :${TEST_PORT} >/dev/null 2>&1; then
+            log_message "[WARNING] Could not free port ${TEST_PORT}, searching for alternative..."
+            NEW_PORT=$(find_available_port $((TEST_PORT + 1)) $MAX_PORT_ATTEMPTS)
+            if [ -n "$NEW_PORT" ]; then
+                log_message "[OK] Found available port: ${NEW_PORT}"
+                # Update test.default.props with new port
+                if [ -f "${PROPS_FILE}" ]; then
+                    sed -i.bak "s/hostname=127.0.0.1:${TEST_PORT}/hostname=127.0.0.1:${NEW_PORT}/" "${PROPS_FILE}" 2>/dev/null || \
+                    sed -i '' "s/hostname=127.0.0.1:${TEST_PORT}/hostname=127.0.0.1:${NEW_PORT}/" "${PROPS_FILE}"
+                    log_message "[OK] Updated test.default.props to use port ${NEW_PORT}"
+                    TEST_PORT=$NEW_PORT
+                fi
+            else
+                log_message "[ERROR] No available ports found in range ${TEST_PORT}-$((TEST_PORT + MAX_PORT_ATTEMPTS))"
+                exit 1
+            fi
+        else
+            log_message "[OK] Killed process $PORT_PID, port ${TEST_PORT} is now available"
+        fi
     fi
 else
-    log_message "[OK] Port 8018 is available"
+    log_message "[OK] Port ${TEST_PORT} is available"
 fi
 
 # Also check for any stale Java test processes
-STALE_TEST_PROCS=$(ps aux | grep -E "TestServer|ScalaTest.*obp-api" | grep -v grep | awk '{print $2}' || true)
+STALE_TEST_PROCS=$(ps aux | grep -E "TestServer|ScalaTest.*obp-api" | grep -v grep | awk '{print $2}' 2>/dev/null || true)
 if [ -n "$STALE_TEST_PROCS" ]; then
     log_message "[WARNING] Found stale test processes - cleaning up"
     echo "$STALE_TEST_PROCS" | xargs kill -9 2>/dev/null || true
@@ -742,6 +796,13 @@ export START_TIME
 MONITOR_FLAG="${LOG_DIR}/monitor.flag"
 touch "${MONITOR_FLAG}"
 
+# Optional timeout handling
+MAVEN_PID=""
+if [ "$TIMEOUT_MINUTES" -gt 0 ] 2>/dev/null; then
+    log_message "[INFO] Test timeout set to ${TIMEOUT_MINUTES} minutes"
+    TIMEOUT_SECONDS=$((TIMEOUT_MINUTES * 60))
+fi
+
 # Background process: Monitor log file and update title bar with progress
 (
     # Wait for log file to be created and have Maven output
@@ -752,46 +813,48 @@ touch "${MONITOR_FLAG}"
     phase="Building"
     in_building=false
     in_testing=false
+    timing_file="${LOG_DIR}/phase_timing.tmp"
 
     # Keep monitoring until flag file is removed
     while [ -f "${MONITOR_FLAG}" ]; do
         # Use tail to look at recent lines only (last 500 lines for performance)
-        # This ensures O(1) performance regardless of log file size
-        recent_lines=$(tail -n 500 "${DETAIL_LOG}" 2>/dev/null)
+        recent_lines=$(tail -n 500 "${DETAIL_LOG}" 2>/dev/null || true)
 
         # Switch to "Building" phase when Maven starts compiling
         if ! $in_building && echo "$recent_lines" | grep -q -E "Compiling|Building.*Open Bank Project" 2>/dev/null; then
             phase="Building"
             in_building=true
-            # Record building phase start and change terminal color to orange for building phase
-            record_phase_time "building"
-            set_terminal_style "Building"
+            # Record building phase and update terminal (inline to avoid subshell issues)
+            current_time=$(python3 -c "import time; print(int(time.time() * 1000))" 2>/dev/null || date +%s000)
+            if [ -f "$timing_file" ]; then
+                phase_start=$(grep "PHASE_START_TIME=" "$timing_file" 2>/dev/null | tail -1 | cut -d= -f2 || echo "0")
+                [ -n "$phase_start" ] && [ "$phase_start" -gt 0 ] 2>/dev/null && echo "STARTING_TIME=$((current_time - phase_start))" >> "$timing_file"
+            fi
+            echo "PHASE_START_TIME=$current_time" >> "$timing_file"
+            echo -ne "\033]11;#ff6b35\007\033]10;#ffffff\007"  # Orange background
         fi
 
         # Switch to "Testing" phase when tests start
         if ! $in_testing && echo "$recent_lines" | grep -q "Run starting" 2>/dev/null; then
             phase="Testing"
             in_testing=true
-            # Record testing phase start and change terminal color to blue for testing phase
-            record_phase_time "testing"
-            set_terminal_style "Testing"
+            # Record testing phase
+            current_time=$(python3 -c "import time; print(int(time.time() * 1000))" 2>/dev/null || date +%s000)
+            if [ -f "$timing_file" ]; then
+                phase_start=$(grep "PHASE_START_TIME=" "$timing_file" 2>/dev/null | tail -1 | cut -d= -f2 || echo "0")
+                [ -n "$phase_start" ] && [ "$phase_start" -gt 0 ] 2>/dev/null && echo "BUILDING_TIME=$((current_time - phase_start))" >> "$timing_file"
+            fi
+            echo "PHASE_START_TIME=$current_time" >> "$timing_file"
+            echo -ne "\033]11;#001f3f\007\033]10;#ffffff\007"  # Blue background
         fi
 
         # Extract current running test suite and scenario from recent lines
         suite=""
         scenario=""
         if $in_testing; then
-            # Find the most recent test suite name (pattern like "SomeTest:")
-            # Pipe directly to avoid temp file I/O
-            suite=$(echo "$recent_lines" | grep -E "Test:" | tail -1 | sed 's/\x1b\[[0-9;]*m//g' | sed 's/:$//' | tr -d '\n\r')
-
-            # Find the most recent scenario name (pattern like "  Scenario: ..." or "- Scenario: ...")
-            scenario=$(echo "$recent_lines" | grep -i "scenario:" | tail -1 | sed 's/\x1b\[[0-9;]*m//g' | sed 's/^[[:space:]]*-*[[:space:]]*//' | sed -E 's/^[Ss]cenario:[[:space:]]*//' | tr -d '\n\r')
-
-            # Truncate scenario if too long (max 50 chars)
-            if [ -n "$scenario" ] && [ ${#scenario} -gt 50 ]; then
-                scenario="${scenario:0:47}..."
-            fi
+            suite=$(echo "$recent_lines" | grep -E "Test:" 2>/dev/null | tail -1 | sed 's/\x1b\[[0-9;]*m//g' | sed 's/:$//' | tr -d '\n\r' || true)
+            scenario=$(echo "$recent_lines" | grep -i "scenario:" 2>/dev/null | tail -1 | sed 's/\x1b\[[0-9;]*m//g' | sed 's/^[[:space:]]*-*[[:space:]]*//' | sed -E 's/^[Ss]cenario:[[:space:]]*//' | tr -d '\n\r' || true)
+            [ -n "$scenario" ] && [ ${#scenario} -gt 50 ] && scenario="${scenario:0:47}..."
         fi
 
         # Calculate elapsed time
@@ -800,21 +863,54 @@ touch "${MONITOR_FLAG}"
         seconds=$((duration % 60))
         elapsed=$(printf "%dm %ds" $minutes $seconds)
 
-        # Update title: "Testing: DynamicEntityTest - Scenario name [5m 23s]"
-        update_terminal_title "$phase" "$elapsed" "" "$suite" "$scenario"
+        # Update title
+        title="OBP-API ${phase}"
+        [ -n "$suite" ] && title="${title}: ${suite}"
+        [ -n "$scenario" ] && title="${title} - ${scenario}"
+        title="${title}... [${elapsed}]"
+        echo -ne "\033]0;${title}\007"
 
         sleep 5
     done
 ) &
 MONITOR_PID=$!
 
-# Run Maven (all output goes to terminal AND log file)
-if mvn clean test 2>&1 | tee "${DETAIL_LOG}"; then
-    TEST_RESULT="SUCCESS"
-    RESULT_COLOR=""
+# Run Maven with optional timeout
+if [ "$TIMEOUT_MINUTES" -gt 0 ] 2>/dev/null; then
+    # Run Maven in background and monitor for timeout
+    mvn clean test 2>&1 | tee "${DETAIL_LOG}" &
+    MAVEN_PID=$!
+    
+    elapsed=0
+    while kill -0 $MAVEN_PID 2>/dev/null; do
+        sleep 10
+        elapsed=$((elapsed + 10))
+        if [ $elapsed -ge $TIMEOUT_SECONDS ]; then
+            log_message ""
+            log_message "[TIMEOUT] Test execution exceeded ${TIMEOUT_MINUTES} minutes - terminating"
+            kill -9 $MAVEN_PID 2>/dev/null || true
+            # Also kill any child Java processes
+            pkill -9 -P $MAVEN_PID 2>/dev/null || true
+            TEST_RESULT="TIMEOUT"
+            break
+        fi
+    done
+    
+    if [ "$TEST_RESULT" != "TIMEOUT" ]; then
+        wait $MAVEN_PID
+        if [ $? -eq 0 ]; then
+            TEST_RESULT="SUCCESS"
+        else
+            TEST_RESULT="FAILURE"
+        fi
+    fi
 else
-    TEST_RESULT="FAILURE"
-    RESULT_COLOR=""
+    # Run Maven normally (all output goes to terminal AND log file)
+    if mvn clean test 2>&1 | tee "${DETAIL_LOG}"; then
+        TEST_RESULT="SUCCESS"
+    else
+        TEST_RESULT="FAILURE"
+    fi
 fi
 
 ################################################################################
