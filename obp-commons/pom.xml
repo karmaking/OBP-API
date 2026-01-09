@@ -113,9 +113,13 @@
                     <forkMode>once</forkMode>
                     <junitxml>.</junitxml>
                     <filereports>WDF TestSuite.txt</filereports>
-                    <argLine>-Drun.mode=test -XX:MaxMetaspaceSize=512m -Xms512m -Xmx512m</argLine>
+                    <!-- Increased memory for faster test execution -->
+                    <argLine>-Drun.mode=test -XX:MaxMetaspaceSize=1G -Xms2G -Xmx4G -XX:+UseG1GC -XX:+TieredCompilation -XX:TieredStopAtLevel=1 -XX:+UseStringDeduplication</argLine>
                     <tagsToExclude>code.external</tagsToExclude>
                     <testFailureIgnore>${maven.test.failure.ignore}</testFailureIgnore>
+                    <!-- Enable parallel test execution - keep at 4 to avoid shared state issues -->
+                    <parallel>true</parallel>
+                    <threadCount>4</threadCount>
                 </configuration>
                 <executions>
                     <execution>
