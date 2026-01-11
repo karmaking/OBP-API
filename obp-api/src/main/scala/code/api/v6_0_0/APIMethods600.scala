@@ -1648,7 +1648,7 @@ trait APIMethods600 {
          |
          |${userAuthenticationMessage(true)}
          |
-         |CanGetConnectorMethodNames entitlement is required.
+         |CanGetSystemConnectorMethodNames entitlement is required.
          |
       """.stripMargin,
       EmptyBody,
@@ -1658,8 +1658,8 @@ trait APIMethods600 {
         UserHasMissingRoles,
         UnknownError
       ),
-      List(apiTagSystem, apiTagMethodRouting, apiTagApi),
-      Some(List(canGetConnectorMethodNames))
+      List(apiTagConnectorMethod, apiTagSystem, apiTagMethodRouting, apiTagApi),
+      Some(List(canGetSystemConnectorMethodNames))
     )
 
     lazy val getConnectorMethodNames: OBPEndpoint = {
