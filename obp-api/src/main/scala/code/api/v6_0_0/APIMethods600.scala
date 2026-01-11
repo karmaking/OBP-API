@@ -1648,7 +1648,7 @@ trait APIMethods600 {
          |
          |${userAuthenticationMessage(true)}
          |
-         |CanGetMethodRoutings entitlement is required.
+         |CanGetConnectorMethodNames entitlement is required.
          |
       """.stripMargin,
       EmptyBody,
@@ -1659,7 +1659,7 @@ trait APIMethods600 {
         UnknownError
       ),
       List(apiTagSystem, apiTagMethodRouting, apiTagApi),
-      Some(List(canGetMethodRoutings))
+      Some(List(canGetConnectorMethodNames))
     )
 
     lazy val getConnectorMethodNames: OBPEndpoint = {
@@ -1667,7 +1667,6 @@ trait APIMethods600 {
         cc => implicit val ec = EndpointContext(Some(cc))
           for {
             (Full(u), callContext) <- authenticatedAccess(cc)
-            _ <- NewStyle.function.hasEntitlement("", u.userId, canGetMethodRoutings, callContext)
             // Fetch connector method names with caching
             methodNames <- Future {
               /**

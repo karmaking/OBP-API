@@ -1635,6 +1635,11 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
                           var errorResponseBodies: List[String], // Possible error responses
                           tags: List[ResourceDocTag],
                           var roles: Option[List[ApiRole]] = None,
+                          // IMPORTANT: Roles declared here are AUTOMATICALLY CHECKED at runtime!
+                          // When roles specified, framework automatically: 1) Validates user authentication,
+                          // 2) Checks user has at least one of specified roles, 3) Performs checks in wrappedWithAuthCheck()
+                          // No manual hasEntitlement() call needed in endpoint body - handled automatically!
+                          // To disable: call .disableAutoValidateRoles() on ResourceDoc
                           isFeatured: Boolean = false,
                           specialInstructions: Option[String] = None,
                           var specifiedUrl: Option[String] = None, // A derived value: Contains the called version (added at run time). See the resource doc for resource doc!

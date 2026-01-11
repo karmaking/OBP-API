@@ -1003,6 +1003,9 @@ object ApiRole extends MdcLoggable{
   case class CanGetAllConnectorMethods(requiresBankId: Boolean = false) extends ApiRole
   lazy val canGetAllConnectorMethods = CanGetAllConnectorMethods()
 
+  case class CanGetConnectorMethodNames(requiresBankId: Boolean = false) extends ApiRole
+  lazy val canGetConnectorMethodNames = CanGetConnectorMethodNames()
+
   case class CanCreateDynamicResourceDoc(requiresBankId: Boolean = false) extends ApiRole
   lazy val canCreateDynamicResourceDoc = CanCreateDynamicResourceDoc()
 
