@@ -4,6 +4,7 @@ import code.api.util.{APIUtil, CallContext, DynamicUtil}
 import code.bankconnectors.Connector
 import code.model.dataAccess.ResourceUser
 import code.users.Users
+import code.entitlement.Entitlement
 import com.openbankproject.commons.model._
 import com.openbankproject.commons.ExecutionContext.Implicits.global
 import net.liftweb.common.{Box, Empty, Failure, Full}
@@ -26,12 +27,12 @@ object AbacRuleEngine {
 
   /**
    * Type alias for compiled ABAC rule function
-   * Parameters: authenticatedUser (logged in), authenticatedUserAttributes (non-personal), authenticatedUserAuthContext (auth context), 
-   *             onBehalfOfUser (delegation), onBehalfOfUserAttributes, onBehalfOfUserAuthContext,
+   * Parameters: authenticatedUser (logged in), authenticatedUserAttributes (non-personal), authenticatedUserAuthContext (auth context), authenticatedUserEntitlements (roles),
+   *             onBehalfOfUser (delegation), onBehalfOfUserAttributes, onBehalfOfUserAuthContext, onBehalfOfUserEntitlements,
    *             user, userAttributes, bankOpt, bankAttributes, accountOpt, accountAttributes, transactionOpt, transactionAttributes, customerOpt, customerAttributes
    * Returns: Boolean (true = allow access, false = deny access)
    */
-  type AbacRuleFunction = (User, List[UserAttributeTrait], List[UserAuthContext], Option[User], List[UserAttributeTrait], List[UserAuthContext], Option[User], List[UserAttributeTrait], Option[Bank], List[BankAttributeTrait], Option[BankAccount], List[AccountAttribute], Option[Transaction], List[TransactionAttribute], Option[TransactionRequest], List[TransactionRequestAttributeTrait], Option[Customer], List[CustomerAttribute], Option[CallContext]) => Boolean
+  type AbacRuleFunction = (User, List[UserAttributeTrait], List[UserAuthContext], List[Entitlement], Option[User], List[UserAttributeTrait], List[UserAuthContext], List[Entitlement], Option[User], List[UserAttributeTrait], Option[Bank], List[BankAttributeTrait], Option[BankAccount], List[AccountAttribute], Option[Transaction], List[TransactionAttribute], Option[TransactionRequest], List[TransactionRequestAttributeTrait], Option[Customer], List[CustomerAttribute], Option[CallContext]) => Boolean
 
   /**
    * Compile an ABAC rule from Scala code
@@ -75,7 +76,7 @@ object AbacRuleEngine {
        |import net.liftweb.common._
        |
        |// ABAC Rule Function
-       |(authenticatedUser: User, authenticatedUserAttributes: List[UserAttributeTrait], authenticatedUserAuthContext: List[UserAuthContext], onBehalfOfUserOpt: Option[User], onBehalfOfUserAttributes: List[UserAttributeTrait], onBehalfOfUserAuthContext: List[UserAuthContext], userOpt: Option[User], userAttributes: List[UserAttributeTrait], bankOpt: Option[Bank], bankAttributes: List[BankAttributeTrait], accountOpt: Option[BankAccount], accountAttributes: List[AccountAttribute], transactionOpt: Option[Transaction], transactionAttributes: List[TransactionAttribute], transactionRequestOpt: Option[TransactionRequest], transactionRequestAttributes: List[TransactionRequestAttributeTrait], customerOpt: Option[Customer], customerAttributes: List[CustomerAttribute], callContext: Option[code.api.util.CallContext]) => {
+       |(authenticatedUser: User, authenticatedUserAttributes: List[UserAttributeTrait], authenticatedUserAuthContext: List[UserAuthContext], authenticatedUserEntitlements: List[Entitlement], onBehalfOfUserOpt: Option[User], onBehalfOfUserAttributes: List[UserAttributeTrait], onBehalfOfUserAuthContext: List[UserAuthContext], onBehalfOfUserEntitlements: List[Entitlement], userOpt: Option[User], userAttributes: List[UserAttributeTrait], bankOpt: Option[Bank], bankAttributes: List[BankAttributeTrait], accountOpt: Option[BankAccount], accountAttributes: List[AccountAttribute], transactionOpt: Option[Transaction], transactionAttributes: List[TransactionAttribute], transactionRequestOpt: Option[TransactionRequest], transactionRequestAttributes: List[TransactionRequestAttributeTrait], customerOpt: Option[Customer], customerAttributes: List[CustomerAttribute], callContext: Option[code.api.util.CallContext]) => {
        |  $ruleCode
        |}
        |""".stripMargin
@@ -129,6 +130,12 @@ object AbacRuleEngine {
         5.seconds
       )
       
+      // Fetch entitlements for authenticated user
+      authenticatedUserEntitlements = Await.result(
+        code.api.util.NewStyle.function.getEntitlementsByUserId(authenticatedUserId, Some(callContext)),
+        5.seconds
+      )
+      
       // Fetch onBehalfOf user if provided (delegation scenario)
       onBehalfOfUserOpt <- onBehalfOfUserId match {
         case Some(obUserId) => Users.users.vend.getUserByUserId(obUserId).map(Some(_))
@@ -153,6 +160,16 @@ object AbacRuleEngine {
             5.seconds
           )
         case None => List.empty[UserAuthContext]
+      }
+      
+      // Fetch entitlements for onBehalfOf user if provided
+      onBehalfOfUserEntitlements = onBehalfOfUserId match {
+        case Some(obUserId) =>
+          Await.result(
+            code.api.util.NewStyle.function.getEntitlementsByUserId(obUserId, Some(callContext)),
+            5.seconds
+          )
+        case None => List.empty[Entitlement]
       }
       
       // Fetch target user if userId is provided
@@ -274,7 +291,7 @@ object AbacRuleEngine {
       // Compile and execute the rule
       compiledFunc <- compileRule(ruleId, rule.ruleCode)
       result <- tryo {
-        compiledFunc(authenticatedUser, authenticatedUserAttributes, authenticatedUserAuthContext, onBehalfOfUserOpt, onBehalfOfUserAttributes, onBehalfOfUserAuthContext, userOpt, userAttributes, bankOpt, bankAttributes, accountOpt, accountAttributes, transactionOpt, transactionAttributes, transactionRequestOpt, transactionRequestAttributes, customerOpt, customerAttributes, Some(callContext))
+        compiledFunc(authenticatedUser, authenticatedUserAttributes, authenticatedUserAuthContext, authenticatedUserEntitlements, onBehalfOfUserOpt, onBehalfOfUserAttributes, onBehalfOfUserAuthContext, onBehalfOfUserEntitlements, userOpt, userAttributes, bankOpt, bankAttributes, accountOpt, accountAttributes, transactionOpt, transactionAttributes, transactionRequestOpt, transactionRequestAttributes, customerOpt, customerAttributes, Some(callContext))
       }
     } yield result
   }

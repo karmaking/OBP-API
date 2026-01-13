@@ -5116,9 +5116,11 @@ trait APIMethods600 {
                 AbacParameterJsonV600("authenticatedUser", "User", "The logged-in user (always present)", required = true, "User"),
                 AbacParameterJsonV600("authenticatedUserAttributes", "List[UserAttributeTrait]", "Non-personal attributes of authenticated user", required = true, "User"),
                 AbacParameterJsonV600("authenticatedUserAuthContext", "List[UserAuthContext]", "Auth context of authenticated user", required = true, "User"),
+                AbacParameterJsonV600("authenticatedUserEntitlements", "List[Entitlement]", "Entitlements (roles) of authenticated user", required = true, "User"),
                 AbacParameterJsonV600("onBehalfOfUserOpt", "Option[User]", "User being acted on behalf of (delegation)", required = false, "User"),
                 AbacParameterJsonV600("onBehalfOfUserAttributes", "List[UserAttributeTrait]", "Attributes of delegation user", required = false, "User"),
                 AbacParameterJsonV600("onBehalfOfUserAuthContext", "List[UserAuthContext]", "Auth context of delegation user", required = false, "User"),
+                AbacParameterJsonV600("onBehalfOfUserEntitlements", "List[Entitlement]", "Entitlements (roles) of delegation user", required = false, "User"),
                 AbacParameterJsonV600("userOpt", "Option[User]", "Target user being evaluated", required = false, "User"),
                 AbacParameterJsonV600("userAttributes", "List[UserAttributeTrait]", "Attributes of target user", required = false, "User"),
                 AbacParameterJsonV600("bankOpt", "Option[Bank]", "Bank context", required = false, "Bank"),
@@ -5223,6 +5225,12 @@ trait APIMethods600 {
                   AbacObjectPropertyJsonV600("value", "String", "Attribute value"),
                   AbacObjectPropertyJsonV600("attributeType", "AttributeType", "Attribute type")
                 )),
+                AbacObjectTypeJsonV600("Entitlement", "User entitlement (role)", List(
+                  AbacObjectPropertyJsonV600("entitlementId", "String", "Entitlement ID"),
+                  AbacObjectPropertyJsonV600("roleName", "String", "Role name (e.g., CanCreateAccount, CanReadTransactions)"),
+                  AbacObjectPropertyJsonV600("bankId", "String", "Bank ID (empty string for system-wide roles)"),
+                  AbacObjectPropertyJsonV600("userId", "String", "User ID this entitlement belongs to")
+                )),
                 AbacObjectTypeJsonV600("CallContext", "Request context with metadata", List(
                   AbacObjectPropertyJsonV600("correlationId", "String", "Correlation ID for request tracking"),
                   AbacObjectPropertyJsonV600("url", "Option[String]", "Request URL"),
@@ -5238,50 +5246,50 @@ trait APIMethods600 {
                 AbacRuleExampleJsonV600(
                   category = "Access Control - Account Access",
                   title = "Branch Manager Internal Account Access",
-                  code = "authenticatedUserAttributes.exists(a => a.name == \"branch\" && accountAttributes.exists(aa => aa.name == \"branch\" && a.value == aa.value)) && callContext.exists(_.verb.exists(_ == \"GET\")) && accountOpt.exists(_.accountType == \"CURRENT\")",
-                  description = "Allow GET access to current accounts only when user's branch matches account's branch"
+                  code = "authenticatedUserEntitlements.exists(e => e.roleName == \"CanReadAccountsAtOneBank\") && authenticatedUserAttributes.exists(a => a.name == \"branch\" && accountAttributes.exists(aa => aa.name == \"branch\" && a.value == aa.value)) && callContext.exists(_.verb.exists(_ == \"GET\")) && accountOpt.exists(_.accountType == \"CURRENT\")",
+                  description = "Allow GET access to current accounts when user has CanReadAccountsAtOneBank role and branch matches account's branch"
                 ),
                 AbacRuleExampleJsonV600(
                   category = "Access Control - Transaction Access",
                   title = "Internal Network High-Value Transaction Review",
-                  code = "callContext.exists(_.ipAddress.exists(_.startsWith(\"10.\"))) && authenticatedUserAttributes.exists(a => a.name == \"role\" && a.value == \"compliance_officer\") && transactionOpt.exists(_.amount > 10000)",
-                  description = "Allow compliance officers on internal network to review high-value transactions over 10,000"
+                  code = "callContext.exists(_.ipAddress.exists(_.startsWith(\"10.\"))) && authenticatedUserEntitlements.exists(e => e.roleName == \"CanReadTransactionsAtOneBank\") && transactionOpt.exists(_.amount > 10000)",
+                  description = "Allow users with CanReadTransactionsAtOneBank role on internal network to review high-value transactions over 10,000"
                 ),
                 AbacRuleExampleJsonV600(
                   category = "Access Control - Account Balance",
                   title = "Department Head Same-Department Account Read where overdrawn",
-                  code = "authenticatedUserAttributes.exists(a => a.name == \"role\" && a.value == \"department_head\") && authenticatedUserAttributes.exists(ua => ua.name == \"department\" && accountAttributes.exists(aa => aa.name == \"department\" && ua.value == aa.value)) && callContext.exists(_.url.exists(_.contains(\"/accounts/\"))) && accountOpt.exists(_.balance < 0)",
-                  description = "Allow department heads to read account details for overdrawn accounts in their department"
+                  code = "authenticatedUserEntitlements.exists(e => e.roleName == \"CanReadAccountsAtOneBank\") && authenticatedUserAttributes.exists(ua => ua.name == \"department\" && accountAttributes.exists(aa => aa.name == \"department\" && ua.value == aa.value)) && callContext.exists(_.url.exists(_.contains(\"/accounts/\"))) && accountOpt.exists(_.balance < 0)",
+                  description = "Allow users with CanReadAccountsAtOneBank role to read overdrawn accounts in their department"
                 ),
                 AbacRuleExampleJsonV600(
                   category = "Access Control - Transaction Request Approval",
                   title = "Manager Internal Network Transaction Approval",
-                  code = "authenticatedUserAttributes.exists(a => a.name == \"role\" && List(\"manager\", \"supervisor\").contains(a.value)) && callContext.exists(_.ipAddress.exists(ip => ip.startsWith(\"10.\") || ip.startsWith(\"192.168.\"))) && transactionRequestOpt.exists(tr => tr.status == \"PENDING\" && tr.charge.value.toDouble < 50000)",
-                  description = "Allow managers/supervisors on internal network to approve pending transaction requests under 50,000"
+                  code = "authenticatedUserEntitlements.exists(e => e.roleName == \"CanCreateTransactionRequest\") && callContext.exists(_.ipAddress.exists(ip => ip.startsWith(\"10.\") || ip.startsWith(\"192.168.\"))) && transactionRequestOpt.exists(tr => tr.status == \"PENDING\" && tr.charge.value.toDouble < 50000)",
+                  description = "Allow users with CanCreateTransactionRequest role on internal network to approve pending transaction requests under 50,000"
                 ),
                 AbacRuleExampleJsonV600(
                   category = "Access Control - Customer Onboarding",
                   title = "KYC Officer Customer Creation from Branch",
-                  code = "authenticatedUserAttributes.exists(a => a.name == \"certification\" && a.value == \"kyc_certified\") && callContext.exists(_.verb.exists(_ == \"POST\")) && callContext.exists(_.ipAddress.exists(_.startsWith(\"10.20.\"))) && customerAttributes.exists(ca => ca.name == \"onboarding_status\" && ca.value == \"pending\")",
-                  description = "Allow KYC certified officers to create customers via POST from branch network (10.20.x.x) when status is pending"
+                  code = "authenticatedUserEntitlements.exists(e => e.roleName == \"CanCreateCustomer\") && authenticatedUserAttributes.exists(a => a.name == \"certification\" && a.value == \"kyc_certified\") && callContext.exists(_.verb.exists(_ == \"POST\")) && callContext.exists(_.ipAddress.exists(_.startsWith(\"10.20.\"))) && customerAttributes.exists(ca => ca.name == \"onboarding_status\" && ca.value == \"pending\")",
+                  description = "Allow users with CanCreateCustomer role and KYC certification to create customers via POST from branch network (10.20.x.x) when status is pending"
                 ),
                 AbacRuleExampleJsonV600(
                   category = "Access Control - Cross-Border Transaction",
                   title = "International Team Foreign Currency Transaction",
-                  code = "authenticatedUserAttributes.exists(a => a.name == \"team\" && a.value == \"international\") && callContext.exists(_.url.exists(_.contains(\"/transactions/\"))) && transactionOpt.exists(t => t.currency != \"USD\" && t.amount < 100000) && accountOpt.exists(a => accountAttributes.exists(aa => aa.name == \"international_enabled\" && aa.value == \"true\"))",
-                  description = "Allow international team to access foreign currency transactions under 100k on international-enabled accounts"
+                  code = "authenticatedUserEntitlements.exists(e => e.roleName == \"CanReadTransactionsAtOneBank\") && authenticatedUserAttributes.exists(a => a.name == \"team\" && a.value == \"international\") && callContext.exists(_.url.exists(_.contains(\"/transactions/\"))) && transactionOpt.exists(t => t.currency != \"USD\" && t.amount < 100000) && accountOpt.exists(a => accountAttributes.exists(aa => aa.name == \"international_enabled\" && aa.value == \"true\"))",
+                  description = "Allow international team users with CanReadTransactionsAtOneBank role to access foreign currency transactions under 100k on international-enabled accounts"
                 ),
                 AbacRuleExampleJsonV600(
                   category = "Access Control - Delegated Account Management",
                   title = "Assistant with Limited Delegation Account View",
-                  code = "onBehalfOfUserOpt.isDefined && onBehalfOfUserAttributes.exists(a => a.name == \"role\" && a.value == \"executive\") && authenticatedUserAttributes.exists(a => a.name == \"assistant_of\" && onBehalfOfUserOpt.exists(u => a.value == u.userId)) && callContext.exists(_.verb.exists(_ == \"GET\")) && accountOpt.exists(a => accountAttributes.exists(aa => aa.name == \"tier\" && List(\"gold\", \"platinum\").contains(aa.value)))",
-                  description = "Allow assistants to view gold/platinum accounts via GET when acting on behalf of their assigned executive"
+                  code = "onBehalfOfUserOpt.isDefined && onBehalfOfUserEntitlements.exists(e => e.roleName == \"CanReadAccountsAtOneBank\") && authenticatedUserAttributes.exists(a => a.name == \"assistant_of\" && onBehalfOfUserOpt.exists(u => a.value == u.userId)) && callContext.exists(_.verb.exists(_ == \"GET\")) && accountOpt.exists(a => accountAttributes.exists(aa => aa.name == \"tier\" && List(\"gold\", \"platinum\").contains(aa.value)))",
+                  description = "Allow assistants to view gold/platinum accounts via GET when acting on behalf of a user with CanReadAccountsAtOneBank role"
                 ),
                 AbacRuleExampleJsonV600(
                   category = "Access Control - Risk-Based Transaction Review",
                   title = "Fraud Analyst High-Risk Transaction Access",
-                  code = "authenticatedUserAttributes.exists(a => a.name == \"role\" && a.value == \"fraud_analyst\") && callContext.exists(c => c.verb.exists(_ == \"GET\") && c.implementedByPartialFunction.exists(_.contains(\"Transaction\"))) && transactionAttributes.exists(ta => ta.name == \"risk_score\" && ta.value.toInt >= 75) && transactionOpt.exists(_.status.exists(_ != \"COMPLETED\"))",
-                  description = "Allow fraud analysts to GET high-risk (score ≥75) non-completed transactions"
+                  code = "authenticatedUserEntitlements.exists(e => e.roleName == \"CanReadTransactionsAtOneBank\") && callContext.exists(c => c.verb.exists(_ == \"GET\") && c.implementedByPartialFunction.exists(_.contains(\"Transaction\"))) && transactionAttributes.exists(ta => ta.name == \"risk_score\" && ta.value.toInt >= 75) && transactionOpt.exists(_.status.exists(_ != \"COMPLETED\"))",
+                  description = "Allow users with CanReadTransactionsAtOneBank role to GET high-risk (score ≥75) non-completed transactions"
                 )
               ),
               available_operators = List(
