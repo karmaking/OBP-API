@@ -76,7 +76,7 @@ MAVEN_OPTS="-Xms3G -Xmx6G -XX:MaxMetaspaceSize=2G" mvn -pl obp-http4s-runner -am
 java -jar obp-http4s-runner/target/obp-http4s-runner.jar
 ```
 
-The http4s server binds to `http4s.host` / `http4s.port` as configured in your props file (defaults are `127.0.0.1` and `8181`).
+The http4s server binds to `http4s.host` / `http4s.port` as configured in your props file (defaults are `127.0.0.1` and `8086`).
 
 ### ZED IDE Setup
 

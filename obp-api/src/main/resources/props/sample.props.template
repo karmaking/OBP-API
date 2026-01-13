@@ -1703,6 +1703,6 @@ securelogging_mask_email=true
 ############################################
 
 # Host and port for http4s server (used by bootstrap.http4s.Http4sServer)
-# Defaults (if not set) are 127.0.0.1 and 8181
+# Defaults (if not set) are 127.0.0.1 and 8086
 http4s.host=127.0.0.1
 http4s.port=8086

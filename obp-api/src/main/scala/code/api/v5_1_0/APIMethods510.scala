@@ -239,55 +239,204 @@ trait APIMethods510 {
           }
     }
 
+    // Helper function to avoid code duplication
+    private def getLogCacheHelper(level: RedisLogger.LogLevel.Value, cc: CallContext): Future[(RedisLogger.LogTail, Option[CallContext])] = {
+      implicit val ec = EndpointContext(Some(cc))
+      for {
+        httpParams <- NewStyle.function.extractHttpParamsFromUrl(cc.url)
+        (obpQueryParams, callContext) <- createQueriesByHttpParamsFuture(httpParams, cc.callContext)
+        limit = obpQueryParams.collectFirst { case OBPLimit(value) => value }
+        offset = obpQueryParams.collectFirst { case OBPOffset(value) => value }
+        logs <- Future(RedisLogger.getLogTail(level, limit, offset))
+      } yield {
+        (logs, HttpCode.`200`(callContext))
+      }
+    }
+
     staticResourceDocs += ResourceDoc(
-      logCacheEndpoint,
+      logCacheTraceEndpoint,
       implementedInApiVersion,
-      nameOf(logCacheEndpoint),
+      nameOf(logCacheTraceEndpoint),
       "GET",
-      "/system/log-cache/LOG_LEVEL",
-      "Get Log Cache",
-      """Returns information about:
-        |
-        |* Log Cache
+      "/system/log-cache/trace",
+      "Get Trace Level Log Cache",
+      """Returns TRACE level logs from the system log cache.
         |
         |This endpoint supports pagination via the following optional query parameters:
         |* limit - Maximum number of log entries to return
         |* offset - Number of log entries to skip (for pagination)
         |
-        |Example: GET /system/log-cache/INFO?limit=50&offset=100
+        |Example: GET /system/log-cache/trace?limit=50&offset=100
         """,
       EmptyBody,
       EmptyBody,
       List($UserNotLoggedIn, UnknownError),
-      apiTagSystem :: apiTagApi :: Nil,
-      Some(List(canGetAllLevelLogsAtAllBanks)))
+      apiTagSystem :: apiTagApi :: apiTagLogCache :: Nil,
+      Some(List(canGetSystemLogCacheTrace, canGetSystemLogCacheAll)))
 
-    lazy val logCacheEndpoint: OBPEndpoint = {
-      case "system" :: "log-cache" :: logLevel :: Nil JsonGet _ =>
+    lazy val logCacheTraceEndpoint: OBPEndpoint = {
+      case "system" :: "log-cache" :: "trace" :: Nil JsonGet _ =>
         cc =>
           implicit val ec = EndpointContext(Some(cc))
           for {
-            // Parse and validate log level
-            level <- NewStyle.function.tryons(ErrorMessages.invalidLogLevel, 400, cc.callContext) {
-              RedisLogger.LogLevel.valueOf(logLevel)
-            }
-            // Check entitlements using helper
-            _ <- NewStyle.function.handleEntitlementsAndScopes(
-              bankId = "",
-              userId = cc.userId,
-              roles = RedisLogger.LogLevel.requiredRoles(level),
-              callContext = cc.callContext
-            )
-            httpParams <- NewStyle.function.extractHttpParamsFromUrl(cc.url)
-            (obpQueryParams, callContext) <- createQueriesByHttpParamsFuture(httpParams, cc.callContext)
-            // Extract limit and offset from query parameters
-            limit = obpQueryParams.collectFirst { case OBPLimit(value) => value }
-            offset = obpQueryParams.collectFirst { case OBPOffset(value) => value }
-            // Fetch logs with pagination
-            logs <- Future(RedisLogger.getLogTail(level, limit, offset))
-          } yield {
-            (logs, HttpCode.`200`(cc.callContext))
-          }
+            _ <- NewStyle.function.handleEntitlementsAndScopes("", cc.userId, List(canGetSystemLogCacheTrace, canGetSystemLogCacheAll), cc.callContext)
+            result <- getLogCacheHelper(RedisLogger.LogLevel.TRACE, cc)
+          } yield result
+    }
+
+    staticResourceDocs += ResourceDoc(
+      logCacheDebugEndpoint,
+      implementedInApiVersion,
+      nameOf(logCacheDebugEndpoint),
+      "GET",
+      "/system/log-cache/debug",
+      "Get Debug Level Log Cache",
+      """Returns DEBUG level logs from the system log cache.
+        |
+        |This endpoint supports pagination via the following optional query parameters:
+        |* limit - Maximum number of log entries to return
+        |* offset - Number of log entries to skip (for pagination)
+        |
+        |Example: GET /system/log-cache/debug?limit=50&offset=100
+        """,
+      EmptyBody,
+      EmptyBody,
+      List($UserNotLoggedIn, UnknownError),
+      apiTagSystem :: apiTagApi :: apiTagLogCache :: Nil,
+      Some(List(canGetSystemLogCacheDebug, canGetSystemLogCacheAll)))
+
+    lazy val logCacheDebugEndpoint: OBPEndpoint = {
+      case "system" :: "log-cache" :: "debug" :: Nil JsonGet _ =>
+        cc =>
+          implicit val ec = EndpointContext(Some(cc))
+          for {
+            _ <- NewStyle.function.handleEntitlementsAndScopes("", cc.userId, List(canGetSystemLogCacheDebug, canGetSystemLogCacheAll), cc.callContext)
+            result <- getLogCacheHelper(RedisLogger.LogLevel.DEBUG, cc)
+          } yield result
+    }
+
+    staticResourceDocs += ResourceDoc(
+      logCacheInfoEndpoint,
+      implementedInApiVersion,
+      nameOf(logCacheInfoEndpoint),
+      "GET",
+      "/system/log-cache/info",
+      "Get Info Level Log Cache",
+      """Returns INFO level logs from the system log cache.
+        |
+        |This endpoint supports pagination via the following optional query parameters:
+        |* limit - Maximum number of log entries to return
+        |* offset - Number of log entries to skip (for pagination)
+        |
+        |Example: GET /system/log-cache/info?limit=50&offset=100
+        """,
+      EmptyBody,
+      EmptyBody,
+      List($UserNotLoggedIn, UnknownError),
+      apiTagSystem :: apiTagApi :: apiTagLogCache :: Nil,
+      Some(List(canGetSystemLogCacheInfo, canGetSystemLogCacheAll)))
+
+    lazy val logCacheInfoEndpoint: OBPEndpoint = {
+      case "system" :: "log-cache" :: "info" :: Nil JsonGet _ =>
+        cc =>
+          implicit val ec = EndpointContext(Some(cc))
+          for {
+            _ <- NewStyle.function.handleEntitlementsAndScopes("", cc.userId, List(canGetSystemLogCacheInfo, canGetSystemLogCacheAll), cc.callContext)
+            result <- getLogCacheHelper(RedisLogger.LogLevel.INFO, cc)
+          } yield result
+    }
+
+    staticResourceDocs += ResourceDoc(
+      logCacheWarningEndpoint,
+      implementedInApiVersion,
+      nameOf(logCacheWarningEndpoint),
+      "GET",
+      "/system/log-cache/warning",
+      "Get Warning Level Log Cache",
+      """Returns WARNING level logs from the system log cache.
+        |
+        |This endpoint supports pagination via the following optional query parameters:
+        |* limit - Maximum number of log entries to return
+        |* offset - Number of log entries to skip (for pagination)
+        |
+        |Example: GET /system/log-cache/warning?limit=50&offset=100
+        """,
+      EmptyBody,
+      EmptyBody,
+      List($UserNotLoggedIn, UnknownError),
+      apiTagSystem :: apiTagApi :: apiTagLogCache :: Nil,
+      Some(List(canGetSystemLogCacheWarning, canGetSystemLogCacheAll)))
+
+    lazy val logCacheWarningEndpoint: OBPEndpoint = {
+      case "system" :: "log-cache" :: "warning" :: Nil JsonGet _ =>
+        cc =>
+          implicit val ec = EndpointContext(Some(cc))
+          for {
+            _ <- NewStyle.function.handleEntitlementsAndScopes("", cc.userId, List(canGetSystemLogCacheWarning, canGetSystemLogCacheAll), cc.callContext)
+            result <- getLogCacheHelper(RedisLogger.LogLevel.WARNING, cc)
+          } yield result
+    }
+
+    staticResourceDocs += ResourceDoc(
+      logCacheErrorEndpoint,
+      implementedInApiVersion,
+      nameOf(logCacheErrorEndpoint),
+      "GET",
+      "/system/log-cache/error",
+      "Get Error Level Log Cache",
+      """Returns ERROR level logs from the system log cache.
+        |
+        |This endpoint supports pagination via the following optional query parameters:
+        |* limit - Maximum number of log entries to return
+        |* offset - Number of log entries to skip (for pagination)
+        |
+        |Example: GET /system/log-cache/error?limit=50&offset=100
+        """,
+      EmptyBody,
+      EmptyBody,
+      List($UserNotLoggedIn, UnknownError),
+      apiTagSystem :: apiTagApi :: apiTagLogCache :: Nil,
+      Some(List(canGetSystemLogCacheError, canGetSystemLogCacheAll)))
+
+    lazy val logCacheErrorEndpoint: OBPEndpoint = {
+      case "system" :: "log-cache" :: "error" :: Nil JsonGet _ =>
+        cc =>
+          implicit val ec = EndpointContext(Some(cc))
+          for {
+            _ <- NewStyle.function.handleEntitlementsAndScopes("", cc.userId, List(canGetSystemLogCacheError, canGetSystemLogCacheAll), cc.callContext)
+            result <- getLogCacheHelper(RedisLogger.LogLevel.ERROR, cc)
+          } yield result
+    }
+
+    staticResourceDocs += ResourceDoc(
+      logCacheAllEndpoint,
+      implementedInApiVersion,
+      nameOf(logCacheAllEndpoint),
+      "GET",
+      "/system/log-cache/all",
+      "Get All Level Log Cache",
+      """Returns logs of all levels from the system log cache.
+        |
+        |This endpoint supports pagination via the following optional query parameters:
+        |* limit - Maximum number of log entries to return
+        |* offset - Number of log entries to skip (for pagination)
+        |
+        |Example: GET /system/log-cache/all?limit=50&offset=100
+        """,
+      EmptyBody,
+      EmptyBody,
+      List($UserNotLoggedIn, UnknownError),
+      apiTagSystem :: apiTagApi :: apiTagLogCache :: Nil,
+      Some(List(canGetSystemLogCacheAll)))
+
+    lazy val logCacheAllEndpoint: OBPEndpoint = {
+      case "system" :: "log-cache" :: "all" :: Nil JsonGet _ =>
+        cc =>
+          implicit val ec = EndpointContext(Some(cc))
+          for {
+            _ <- NewStyle.function.handleEntitlementsAndScopes("", cc.userId, List(canGetSystemLogCacheAll), cc.callContext)
+            result <- getLogCacheHelper(RedisLogger.LogLevel.ALL, cc)
+          } yield result
     }
 
 

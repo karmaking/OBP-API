@@ -209,11 +209,16 @@ object ResourceDocs300 extends OBPRestHelper with ResourceDocsAPIMethods with Md
                       val resourceDocsJson = JSONFactory1_4_0.createResourceDocsJson(resourceDocs, isVersion4OrHigher, locale)
                       resourceDocsJson.resource_docs
                     case _ =>
-                      // Get all resource docs for the requested version
-                      val allResourceDocs = ImplementationsResourceDocs.getResourceDocsList(requestedApiVersion).getOrElse(List.empty)
-                      val filteredResourceDocs = ResourceDocsAPIMethodsUtil.filterResourceDocs(allResourceDocs, resourceDocTags, partialFunctions)
-                      val resourceDocJson = JSONFactory1_4_0.createResourceDocsJson(filteredResourceDocs, isVersion4OrHigher, locale)
-                      resourceDocJson.resource_docs
+                      contentParam match {
+                        case Some(DYNAMIC) =>
+                          ImplementationsResourceDocs.getResourceDocsObpDynamicCached(resourceDocTags, partialFunctions, locale, None, isVersion4OrHigher).head.resource_docs
+                        case Some(STATIC) => {
+                          ImplementationsResourceDocs.getStaticResourceDocsObpCached(requestedApiVersionString, resourceDocTags, partialFunctions, locale, isVersion4OrHigher).head.resource_docs
+                        }
+                        case _ => {
+                          ImplementationsResourceDocs.getAllResourceDocsObpCached(requestedApiVersionString, resourceDocTags, partialFunctions, locale, contentParam, isVersion4OrHigher).head.resource_docs
+                        }
+                      }
                   }
                   
                   val hostname = HostName

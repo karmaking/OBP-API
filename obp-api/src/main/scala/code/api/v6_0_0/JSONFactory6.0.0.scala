@@ -268,16 +268,21 @@ case class InvalidatedCacheNamespaceJsonV600(
     status: String
 )
 
-case class CacheProviderConfigJsonV600(
-    provider: String,
-    enabled: Boolean,
-    url: Option[String],
-    port: Option[Int],
-    use_ssl: Option[Boolean]
+case class RedisCacheStatusJsonV600(
+    available: Boolean,
+    url: String,
+    port: Int,
+    use_ssl: Boolean
+)
+
+case class InMemoryCacheStatusJsonV600(
+    available: Boolean,
+    current_size: Long
 )
 
 case class CacheConfigJsonV600(
-    providers: List[CacheProviderConfigJsonV600],
+    redis_status: RedisCacheStatusJsonV600,
+    in_memory_status: InMemoryCacheStatusJsonV600,
     instance_id: String,
     environment: String,
     global_prefix: String
@@ -289,7 +294,9 @@ case class CacheNamespaceInfoJsonV600(
     current_version: Long,
     key_count: Int,
     description: String,
-    category: String
+    category: String,
+    storage_location: String,
+    ttl_info: String
 )
 
 case class CacheInfoJsonV600(
@@ -1119,21 +1126,17 @@ object JSONFactory600 extends CustomJsonFormats with MdcLoggable {
     import code.api.Constant
     import net.liftweb.util.Props
 
-    val redisProvider = CacheProviderConfigJsonV600(
-      provider = "redis",
-      enabled = true,
-      url = Some(Redis.url),
-      port = Some(Redis.port),
-      use_ssl = Some(Redis.useSsl)
-    )
+    val redisIsReady = try {
+      Redis.isRedisReady
+    } catch {
+      case _: Throwable => false
+    }
 
-    val inMemoryProvider = CacheProviderConfigJsonV600(
-      provider = "in_memory",
-      enabled = true,
-      url = None,
-      port = None,
-      use_ssl = None
-    )
+    val inMemorySize = try {
+      InMemory.underlyingGuavaCache.size()
+    } catch {
+      case _: Throwable => 0L
+    }
 
     val instanceId = code.api.util.APIUtil.getPropsValue("api_instance_id").getOrElse("obp")
     val environment = Props.mode match {
@@ -1144,8 +1147,21 @@ object JSONFactory600 extends CustomJsonFormats with MdcLoggable {
       case _ => "unknown"
     }
 
+    val redisStatus = RedisCacheStatusJsonV600(
+      available = redisIsReady,
+      url = Redis.url,
+      port = Redis.port,
+      use_ssl = Redis.useSsl
+    )
+
+    val inMemoryStatus = InMemoryCacheStatusJsonV600(
+      available = inMemorySize >= 0,
+      current_size = inMemorySize
+    )
+
     CacheConfigJsonV600(
-      providers = List(redisProvider, inMemoryProvider),
+      redis_status = redisStatus,
+      in_memory_status = inMemoryStatus,
       instance_id = instanceId,
       environment = environment,
       global_prefix = Constant.getGlobalCacheNamespacePrefix
@@ -1153,8 +1169,9 @@ object JSONFactory600 extends CustomJsonFormats with MdcLoggable {
   }
 
   def createCacheInfoJsonV600(): CacheInfoJsonV600 = {
-    import code.api.cache.Redis
+    import code.api.cache.{Redis, InMemory}
     import code.api.Constant
+    import code.api.JedisMethod
 
     val namespaceDescriptions = Map(
       Constant.CALL_COUNTER_NAMESPACE -> ("Rate limit call counters", "Rate Limiting"),
@@ -1178,14 +1195,69 @@ object JSONFactory600 extends CustomJsonFormats with MdcLoggable {
       val prefix = Constant.getVersionedCachePrefix(namespaceId)
       val pattern = s"${prefix}*"
 
-      val keyCount = try {
-        val count = Redis.countKeys(pattern)
-        totalKeys += count
-        count
+      // Dynamically determine storage location by checking where keys exist
+      var redisKeyCount = 0
+      var memoryKeyCount = 0
+      var storageLocation = "unknown"
+      var ttlInfo = "no keys to sample"
+
+      try {
+        redisKeyCount = Redis.countKeys(pattern)
+        totalKeys += redisKeyCount
+
+        // Sample keys to get TTL information
+        if (redisKeyCount > 0) {
+          val sampleKeys = Redis.scanKeys(pattern).take(5)
+          val ttls = sampleKeys.flatMap { key =>
+            Redis.use(JedisMethod.TTL, key, None, None).map(_.toLong)
+          }
+
+          if (ttls.nonEmpty) {
+            val minTtl = ttls.min
+            val maxTtl = ttls.max
+            val avgTtl = ttls.sum / ttls.length.toLong
+
+            ttlInfo = if (minTtl == maxTtl) {
+              if (minTtl == -1) "no expiry"
+              else if (minTtl == -2) "keys expired or missing"
+              else s"${minTtl}s"
+            } else {
+              s"range ${minTtl}s to ${maxTtl}s (avg ${avgTtl}s)"
+            }
+          }
+        }
       } catch {
         case _: Throwable =>
           redisAvailable = false
-          0
+      }
+
+      try {
+        memoryKeyCount = InMemory.countKeys(pattern)
+        totalKeys += memoryKeyCount
+
+        if (memoryKeyCount > 0 && redisKeyCount == 0) {
+          ttlInfo = "in-memory (no TTL in Guava cache)"
+        }
+      } catch {
+        case _: Throwable =>
+          // In-memory cache error (shouldn't happen, but handle gracefully)
+      }
+
+      // Determine storage based on where keys actually exist
+      val keyCount = if (redisKeyCount > 0 && memoryKeyCount > 0) {
+        storageLocation = "both"
+        ttlInfo = s"redis: ${ttlInfo}, memory: in-memory cache"
+        redisKeyCount + memoryKeyCount
+      } else if (redisKeyCount > 0) {
+        storageLocation = "redis"
+        redisKeyCount
+      } else if (memoryKeyCount > 0) {
+        storageLocation = "memory"
+        memoryKeyCount
+      } else {
+        // No keys found in either location - we don't know where they would be stored
+        storageLocation = "unknown"
+        0
       }
 
       val (description, category) = namespaceDescriptions.getOrElse(namespaceId, ("Unknown namespace", "Other"))
@@ -1196,7 +1268,9 @@ object JSONFactory600 extends CustomJsonFormats with MdcLoggable {
         current_version = version,
         key_count = keyCount,
         description = description,
-        category = category
+        category = category,
+        storage_location = storageLocation,
+        ttl_info = ttlInfo
       )
     }
 
