@@ -1249,7 +1249,7 @@ object Glossary extends MdcLoggable  {
 			|
 			|### 1) Get your App key
 			|
-			|[Sign up](${APIUtil.getPropsValue("webui_obp_portal_url", "http://localhost:5174")}/register) or [login]($getServerUrl/user_mgt/login) as a developer.
+			|[Sign up]($getServerUrl/user_mgt/sign_up) or [login]($getServerUrl/user_mgt/login) as a developer.
 			|
 			|Register your App key [HERE](${getConsumerRegistrationUrl()})
 			|
@@ -2305,7 +2305,7 @@ object Glossary extends MdcLoggable  {
         |
         |### Step 1: Get your App key
         |
-        |[Sign up](${APIUtil.getPropsValue("webui_obp_portal_url", "http://localhost:5174")}/register) or [login]($getServerUrl/user_mgt/login) as a developer
+        |[Sign up]($getServerUrl/user_mgt/sign_up) or [login]($getServerUrl/user_mgt/login) as a developer
         |
         |Register your App key [HERE](${getConsumerRegistrationUrl()})
         |
@@ -2954,7 +2954,7 @@ object Glossary extends MdcLoggable  {
 |
 |## In order to get an App / Consumer key
 |
-|[Sign up](${APIUtil.getPropsValue("webui_obp_portal_url", "http://localhost:5174")}/register) or [login]($getServerUrl/user_mgt/login) as a developer.
+|[Sign up]($getServerUrl/user_mgt/sign_up) or [login]($getServerUrl/user_mgt/login) as a developer.
 |
 |Register your App / Consumer [HERE](${getConsumerRegistrationUrl()})
 |

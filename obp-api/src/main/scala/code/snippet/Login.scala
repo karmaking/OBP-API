@@ -70,11 +70,8 @@ class Login {
         href getOrElse "#"
       } & {
         ".signup [href]" #> {
-         val portalUrl = getWebUiPropsValue("webui_obp_portal_url", "http://localhost:5174")
-         s"$portalUrl/register"
-        } &
-        ".signup [target]" #> "_blank" &
-        ".signup [rel]" #> "noopener"
+         AuthUser.signUpPath.foldLeft("")(_ + "/" + _)
+        }
       }
     }
   }

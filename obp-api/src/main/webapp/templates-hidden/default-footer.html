@@ -148,7 +148,7 @@ Berlin 13359, Germany
 						<li data-lift="Nav.item?name=Login" class="navitem">
 							
 							<p data-lift="WebUI.userIsLoggedIn">
-								<a href="#" data-lift="WebUI.portalRegisterLink" class="navbar-btn" id ="register-link"><lift:loc locid="register">Register</lift:loc></a><a data-lift="Login.loggedOut" href="#" class="btn btn-danger login"><lift:loc locid="logon">Log on</lift:loc></a>
+								<a href="/user_mgt/sign_up" class="navbar-btn" id ="register-link"><lift:loc locid="register">Register</lift:loc></a><a data-lift="Login.loggedOut" href="#" class="btn btn-danger login"><lift:loc locid="logon">Log on</lift:loc></a>
 							</p>
 						</li>
 
@@ -208,7 +208,7 @@ Berlin 13359, Germany
 				</li>
 				<li>
 					<div class="navitem" id="register-link-nav">
-						<a href="#" data-lift="WebUI.portalRegisterLink" class="navbar-btn" id ="register-link">Register</a>
+						<a data-lift="WebUI.userIsLoggedIn" href="/user_mgt/sign_up" class="navbar-btn" id ="register-link">Register</a>
 						<a data-lift="Login.loggedIn" href="#" class="logout">Log off</a></p>
 					</div>
 				</li>
@@ -248,7 +248,7 @@ Berlin 13359, Germany
 						<a class="sofi-link" data-lift="WebUI.sofiLink" href="">Sofit</a>
 					</li>
 					<li>
-						<a href="#" data-lift="WebUI.portalRegisterLink" class="navbar-btn" id ="register-link">
+						<a href="/user_mgt/sign_up?after-signup=link-to-customer" class="navbar-btn" id ="register-link">
 							<lift:loc locid="register">On Board</lift:loc></a>
 					</li>
 					<li>

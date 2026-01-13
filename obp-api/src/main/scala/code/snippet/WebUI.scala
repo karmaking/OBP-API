@@ -550,21 +550,8 @@ class WebUI extends MdcLoggable{
   def userIsLoggedIn: CssSel = {
     if(AuthUser.loggedIn_?)
       "#register-link [href]" #> scala.xml.Unparsed(s"/already-logged-in")
-    else {
-      val portalUrl = getWebUiPropsValue("webui_obp_portal_url", "http://localhost:5174")
-      val registerUrl = s"$portalUrl/register"
-      "#register-link [href]" #> scala.xml.Unparsed(registerUrl) &
-      "#register-link [target]" #> "_blank" &
-      "#register-link [rel]" #> "noopener"
-    }
-  }
-
-  def portalRegisterLink: CssSel = {
-    val portalUrl = getWebUiPropsValue("webui_obp_portal_url", "http://localhost:5174")
-    val registerUrl = s"$portalUrl/register"
-    "a [href]" #> scala.xml.Unparsed(registerUrl) &
-    "a [target]" #> "_blank" &
-    "a [rel]" #> "noopener"
+    else
+      "#register-link [href]" #> scala.xml.Unparsed(s"/user_mgt/sign_up")
   }
 
   def alreadyLoggedIn: CssSel = {
