@@ -459,10 +459,10 @@ case class AbacObjectTypeJsonV600(
 )
 
 case class AbacRuleExampleJsonV600(
-    category: String,
-    title: String,
-    code: String,
-    description: String
+    rule_name: String,
+    rule_code: String,
+    description: String,
+    is_active: Boolean
 )
 
 case class AbacRuleSchemaJsonV600(
