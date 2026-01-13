@@ -1,5 +1,6 @@
 package code.api.v6_0_0
 
+import scala.language.reflectiveCalls
 import code.accountattribute.AccountAttributeX
 import code.api.Constant
 import code.api.{DirectLogin, ObpApiFailure}
@@ -111,7 +112,7 @@ trait APIMethods600 {
       case (Nil | "root" :: Nil) JsonGet _ => {
         cc => implicit val ec = EndpointContext(Some(cc))
           for {
-            _ <- Future() // Just start async call
+            _ <- Future(()) // Just start async call
           } yield {
             (JSONFactory510.getApiInfoJSON(OBPAPI6_0_0.version, OBPAPI6_0_0.versionStatus), HttpCode.`200`(cc.callContext))
           }
@@ -1539,14 +1540,14 @@ trait APIMethods600 {
             _ <- entitlementsByBank.exists(_.roleName == CanCreateEntitlementAtOneBank.toString()) match {
               case true =>
                 // Already has entitlement
-                Future()
+                Future(())
               case false =>
                 Future(Entitlement.entitlement.vend.addEntitlement(postJson.bank_id, cc.userId, CanCreateEntitlementAtOneBank.toString()))
             }
             _ <- entitlementsByBank.exists(_.roleName == CanReadDynamicResourceDocsAtOneBank.toString()) match {
               case true =>
                 // Already has entitlement
-                Future()
+                Future(())
               case false =>
                 Future(Entitlement.entitlement.vend.addEntitlement(postJson.bank_id, cc.userId, CanReadDynamicResourceDocsAtOneBank.toString()))
             }
@@ -1675,7 +1676,7 @@ trait APIMethods600 {
                */
               val cacheKey = "getConnectorMethodNames"
               val cacheTTL = APIUtil.getPropsAsIntValue("getConnectorMethodNames.cache.ttl.seconds", 3600)
-              Caching.memoizeSyncWithProvider(Some(cacheKey))(cacheTTL seconds) {
+              Caching.memoizeSyncWithProvider(Some(cacheKey))(cacheTTL.seconds) {
                 val connectorName = APIUtil.getPropsValue("connector", "mapped")
                 val connector = code.bankconnectors.Connector.getConnectorInstance(connectorName)
                 connector.callableMethods.keys.toList

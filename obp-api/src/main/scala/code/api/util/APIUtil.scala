@@ -26,6 +26,9 @@ TESOBE (http://www.tesobe.com/)
  */
 
 package code.api.util
+
+import scala.language.implicitConversions
+import scala.language.reflectiveCalls
 import bootstrap.liftweb.CustomDBVendor
 import cats.effect.IO
 import code.accountholders.AccountHolders
@@ -1767,9 +1770,9 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
     
     private val reversedRequestUrl = requestUrlPartPath.reverse
     def getPathParams(url: List[String]): Map[String, String] =
-      reversedRequestUrl.zip(url.reverse) collect {
+      reversedRequestUrl.zip(url.reverse).collect {
         case pair @(k, _) if isPathVariable(k) => pair
-      } toMap
+      }.toMap
 
     /**
      * According errorResponseBodies whether contains UserNotLoggedIn and UserHasMissingRoles do validation.
@@ -4026,7 +4029,7 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
   def parseDate(date: String): Option[Date] = {
     val currentSupportFormats = List(DateWithDayFormat, DateWithSecondsFormat, DateWithMsFormat, DateWithMsRollbackFormat)
     val parsePosition = new ParsePosition(0)
-    currentSupportFormats.toStream.map(_.parse(date, parsePosition)).find(null !=)
+    currentSupportFormats.toStream.map(_.parse(date, parsePosition)).find(null.!=)
   }
 
   private def passesPsd2ServiceProviderCommon(cc: Option[CallContext], serviceProvider: String) = {
@@ -4422,7 +4425,7 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
 
   private def getClassPool(classLoader: ClassLoader) = {
     import scala.concurrent.duration._
-    Caching.memoizeSyncWithImMemory(Some(classLoader.toString()))(DurationInt(30) days) {
+    Caching.memoizeSyncWithImMemory(Some(classLoader.toString()))(DurationInt(30).days) {
       val classPool: ClassPool = ClassPool.getDefault
       classPool.appendClassPath(new LoaderClassPath(classLoader))
       classPool
@@ -4523,7 +4526,7 @@ object APIUtil extends MdcLoggable with CustomJsonFormats{
      */
     def getObpTrace(clazzName: String, methodName: String, signature: String, exclude: List[(String, String, String)] = Nil): List[(String, String, String)] = {
       import scala.concurrent.duration._
-      Caching.memoizeSyncWithImMemory(Some(clazzName + methodName + signature))(DurationInt(30) days) {
+      Caching.memoizeSyncWithImMemory(Some(clazzName + methodName + signature))(DurationInt(30).days) {
         // List:: className->methodName->signature, find all the dependent methods for one 
         val methods = getDependentMethods(clazzName, methodName, signature)
 
