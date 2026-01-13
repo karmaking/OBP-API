@@ -5248,22 +5248,10 @@ trait APIMethods600 {
                   description = "Allow compliance officers on internal network to review high-value transactions over 10,000"
                 ),
                 AbacRuleExampleJsonV600(
-                  category = "Access Control - Customer Data",
-                  title = "Regional Manager Customer Access via Mobile",
-                  code = "authenticatedUserAttributes.exists(a => a.name == \"region\" && customerAttributes.exists(ca => ca.name == \"region\" && a.value == ca.value)) && callContext.exists(_.userAgent.exists(_.contains(\"Mobile\"))) && customerOpt.exists(_.relationshipStatus == \"ACTIVE\")",
-                  description = "Allow regional managers to access active customers in their region when using mobile app"
-                ),
-                AbacRuleExampleJsonV600(
-                  category = "Access Control - Transaction Modification",
-                  title = "Authorized Delegation Transaction Update",
-                  code = "onBehalfOfUserOpt.exists(_.userId != authenticatedUser.userId) && onBehalfOfUserAttributes.exists(a => a.name == \"delegation_level\" && a.value == \"full\") && callContext.exists(_.verb.exists(_ == \"PUT\")) && transactionOpt.exists(t => t.amount < 5000)",
-                  description = "Allow full delegation to update transactions under 5000 via PUT requests"
-                ),
-                AbacRuleExampleJsonV600(
                   category = "Access Control - Account Balance",
-                  title = "Department Head Same-Department Account Read",
-                  code = "authenticatedUserAttributes.exists(a => a.name == \"role\" && a.value == \"department_head\") && authenticatedUserAttributes.exists(ua => ua.name == \"department\" && accountAttributes.exists(aa => aa.name == \"department\" && ua.value == aa.value)) && callContext.exists(_.url.exists(_.contains(\"/accounts/\"))) && accountOpt.exists(_.balance > 0)",
-                  description = "Allow department heads to read account details for accounts in their department with positive balance"
+                  title = "Department Head Same-Department Account Read where overdrawn",
+                  code = "authenticatedUserAttributes.exists(a => a.name == \"role\" && a.value == \"department_head\") && authenticatedUserAttributes.exists(ua => ua.name == \"department\" && accountAttributes.exists(aa => aa.name == \"department\" && ua.value == aa.value)) && callContext.exists(_.url.exists(_.contains(\"/accounts/\"))) && accountOpt.exists(_.balance < 0)",
+                  description = "Allow department heads to read account details for overdrawn accounts in their department"
                 ),
                 AbacRuleExampleJsonV600(
                   category = "Access Control - Transaction Request Approval",
