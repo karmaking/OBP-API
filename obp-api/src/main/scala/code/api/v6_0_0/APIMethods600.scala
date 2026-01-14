@@ -5652,6 +5652,112 @@ trait APIMethods600 {
       }
     }
 
+    staticResourceDocs += ResourceDoc(
+      executeAbacPolicy,
+      implementedInApiVersion,
+      nameOf(executeAbacPolicy),
+      "POST",
+      "/management/abac-policies/POLICY/execute",
+      "Execute ABAC Policy",
+      s"""Execute all ABAC rules in a policy to test access control.
+         |
+         |This endpoint executes all active rules that belong to the specified policy.
+         |The policy uses OR logic - access is granted if at least one rule passes.
+         |
+         |This allows you to test a complete policy with specific context (authenticated user, bank, account, transaction, customer, etc.).
+         |
+         |**Documentation:**
+         |- ${Glossary.getGlossaryItemLink("ABAC_Simple_Guide")} - Getting started with ABAC rules
+         |- ${Glossary.getGlossaryItemLink("ABAC_Parameters_Summary")} - Complete list of all 18 parameters
+         |- ${Glossary.getGlossaryItemLink("ABAC_Object_Properties_Reference")} - Detailed property reference
+         |- ${Glossary.getGlossaryItemLink("ABAC_Testing_Examples")} - Testing examples and patterns
+         |
+         |You can provide optional IDs in the request body to test the policy with specific context.
+         |
+         |${userAuthenticationMessage(true)}
+         |
+         |""".stripMargin,
+      ExecuteAbacRuleJsonV600(
+        authenticated_user_id = Some("c7b6cb47-cb96-4441-8801-35b57456753a"),
+        on_behalf_of_user_id = Some("a3b5c123-1234-5678-9012-fedcba987654"),
+        user_id = Some("c7b6cb47-cb96-4441-8801-35b57456753a"),
+        bank_id = Some("gh.29.uk"),
+        account_id = Some("8ca8a7e4-6d02-48e3-a029-0b2bf89de9f0"),
+        view_id = Some("owner"),
+        transaction_request_id = Some("123456"),
+        transaction_id = Some("abc123"),
+        customer_id = Some("customer-id-123")
+      ),
+      AbacRuleResultJsonV600(
+        result = true
+      ),
+      List(
+        UserNotLoggedIn,
+        UserHasMissingRoles,
+        InvalidJsonFormat,
+        UnknownError
+      ),
+      List(apiTagABAC),
+      Some(List(canExecuteAbacRule))
+    )
+
+    lazy val executeAbacPolicy: OBPEndpoint = {
+      case "management" :: "abac-policies" :: policy :: "execute" :: Nil JsonPost json -> _ => {
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(user), callContext) <- authenticatedAccess(cc)
+            _ <- NewStyle.function.hasEntitlement("", user.userId, canExecuteAbacRule, callContext)
+            execJson <- NewStyle.function.tryons(s"$InvalidJsonFormat", 400, callContext) {
+              json.extract[ExecuteAbacRuleJsonV600]
+            }
+
+            // Verify the policy exists
+            _ <- Future {
+              if (Constant.ABAC_POLICIES.contains(policy)) {
+                Full(true)
+              } else {
+                Failure(s"Policy not found: $policy. Available policies: ${Constant.ABAC_POLICIES.mkString(", ")}")
+              }
+            } map {
+              unboxFullOrFail(_, callContext, s"Invalid ABAC Policy: $policy", 404)
+            }
+
+            // Execute the policy with IDs - object fetching happens internally
+            // authenticatedUserId: can be provided in request (for testing) or defaults to actual authenticated user
+            // onBehalfOfUserId: optional delegation - acting on behalf of another user
+            // userId: the target user being evaluated (defaults to authenticated user)
+            effectiveAuthenticatedUserId = execJson.authenticated_user_id.getOrElse(user.userId)
+
+            result <- Future {
+              val resultBox = AbacRuleEngine.executeRulesByPolicy(
+                policy = policy,
+                authenticatedUserId = effectiveAuthenticatedUserId,
+                onBehalfOfUserId = execJson.on_behalf_of_user_id,
+                userId = execJson.user_id,
+                callContext = callContext.getOrElse(cc),
+                bankId = execJson.bank_id,
+                accountId = execJson.account_id,
+                viewId = execJson.view_id,
+                transactionId = execJson.transaction_id,
+                transactionRequestId = execJson.transaction_request_id,
+                customerId = execJson.customer_id
+              )
+
+              resultBox match {
+                case Full(allowed) =>
+                  AbacRuleResultJsonV600(result = allowed)
+                case Failure(msg, _, _) =>
+                  AbacRuleResultJsonV600(result = false)
+                case Empty =>
+                  AbacRuleResultJsonV600(result = false)
+              }
+            }
+          } yield {
+            (result, HttpCode.`200`(callContext))
+          }
+      }
+    }
+
     // ============================================================================================================
     // USER ATTRIBUTES v6.0.0 - Consistent with other entity attributes
     // ============================================================================================================
