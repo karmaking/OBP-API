@@ -1863,7 +1863,7 @@ trait APIMethods310 {
       List(
         UnknownError
       ),
-      List(apiTagApi))
+      List(apiTagApi, apiTagOAuth, apiTagOIDC))
 
     lazy val getObpConnectorLoopback : OBPEndpoint = {
       case "connector" :: "loopback" :: Nil JsonGet _ => {
@@ -4111,7 +4111,7 @@ trait APIMethods310 {
       List(
         UnknownError
       ),
-      List(apiTagApi))
+      List(apiTagApi, apiTagOAuth, apiTagOIDC))
 
     lazy val getOAuth2ServerJWKsURIs: OBPEndpoint = {
       case "jwks-uris" :: Nil JsonGet _ => {

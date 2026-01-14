@@ -74,6 +74,8 @@ object AbacRuleEngine {
        |import com.openbankproject.commons.model._
        |import code.model.dataAccess.ResourceUser
        |import net.liftweb.common._
+       |import code.entitlement.Entitlement
+       |import code.api.util.CallContext
        |
        |// ABAC Rule Function
        |(authenticatedUser: User, authenticatedUserAttributes: List[UserAttributeTrait], authenticatedUserAuthContext: List[UserAuthContext], authenticatedUserEntitlements: List[Entitlement], onBehalfOfUserOpt: Option[User], onBehalfOfUserAttributes: List[UserAttributeTrait], onBehalfOfUserAuthContext: List[UserAuthContext], onBehalfOfUserEntitlements: List[Entitlement], userOpt: Option[User], userAttributes: List[UserAttributeTrait], bankOpt: Option[Bank], bankAttributes: List[BankAttributeTrait], accountOpt: Option[BankAccount], accountAttributes: List[AccountAttribute], transactionOpt: Option[Transaction], transactionAttributes: List[TransactionAttribute], transactionRequestOpt: Option[TransactionRequest], transactionRequestAttributes: List[TransactionRequestAttributeTrait], customerOpt: Option[Customer], customerAttributes: List[CustomerAttribute], callContext: Option[code.api.util.CallContext]) => {
