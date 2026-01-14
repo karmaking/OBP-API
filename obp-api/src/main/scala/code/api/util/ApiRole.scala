@@ -86,19 +86,19 @@ object ApiRole extends MdcLoggable{
 
   case class CanGetCustomersAtAllBanks(requiresBankId: Boolean = false) extends ApiRole
   lazy val canGetCustomersAtAllBanks = CanGetCustomersAtAllBanks()
-
+  
   case class CanGetCustomersMinimalAtAllBanks(requiresBankId: Boolean = false) extends ApiRole
   lazy val canGetCustomersMinimalAtAllBanks = CanGetCustomersMinimalAtAllBanks()
-
+  
   case class CanGetCustomersAtOneBank(requiresBankId: Boolean = true) extends ApiRole
   lazy val canGetCustomersAtOneBank = CanGetCustomersAtOneBank()
-
+  
   case class CanGetCustomersMinimalAtOneBank(requiresBankId: Boolean = true) extends ApiRole
   lazy val canGetCustomersMinimalAtOneBank = CanGetCustomersMinimalAtOneBank()
-
+  
   case class CanGetCustomerOverview(requiresBankId: Boolean = true) extends ApiRole
   lazy val canGetCustomerOverview = CanGetCustomerOverview()
-
+  
   case class CanGetCustomerOverviewFlat(requiresBankId: Boolean = true) extends ApiRole
   lazy val canGetCustomerOverviewFlat = CanGetCustomerOverviewFlat()
 
@@ -127,7 +127,7 @@ object ApiRole extends MdcLoggable{
 
   case class CanUpdateAgentStatusAtAnyBank(requiresBankId: Boolean = false) extends ApiRole
   lazy val canUpdateAgentStatusAtAnyBank = CanUpdateAgentStatusAtAnyBank()
-
+  
   case class CanUpdateAgentStatusAtOneBank(requiresBankId: Boolean = true) extends ApiRole
   lazy val canUpdateAgentStatusAtOneBank = CanUpdateAgentStatusAtOneBank()
 
@@ -136,10 +136,10 @@ object ApiRole extends MdcLoggable{
 
   case class CanUpdateCustomerNumber(requiresBankId: Boolean = true) extends ApiRole
   lazy val canUpdateCustomerNumber = CanUpdateCustomerNumber()
-
+  
   case class CanUpdateCustomerMobilePhoneNumber(requiresBankId: Boolean = true) extends ApiRole
-  lazy val canUpdateCustomerMobilePhoneNumber = CanUpdateCustomerMobilePhoneNumber()
-
+  lazy val canUpdateCustomerMobilePhoneNumber = CanUpdateCustomerMobilePhoneNumber()  
+  
   case class CanUpdateCustomerIdentity(requiresBankId: Boolean = true) extends ApiRole
   lazy val canUpdateCustomerIdentity = CanUpdateCustomerIdentity()
 
@@ -160,28 +160,28 @@ object ApiRole extends MdcLoggable{
 
   case class CanCreateCustomerAtAnyBank(requiresBankId: Boolean = false) extends ApiRole
   lazy val canCreateCustomerAtAnyBank = CanCreateCustomerAtAnyBank()
-
+  
   case class CanGetCorrelatedUsersInfo(requiresBankId: Boolean = true) extends ApiRole
-  lazy val canGetCorrelatedUsersInfo = CanGetCorrelatedUsersInfo()
-
+  lazy val canGetCorrelatedUsersInfo = CanGetCorrelatedUsersInfo() 
+  
   case class CanGetCorrelatedUsersInfoAtAnyBank(requiresBankId: Boolean = false) extends ApiRole
   lazy val canGetCorrelatedUsersInfoAtAnyBank = CanGetCorrelatedUsersInfoAtAnyBank()
 
   case class CanCreateUserCustomerLink(requiresBankId: Boolean = true) extends ApiRole
   lazy val canCreateUserCustomerLink = CanCreateUserCustomerLink()
-
+  
   case class CanDeleteUserCustomerLink(requiresBankId: Boolean = true) extends ApiRole
   lazy val canDeleteUserCustomerLink = CanDeleteUserCustomerLink()
-
+  
   case class CanGetUserCustomerLink(requiresBankId: Boolean = true) extends ApiRole
   lazy val canGetUserCustomerLink = CanGetUserCustomerLink()
 
   case class CanCreateUserCustomerLinkAtAnyBank(requiresBankId: Boolean = false) extends ApiRole
   lazy val canCreateUserCustomerLinkAtAnyBank = CanCreateUserCustomerLinkAtAnyBank()
-
+  
   case class CanGetUserCustomerLinkAtAnyBank(requiresBankId: Boolean = false) extends ApiRole
   lazy val canGetUserCustomerLinkAtAnyBank = CanGetUserCustomerLinkAtAnyBank()
-
+  
   case class CanDeleteUserCustomerLinkAtAnyBank(requiresBankId: Boolean = false) extends ApiRole
   lazy val canDeleteUserCustomerLinkAtAnyBank = CanDeleteUserCustomerLinkAtAnyBank()
 
@@ -193,10 +193,10 @@ object ApiRole extends MdcLoggable{
 
   case class CanCreateAccountAttributeAtOneBank(requiresBankId: Boolean = true) extends ApiRole
   lazy val canCreateAccountAttributeAtOneBank = CanCreateAccountAttributeAtOneBank()
-
+  
   case class CanUpdateAccountAttribute(requiresBankId: Boolean = true) extends ApiRole
   lazy val canUpdateAccountAttribute = CanUpdateAccountAttribute()
-
+  
   case class CanGetAnyUser (requiresBankId: Boolean = false) extends ApiRole
   lazy val canGetAnyUser = CanGetAnyUser()
 
@@ -226,10 +226,10 @@ object ApiRole extends MdcLoggable{
 
   case class CanCreateEntitlementAtOneBank(requiresBankId: Boolean = true) extends ApiRole
   lazy val canCreateEntitlementAtOneBank = CanCreateEntitlementAtOneBank()
-
+  
   case class CanCreateSystemViewPermission(requiresBankId: Boolean = false) extends ApiRole
   lazy val canCreateSystemViewPermission = CanCreateSystemViewPermission()
-
+  
   case class CanDeleteSystemViewPermission(requiresBankId: Boolean = false) extends ApiRole
   lazy val canDeleteSystemViewPermission = CanDeleteSystemViewPermission()
 
@@ -305,16 +305,16 @@ object ApiRole extends MdcLoggable{
 
   case class CanGetCustomerAccountLink(requiresBankId: Boolean = true) extends ApiRole
   lazy val canGetCustomerAccountLink = CanGetCustomerAccountLink()
-
+  
   case class CanGetCustomerAccountLinks(requiresBankId: Boolean = true) extends ApiRole
   lazy val canGetCustomerAccountLinks = CanGetCustomerAccountLinks()
-
+  
   case class CanCreateBranch(requiresBankId: Boolean = true) extends ApiRole
   lazy val canCreateBranch = CanCreateBranch()
 
   case class CanUpdateBranch(requiresBankId: Boolean = true) extends ApiRole
   lazy val canUpdateBranch = CanUpdateBranch()
-
+  
   case class CanCreateBranchAtAnyBank(requiresBankId: Boolean = false) extends ApiRole
   lazy val canCreateBranchAtAnyBank = CanCreateBranchAtAnyBank()
 
@@ -325,14 +325,14 @@ object ApiRole extends MdcLoggable{
   lazy val canDeleteBranchAtAnyBank = CanDeleteBranchAtAnyBank()
 
   case class CanCreateAtm(requiresBankId: Boolean = true) extends ApiRole
-  lazy val canCreateAtm = CanCreateAtm()
-
+  lazy val canCreateAtm = CanCreateAtm()  
+  
   case class CanDeleteAtm(requiresBankId: Boolean = true) extends ApiRole
   lazy val canDeleteAtm = CanDeleteAtm()
 
   case class CanDeleteAtmAtAnyBank(requiresBankId: Boolean = false) extends ApiRole
   lazy val canDeleteAtmAtAnyBank = CanDeleteAtmAtAnyBank()
-
+  
   case class CanUpdateAtm(requiresBankId: Boolean = true) extends ApiRole
   lazy val canUpdateAtm = CanUpdateAtm()
 
@@ -344,22 +344,22 @@ object ApiRole extends MdcLoggable{
 
   case class CanCreateCounterparty(requiresBankId: Boolean = true) extends ApiRole
   lazy val canCreateCounterparty = CanCreateCounterparty()
-
+  
   case class CanCreateCounterpartyAtAnyBank(requiresBankId: Boolean = false) extends ApiRole
   lazy val canCreateCounterpartyAtAnyBank = CanCreateCounterpartyAtAnyBank()
 
   case class CanDeleteCounterparty(requiresBankId: Boolean = true) extends ApiRole
   lazy val canDeleteCounterparty = CanDeleteCounterparty()
-
+  
   case class CanDeleteCounterpartyAtAnyBank(requiresBankId: Boolean = false) extends ApiRole
   lazy val canDeleteCounterpartyAtAnyBank = CanDeleteCounterpartyAtAnyBank()
-
+  
   case class CanGetCounterparty(requiresBankId: Boolean = true) extends ApiRole
-  lazy val canGetCounterparty = CanGetCounterparty()
-
+  lazy val canGetCounterparty = CanGetCounterparty() 
+  
   case class CanGetCounterpartiesAtAnyBank(requiresBankId: Boolean = false) extends ApiRole
   lazy val canGetCounterpartiesAtAnyBank = CanGetCounterpartiesAtAnyBank()
-
+  
   case class CanGetCounterparties(requiresBankId: Boolean = true) extends ApiRole
   lazy val canGetCounterparties = CanGetCounterparties()
 
@@ -368,10 +368,10 @@ object ApiRole extends MdcLoggable{
 
   case class CanGetAllApiCollections(requiresBankId: Boolean = false) extends ApiRole
   lazy val canGetAllApiCollections = CanGetAllApiCollections()
-
+  
   case class CanGetCounterpartyAtAnyBank(requiresBankId: Boolean = false) extends ApiRole
   lazy val canGetCounterpartyAtAnyBank = CanGetCounterpartyAtAnyBank()
-
+  
   case class CanCreateProduct(requiresBankId: Boolean = true) extends ApiRole
   lazy val canCreateProduct = CanCreateProduct()
 
@@ -395,7 +395,7 @@ object ApiRole extends MdcLoggable{
 
   case class CanReadMetrics (requiresBankId: Boolean = false) extends ApiRole
   lazy val canReadMetrics = CanReadMetrics()
-
+  
   case class CanGetMetricsAtOneBank(requiresBankId: Boolean = true) extends ApiRole
   lazy val canGetMetricsAtOneBank = CanGetMetricsAtOneBank()
 
@@ -419,19 +419,19 @@ object ApiRole extends MdcLoggable{
   case class CanDeleteCacheKey(requiresBankId: Boolean = false) extends ApiRole
   lazy val canDeleteCacheKey = CanDeleteCacheKey()
   lazy val canGetConfig = CanGetConfig()
-
+  
   case class CanGetAdapterInfo(requiresBankId: Boolean = false) extends ApiRole
   lazy val canGetAdapterInfo = CanGetAdapterInfo()
-
+  
   case class CanGetAdapterInfoAtOneBank(requiresBankId: Boolean = false) extends ApiRole
   lazy val canGetAdapterInfoAtOneBank = CanGetAdapterInfoAtOneBank()
-
+  
   case class CanGetDatabaseInfo(requiresBankId: Boolean = false) extends ApiRole
   lazy val canGetDatabaseInfo = CanGetDatabaseInfo()
-
+  
   case class CanGetMigrations(requiresBankId: Boolean = false) extends ApiRole
   lazy val canGetMigrations = CanGetMigrations()
-
+  
   case class CanGetCallContext(requiresBankId: Boolean = false) extends ApiRole
   lazy val canGetCallContext = CanGetCallContext()
 
@@ -446,10 +446,10 @@ object ApiRole extends MdcLoggable{
 
   case class CanUseAccountFirehoseAtAnyBank(requiresBankId: Boolean = false) extends ApiRole
   lazy val canUseAccountFirehoseAtAnyBank = CanUseAccountFirehoseAtAnyBank()
-
+  
   case class CanUseAccountFirehose(requiresBankId: Boolean = true) extends ApiRole
   lazy val canUseAccountFirehose = CanUseAccountFirehose()
-
+  
   case class CanUseCustomerFirehoseAtAnyBank(requiresBankId: Boolean = false) extends ApiRole
   lazy val canUseCustomerFirehoseAtAnyBank = CanUseCustomerFirehoseAtAnyBank()
 
@@ -467,38 +467,38 @@ object ApiRole extends MdcLoggable{
 
   case class CanUnlockUser (requiresBankId: Boolean = false) extends ApiRole
   lazy val canUnlockUser = CanUnlockUser()
-
+  
   case class CanLockUser (requiresBankId: Boolean = false) extends ApiRole
   lazy val canLockUser = CanLockUser()
-
+  
   case class CanDeleteUser (requiresBankId: Boolean = false) extends ApiRole
   lazy val canDeleteUser = CanDeleteUser()
 
   case class CanValidateUser (requiresBankId: Boolean = false) extends ApiRole
   lazy val canValidateUser = CanValidateUser()
-
+  
   case class CanGetUsersWithAttributes (requiresBankId: Boolean = false) extends ApiRole
   lazy val canGetUsersWithAttributes = CanGetUsersWithAttributes()
-
+  
   case class CanCreateNonPersonalUserAttribute (requiresBankId: Boolean = false) extends ApiRole
   lazy val canCreateNonPersonalUserAttribute = CanCreateNonPersonalUserAttribute()
-
+  
   case class CanGetNonPersonalUserAttributes (requiresBankId: Boolean = false) extends ApiRole
   lazy val canGetNonPersonalUserAttributes = CanGetNonPersonalUserAttributes()
-
+  
   case class CanDeleteNonPersonalUserAttribute (requiresBankId: Boolean = false) extends ApiRole
   lazy val canDeleteNonPersonalUserAttribute = CanDeleteNonPersonalUserAttribute()
 
   // v6.0.0 User Attribute roles (consistent naming - "user attributes" means non-personal)
   case class CanCreateUserAttribute (requiresBankId: Boolean = false) extends ApiRole
   lazy val canCreateUserAttribute = CanCreateUserAttribute()
-
+  
   case class CanGetUserAttributes (requiresBankId: Boolean = false) extends ApiRole
   lazy val canGetUserAttributes = CanGetUserAttributes()
-
+  
   case class CanUpdateUserAttribute (requiresBankId: Boolean = false) extends ApiRole
   lazy val canUpdateUserAttribute = CanUpdateUserAttribute()
-
+  
   case class CanDeleteUserAttribute (requiresBankId: Boolean = false) extends ApiRole
   lazy val canDeleteUserAttribute = CanDeleteUserAttribute()
 
@@ -510,7 +510,7 @@ object ApiRole extends MdcLoggable{
 
   case class CanCreateRateLimits(requiresBankId: Boolean = false) extends ApiRole
   lazy val canCreateRateLimits = CanCreateRateLimits()
-
+  
   case class CanDeleteRateLimits(requiresBankId: Boolean = false) extends ApiRole
   lazy val canDeleteRateLimits = CanDeleteRateLimits()
 
@@ -1173,17 +1173,17 @@ object ApiRole extends MdcLoggable{
   lazy val canCreateGroupAtAllBanks = CanCreateGroupAtAllBanks()
   case class CanCreateGroupAtOneBank(requiresBankId: Boolean = true) extends ApiRole
   lazy val canCreateGroupAtOneBank = CanCreateGroupAtOneBank()
-
+  
   case class CanUpdateGroupAtAllBanks(requiresBankId: Boolean = false) extends ApiRole
   lazy val canUpdateGroupAtAllBanks = CanUpdateGroupAtAllBanks()
   case class CanUpdateGroupAtOneBank(requiresBankId: Boolean = true) extends ApiRole
   lazy val canUpdateGroupAtOneBank = CanUpdateGroupAtOneBank()
-
+  
   case class CanDeleteGroupAtAllBanks(requiresBankId: Boolean = false) extends ApiRole
   lazy val canDeleteGroupAtAllBanks = CanDeleteGroupAtAllBanks()
   case class CanDeleteGroupAtOneBank(requiresBankId: Boolean = true) extends ApiRole
   lazy val canDeleteGroupAtOneBank = CanDeleteGroupAtOneBank()
-
+  
   case class CanGetGroupsAtAllBanks(requiresBankId: Boolean = false) extends ApiRole
   lazy val canGetGroupsAtAllBanks = CanGetGroupsAtAllBanks()
   case class CanGetGroupsAtOneBank(requiresBankId: Boolean = true) extends ApiRole
@@ -1194,12 +1194,12 @@ object ApiRole extends MdcLoggable{
   lazy val canAddUserToGroupAtAllBanks = CanAddUserToGroupAtAllBanks()
   case class CanAddUserToGroupAtOneBank(requiresBankId: Boolean = true) extends ApiRole
   lazy val canAddUserToGroupAtOneBank = CanAddUserToGroupAtOneBank()
-
+  
   case class CanRemoveUserFromGroupAtAllBanks(requiresBankId: Boolean = false) extends ApiRole
   lazy val canRemoveUserFromGroupAtAllBanks = CanRemoveUserFromGroupAtAllBanks()
   case class CanRemoveUserFromGroupAtOneBank(requiresBankId: Boolean = true) extends ApiRole
   lazy val canRemoveUserFromGroupAtOneBank = CanRemoveUserFromGroupAtOneBank()
-
+  
   case class CanGetUserGroupMembershipsAtAllBanks(requiresBankId: Boolean = false) extends ApiRole
   lazy val canGetUserGroupMembershipsAtAllBanks = CanGetUserGroupMembershipsAtAllBanks()
   case class CanGetUserGroupMembershipsAtOneBank(requiresBankId: Boolean = true) extends ApiRole
@@ -1282,15 +1282,15 @@ object Util {
         "CanSetCallLimits",
         "CanDeleteRateLimits"
       )
-
+    
     val allowed = allowedPrefixes ::: allowedExistingNames
 
     source.collect {
       case obj: Defn.Object if obj.name.value == "ApiRole" =>
         obj.collect {
-          case c: Defn.Class if allowed.exists(i => c.name.syntax.startsWith(i)) == true =>
+          case c: Defn.Class if allowed.exists(i => c.name.syntax.startsWith(i)) == true => 
             // OK
-          case c: Defn.Class if allowed.exists(i => c.name.syntax.startsWith(i)) == false =>
+          case c: Defn.Class if allowed.exists(i => c.name.syntax.startsWith(i)) == false => 
             println("INCORRECT - " + c)
         }
     }

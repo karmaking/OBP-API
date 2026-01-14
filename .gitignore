@@ -44,3 +44,4 @@ project/project
 coursier
 metals.sbt
 obp-http4s-runner/src/main/resources/git.properties
+test-results
