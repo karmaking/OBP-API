@@ -299,6 +299,70 @@ object AbacRuleEngine {
 
 
   /**
+   * Execute all active ABAC rules with a specific policy (OR logic - at least one must pass)
+   * @param logic The logic to apply: "AND" (all must pass), "OR" (any must pass), "XOR" (exactly one must pass)
+   * 
+   * @param policy The policy to filter rules by
+   * @param authenticatedUserId The ID of the authenticated user
+   * @param onBehalfOfUserId Optional ID of user being acted on behalf of
+   * @param userId The ID of the target user to evaluate
+   * @param callContext Call context for fetching objects
+   * @param bankId Optional bank ID
+   * @param accountId Optional account ID
+   * @param viewId Optional view ID
+   * @param transactionId Optional transaction ID
+   * @param transactionRequestId Optional transaction request ID
+   * @param customerId Optional customer ID
+   * @return Box[Boolean] - Full(true) if at least one rule passes (OR logic), Full(false) if all fail
+   */
+  def executeRulesByPolicy(
+    policy: String,
+    authenticatedUserId: String,
+    onBehalfOfUserId: Option[String] = None,
+    userId: Option[String] = None,
+    callContext: CallContext,
+    bankId: Option[String] = None,
+    accountId: Option[String] = None,
+    viewId: Option[String] = None,
+    transactionId: Option[String] = None,
+    transactionRequestId: Option[String] = None,
+    customerId: Option[String] = None
+  ): Box[Boolean] = {
+    val rules = MappedAbacRuleProvider.getActiveAbacRulesByPolicy(policy)
+    
+    if (rules.isEmpty) {
+      // No rules for this policy - default to allow
+      Full(true)
+    } else {
+      // Execute all rules and check if at least one passes
+      val results = rules.map { rule =>
+        executeRule(
+          ruleId = rule.abacRuleId,
+          authenticatedUserId = authenticatedUserId,
+          onBehalfOfUserId = onBehalfOfUserId,
+          userId = userId,
+          callContext = callContext,
+          bankId = bankId,
+          accountId = accountId,
+          viewId = viewId,
+          transactionId = transactionId,
+          transactionRequestId = transactionRequestId,
+          customerId = customerId
+        )
+      }
+      
+      // Count successes and failures
+      val successes = results.filter {
+        case Full(true) => true
+        case _ => false
+      }
+
+      // At least one rule must pass (OR logic)
+      Full(successes.nonEmpty)
+    }
+  }
+
+  /**
    * Validate ABAC rule code by attempting to compile it
    * 
    * @param ruleCode The Scala code to validate

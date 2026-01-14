@@ -27,7 +27,7 @@ import code.api.v5_0_0.{ViewJsonV500, ViewsJsonV500}
 import code.api.v5_1_0.{JSONFactory510, PostCustomerLegalNameJsonV510}
 import code.api.dynamic.entity.helper.{DynamicEntityHelper, DynamicEntityInfo}
 import code.api.v6_0_0.JSONFactory600.{AddUserToGroupResponseJsonV600, DynamicEntityDiagnosticsJsonV600, DynamicEntityIssueJsonV600, GroupEntitlementJsonV600, GroupEntitlementsJsonV600, GroupJsonV600, GroupsJsonV600, PostGroupJsonV600, PostGroupMembershipJsonV600, PostResetPasswordUrlJsonV600, PutGroupJsonV600, ReferenceTypeJsonV600, ReferenceTypesJsonV600, ResetPasswordUrlJsonV600, RoleWithEntitlementCountJsonV600, RolesWithEntitlementCountsJsonV600, ScannedApiVersionJsonV600, UpdateViewJsonV600, UserGroupMembershipJsonV600, UserGroupMembershipsJsonV600, ValidateUserEmailJsonV600, ValidateUserEmailResponseJsonV600, ViewJsonV600, ViewPermissionJsonV600, ViewPermissionsJsonV600, ViewsJsonV600, createAbacRuleJsonV600, createAbacRulesJsonV600, createActiveRateLimitsJsonV600, createCallLimitJsonV600, createRedisCallCountersJson}
-import code.api.v6_0_0.{AbacRuleJsonV600, AbacRuleResultJsonV600, AbacRulesJsonV600, CacheConfigJsonV600, CacheInfoJsonV600, CacheNamespaceInfoJsonV600, CreateAbacRuleJsonV600, CurrentConsumerJsonV600, ExecuteAbacRuleJsonV600, InMemoryCacheStatusJsonV600, RedisCacheStatusJsonV600, UpdateAbacRuleJsonV600}
+import code.api.v6_0_0.{AbacRuleJsonV600, AbacRuleResultJsonV600, AbacRulesJsonV600, CacheConfigJsonV600, CacheInfoJsonV600, CacheNamespaceInfoJsonV600, CreateAbacRuleJsonV600, CurrentConsumerJsonV600, ExecuteAbacRuleJsonV600, InMemoryCacheStatusJsonV600, RedisCacheStatusJsonV600, UpdateAbacRuleJsonV600, AbacPoliciesJsonV600, AbacPolicyJsonV600}
 import code.api.v6_0_0.OBPAPI6_0_0
 import code.abacrule.{AbacRuleEngine, MappedAbacRuleProvider}
 import code.metrics.APIMetrics
@@ -4732,6 +4732,7 @@ trait APIMethods600 {
         rule_name = "admin_only",
         rule_code = """user.emailAddress.contains("admin")""",
         description = "Only allow access to users with admin email",
+        policy = "user-access,admin",
         is_active = true
       ),
       AbacRuleJsonV600(
@@ -4740,6 +4741,7 @@ trait APIMethods600 {
         rule_code = """user.emailAddress.contains("admin")""",
         is_active = true,
         description = "Only allow access to users with admin email",
+        policy = "user-access,admin",
         created_by_user_id = "user123",
         updated_by_user_id = "user123"
       ),
@@ -4779,6 +4781,7 @@ trait APIMethods600 {
                 ruleName = createJson.rule_name,
                 ruleCode = createJson.rule_code,
                 description = createJson.description,
+                policy = createJson.policy,
                 isActive = createJson.is_active,
                 createdBy = user.userId
               )
@@ -4815,6 +4818,7 @@ trait APIMethods600 {
         rule_code = """user.emailAddress.contains("admin")""",
         is_active = true,
         description = "Only allow access to users with admin email",
+        policy = "user-access,admin",
         created_by_user_id = "user123",
         updated_by_user_id = "user123"
       ),
@@ -4870,6 +4874,7 @@ trait APIMethods600 {
             rule_code = """user.emailAddress.contains("admin")""",
             is_active = true,
             description = "Only allow access to users with admin email",
+            policy = "user-access,admin",
             created_by_user_id = "user123",
             updated_by_user_id = "user123"
           )
@@ -4900,6 +4905,75 @@ trait APIMethods600 {
     }
 
     staticResourceDocs += ResourceDoc(
+      getAbacRulesByPolicy,
+      implementedInApiVersion,
+      nameOf(getAbacRulesByPolicy),
+      "GET",
+      "/management/abac-rules/policy/POLICY",
+      "Get ABAC Rules by Policy",
+      s"""Get all ABAC rules that belong to a specific policy.
+         |
+         |Multiple rules can share the same policy. Rules with multiple policies (comma-separated)
+         |will be returned if any of their policies match the requested policy.
+         |
+         |**Documentation:**
+         |- ${Glossary.getGlossaryItemLink("ABAC_Simple_Guide")} - Getting started with ABAC rules
+         |- ${Glossary.getGlossaryItemLink("ABAC_Parameters_Summary")} - Complete list of all 18 parameters
+         |- ${Glossary.getGlossaryItemLink("ABAC_Object_Properties_Reference")} - Detailed property reference
+         |
+         |${userAuthenticationMessage(true)}
+         |
+         |""".stripMargin,
+      EmptyBody,
+      AbacRulesJsonV600(
+        abac_rules = List(
+          AbacRuleJsonV600(
+            abac_rule_id = "abc123",
+            rule_name = "admin_only",
+            rule_code = """user.emailAddress.contains("admin")""",
+            is_active = true,
+            description = "Only allow access to users with admin email",
+            policy = "user-access,admin",
+            created_by_user_id = "user123",
+            updated_by_user_id = "user123"
+          ),
+          AbacRuleJsonV600(
+            abac_rule_id = "def456",
+            rule_name = "admin_department_check",
+            rule_code = """user.department == "admin"""",
+            is_active = true,
+            description = "Check if user is in admin department",
+            policy = "admin",
+            created_by_user_id = "user123",
+            updated_by_user_id = "user123"
+          )
+        )
+      ),
+      List(
+        UserNotLoggedIn,
+        UserHasMissingRoles,
+        UnknownError
+      ),
+      List(apiTagABAC),
+      Some(List(canGetAbacRule))
+    )
+
+    lazy val getAbacRulesByPolicy: OBPEndpoint = {
+      case "management" :: "abac-rules" :: "policy" :: policy :: Nil JsonGet _ => {
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(user), callContext) <- authenticatedAccess(cc)
+            _ <- NewStyle.function.hasEntitlement("", user.userId, canGetAbacRule, callContext)
+            rules <- Future {
+              MappedAbacRuleProvider.getAbacRulesByPolicy(policy)
+            }
+          } yield {
+            (createAbacRulesJsonV600(rules), HttpCode.`200`(callContext))
+          }
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
       updateAbacRule,
       implementedInApiVersion,
       nameOf(updateAbacRule),
@@ -4920,6 +4994,7 @@ trait APIMethods600 {
         rule_name = "admin_only_updated",
         rule_code = """user.emailAddress.contains("admin") && user.provider == "obp"""",
         description = "Only allow access to OBP admin users",
+        policy = "user-access,admin,obp",
         is_active = true
       ),
       AbacRuleJsonV600(
@@ -4928,6 +5003,7 @@ trait APIMethods600 {
         rule_code = """user.emailAddress.contains("admin") && user.provider == "obp"""",
         is_active = true,
         description = "Only allow access to OBP admin users",
+        policy = "user-access,admin,obp",
         created_by_user_id = "user123",
         updated_by_user_id = "user456"
       ),
@@ -4962,6 +5038,7 @@ trait APIMethods600 {
                 ruleName = updateJson.rule_name,
                 ruleCode = updateJson.rule_code,
                 description = updateJson.description,
+                policy = updateJson.policy,
                 isActive = updateJson.is_active,
                 updatedBy = user.userId
               )
@@ -5079,11 +5156,13 @@ trait APIMethods600 {
             rule_name = "Check User Identity",
             rule_code = "authenticatedUser.userId == user.userId",
             description = "Verify that the authenticated user matches the target user",
+            policy = "user-access",
             is_active = true
           ),
           AbacRuleExampleJsonV600(
             rule_name = "Check Specific Bank",
             rule_code = "bankOpt.isDefined && bankOpt.get.bankId.value == \"gh.29.uk\"",
+            policy = "bank-access",
             description = "Verify that the bank context is defined and matches a specific bank ID",
             is_active = true
           )
@@ -5247,48 +5326,56 @@ trait APIMethods600 {
                   rule_name = "Branch Manager Internal Account Access",
                   rule_code = "authenticatedUserEntitlements.exists(e => e.roleName == \"CanReadAccountsAtOneBank\") && authenticatedUserAttributes.exists(a => a.name == \"branch\" && accountAttributes.exists(aa => aa.name == \"branch\" && a.value == aa.value)) && callContext.exists(_.verb.exists(_ == \"GET\")) && accountOpt.exists(_.accountType == \"CURRENT\")",
                   description = "Allow GET access to current accounts when user has CanReadAccountsAtOneBank role and branch matches account's branch",
+                  policy = "account-access",
                   is_active = true
                 ),
                 AbacRuleExampleJsonV600(
                   rule_name = "Internal Network High-Value Transaction Review",
                   rule_code = "callContext.exists(_.ipAddress.exists(_.startsWith(\"10.\"))) && authenticatedUserEntitlements.exists(e => e.roleName == \"CanReadTransactionsAtOneBank\") && transactionOpt.exists(_.amount > 10000)",
                   description = "Allow users with CanReadTransactionsAtOneBank role on internal network to review high-value transactions over 10,000",
+                  policy = "transaction-access",
                   is_active = true
                 ),
                 AbacRuleExampleJsonV600(
                   rule_name = "Department Head Same-Department Account Read where overdrawn",
                   rule_code = "authenticatedUserEntitlements.exists(e => e.roleName == \"CanReadAccountsAtOneBank\") && authenticatedUserAttributes.exists(ua => ua.name == \"department\" && accountAttributes.exists(aa => aa.name == \"department\" && ua.value == aa.value)) && callContext.exists(_.url.exists(_.contains(\"/accounts/\"))) && accountOpt.exists(_.balance < 0)",
                   description = "Allow users with CanReadAccountsAtOneBank role to read overdrawn accounts in their department",
+                  policy = "account-access",
                   is_active = true
                 ),
                 AbacRuleExampleJsonV600(
                   rule_name = "Manager Internal Network Transaction Approval",
                   rule_code = "authenticatedUserEntitlements.exists(e => e.roleName == \"CanCreateTransactionRequest\") && callContext.exists(_.ipAddress.exists(ip => ip.startsWith(\"10.\") || ip.startsWith(\"192.168.\"))) && transactionRequestOpt.exists(tr => tr.status == \"PENDING\" && tr.charge.value.toDouble < 50000)",
                   description = "Allow users with CanCreateTransactionRequest role on internal network to approve pending transaction requests under 50,000",
+                  policy = "transaction-request",
                   is_active = true
                 ),
                 AbacRuleExampleJsonV600(
                   rule_name = "KYC Officer Customer Creation from Branch",
                   rule_code = "authenticatedUserEntitlements.exists(e => e.roleName == \"CanCreateCustomer\") && authenticatedUserAttributes.exists(a => a.name == \"certification\" && a.value == \"kyc_certified\") && callContext.exists(_.verb.exists(_ == \"POST\")) && callContext.exists(_.ipAddress.exists(_.startsWith(\"10.20.\"))) && customerAttributes.exists(ca => ca.name == \"onboarding_status\" && ca.value == \"pending\")",
                   description = "Allow users with CanCreateCustomer role and KYC certification to create customers via POST from branch network (10.20.x.x) when status is pending",
+                  policy = "customer-access",
                   is_active = true
                 ),
                 AbacRuleExampleJsonV600(
                   rule_name = "International Team Foreign Currency Transaction",
                   rule_code = "authenticatedUserEntitlements.exists(e => e.roleName == \"CanReadTransactionsAtOneBank\") && authenticatedUserAttributes.exists(a => a.name == \"team\" && a.value == \"international\") && callContext.exists(_.url.exists(_.contains(\"/transactions/\"))) && transactionOpt.exists(t => t.currency != \"USD\" && t.amount < 100000) && accountOpt.exists(a => accountAttributes.exists(aa => aa.name == \"international_enabled\" && aa.value == \"true\"))",
                   description = "Allow international team users with CanReadTransactionsAtOneBank role to access foreign currency transactions under 100k on international-enabled accounts",
+                  policy = "transaction-access",
                   is_active = true
                 ),
                 AbacRuleExampleJsonV600(
                   rule_name = "Assistant with Limited Delegation Account View",
                   rule_code = "onBehalfOfUserOpt.isDefined && onBehalfOfUserEntitlements.exists(e => e.roleName == \"CanReadAccountsAtOneBank\") && authenticatedUserAttributes.exists(a => a.name == \"assistant_of\" && onBehalfOfUserOpt.exists(u => a.value == u.userId)) && callContext.exists(_.verb.exists(_ == \"GET\")) && accountOpt.exists(a => accountAttributes.exists(aa => aa.name == \"tier\" && List(\"gold\", \"platinum\").contains(aa.value)))",
                   description = "Allow assistants to view gold/platinum accounts via GET when acting on behalf of a user with CanReadAccountsAtOneBank role",
+                  policy = "account-access",
                   is_active = true
                 ),
                 AbacRuleExampleJsonV600(
                   rule_name = "Fraud Analyst High-Risk Transaction Access",
                   rule_code = "authenticatedUserEntitlements.exists(e => e.roleName == \"CanReadTransactionsAtOneBank\") && callContext.exists(c => c.verb.exists(_ == \"GET\") && c.implementedByPartialFunction.exists(_.contains(\"Transaction\"))) && transactionAttributes.exists(ta => ta.name == \"risk_score\" && ta.value.toInt >= 75) && transactionOpt.exists(_.status.exists(_ != \"COMPLETED\"))",
                   description = "Allow users with CanReadTransactionsAtOneBank role to GET high-risk (score ≥75) non-completed transactions",
+                  policy = "transaction-access",
                   is_active = true
                 )
               ),
@@ -5311,6 +5398,59 @@ trait APIMethods600 {
               )
             )
             (metadata, HttpCode.`200`(callContext))
+          }
+      }
+    }
+
+    staticResourceDocs += ResourceDoc(
+      getAbacPolicies,
+      implementedInApiVersion,
+      nameOf(getAbacPolicies),
+      "GET",
+      "/management/abac-policies",
+      "Get ABAC Policies",
+      s"""Get the list of allowed ABAC policy names.
+         |
+         |ABAC rules are organized by policies. Each rule must have at least one policy assigned.
+         |Rules can have multiple policies (comma-separated). This endpoint returns the list of
+         |standardized policy names that should be used when creating or updating rules.
+         |
+         |${userAuthenticationMessage(true)}
+         |
+         |""".stripMargin,
+      EmptyBody,
+      AbacPoliciesJsonV600(
+        policies = List(
+          AbacPolicyJsonV600(
+            policy = "account-access",
+            description = "Rules for controlling access to account information"
+          )
+        )
+      ),
+      List(
+        UserNotLoggedIn,
+        UserHasMissingRoles,
+        UnknownError
+      ),
+      List(apiTagABAC),
+      Some(List(canGetAbacRule))
+    )
+
+    lazy val getAbacPolicies: OBPEndpoint = {
+      case "management" :: "abac-policies" :: Nil JsonGet _ => {
+        cc => implicit val ec = EndpointContext(Some(cc))
+          for {
+            (Full(user), callContext) <- authenticatedAccess(cc)
+            _ <- NewStyle.function.hasEntitlement("", user.userId, canGetAbacRule, callContext)
+          } yield {
+            val policies = Constant.ABAC_POLICIES.map { policy =>
+              AbacPolicyJsonV600(
+                policy = policy,
+                description = Constant.ABAC_POLICY_DESCRIPTIONS.getOrElse(policy, "No description available")
+              )
+            }
+            
+            (AbacPoliciesJsonV600(policies), HttpCode.`200`(callContext))
           }
       }
     }
