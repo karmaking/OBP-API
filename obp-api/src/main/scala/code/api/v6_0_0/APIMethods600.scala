@@ -1074,7 +1074,15 @@ trait APIMethods600 {
             entitlements <- NewStyle.function.getEntitlementsByUserId(u.userId, callContext)
           } yield {
             val permissions: Option[Permission] = Views.views.vend.getPermissionForUser(u).toOption
-            val currentUser = UserV600(u, entitlements, permissions)
+            // Add SuperAdmin virtual entitlement if user is super admin
+            // NOTE: We ONLY use this Role in order to create CanCreateEntitlementAtAnyBank and also delete.
+            // Thus it is a boot straping Role. Useful to have in response so the API Manager shows Create Entitlement page to the User.
+            val finalEntitlements = if (APIUtil.isSuperAdmin(u.userId)) {
+              entitlements ::: List(Entitlement.entitlement.vend.addEntitlement("", u.userId, "SuperAdmin"))
+            } else {
+              entitlements
+            }
+            val currentUser = UserV600(u, finalEntitlements, permissions)
             val onBehalfOfUser = if(cc.onBehalfOfUser.isDefined) {
               val user = cc.onBehalfOfUser.toOption.get
               val entitlements = Entitlement.entitlement.vend.getEntitlementsByUserId(user.userId).headOption.toList.flatten
@@ -5449,7 +5457,7 @@ trait APIMethods600 {
                 description = Constant.ABAC_POLICY_DESCRIPTIONS.getOrElse(policy, "No description available")
               )
             }
-            
+
             (AbacPoliciesJsonV600(policies), HttpCode.`200`(callContext))
           }
       }
